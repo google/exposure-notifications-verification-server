@@ -16,6 +16,7 @@ package middleware_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -136,7 +137,7 @@ func TestProcessFirewall(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(tc.ctx)
 			r.Header.Set("Accept", "application/json")
 

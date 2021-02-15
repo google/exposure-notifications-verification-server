@@ -15,6 +15,7 @@
 package middleware_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -57,7 +58,7 @@ func TestRequireHeader(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {
@@ -114,7 +115,7 @@ func TestRequireHeaderValues(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {

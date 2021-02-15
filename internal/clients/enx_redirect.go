@@ -42,7 +42,7 @@ func NewENXRedirectClient(base string, opts ...Option) (*ENXRedirectClient, erro
 
 // AppleSiteAssociation calls and parses the Apple site association file.
 func (c *ENXRedirectClient) AppleSiteAssociation(ctx context.Context) (*api.IOSDataResponse, error) {
-	req, err := c.newRequest(ctx, "GET", "/.well-known/apple-app-site-association", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, "/.well-known/apple-app-site-association", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *ENXRedirectClient) AppleSiteAssociation(ctx context.Context) (*api.IOSD
 
 // AndroidAssetLinks calls and parses the Android assetlinks file.
 func (c *ENXRedirectClient) AndroidAssetLinks(ctx context.Context) ([]*api.AndroidDataResponse, error) {
-	req, err := c.newRequest(ctx, "GET", "/.well-known/assetlinks.json", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, "/.well-known/assetlinks.json", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *ENXRedirectClient) CheckRedirect(ctx context.Context, userAgent string)
 		Timeout: c.client.httpClient.Timeout,
 	}
 
-	req, err := c.newRequest(ctx, "GET", "/", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, "/", nil)
 	if err != nil {
 		return nil, err
 	}

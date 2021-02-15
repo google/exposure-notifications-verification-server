@@ -15,6 +15,7 @@
 package smskeys_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -82,7 +83,7 @@ func TestHandleIndex(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

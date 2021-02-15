@@ -94,7 +94,7 @@ func APIServer(
 	processFirewall := middleware.ProcessFirewall(h, "apiserver")
 
 	// Health route
-	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 
 	// Make verify chaff tracker.
 	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
@@ -124,7 +124,7 @@ func APIServer(
 
 		// POST /api/verify
 		verifyapiController := verifyapi.New(cfg, db, cacher, tokenSigner, h)
-		sub.Handle("", verifyapiController.HandleVerify()).Methods("POST")
+		sub.Handle("", verifyapiController.HandleVerify()).Methods(http.MethodPost)
 	}
 
 	{
@@ -139,7 +139,7 @@ func APIServer(
 		if err != nil {
 			return nil, closer, fmt.Errorf("failed to create certapi controller: %w", err)
 		}
-		sub.Handle("", certapiController.HandleCertificate()).Methods("POST")
+		sub.Handle("", certapiController.HandleCertificate()).Methods(http.MethodPost)
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -122,8 +123,8 @@ func realMain(ctx context.Context) error {
 	r.Use(populateLogger)
 
 	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
-	r.Handle("/", rotationController.HandleRotate()).Methods("GET")
-	r.Handle("/realms", rotationController.HandleVerificationRotate()).Methods("GET")
+	r.Handle("/", rotationController.HandleRotate()).Methods(http.MethodGet)
+	r.Handle("/realms", rotationController.HandleVerificationRotate()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

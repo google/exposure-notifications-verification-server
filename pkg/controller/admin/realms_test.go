@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -85,13 +86,13 @@ func TestHandleRealmsIndex(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsIndex()).Methods("GET")
+		mux.Handle("/", c.HandleRealmsIndex()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -110,13 +111,13 @@ func TestHandleRealmsIndex(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsIndex()).Methods("GET")
+		mux.Handle("/", c.HandleRealmsIndex()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -208,13 +209,13 @@ func TestHandleRealmsCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsCreate()).Methods("POST")
+		mux.Handle("/", c.HandleRealmsCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/", nil)
+		r := httptest.NewRequest(http.MethodPost, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -234,13 +235,13 @@ func TestHandleRealmsCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsCreate()).Methods("POST")
+		mux.Handle("/", c.HandleRealmsCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
 			"name": []string{""},
 		}).Encode()))
 		r = r.Clone(ctx)
@@ -265,13 +266,13 @@ func TestHandleRealmsCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsCreate()).Methods("GET")
+		mux.Handle("/", c.HandleRealmsCreate()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 
@@ -290,13 +291,13 @@ func TestHandleRealmsCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleRealmsCreate()).Methods("POST")
+		mux.Handle("/", c.HandleRealmsCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
 			"name":                        []string{"realmy"},
 			"regionCode":                  []string{"TT-tt"},
 			"useRealmCertificateKey":      []string{"1"},
@@ -373,13 +374,13 @@ func TestHandleRealmsUpdate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods("POST")
+		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -399,13 +400,13 @@ func TestHandleRealmsUpdate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods("GET")
+		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("GET", "/1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 
@@ -424,13 +425,13 @@ func TestHandleRealmsUpdate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods("POST")
+		mux.Handle("/{id}", c.HandleRealmsUpdate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/1", strings.NewReader((&url.Values{
 			"can_use_system_sms_config":   []string{"1"},
 			"can_use_system_email_config": []string{"1"},
 		}).Encode()))
@@ -497,13 +498,13 @@ func TestHandleRealmsAdd(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/12345/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/12345/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -523,13 +524,13 @@ func TestHandleRealmsAdd(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1/12345", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1/12345", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -554,13 +555,13 @@ func TestHandleRealmsAdd(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleRealmsAdd()).Methods("POST")
+		mux.Handle("/{id}", c.HandleRealmsAdd()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -580,13 +581,13 @@ func TestHandleRealmsAdd(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsAdd()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -668,13 +669,13 @@ func TestHandleRealmsRemove(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/12345/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/12345/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -694,13 +695,13 @@ func TestHandleRealmsRemove(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1/12345", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1/12345", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -725,13 +726,13 @@ func TestHandleRealmsRemove(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleRealmsRemove()).Methods("POST")
+		mux.Handle("/{id}", c.HandleRealmsRemove()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -751,13 +752,13 @@ func TestHandleRealmsRemove(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods("POST")
+		mux.Handle("/{realm_id}/{user_id}", c.HandleRealmsRemove()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, user)
 
-		r := httptest.NewRequest("POST", "/1/1", nil)
+		r := httptest.NewRequest(http.MethodPost, "/1/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

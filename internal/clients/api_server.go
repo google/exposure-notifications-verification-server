@@ -16,6 +16,7 @@ package clients
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 )
@@ -39,7 +40,7 @@ func NewAPIServerClient(base, apiKey string, opts ...Option) (*APIServerClient, 
 
 // Verify calls the /verify endpoint to convert a code into a token.
 func (c *APIServerClient) Verify(ctx context.Context, in *api.VerifyCodeRequest) (*api.VerifyCodeResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/api/verify", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/verify", in)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func (c *APIServerClient) Verify(ctx context.Context, in *api.VerifyCodeRequest)
 
 // Certificate calls the /certificate endpoint to exchange a token for a certificate.
 func (c *APIServerClient) Certificate(ctx context.Context, in *api.VerificationCertificateRequest) (*api.VerificationCertificateResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/api/certificate", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/certificate", in)
 	if err != nil {
 		return nil, err
 	}

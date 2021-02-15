@@ -159,7 +159,7 @@ func TestIssueMalformed(t *testing.T) {
 				}
 				reader = bytes.NewBuffer(b)
 			}
-			req, err := http.NewRequestWithContext(localCtx, "GET", "http://example.com", reader)
+			req, err := http.NewRequestWithContext(localCtx, http.MethodGet, "http://example.com", reader)
 			req.Header.Add("content-type", "application/json")
 			if err != nil {
 				t.Fatal(err)

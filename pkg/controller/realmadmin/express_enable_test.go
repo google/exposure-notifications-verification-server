@@ -15,6 +15,7 @@
 package realmadmin_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -75,7 +76,7 @@ func TestHandleEnableExpress(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -108,7 +109,7 @@ func TestHandleEnableExpress(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -141,7 +142,7 @@ func TestHandleEnableExpress(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -180,7 +181,7 @@ func TestHandleEnableExpress(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

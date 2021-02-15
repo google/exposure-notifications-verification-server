@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -122,7 +123,7 @@ func realMain(ctx context.Context) error {
 	r.Use(populateLogger)
 
 	cleanupController := cleanup.New(cfg, db, tokenSignerTyp, h)
-	r.Handle("/", cleanupController.HandleCleanup()).Methods("GET")
+	r.Handle("/", cleanupController.HandleCleanup()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

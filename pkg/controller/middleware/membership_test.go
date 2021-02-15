@@ -119,7 +119,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 			}
 			ctx = controller.WithSession(ctx, session)
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 
@@ -195,7 +195,7 @@ func TestRequireMembership(t *testing.T) {
 			session := &sessions.Session{}
 			ctx = controller.WithSession(ctx, session)
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 

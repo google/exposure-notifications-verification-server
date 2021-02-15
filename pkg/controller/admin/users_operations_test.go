@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -82,13 +83,13 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods("POST")
+		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
 			"name":  []string{"Tester"},
 			"email": []string{fmt.Sprintf("tester-%s@example.com", suffix)},
 		}).Encode()))
@@ -111,13 +112,13 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods("POST")
+		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
 			"name":  []string{"Tester"},
 			"email": []string{""}, // blank
 		}).Encode()))
@@ -143,13 +144,13 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods("GET")
+		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Accept", "text/html")
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -174,13 +175,13 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods("POST")
+		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader((&url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
 			"name":  []string{"Tester"},
 			"email": []string{fmt.Sprintf("tester-%s@example.com", suffix)},
 		}).Encode()))
@@ -246,13 +247,13 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminRevoke()).Methods("GET")
+		mux.Handle("/", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -284,7 +285,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods("GET")
+		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
 
 		session := &sessions.Session{
 			Values: make(map[interface{}]interface{}),
@@ -295,7 +296,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		ctx = controller.WithUser(ctx, user)
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("GET", u, nil)
+		r := httptest.NewRequest(http.MethodGet, u, nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -335,14 +336,14 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods("GET")
+		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("GET", u, nil)
+		r := httptest.NewRequest(http.MethodGet, u, nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -416,13 +417,13 @@ func TestHandleUserDelete(t *testing.T) {
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUserDelete()).Methods("GET")
+		mux.Handle("/", c.HandleUserDelete()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -454,7 +455,7 @@ func TestHandleUserDelete(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserDelete()).Methods("GET")
+		mux.Handle("/{id}", c.HandleUserDelete()).Methods(http.MethodGet)
 
 		session := &sessions.Session{
 			Values: make(map[interface{}]interface{}),
@@ -465,7 +466,7 @@ func TestHandleUserDelete(t *testing.T) {
 		ctx = controller.WithUser(ctx, user)
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("GET", u, nil)
+		r := httptest.NewRequest(http.MethodGet, u, nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -492,13 +493,13 @@ func TestHandleUserDelete(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserDelete()).Methods("GET")
+		mux.Handle("/{id}", c.HandleUserDelete()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

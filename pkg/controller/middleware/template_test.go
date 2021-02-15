@@ -36,7 +36,7 @@ func TestPopulateTemplateVariables(t *testing.T) {
 	}
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 

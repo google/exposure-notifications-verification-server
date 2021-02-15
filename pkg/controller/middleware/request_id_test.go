@@ -37,7 +37,7 @@ func TestPopulateRequestID(t *testing.T) {
 
 	populateRequestID := middleware.PopulateRequestID(h)
 
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 

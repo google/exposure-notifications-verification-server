@@ -16,6 +16,7 @@ package user_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
@@ -90,7 +91,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
 			"name":        []string{"person"},
 			"email":       []string{"you@example.com"},
 			"permissions": []string{"2", "4", "8"},
@@ -131,7 +132,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		r := httptest.NewRequest("POST", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
 			"name": []string{""},
 		}.Encode()))
 		r = r.Clone(ctx)

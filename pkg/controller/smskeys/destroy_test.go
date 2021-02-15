@@ -16,6 +16,7 @@ package smskeys_test
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -84,7 +85,7 @@ func TestHandleDestroy(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r = mux.SetURLVars(r, map[string]string{"id": "123456"})
 		r.Header.Set("Accept", "text/html")
@@ -136,7 +137,7 @@ func TestHandleDestroy(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", toDestroy)})
 		r.Header.Set("Content-Type", "text/html")

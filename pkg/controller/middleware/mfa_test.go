@@ -15,6 +15,7 @@
 package middleware_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -182,7 +183,7 @@ func TestRequireMFA(t *testing.T) {
 				controller.StoreSessionMFAPrompted(session, true)
 			}
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Content-Type", "application/json")
 

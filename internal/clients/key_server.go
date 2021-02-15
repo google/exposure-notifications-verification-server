@@ -17,6 +17,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
 )
@@ -40,7 +41,7 @@ func NewKeyServerClient(base string, opts ...Option) (*KeyServerClient, error) {
 
 // Stats calls the /v1/stats endpoint to get key-server statistics.
 func (c *KeyServerClient) Stats(ctx context.Context, in *keyserver.StatsRequest, authToken string) (*keyserver.StatsResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/v1/stats", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/v1/stats", in)
 	if err != nil {
 		return nil, err
 	}

@@ -16,6 +16,7 @@ package clients
 
 import (
 	"context"
+	"net/http"
 )
 
 // AppSyncClient is a client that talks to the appsync service.
@@ -37,7 +38,7 @@ func NewAppSyncClient(base string, opts ...Option) (*AppSyncClient, error) {
 
 // AppSync triggers an application sync.
 func (c *AppSyncClient) AppSync(ctx context.Context) (*AppsResponse, error) {
-	req, err := c.newRequest(ctx, "GET", "/", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, "/", nil)
 	if err != nil {
 		return nil, err
 	}

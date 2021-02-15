@@ -16,6 +16,7 @@ package clients
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 )
@@ -40,7 +41,7 @@ func NewAdminAPIServerClient(base, apiKey string, opts ...Option) (*AdminAPIServ
 // BatchIssueCode calls the /batch-issue endpoint. Callers must check the HTTP
 // response code.
 func (c *AdminAPIServerClient) BatchIssueCode(ctx context.Context, in *api.BatchIssueCodeRequest) (*api.BatchIssueCodeResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/api/batch-issue", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/batch-issue", in)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +55,7 @@ func (c *AdminAPIServerClient) BatchIssueCode(ctx context.Context, in *api.Batch
 
 // CheckCodeStatus uses the Admin API to retrieve the status of an OTP code.
 func (c *AdminAPIServerClient) CheckCodeStatus(ctx context.Context, in *api.CheckCodeStatusRequest) (*api.CheckCodeStatusResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/api/checkcodestatus", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/checkcodestatus", in)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (c *AdminAPIServerClient) CheckCodeStatus(ctx context.Context, in *api.Chec
 // IssueCode calls the /issue endpoint. Callers must check the HTTP response
 // code.
 func (c *AdminAPIServerClient) IssueCode(ctx context.Context, in *api.IssueCodeRequest) (*api.IssueCodeResponse, error) {
-	req, err := c.newRequest(ctx, "POST", "/api/issue", in)
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/issue", in)
 	if err != nil {
 		return nil, err
 	}

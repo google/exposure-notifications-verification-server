@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -80,13 +81,13 @@ func TestAdminMobileApps(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleMobileAppsShow()).Methods("GET")
+		mux.Handle("/", c.HandleMobileAppsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -105,13 +106,13 @@ func TestAdminMobileApps(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleMobileAppsShow()).Methods("GET")
+		mux.Handle("/", c.HandleMobileAppsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

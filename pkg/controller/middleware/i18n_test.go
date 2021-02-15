@@ -74,7 +74,7 @@ func TestProcessLocale(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/"+tc.query, nil)
+			r := httptest.NewRequest(http.MethodGet, "/"+tc.query, nil)
 			r = r.Clone(ctx)
 			r.Header.Set("Accept", "application/json")
 			for k, v := range tc.headers {

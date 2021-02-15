@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -128,7 +129,7 @@ func realMain(ctx context.Context) error {
 	defer limiterStore.Close(ctx)
 
 	modelerController := modeler.New(ctx, cfg, db, limiterStore, h)
-	r.Handle("/", modelerController.HandleModel()).Methods("POST")
+	r.Handle("/", modelerController.HandleModel()).Methods(http.MethodPost)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {

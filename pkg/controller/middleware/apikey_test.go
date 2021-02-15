@@ -132,7 +132,7 @@ func TestRequireAPIKey(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 			r.Header.Set(middleware.APIKeyHeader, tc.apiKey)
 			r.Header.Set("Accept", "application/json")

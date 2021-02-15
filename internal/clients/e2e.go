@@ -268,7 +268,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 				return nil, err
 			}
 
-			httpReq, err := http.NewRequestWithContext(ctx, "POST", cfg.KeyServer, &b)
+			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.KeyServer, &b)
 			if err != nil {
 				return nil, err
 			}

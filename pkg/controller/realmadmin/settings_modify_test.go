@@ -16,6 +16,7 @@ package realmadmin_test
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
@@ -76,7 +77,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -112,7 +113,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"general":         []string{"1"},
 			"name":            []string{"new-realmy"},
 			"region_code":     []string{"TT2"},
@@ -167,7 +168,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"codes":              []string{"1"},
 			"allowed_test_types": []string{"2"},
 			"require_date":       []string{"1"},
@@ -238,7 +239,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"security":                       []string{"1"},
 			"email_verified_mode":            []string{"2"},
 			"mfa_mode":                       []string{"2"},
@@ -324,7 +325,7 @@ func TestHandleSettings(t *testing.T) {
 					Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 				})
 
-				r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+				r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 					"security": []string{"1"},
 					tc.field:   []string{"bad"},
 				}.Encode()))
@@ -373,7 +374,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"abuse_prevention":              []string{"1"},
 			"abuse_prevention_enabled":      []string{"1"},
 			"abuse_prevention_limit_factor": []string{"10.5"},
@@ -425,7 +426,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"sms":                 []string{"1"},
 			"sms_text_label_0":    []string{"Default SMS template"},
 			"sms_text_template_0": []string{"[longcode]"},
@@ -473,7 +474,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"sms":                 []string{"1"},
 			"twilio_account_sid":  []string{"abcd1234"},
 			"sms_text_label_0":    []string{"Default SMS template"},
@@ -516,7 +517,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"email":        []string{"1"},
 			"smtp_account": []string{"abcd1234"},
 		}.Encode()))
@@ -551,7 +552,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
 			"codes":       []string{"1"},
 			"code_length": []string{"2"},
 		}.Encode()))
@@ -595,7 +596,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/", nil)
+		r := httptest.NewRequest(http.MethodPut, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

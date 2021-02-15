@@ -15,6 +15,7 @@
 package login_test
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -124,7 +125,7 @@ func TestHandlePostAuthenticate(t *testing.T) {
 				Permissions: tc.perms,
 			})
 
-			r := httptest.NewRequest("GET", "/", nil)
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r = r.Clone(ctx)
 
 			w := httptest.NewRecorder()

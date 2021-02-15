@@ -106,7 +106,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,7 +139,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 		}
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest("GET", "/", nil)
+		r, err := http.NewRequest(http.MethodGet, "/", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +174,7 @@ func checkKeys(tb testing.TB, db *database.Database, realm *database.Realm, coun
 func invokeRotate(ctx context.Context, tb testing.TB, c *Controller) {
 	tb.Helper()
 
-	r, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
+	r, err := http.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 	if err != nil {
 		tb.Fatal(err)
 	}

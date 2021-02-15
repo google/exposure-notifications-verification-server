@@ -69,7 +69,7 @@ func ENXRedirect(
 	r.Use(processDebug)
 
 	// Handle health.
-	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 
 	// iOS and Android include functionality to associate data between web-apps
 	// and device apps. Things like handoff between websites and apps, or
@@ -92,8 +92,8 @@ func ENXRedirect(
 		if err != nil {
 			return nil, fmt.Errorf("failed to create associated links controller: %w", err)
 		}
-		wk.PathPrefix("/apple-app-site-association").Handler(assocController.HandleIos()).Methods("GET")
-		wk.PathPrefix("/assetlinks.json").Handler(assocController.HandleAndroid()).Methods("GET")
+		wk.PathPrefix("/apple-app-site-association").Handler(assocController.HandleIos()).Methods(http.MethodGet)
+		wk.PathPrefix("/assetlinks.json").Handler(assocController.HandleAndroid()).Methods(http.MethodGet)
 	}
 
 	// Handle redirects.
@@ -101,7 +101,7 @@ func ENXRedirect(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create redirect controller: %w", err)
 	}
-	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods("GET")
+	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods(http.MethodGet)
 
 	// Wrap the main router in the mutating middleware method. This cannot be
 	// inserted as middleware because gorilla processes the method before

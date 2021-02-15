@@ -16,6 +16,7 @@ package admin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -83,13 +84,13 @@ func TestAdminEvents(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleEventsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -113,13 +114,13 @@ func TestAdminEvents(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleEventsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/?realm_id=1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/?realm_id=1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -138,13 +139,13 @@ func TestAdminEvents(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleEventsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -163,13 +164,13 @@ func TestAdminEvents(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleEventsShow()).Methods("GET")
+		mux.Handle("/", c.HandleEventsShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/?realm_id=0", nil)
+		r := httptest.NewRequest(http.MethodGet, "/?realm_id=0", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

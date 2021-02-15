@@ -17,6 +17,7 @@ package admin_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -80,13 +81,13 @@ func TestAdminUsersIndex(t *testing.T) {
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -105,13 +106,13 @@ func TestAdminUsersIndex(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -130,13 +131,13 @@ func TestAdminUsersIndex(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUsersIndex()).Methods("GET")
+		mux.Handle("/", c.HandleUsersIndex()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/?filter=systemAdmins", nil)
+		r := httptest.NewRequest(http.MethodGet, "/?filter=systemAdmins", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -221,13 +222,13 @@ func TestAdminUserShow(t *testing.T) {
 		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUserShow()).Methods("GET")
+		mux.Handle("/", c.HandleUserShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -246,13 +247,13 @@ func TestAdminUserShow(t *testing.T) {
 
 		mux := mux.NewRouter()
 		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserShow()).Methods("GET")
+		mux.Handle("/{id}", c.HandleUserShow()).Methods(http.MethodGet)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

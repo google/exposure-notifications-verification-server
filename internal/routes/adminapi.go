@@ -95,7 +95,7 @@ func AdminAPI(
 	processFirewall := middleware.ProcessFirewall(h, "adminapi")
 
 	// Health route
-	r.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
+	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 
 	// API routes
 	{
@@ -104,12 +104,12 @@ func AdminAPI(
 		sub.Use(processFirewall)
 
 		issueapiController := issueapi.New(cfg, db, limiterStore, smsSigner, h)
-		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods("POST")
-		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods("POST")
+		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods(http.MethodPost)
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods(http.MethodPost)
 
 		codesController := codes.NewAPI(ctx, cfg, db, h)
-		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods("POST")
-		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods("POST")
+		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods(http.MethodPost)
+		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods(http.MethodPost)
 	}
 
 	// Stats routes
@@ -119,20 +119,20 @@ func AdminAPI(
 		sub.Use(processFirewall)
 
 		statsController := stats.New(cacher, db, h)
-		sub.Handle("/realm.csv", statsController.HandleRealmStats(stats.TypeCSV)).Methods("GET")
-		sub.Handle("/realm.json", statsController.HandleRealmStats(stats.TypeJSON)).Methods("GET")
+		sub.Handle("/realm.csv", statsController.HandleRealmStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm.json", statsController.HandleRealmStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-		sub.Handle("/realm/users.csv", statsController.HandleRealmUsersStats(stats.TypeCSV)).Methods("GET")
-		sub.Handle("/realm/users.json", statsController.HandleRealmUsersStats(stats.TypeJSON)).Methods("GET")
+		sub.Handle("/realm/users.csv", statsController.HandleRealmUsersStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/users.json", statsController.HandleRealmUsersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-		sub.Handle("/realm/users/{id}.csv", statsController.HandleRealmUserStats(stats.TypeCSV)).Methods("GET")
-		sub.Handle("/realm/users/{id}.json", statsController.HandleRealmUserStats(stats.TypeJSON)).Methods("GET")
+		sub.Handle("/realm/users/{id}.csv", statsController.HandleRealmUserStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/users/{id}.json", statsController.HandleRealmUserStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods("GET")
-		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods("GET")
+		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-		sub.Handle("/realm/key-server.csv", statsController.HandleKeyServerStats(stats.TypeCSV)).Methods("GET")
-		sub.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.TypeJSON)).Methods("GET")
+		sub.Handle("/realm/key-server.csv", statsController.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
 	}
 
 	// Wrap the main router in the mutating middleware method. This cannot be

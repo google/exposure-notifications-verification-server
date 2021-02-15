@@ -16,6 +16,7 @@ package realmadmin_test
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -91,7 +92,7 @@ func TestHandleEvents(t *testing.T) {
 			Permissions: rbac.AuditRead,
 		})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

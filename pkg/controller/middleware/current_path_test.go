@@ -31,7 +31,7 @@ func TestInjectCurrentPath(t *testing.T) {
 
 	injectCurrentPath := middleware.InjectCurrentPath()
 
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
 	r.Header.Set("Accept", "application/json")
 

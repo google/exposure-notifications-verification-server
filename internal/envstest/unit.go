@@ -37,7 +37,7 @@ func ExerciseSessionMissing(t *testing.T, h http.Handler) {
 
 		ctx := project.TestContext(t)
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -66,7 +66,7 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -94,7 +94,7 @@ func ExerciseUserMissing(t *testing.T, h http.Handler) {
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -124,7 +124,7 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 		ctx = controller.WithMembership(ctx, &database.Membership{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest("GET", "/", nil)
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -153,7 +153,7 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 		ctx = controller.WithMembership(ctx, membership)
 		ctx = controller.WithUser(ctx, membership.User)
 
-		r := httptest.NewRequest("GET", "/1", nil)
+		r := httptest.NewRequest(http.MethodGet, "/1", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 
@@ -190,7 +190,7 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 		ctx = controller.WithMembership(ctx, membership)
 		ctx = controller.WithUser(ctx, membership.User)
 
-		r := httptest.NewRequest("GET", "/13940890", nil)
+		r := httptest.NewRequest(http.MethodGet, "/13940890", nil)
 		r = r.Clone(ctx)
 		r.Header.Set("Content-Type", "text/html")
 

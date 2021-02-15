@@ -17,6 +17,7 @@ package user_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -100,7 +101,7 @@ func TestHandleUpdate(t *testing.T) {
 		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -111,7 +112,7 @@ func TestHandleUpdate(t *testing.T) {
 		})
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("PUT", u, strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, u, strings.NewReader(url.Values{
 			"name": []string{"apple"},
 		}.Encode()))
 		r = r.Clone(ctx)
@@ -142,7 +143,7 @@ func TestHandleUpdate(t *testing.T) {
 		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -153,7 +154,7 @@ func TestHandleUpdate(t *testing.T) {
 		})
 
 		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest("PUT", u, strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, u, strings.NewReader(url.Values{
 			"name": []string{""},
 		}.Encode()))
 		r = r.Clone(ctx)

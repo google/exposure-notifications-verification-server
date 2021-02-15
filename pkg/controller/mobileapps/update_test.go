@@ -17,6 +17,7 @@ package mobileapps_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -98,7 +99,7 @@ func TestHandleUpdate(t *testing.T) {
 		c := mobileapps.New(harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -108,7 +109,7 @@ func TestHandleUpdate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/1", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/1", strings.NewReader(url.Values{
 			"name": []string{"apple"},
 		}.Encode()))
 		r = r.Clone(ctx)
@@ -139,7 +140,7 @@ func TestHandleUpdate(t *testing.T) {
 		c := mobileapps.New(harness.Database, h)
 
 		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods("PUT")
+		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -149,7 +150,7 @@ func TestHandleUpdate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest("PUT", "/1", strings.NewReader(url.Values{
+		r := httptest.NewRequest(http.MethodPut, "/1", strings.NewReader(url.Values{
 			"name": []string{""},
 			"type": []string{"-1"},
 		}.Encode()))

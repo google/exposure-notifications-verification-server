@@ -158,7 +158,7 @@ func Server(
 
 	{
 		sub := r.PathPrefix("").Subrouter()
-		sub.Handle("/health", controller.HandleHealthz(db, h)).Methods("GET")
+		sub.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 	}
 
 	{
@@ -166,40 +166,40 @@ func Server(
 		{
 			sub := r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
-			sub.Handle("/session", loginController.HandleCreateSession()).Methods("POST")
-			sub.Handle("/signout", loginController.HandleSignOut()).Methods("GET")
+			sub.Handle("/session", loginController.HandleCreateSession()).Methods(http.MethodPost)
+			sub.Handle("/signout", loginController.HandleSignOut()).Methods(http.MethodGet)
 
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
 			sub.Use(checkIdleNoAuth)
 
-			sub.Handle("/", loginController.HandleLogin()).Methods("GET")
-			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods("GET")
-			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods("POST")
+			sub.Handle("/", loginController.HandleLogin()).Methods(http.MethodGet)
+			sub.Handle("/login/reset-password", loginController.HandleShowResetPassword()).Methods(http.MethodGet)
+			sub.Handle("/login/reset-password", loginController.HandleSubmitResetPassword()).Methods(http.MethodPost)
 			sub.Handle("/login/manage-account", loginController.HandleShowSelectNewPassword()).
-				Queries("oobCode", "", "mode", "resetPassword").Methods("GET")
+				Queries("oobCode", "", "mode", "resetPassword").Methods(http.MethodGet)
 			sub.Handle("/login/manage-account", loginController.HandleSubmitNewPassword()).
-				Queries("oobCode", "", "mode", "resetPassword").Methods("POST")
+				Queries("oobCode", "", "mode", "resetPassword").Methods(http.MethodPost)
 			sub.Handle("/login/manage-account", loginController.HandleReceiveVerifyEmail()).
-				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods("GET")
+				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods(http.MethodGet)
 
 			// Realm selection & account settings
 			sub = r.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentMembership)
-			sub.Handle("/login", loginController.HandleReauth()).Methods("GET")
-			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods("GET")
-			sub.Handle("/login/post-authenticate", loginController.HandlePostAuthenticate()).Methods("GET", "POST", "PUT", "PATCH")
-			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods("GET", "POST")
-			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods("GET")
-			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods("POST")
-			sub.Handle("/account", loginController.HandleAccountSettings()).Methods("GET")
+			sub.Handle("/login", loginController.HandleReauth()).Methods(http.MethodGet)
+			sub.Handle("/login", loginController.HandleReauth()).Queries("redir", "").Methods(http.MethodGet)
+			sub.Handle("/login/post-authenticate", loginController.HandlePostAuthenticate()).Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch)
+			sub.Handle("/login/select-realm", loginController.HandleSelectRealm()).Methods(http.MethodGet, http.MethodPost)
+			sub.Handle("/login/change-password", loginController.HandleShowChangePassword()).Methods(http.MethodGet)
+			sub.Handle("/login/change-password", loginController.HandleSubmitChangePassword()).Methods(http.MethodPost)
+			sub.Handle("/account", loginController.HandleAccountSettings()).Methods(http.MethodGet)
 			sub.Handle("/login/manage-account", loginController.HandleShowVerifyEmail()).
-				Queries("mode", "verifyEmail").Methods("GET")
+				Queries("mode", "verifyEmail").Methods(http.MethodGet)
 			sub.Handle("/login/manage-account", loginController.HandleSubmitVerifyEmail()).
-				Queries("mode", "verifyEmail").Methods("POST")
-			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods("GET")
+				Queries("mode", "verifyEmail").Methods(http.MethodPost)
+			sub.Handle("/login/register-phone", loginController.HandleRegisterPhone()).Methods(http.MethodGet)
 		}
 	}
 
@@ -214,13 +214,13 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
-		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods("GET")
+		sub.Handle("", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods(http.MethodGet)
+		sub.Handle("/", http.RedirectHandler("/codes/issue", http.StatusSeeOther)).Methods(http.MethodGet)
 
 		// API for creating new verification codes. Called via AJAX.
 		issueapiController := issueapi.New(cfg, db, limiterStore, smsSigner, h)
-		sub.Handle("/issue", issueapiController.HandleIssueUI()).Methods("POST")
-		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueUI()).Methods("POST")
+		sub.Handle("/issue", issueapiController.HandleIssueUI()).Methods(http.MethodPost)
+		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueUI()).Methods(http.MethodPost)
 
 		codesController := codes.NewServer(ctx, cfg, db, h)
 		codesRoutes(sub, codesController)
@@ -348,139 +348,139 @@ func Server(
 
 // codesRoutes are the routes for checking codes.
 func codesRoutes(r *mux.Router, c *codes.Controller) {
-	r.Handle("/issue", c.HandleIssue()).Methods("GET")
-	r.Handle("/bulk-issue", c.HandleBulkIssue()).Methods("GET")
-	r.Handle("/status", c.HandleIndex()).Methods("GET")
-	r.Handle("/{uuid}", c.HandleShow()).Methods("GET")
-	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods("PATCH")
+	r.Handle("/issue", c.HandleIssue()).Methods(http.MethodGet)
+	r.Handle("/bulk-issue", c.HandleBulkIssue()).Methods(http.MethodGet)
+	r.Handle("/status", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("/{uuid}", c.HandleShow()).Methods(http.MethodGet)
+	r.Handle("/{uuid}/expire", c.HandleExpirePage()).Methods(http.MethodPatch)
 }
 
 // mobileappsRoutes are the Mobile App routes.
 func mobileappsRoutes(r *mux.Router, c *mobileapps.Controller) {
-	r.Handle("", c.HandleIndex()).Methods("GET")
-	r.Handle("", c.HandleCreate()).Methods("POST")
-	r.Handle("/new", c.HandleCreate()).Methods("GET")
-	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
+	r.Handle("", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("", c.HandleCreate()).Methods(http.MethodPost)
+	r.Handle("/new", c.HandleCreate()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods(http.MethodPatch)
 }
 
 // apikeyRoutes are the API key routes.
 func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
-	r.Handle("", c.HandleIndex()).Methods("GET")
-	r.Handle("", c.HandleCreate()).Methods("POST")
-	r.Handle("/new", c.HandleCreate()).Methods("GET")
-	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods("PATCH")
+	r.Handle("", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("", c.HandleCreate()).Methods(http.MethodPost)
+	r.Handle("/new", c.HandleCreate()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods(http.MethodPatch)
 }
 
 // userRoutes are the user routes.
 func userRoutes(r *mux.Router, c *user.Controller) {
-	r.Handle("", c.HandleIndex()).Methods("GET")
-	r.Handle("", c.HandleCreate()).Methods("POST")
-	r.Handle("/new", c.HandleCreate()).Methods("GET")
-	r.Handle("/export.csv", c.HandleExport()).Methods("GET")
-	r.Handle("/import", c.HandleImport()).Methods("GET")
-	r.Handle("/import", c.HandleImportBatch()).Methods("POST")
-	r.Handle("/bulk-permissions/add", c.HandleBulkPermissions(database.BulkPermissionActionAdd)).Methods("POST")
-	r.Handle("/bulk-permissions/remove", c.HandleBulkPermissions(database.BulkPermissionActionRemove)).Methods("POST")
-	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods("GET")
-	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods("PATCH")
-	r.Handle("/{id:[0-9]+}", c.HandleDelete()).Methods("DELETE")
-	r.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods("POST")
+	r.Handle("", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("", c.HandleCreate()).Methods(http.MethodPost)
+	r.Handle("/new", c.HandleCreate()).Methods(http.MethodGet)
+	r.Handle("/export.csv", c.HandleExport()).Methods(http.MethodGet)
+	r.Handle("/import", c.HandleImport()).Methods(http.MethodGet)
+	r.Handle("/import", c.HandleImportBatch()).Methods(http.MethodPost)
+	r.Handle("/bulk-permissions/add", c.HandleBulkPermissions(database.BulkPermissionActionAdd)).Methods(http.MethodPost)
+	r.Handle("/bulk-permissions/remove", c.HandleBulkPermissions(database.BulkPermissionActionRemove)).Methods(http.MethodPost)
+	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods(http.MethodGet)
+	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}", c.HandleDelete()).Methods(http.MethodDelete)
+	r.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods(http.MethodPost)
 }
 
 // realmkeysRoutes are the realm key routes.
 func realmkeysRoutes(r *mux.Router, c *realmkeys.Controller) {
-	r.Handle("/keys", c.HandleIndex()).Methods("GET")
-	r.Handle("/keys/{id:[0-9]+}", c.HandleDestroy()).Methods("DELETE")
-	r.Handle("/keys/create", c.HandleCreateKey()).Methods("POST")
-	r.Handle("/keys/upgrade", c.HandleUpgrade()).Methods("POST")
-	r.Handle("/keys/automatic", c.HandleAutomaticRotate()).Methods("POST")
-	r.Handle("/keys/manual", c.HandleManualRotate()).Methods("POST")
-	r.Handle("/keys/save", c.HandleSave()).Methods("POST")
-	r.Handle("/keys/activate", c.HandleActivate()).Methods("POST")
+	r.Handle("/keys", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("/keys/{id:[0-9]+}", c.HandleDestroy()).Methods(http.MethodDelete)
+	r.Handle("/keys/create", c.HandleCreateKey()).Methods(http.MethodPost)
+	r.Handle("/keys/upgrade", c.HandleUpgrade()).Methods(http.MethodPost)
+	r.Handle("/keys/automatic", c.HandleAutomaticRotate()).Methods(http.MethodPost)
+	r.Handle("/keys/manual", c.HandleManualRotate()).Methods(http.MethodPost)
+	r.Handle("/keys/save", c.HandleSave()).Methods(http.MethodPost)
+	r.Handle("/keys/activate", c.HandleActivate()).Methods(http.MethodPost)
 }
 
 // realmSMSkeysRoutes are the realm key routes.
 func realmSMSkeysRoutes(r *mux.Router, c *smskeys.Controller) {
-	r.Handle("/sms-keys", c.HandleIndex()).Methods("GET")
-	r.Handle("/sms-keys", c.HandleCreateKey()).Methods("POST")
-	r.Handle("/sms-keys/enable", c.HandleEnable()).Methods("PUT")
-	r.Handle("/sms-keys/disable", c.HandleDisable()).Methods("PUT")
-	r.Handle("/sms-keys/{id:[0-9]+}", c.HandleDestroy()).Methods("DELETE")
-	r.Handle("/sms-keys/activate", c.HandleActivate()).Methods("POST")
+	r.Handle("/sms-keys", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("/sms-keys", c.HandleCreateKey()).Methods(http.MethodPost)
+	r.Handle("/sms-keys/enable", c.HandleEnable()).Methods(http.MethodPut)
+	r.Handle("/sms-keys/disable", c.HandleDisable()).Methods(http.MethodPut)
+	r.Handle("/sms-keys/{id:[0-9]+}", c.HandleDestroy()).Methods(http.MethodDelete)
+	r.Handle("/sms-keys/activate", c.HandleActivate()).Methods(http.MethodPost)
 }
 
 // statsRoutes are the statistics routes, rooted at /stats.
 func statsRoutes(r *mux.Router, c *stats.Controller) {
-	r.Handle("/realm.csv", c.HandleRealmStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm.json", c.HandleRealmStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm.csv", c.HandleRealmStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm.json", c.HandleRealmStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-	r.Handle("/realm/users.csv", c.HandleRealmUsersStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm/users.json", c.HandleRealmUsersStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm/users.csv", c.HandleRealmUsersStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/users.json", c.HandleRealmUsersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm/users/{id}.csv", c.HandleRealmUserStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/users/{id}.json", c.HandleRealmUserStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-	r.Handle("/realm/api-keys/{id}.csv", c.HandleRealmAuthorizedAppStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm/api-keys/{id}.json", c.HandleRealmAuthorizedAppStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm/api-keys/{id}.csv", c.HandleRealmAuthorizedAppStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/api-keys/{id}.json", c.HandleRealmAuthorizedAppStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
-	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods("GET")
-	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods("GET")
+	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
 }
 
 // realmadminRoutes are the realm admin routes.
 func realmadminRoutes(r *mux.Router, c *realmadmin.Controller) {
-	r.Handle("/settings", c.HandleSettings()).Methods("GET", "POST")
-	r.Handle("/settings/enable-express", c.HandleEnableExpress()).Methods("POST")
-	r.Handle("/settings/disable-express", c.HandleDisableExpress()).Methods("POST")
-	r.Handle("/stats", c.HandleStats()).Methods("GET")
-	r.Handle("/events", c.HandleEvents()).Methods("GET")
+	r.Handle("/settings", c.HandleSettings()).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/settings/enable-express", c.HandleEnableExpress()).Methods(http.MethodPost)
+	r.Handle("/settings/disable-express", c.HandleDisableExpress()).Methods(http.MethodPost)
+	r.Handle("/stats", c.HandleStats()).Methods(http.MethodGet)
+	r.Handle("/events", c.HandleEvents()).Methods(http.MethodGet)
 }
 
 // jwksRoutes are the JWK routes, rooted at /jwks.
 func jwksRoutes(r *mux.Router, c *jwks.Controller) {
-	r.Handle("/{realm_id:[0-9]+}", c.HandleIndex()).Methods("GET")
+	r.Handle("/{realm_id:[0-9]+}", c.HandleIndex()).Methods(http.MethodGet)
 }
 
 // systemAdminRoutes are the system routes, rooted at /admin.
 func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	// Redirect / to /admin/realms
-	r.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
-	r.Handle("/", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods("GET")
+	r.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods(http.MethodGet)
+	r.Handle("/", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods(http.MethodGet)
 
-	r.Handle("/realms", c.HandleRealmsIndex()).Methods("GET")
-	r.Handle("/realms", c.HandleRealmsCreate()).Methods("POST")
-	r.Handle("/realms/new", c.HandleRealmsCreate()).Methods("GET")
-	r.Handle("/realms/{id:[0-9]+}/edit", c.HandleRealmsUpdate()).Methods("GET")
-	r.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", c.HandleRealmsAdd()).Methods("PATCH")
-	r.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", c.HandleRealmsRemove()).Methods("PATCH")
-	r.Handle("/realms/{id:[0-9]+}", c.HandleRealmsUpdate()).Methods("PATCH")
+	r.Handle("/realms", c.HandleRealmsIndex()).Methods(http.MethodGet)
+	r.Handle("/realms", c.HandleRealmsCreate()).Methods(http.MethodPost)
+	r.Handle("/realms/new", c.HandleRealmsCreate()).Methods(http.MethodGet)
+	r.Handle("/realms/{id:[0-9]+}/edit", c.HandleRealmsUpdate()).Methods(http.MethodGet)
+	r.Handle("/realms/{realm_id:[0-9]+}/add/{user_id:[0-9]+}", c.HandleRealmsAdd()).Methods(http.MethodPatch)
+	r.Handle("/realms/{realm_id:[0-9]+}/remove/{user_id:[0-9]+}", c.HandleRealmsRemove()).Methods(http.MethodPatch)
+	r.Handle("/realms/{id:[0-9]+}", c.HandleRealmsUpdate()).Methods(http.MethodPatch)
 
-	r.Handle("/users", c.HandleUsersIndex()).Methods("GET")
-	r.Handle("/users/{id:[0-9]+}", c.HandleUserShow()).Methods("GET")
-	r.Handle("/users/{id:[0-9]+}", c.HandleUserDelete()).Methods("DELETE")
-	r.Handle("/users", c.HandleSystemAdminCreate()).Methods("POST")
-	r.Handle("/users/new", c.HandleSystemAdminCreate()).Methods("GET")
-	r.Handle("/users/{id:[0-9]+}/revoke", c.HandleSystemAdminRevoke()).Methods("DELETE")
+	r.Handle("/users", c.HandleUsersIndex()).Methods(http.MethodGet)
+	r.Handle("/users/{id:[0-9]+}", c.HandleUserShow()).Methods(http.MethodGet)
+	r.Handle("/users/{id:[0-9]+}", c.HandleUserDelete()).Methods(http.MethodDelete)
+	r.Handle("/users", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
+	r.Handle("/users/new", c.HandleSystemAdminCreate()).Methods(http.MethodGet)
+	r.Handle("/users/{id:[0-9]+}/revoke", c.HandleSystemAdminRevoke()).Methods(http.MethodDelete)
 
-	r.Handle("/mobile-apps", c.HandleMobileAppsShow()).Methods("GET")
-	r.Handle("/sms", c.HandleSMSUpdate()).Methods("GET", "POST")
-	r.Handle("/email", c.HandleEmailUpdate()).Methods("GET", "POST")
-	r.Handle("/events", c.HandleEventsShow()).Methods("GET")
+	r.Handle("/mobile-apps", c.HandleMobileAppsShow()).Methods(http.MethodGet)
+	r.Handle("/sms", c.HandleSMSUpdate()).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/email", c.HandleEmailUpdate()).Methods(http.MethodGet, http.MethodPost)
+	r.Handle("/events", c.HandleEventsShow()).Methods(http.MethodGet)
 
-	r.Handle("/caches", c.HandleCachesIndex()).Methods("GET")
-	r.Handle("/caches/clear/{id}", c.HandleCachesClear()).Methods("POST")
+	r.Handle("/caches", c.HandleCachesIndex()).Methods(http.MethodGet)
+	r.Handle("/caches/clear/{id}", c.HandleCachesClear()).Methods(http.MethodPost)
 
-	r.Handle("/info", c.HandleInfoShow()).Methods("GET")
+	r.Handle("/info", c.HandleInfoShow()).Methods(http.MethodGet)
 }
