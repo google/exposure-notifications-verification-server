@@ -116,7 +116,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 		if err != nil {
 			return fmt.Errorf("not enough entropy: %w", err)
 		}
-		teks[i] = key
+		teks = append(teks, key)
 		nextInterval -= maxInterval
 	}
 
