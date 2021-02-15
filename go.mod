@@ -8,7 +8,7 @@ require (
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v51.2.0+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.37.9 // indirect
+	github.com/aws/aws-sdk-go v1.37.10 // indirect
 	github.com/chromedp/cdproto v0.0.0-20210211211551-bf465a41a1f9
 	github.com/chromedp/chromedp v0.6.5
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -19,7 +19,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.21.1-0.20210212173257-183b9374f520
+	github.com/google/exposure-notifications-server v0.22.0
 	github.com/google/go-cmp v0.5.4
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/csrf v1.7.0
