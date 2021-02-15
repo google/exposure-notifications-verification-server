@@ -110,6 +110,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	appSyncController, err := appsync.New(cfg, db, h)
 	if err != nil {
 		return fmt.Errorf("failed to create cleanup controller: %w", err)

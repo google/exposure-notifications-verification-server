@@ -137,6 +137,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	r.Handle("/default", handleDefault(cfg, h))
 	r.Handle("/revise", handleRevise(cfg, h))
 	r.Handle("/enx-redirect", handleENXRedirect(enxRedirectClient, h))

@@ -121,6 +121,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	// Rate limiting
 	limiterStore, err := ratelimit.RateLimiterFor(ctx, &cfg.RateLimit)
 	if err != nil {

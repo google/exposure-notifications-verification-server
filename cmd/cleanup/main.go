@@ -122,6 +122,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	cleanupController := cleanup.New(cfg, db, tokenSignerTyp, h)
 	r.Handle("/", cleanupController.HandleCleanup()).Methods(http.MethodGet)
 

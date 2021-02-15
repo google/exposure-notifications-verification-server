@@ -122,6 +122,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
 	r.Handle("/", rotationController.HandleRotate()).Methods(http.MethodGet)
 	r.Handle("/realms", rotationController.HandleVerificationRotate()).Methods(http.MethodGet)
