@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/schema"
@@ -35,7 +36,7 @@ func BindForm(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	decoder.IgnoreUnknownKeys(true)
 
 	if err := decoder.Decode(data, r.PostForm); err != nil {
-		return err
+		return fmt.Errorf("failed to decode form: %w", err)
 	}
 	return nil
 }
