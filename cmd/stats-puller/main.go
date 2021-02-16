@@ -113,6 +113,10 @@ func realMain(ctx context.Context) error {
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	client, err := clients.NewKeyServerClient(cfg.KeyServerURL,
 		clients.WithTimeout(cfg.DownloadTimeout),
 		clients.WithMaxBodySize(cfg.FileSizeLimitBytes))

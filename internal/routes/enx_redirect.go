@@ -61,6 +61,10 @@ func ENXRedirect(
 	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
 	r.Use(populateLogger)
 
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
+
 	// Install common security headers
 	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 

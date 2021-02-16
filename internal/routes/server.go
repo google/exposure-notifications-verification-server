@@ -103,9 +103,13 @@ func Server(
 	populateRequestID := middleware.PopulateRequestID(h)
 	r.Use(populateRequestID)
 
-	// Logger injection.
+	// Logger injection
 	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
 	r.Use(populateLogger)
+
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),

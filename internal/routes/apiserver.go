@@ -66,9 +66,13 @@ func APIServer(
 	populateRequestID := middleware.PopulateRequestID(h)
 	r.Use(populateRequestID)
 
-	// Logger injection.
+	// Logger injection
 	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
 	r.Use(populateLogger)
+
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	r.Use(recovery)
 
 	// Note that rate limiting is installed _after_ the chaff middleware because
 	// we do not want chaff requests to count towards rate-limiting quota.
