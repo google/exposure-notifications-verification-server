@@ -16,8 +16,10 @@
 package project
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 const (
@@ -43,4 +45,14 @@ func AllDigits(val string) bool {
 		}
 	}
 	return true
+}
+
+// TestTimeout controls the individual test timeout, primarily used on a context
+// for chromedp tests. By default, it's 2min, but it can be controlled with the
+// TEST_TIMEOUT environment variable.
+func TestTimeout() time.Duration {
+	if v, _ := time.ParseDuration(os.Getenv("TEST_TIMEOUT")); v != 0 {
+		return v
+	}
+	return 120 * time.Second
 }

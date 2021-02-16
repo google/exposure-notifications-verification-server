@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/gorilla/sessions"
@@ -155,7 +154,7 @@ func TestHandleCreate(t *testing.T) {
 		t.Parallel()
 
 		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 		defer done()
 
 		var apiKey string

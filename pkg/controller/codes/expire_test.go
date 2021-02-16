@@ -74,7 +74,7 @@ func TestHandleExpire_ExpireCode(t *testing.T) {
 	}
 
 	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, 120*time.Second)
+	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
 	defer done()
 
 	confirmErrCh := envstest.AutoConfirmDialogs(taskCtx, true)
