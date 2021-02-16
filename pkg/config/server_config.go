@@ -165,6 +165,10 @@ func (c *ServerConfig) IsMaintenanceMode() bool {
 	return c.MaintenanceMode
 }
 
+func (c *ServerConfig) GetAuthenticatedSMSFailClosed() bool {
+	return c.SMSSigning.FailClosed
+}
+
 // FirebaseConfig represents configuration specific to firebase auth.
 type FirebaseConfig struct {
 	APIKey          string `env:"FIREBASE_API_KEY,required"`
