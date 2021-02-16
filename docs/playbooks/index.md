@@ -11,9 +11,7 @@ production on GCP. All of our responses here are specific to GCP.
  - [ElevatedLatencyGreaterThan2s](alerts/ElevatedLatencyGreaterThan2s.md)
  - [ElevatedRateLimitedCount](alerts/ElevatedRateLimitedCount.md)
  - [FastErrorBudgetBurn](alerts/FastErrorBudgetBurn.md)
- - [SlowErrorBudgetBurn](alerts/SlowErrorBudgetBurn.md)
  - [HostDown](alerts/HostDown.md)
- - [RealmTokenRemainingCapacityLow](alerts/RealmTokenRemainingCapacityLow.md)
  - [StackdriverExportFailed](alerts/StackdriverExportFailed.md)
 
 ## Common Actions
