@@ -28,6 +28,8 @@ const metricPrefix = observability.MetricRoot + "/api/issue"
 var (
 	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
 
+	mAuthenticatedSMSFailure = stats.Int64(metricPrefix+"/authenticated_sms_failure", "# of failed attempts to sign authenticated sms", stats.UnitDimensionless)
+
 	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
 
 	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
@@ -48,6 +50,13 @@ func init() {
 			Description: "The latency distribution of code issue requests",
 			TagKeys:     observability.APITagKeys(),
 			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
+			Name:        metricPrefix + "/authenticated_sms_failure_count",
+			Measure:     mAuthenticatedSMSFailure,
+			Description: "Count of failed attempts to sign authenticated SMS",
+			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
+			Aggregation: view.Count(),
 		},
 		{
 			Name:        metricPrefix + "/sms_request_count",

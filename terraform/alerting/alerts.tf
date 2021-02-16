@@ -248,6 +248,38 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "AuthenticatedSMSFailure" {
+  project      = var.project
+  combiner     = "OR"
+  display_name = "AuthenticatedSMSFailure"
+  conditions {
+    display_name = "Failed attempts to sign an SMS for authenticated SMS"
+    condition_monitoring_query_language {
+      duration = "60s"
+      query    = <<-EOT
+      fetch
+      generic_task :: custom.googleapis.com/opencensus/en-verification-server/api/issue/authenticated_sms_failure_count
+      | align rate(5m)
+      | every 1m
+      | group_by [metric.realm], [val: sum(value.authenticated_sms_failure_count)]
+      | condition val > 5 '1/s'
+      EOT
+      trigger {
+        count = 1
+      }
+    }
+  }
+  documentation {
+    content   = "${local.playbook_prefix}/AuthenticatedSMSFailure.md"
+    mime_type = "text/markdown"
+  }
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
   count = var.alert_on_human_accessed_secret ? 1 : 0
 

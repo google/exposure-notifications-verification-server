@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/signatures"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+	"go.opencensus.io/stats"
 )
 
 // scrubbers is a list of known Twilio error messages that contain the send to phone number.
@@ -83,6 +84,8 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 	smsStart := time.Now()
 	defer enobs.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
 
+	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
+
 	message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
 	if err != nil {
 		result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
@@ -95,12 +98,24 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 		var err error
 		message, err = signatures.SignSMS(signer, keyID, smsStart, signatures.SMSPurposeENReport, request.Phone, message)
 		if err != nil {
-			result.obsResult = enobs.ResultError("FAILED_TO_SIGN_SMS")
-			return err
+			defer func() {
+				if err := stats.RecordWithOptions(ctx,
+					stats.WithMeasurements(mAuthenticatedSMSFailure.M(1)),
+					stats.WithTags(enobs.ResultError("FAILED_TO_SIGN_SMS"))); err != nil {
+					logger.Errorw("failed to record stats", "error", err)
+				}
+			}()
+
+			if c.config.GetAuthenticatedSMSFailClosed() {
+				result.obsResult = enobs.ResultError("FAILED_TO_SIGN_SMS")
+				return err
+			}
+
+			// Fail open, but still log the error and record the metric.
+			logger.Errorw("failed to sign sms", "error", err)
 		}
 	}
 
-	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 	if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 		// Delete the token
 		if err := c.db.DeleteVerificationCode(result.VerCode.Code); err != nil {

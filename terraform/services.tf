@@ -84,6 +84,7 @@ locals {
     CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
 
     SMS_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
+    SMS_FAIL_CLOSED = false
 
     # TODO(sethvargo): in 0.22+, this should be the parent crypto key (not the
     # crypto key version).

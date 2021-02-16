@@ -23,4 +23,14 @@ type SMSSigningConfig struct {
 	// Keys determines the key manager configuration for this SMS signing
 	// configuration.
 	Keys keys.Config `env:", prefix=SMS_"`
+
+	// FailClosed indicates whether authenticated SMS signature errors should fail
+	// open (continue on error) or fail closed (halt and return error). In both
+	// cases, a metric is logged and can be tracked for monitoring.
+	//
+	// This configuration only applies if authenticated SMS is enabled at the
+	// system level AND a realm has configured authenticated SMS.
+	//
+	// The default behavior is to continue on error.
+	FailClosed bool `env:"SMS_FAIL_CLOSED, default=false"`
 }

@@ -120,3 +120,7 @@ func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Conf
 func (c *AdminAPIServerConfig) IsMaintenanceMode() bool {
 	return c.MaintenanceMode
 }
+
+func (c *AdminAPIServerConfig) GetAuthenticatedSMSFailClosed() bool {
+	return c.SMSSigning.FailClosed
+}

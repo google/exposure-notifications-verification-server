@@ -29,4 +29,8 @@ type IssueAPIConfig interface {
 	GetRateLimitConfig() *ratelimit.Config
 	GetENXRedirectDomain() string
 	IsMaintenanceMode() bool
+
+	// GetAuthenticatedSMSFailClosed indicates how the system should behave when
+	// authenticated SMS fails.
+	GetAuthenticatedSMSFailClosed() bool
 }

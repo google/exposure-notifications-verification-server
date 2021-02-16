@@ -15,10 +15,12 @@
 package issueapi_test
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -33,6 +35,16 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
+
+type badSigner struct{}
+
+func (b *badSigner) Public() crypto.PublicKey {
+	return nil
+}
+
+func (b *badSigner) Sign(_ io.Reader, _ []byte, _ crypto.SignerOpts) ([]byte, error) {
+	return nil, fmt.Errorf("test says nope")
+}
 
 func TestSMS_scrubPhoneNumber(t *testing.T) {
 	t.Parallel()
@@ -115,6 +127,8 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 
 	ctx = controller.WithMembership(ctx, membership)
+
+	harness.Config.SMSSigning.FailClosed = false
 	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
 	request := &api.IssueCodeRequest{
@@ -158,6 +172,33 @@ func TestSMS_sendSMS(t *testing.T) {
 	}
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); err != nil {
 		t.Errorf("couldn't find code got %s: %v", result.VerCode.UUID, err)
+	}
+
+	// Failed SMS signature fails open
+	{
+		harness.Config.SMSSigning.FailClosed = false
+		c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+		c.SendSMS(ctx, realm, smsProvider, &badSigner{}, smsKeyID, request, result)
+		if err := result.ErrorReturn; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Failed SMS signature fails closed
+	{
+		harness.Config.SMSSigning.FailClosed = true
+		c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+		c.SendSMS(ctx, realm, smsProvider, &badSigner{}, smsKeyID, request, result)
+		err := result.ErrorReturn
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if got, want := err.Error, "failed to sign sms"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+		if got, want := err.ErrorCode, "sms_failure"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
 	}
 
 	// Failed SMS send
