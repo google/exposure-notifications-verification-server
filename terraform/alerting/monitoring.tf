@@ -74,9 +74,9 @@ resource "google_logging_metric" "human_accessed_secret" {
   project = var.project
 
   filter = <<EOT
-resource.type="audited_resource"
-resource.labels.service="secretmanager.googleapis.com"
-resource.labels.method:"AccessSecretVersion"
+protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
+protoPayload.serviceName="secretmanager.googleapis.com"
+protoPayload.methodName=~"AccessSecretVersion$"
 protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
 EOT
 
@@ -109,9 +109,9 @@ resource "google_logging_metric" "human_decrypted_value" {
   project = var.project
 
   filter = <<EOT
-resource.type="audited_resource"
-resource.labels.service="cloudkms.googleapis.com"
-resource.labels.method:"Decrypt"
+protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
+protoPayload.serviceName="cloudkms.googleapis.com"
+protoPayload.methodName="Decrypt"
 protoPayload.authenticationInfo.principalEmail!~"gserviceaccount.com$"
 EOT
 

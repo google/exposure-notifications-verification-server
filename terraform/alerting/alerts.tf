@@ -335,7 +335,7 @@ resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
       duration = "60s"
 
       query = <<-EOT
-      fetch audited_resource
+      fetch global
       | metric 'logging.googleapis.com/user/${google_logging_metric.human_decrypted_value.name}'
       | align rate(5m)
       | every 1m
