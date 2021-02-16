@@ -291,7 +291,7 @@ resource "google_monitoring_alert_policy" "HumanAccessedSecret" {
     display_name = "A non-service account accessed a secret."
 
     condition_monitoring_query_language {
-      duration = "60s"
+      duration = "0s"
 
       query = <<-EOT
       fetch audited_resource
@@ -332,7 +332,7 @@ resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
     display_name = "A non-service account decrypted something."
 
     condition_monitoring_query_language {
-      duration = "60s"
+      duration = "0s"
 
       query = <<-EOT
       fetch global
