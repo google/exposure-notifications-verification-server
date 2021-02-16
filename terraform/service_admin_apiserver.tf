@@ -94,6 +94,7 @@ resource "google_cloud_run_service" "adminapi" {
             local.gcp_config,
             local.rate_limit_config,
             local.issue_config,
+            local.signing_config,
             local.observability_config,
 
             // This MUST come last to allow overrides!
