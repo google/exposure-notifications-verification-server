@@ -78,21 +78,6 @@ func Bootstrap(ctx context.Context, db *database.Database) (*BootstrapResponse, 
 	}
 	resp.Realm = realm
 
-	// Ensure an SMS signing key exists.
-	if _, err := realm.CurrentSMSSigningKey(db); err != nil {
-		if !database.IsNotFound(err) {
-			return &resp, fmt.Errorf("failed to find current sms signing key: %w", err)
-		}
-
-		if _, err := realm.CreateSMSSigningKeyVersion(ctx, db, database.SystemTest); err != nil {
-			return &resp, fmt.Errorf("failed to create signing key: %w", err)
-		}
-
-		if _, err = realm.CurrentSMSSigningKey(db); err != nil {
-			return &resp, fmt.Errorf("failed to find current sms signing key after creation: %w", err)
-		}
-	}
-
 	// Generate random entropy for resource names.
 	entropy, err := project.RandomHexString(6)
 	if err != nil {

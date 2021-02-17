@@ -445,6 +445,16 @@ Enter your [Twilio Test Credentials](https://www.twilio.com/docs/iam/test-creden
 
 **Do not enter your real credentials!**
 
+If _Authenticated SMS_ is enabled for your system, configure the authenticated SMS signing key. Select "Authenticated SMS" from the drop down menu. If you do not see this option, your system has not enabled Authenticated SMS.
+
+Click "Create new signing key version".
+
+![select signing keys](images/e2e/authenticated-sms-before-enable.png)
+
+Then click "Enable Authenticated SMS".
+
+![select signing keys](images/e2e/authenticated-sms-enable.png)
+
 Select `Signing Keys` from the drop down menu
 
 ![select signing keys](images/e2e/image04.png)
