@@ -145,6 +145,11 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 				ExternalIssuerID: adminID,
 			}
 
+			// Add a phone number unless SMS is skipped.
+			if !project.SkipE2ESMS {
+				codeReq.Phone = "+18558361987"
+			}
+
 			codeResp, err := adminAPIClient.IssueCode(ctx, codeReq)
 			defer logger.Debugw("issuing code", "request", codeReq, "response", codeResp)
 			if err != nil {

@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,6 +72,7 @@ type TestInstance struct {
 	db     *Database
 	dbLock sync.Mutex
 
+	tmpdir     string
 	skipReason string
 }
 
@@ -169,6 +169,12 @@ func NewTestInstance() (*TestInstance, error) {
 		return nil, fmt.Errorf("failed to generate verification code database hmac: %w", err)
 	}
 
+	// Create a temporary directory for the key manager,
+	tmpdir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to make tmpdir: %w", err)
+	}
+
 	// Build database configuration. This is required to connect to the database
 	// and to run the initial migrations.
 	config := &Config{
@@ -187,10 +193,11 @@ func NewTestInstance() (*TestInstance, error) {
 		},
 
 		Keys: keys.Config{
-			Type: "FILESYSTEM",
+			Type:           "FILESYSTEM",
+			FilesystemRoot: tmpdir,
 		},
 
-		KeyRing:        filepath.Join(project.Root(), "local", "test", "certificates"),
+		KeyRing:        "test-keyring",
 		MaxKeyVersions: 5,
 	}
 
@@ -217,6 +224,7 @@ func NewTestInstance() (*TestInstance, error) {
 		pool:      pool,
 		container: container,
 		db:        db,
+		tmpdir:    tmpdir,
 	}, nil
 }
 
@@ -231,10 +239,17 @@ func (i *TestInstance) MustClose() error {
 
 // Close terminates the test database instance, cleaning up any resources.
 func (i *TestInstance) Close() (retErr error) {
-	// Do not attempt to close  things when there's nothing to close.
+	// Do not attempt to close things when there's nothing to close.
 	if i.skipReason != "" {
 		return
 	}
+
+	defer func() {
+		if err := os.RemoveAll(i.tmpdir); err != nil {
+			retErr = fmt.Errorf("failed to remove tmpdir: %w", err)
+			return
+		}
+	}()
 
 	defer func() {
 		if err := i.pool.Purge(i.container); err != nil {
@@ -251,15 +266,47 @@ func (i *TestInstance) Close() (retErr error) {
 	return
 }
 
+// UtilOption is used as optional configuration to the database setup.
+type UtilOption func(*Database, *Config) (*Database, *Config)
+
+// WithKeyManager alters the key manager.
+func WithKeyManager(mcfg *keys.Config, manager keys.KeyManager) UtilOption {
+	return func(db *Database, cfg *Config) (*Database, *Config) {
+		db.keyManager = manager
+		cfg.Keys = *mcfg
+		return db, cfg
+	}
+}
+
+// WithSigningKeyManager alters the signing key manager.
+func WithSigningKeyManager(mcfg *keys.Config, manager keys.SigningKeyManager) UtilOption {
+	return func(db *Database, cfg *Config) (*Database, *Config) {
+		cfg.Keys = *mcfg
+		db.signingKeyManager = manager
+		return db, cfg
+	}
+}
+
+// WithSecretManager alters the secret manager.
+func WithSecretManager(mcfg *secrets.Config, manager secrets.SecretManager) UtilOption {
+	return func(db *Database, cfg *Config) (*Database, *Config) {
+		cfg.Secrets = *mcfg
+		db.secretManager = manager
+		return db, cfg
+	}
+}
+
 // NewDatabase creates a new database suitable for use in testing. It returns an
 // established database connection and the configuration.
-func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Database, *Config) {
+func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...UtilOption) (*Database, *Config) {
 	tb.Helper()
 
 	// Ensure we should actually create the database.
 	if i.skipReason != "" {
 		tb.Skip(i.skipReason)
 	}
+
+	ctx := project.TestContext(tb)
 
 	// Clone the template database.
 	newDatabaseName, err := i.clone()
@@ -271,16 +318,23 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher) (*Databas
 	config := i.db.config.clone()
 	config.Name = newDatabaseName
 
-	// Create shared context.
-	ctx := context.Background()
-
 	// Parse configuration and override with test data.
 	db, err := config.Load(ctx)
 	if err != nil {
 		tb.Fatalf("failed to load database configuration: %s", err)
 	}
-	db.keyManager = keys.TestKeyManager(tb)
-	db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
+
+	// Apply any options.
+	for _, f := range opts {
+		db, config = f(db, config)
+	}
+
+	if db.keyManager == nil {
+		db.keyManager = keys.TestKeyManager(tb)
+	}
+	if db.config.EncryptionKey == "" {
+		db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
+	}
 
 	// Try to establish a connection to the database.
 	if err := db.OpenWithCacher(ctx, cacher); err != nil {

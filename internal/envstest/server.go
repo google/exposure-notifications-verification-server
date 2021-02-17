@@ -153,6 +153,7 @@ func (r *TestServerResponse) LoggedInSession(session *sessions.Session, email st
 // NewServer creates a new test UI server instance. See NewHarnessServer for
 // more information.
 func NewServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *TestServerResponse {
+	tb.Helper()
 	return NewServerConfig(tb, testDatabaseInstance).NewServer(tb)
 }
 
@@ -172,14 +173,32 @@ type ServerConfigResponse struct {
 func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *ServerConfigResponse {
 	tb.Helper()
 
-	harness := NewTestHarness(tb, testDatabaseInstance)
+	ctx := project.TestContext(tb)
 
-	authProvider, err := auth.NewLocal(context.Background())
+	suffix, err := project.RandomHexString(6)
 	if err != nil {
 		tb.Fatal(err)
 	}
 
-	certificateSigningKey := keys.TestSigningKey(tb, harness.KeyManager)
+	harness := NewTestHarness(tb, testDatabaseInstance)
+
+	authProvider, err := auth.NewLocal(ctx)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	signingKeyManager, ok := harness.KeyManager.(keys.SigningKeyManager)
+	if !ok {
+		tb.Fatal("kms cannot manage signing keys")
+	}
+	parent, err := signingKeyManager.CreateSigningKey(ctx, fmt.Sprintf("certificate-%s", suffix), "key")
+	if err != nil {
+		tb.Fatal(err)
+	}
+	certificateSigningKey, err := signingKeyManager.CreateKeyVersion(ctx, parent)
+	if err != nil {
+		tb.Fatal(err)
+	}
 
 	// Create the config.
 	cfg := &config.ServerConfig{
@@ -198,6 +217,11 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		Database:      *harness.DatabaseConfig,
 		Observability: *harness.ObservabilityConfig,
 		Cache:         *harness.CacheConfig,
+
+		SMSSigning: config.SMSSigningConfig{
+			Keys:       *harness.KeyManagerConfig,
+			FailClosed: true,
+		},
 
 		AssetsPath:  ServerAssetsPath(),
 		LocalesPath: LocalesPath(),
@@ -235,6 +259,8 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 }
 
 func (r *ServerConfigResponse) NewServer(tb testing.TB) *TestServerResponse {
+	tb.Helper()
+
 	ctx := context.Background()
 	mux, err := routes.Server(ctx, r.Config, r.Database, r.AuthProvider, r.Cacher, r.KeyManager, r.KeyManager, r.RateLimiter)
 	if err != nil {

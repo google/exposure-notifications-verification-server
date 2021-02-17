@@ -10,7 +10,7 @@ This page includes helpful tips for configuring things in production.
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
 - [Identity Platform setup](#identity-platform-setup)
-- [End-to-end test runner](#end-to-end-test-runner)
+- [End-to-end (e2e) test runner](#end-to-end-e2e-test-runner)
 - [Architecture](#architecture)
 
 <!-- /TOC -->
@@ -421,7 +421,7 @@ The verification server uses the Google Identity Platform for authorization.
 
 3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
 
-## End-to-end test runner
+## End-to-end (e2e) test runner
 
 Log in as a system admin and view realms, select the `e2e-test-realm`. If this
 realm has not yet been created, wait a few minutes. The e2e runner executes
@@ -436,6 +436,14 @@ Join the realm
 Select the "Back to e2e-test-realm" link
 
 ![back to e2e-test-realm](images/e2e/image03.png)
+
+Select `Settings` from the drop down menu and select the "SMS" tab
+
+![sms settings tab](images/e2e/sms-settings-tab.png)
+
+Enter your [Twilio Test Credentials](https://www.twilio.com/docs/iam/test-credentials) and the `From` number as `+15005550006`, and click "Update SMS settings".
+
+**Do not enter your real credentials!**
 
 Select `Signing Keys` from the drop down menu
 

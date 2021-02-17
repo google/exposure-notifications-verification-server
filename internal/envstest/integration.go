@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -32,17 +33,20 @@ type IntegrationSuite struct {
 func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInstance) *IntegrationSuite {
 	tb.Helper()
 
+	ctx := project.TestContext(tb)
+
 	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
 
 	// Point everything at the same database, cacher, and key manager.
 	adminAPIServerConfig.Database = apiServerConfig.Database
 	adminAPIServerConfig.Cacher = apiServerConfig.Cacher
+	adminAPIServerConfig.KeyManager = apiServerConfig.KeyManager
 	adminAPIServerConfig.RateLimiter = apiServerConfig.RateLimiter
 
 	db := adminAPIServerConfig.Database
 
-	resp, err := Bootstrap(db)
+	resp, err := Bootstrap(ctx, db)
 	if err != nil {
 		tb.Fatal(err)
 	}
