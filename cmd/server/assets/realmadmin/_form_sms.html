@@ -403,13 +403,12 @@
     }
 
     // When the textarea changes, rebuild the splits.
-    const $templates = $('textarea.sms-text-template');
-    $(document).on('keyup', $templates, function(e) {
+    $(document).on('keyup', 'textarea.sms-text-template', function(e) {
       buildTemplateSplits(e.target);
     });
 
     // On initial page load, build the split.
-    buildTemplateSplits($templates[0]);
+    buildTemplateSplits($('textarea.sms-text-template')[0]);
 
     //
     // SMS templates builder
