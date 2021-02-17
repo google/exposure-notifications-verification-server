@@ -155,7 +155,7 @@ func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) 
 // from a local in-memory cache.
 func (c *Controller) smsSignerFor(ctx context.Context, realm *database.Realm) (crypto.Signer, string, error) {
 	// Do not create a signer if the realm does not sign SMS.
-	if !realm.UseAuthenticatedSMS {
+	if !c.config.GetFeatureConfig().EnableAuthenticatedSMS || !realm.UseAuthenticatedSMS {
 		return nil, "", nil
 	}
 

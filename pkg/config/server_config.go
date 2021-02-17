@@ -157,6 +157,10 @@ func (c *ServerConfig) GetRateLimitConfig() *ratelimit.Config {
 	return &c.RateLimit
 }
 
+func (c *ServerConfig) GetFeatureConfig() *FeatureConfig {
+	return &c.Features
+}
+
 func (c *ServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }

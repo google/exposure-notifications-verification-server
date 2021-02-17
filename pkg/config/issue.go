@@ -27,6 +27,7 @@ type IssueAPIConfig interface {
 	GetAllowedSymptomAge() time.Duration
 	GetEnforceRealmQuotas() bool
 	GetRateLimitConfig() *ratelimit.Config
+	GetFeatureConfig() *FeatureConfig
 	GetENXRedirectDomain() string
 	IsMaintenanceMode() bool
 
