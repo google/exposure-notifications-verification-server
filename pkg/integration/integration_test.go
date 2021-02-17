@@ -73,6 +73,9 @@ func TestIntegration(t *testing.T) {
 			TestType:    testType,
 			SymptomDate: symptomDate,
 		}
+		if !project.SkipE2ESMS {
+			issueReq.Phone = project.TestPhoneNumber
+		}
 		issueResp, err := adminAPIClient.IssueCode(ctx, issueReq)
 		if err != nil {
 			t.Fatalf("failed to issue code: %#v\n  req: %#v\n  resp: %#v", err, issueReq, issueResp)
