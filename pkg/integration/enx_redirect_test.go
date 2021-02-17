@@ -30,7 +30,7 @@ func TestENXRedirect(t *testing.T) {
 
 	server := envstest.NewENXRedirectServer(t, testDatabaseInstance)
 
-	bs, err := envstest.Bootstrap(server.Database)
+	bs, err := envstest.Bootstrap(ctx, server.Database)
 	if err != nil {
 		t.Fatal(err)
 	}

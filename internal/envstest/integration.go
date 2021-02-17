@@ -15,9 +15,11 @@
 package envstest
 
 import (
+	"os"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
@@ -32,17 +34,20 @@ type IntegrationSuite struct {
 func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInstance) *IntegrationSuite {
 	tb.Helper()
 
+	ctx := project.TestContext(tb)
+
 	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
 
 	// Point everything at the same database, cacher, and key manager.
 	adminAPIServerConfig.Database = apiServerConfig.Database
 	adminAPIServerConfig.Cacher = apiServerConfig.Cacher
+	adminAPIServerConfig.KeyManager = apiServerConfig.KeyManager
 	adminAPIServerConfig.RateLimiter = apiServerConfig.RateLimiter
 
 	db := adminAPIServerConfig.Database
 
-	resp, err := Bootstrap(db)
+	resp, err := Bootstrap(ctx, db)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -51,6 +56,50 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 			tb.Fatal(err)
 		}
 	})
+
+	// Configure SMS
+	if !project.SkipE2ESMS {
+		realm := resp.Realm
+		twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+		twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
+		if twilioAccountSid == "" {
+			tb.Fatalf("missing TWILIO_ACCOUNT_SID or set E2E_SKIP_SMS to skip")
+		}
+		if twilioAuthToken == "" {
+			tb.Fatalf("missing TWILIO_AUTH_TOKEN or set E2E_SKIP_SMS to skip")
+		}
+
+		has, err := resp.Realm.HasSMSConfig(db)
+		if err != nil {
+			tb.Fatalf("failed to check if realm has sms config: %s", err)
+		}
+		if !has {
+			smsConfig := &database.SMSConfig{
+				RealmID:          realm.ID,
+				ProviderType:     "TWILIO",
+				TwilioAccountSid: twilioAccountSid,
+				TwilioAuthToken:  twilioAuthToken,
+				TwilioFromNumber: "+15005550006",
+			}
+			if err := db.SaveSMSConfig(smsConfig); err != nil {
+				tb.Fatalf("failed to save sms config: %v", err)
+			}
+		}
+
+		if _, err := realm.CurrentSMSSigningKey(db); err != nil {
+			if !database.IsNotFound(err) {
+				tb.Fatalf("failed to find current sms signing key: %s", err)
+			}
+
+			if _, err := realm.CreateSMSSigningKeyVersion(ctx, db, database.SystemTest); err != nil {
+				tb.Fatalf("failed to create signing key: %s", err)
+			}
+
+			if _, err = realm.CurrentSMSSigningKey(db); err != nil {
+				tb.Fatalf("failed to find current sms signing key after creation: %v", err)
+			}
+		}
+	}
 
 	adminAPIServer := adminAPIServerConfig.NewServer(tb)
 	apiServer := apiServerConfig.NewServer(tb)

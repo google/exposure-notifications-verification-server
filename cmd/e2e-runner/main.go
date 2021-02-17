@@ -29,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -99,7 +100,8 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	resp, err := envstest.Bootstrap(db)
+	// Bootstrap the environment
+	resp, err := envstest.Bootstrap(ctx, db)
 	if err != nil {
 		return fmt.Errorf("failed to bootstrap testsuite: %w", err)
 	}
@@ -109,7 +111,18 @@ func realMain(ctx context.Context) error {
 		}
 	}()
 
-	// Create the enx-redirect client if the URL was specified.
+	// Verify that SMS is configured on the realm
+	if !project.SkipE2ESMS {
+		has, err := resp.Realm.HasSMSConfig(db)
+		if err != nil {
+			return fmt.Errorf("failed to check if realm has sms config: %w", err)
+		}
+		if !has {
+			return fmt.Errorf("realm does not have sms config, configure it or set E2E_SKIP_SMS to continue")
+		}
+	}
+
+	// Create the enx-redirect client if the URL was specified
 	var enxRedirectClient *clients.ENXRedirectClient
 	if u := cfg.ENXRedirectURL; u != "" {
 		var err error

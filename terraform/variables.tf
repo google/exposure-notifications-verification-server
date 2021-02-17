@@ -328,6 +328,13 @@ variable "binary_authorization_allowlist_patterns" {
   description = "List of container references to always allow, even without attestations."
 }
 
+variable "e2e_skip_sms" {
+  type    = bool
+  default = false
+
+  description = "Skip SMS tests when executing the e2e runner. Set this to true to not send SMS. You must also configure the e2e realm with proper test credentials."
+}
+
 terraform {
   required_version = ">= 0.14.2"
 

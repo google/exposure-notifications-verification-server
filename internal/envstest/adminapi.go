@@ -68,6 +68,10 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 		Observability: *harness.ObservabilityConfig,
 		Cache:         *harness.CacheConfig,
 		RateLimit:     *harness.RateLimiterConfig,
+		SMSSigning: config.SMSSigningConfig{
+			Keys:       *harness.KeyManagerConfig,
+			FailClosed: true,
+		},
 
 		APIKeyCacheDuration:     5 * time.Second,
 		ENExpressRedirectDomain: "enx-redirect.local",

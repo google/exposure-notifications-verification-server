@@ -98,6 +98,8 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 		tb.Skip()
 	}
 
+	ctx := project.TestContext(tb)
+
 	// Create the cacher.
 	cacher, err := cache.NewInMemory(nil)
 	if err != nil {
@@ -113,9 +115,6 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 		HMACKey: randomBytes(tb, 64),
 	}
 
-	// Create the database.
-	db, dbConfig := testDatabaseInstance.NewDatabase(tb, cacher)
-
 	// Create the key manager.
 	tmpdir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -126,16 +125,25 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 			tb.Fatal(err)
 		}
 	})
-	keyManager, err := keys.NewFilesystem(context.Background(), &keys.Config{
+	keyManager, err := keys.NewFilesystem(ctx, &keys.Config{
 		FilesystemRoot: tmpdir,
 	})
 	if err != nil {
 		tb.Fatal(err)
 	}
+	signingKeyManager, ok := keyManager.(keys.SigningKeyManager)
+	if !ok {
+		tb.Fatalf("%T is not SigningKeyManager", keyManager)
+	}
 	keyManagerConfig := &keys.Config{
 		Type:           "FILESYSTEM",
 		FilesystemRoot: tmpdir,
 	}
+
+	// Create the database.
+	db, dbConfig := testDatabaseInstance.NewDatabase(tb, cacher,
+		database.WithKeyManager(keyManagerConfig, keyManager),
+		database.WithSigningKeyManager(keyManagerConfig, signingKeyManager))
 
 	// Create the rate limiter.
 	limiterStore, err := memorystore.New(&memorystore.Config{
@@ -146,7 +154,7 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 		tb.Fatal(err)
 	}
 	tb.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		if err := limiterStore.Close(ctx); err != nil {

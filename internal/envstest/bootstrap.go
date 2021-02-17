@@ -15,6 +15,7 @@
 package envstest
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -49,9 +50,13 @@ type BootstrapResponse struct {
 // already exists), and provisions new authorized apps for accessing the admin
 // apis, device apis, and stats apis.
 //
+// It also provisions and enables the e2e realm. If the realm already exists, it
+// updates the realms settings to enable settings and configuration that e2e
+// expects.
+//
 // Callers should always call Cleanup() on the response to ensure temporary
 // resources are purged.
-func Bootstrap(db *database.Database) (*BootstrapResponse, error) {
+func Bootstrap(ctx context.Context, db *database.Database) (*BootstrapResponse, error) {
 	var resp BootstrapResponse
 
 	// Find or create the test realm with the correct properties.
@@ -67,6 +72,7 @@ func Bootstrap(db *database.Database) (*BootstrapResponse, error) {
 
 	realm.AllowedTestTypes = database.TestTypeNegative | database.TestTypeConfirmed | database.TestTypeLikely
 	realm.AllowBulkUpload = true
+	realm.UseAuthenticatedSMS = true
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		return &resp, fmt.Errorf("failed to save realm: %w", err)
 	}

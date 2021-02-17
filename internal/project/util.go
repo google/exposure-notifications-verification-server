@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -26,6 +27,14 @@ const (
 	// PasswordSentinel is the password string inserted into forms.
 	PasswordSentinel = "very-nice-try-maybe-next-time" //nolint:gosec
 )
+
+// SkipE2ESMS controls whether the e2e runners use SMS.
+var SkipE2ESMS, _ = strconv.ParseBool(os.Getenv("E2E_SKIP_SMS"))
+
+// TestPhoneNumber is a test phone number to use for tests. It's a "real" phone
+// number (Google's support phone number), but none of the tests actually send
+// SMS.
+const TestPhoneNumber = "+18558361987"
 
 var _, self, _, _ = runtime.Caller(0)
 

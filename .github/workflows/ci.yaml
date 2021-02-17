@@ -37,6 +37,11 @@ jobs:
 
       - name: go-test
         shell: bash
+        env:
+          # The Twilio credentials are not actually a "secret" (they are test
+          # credentials).
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
         run: make test-acc
 
       - name: go-coverage
