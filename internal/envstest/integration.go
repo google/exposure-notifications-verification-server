@@ -57,18 +57,14 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 		}
 	})
 
-	// Configure SMS
-	if !project.SkipE2ESMS {
-		realm := resp.Realm
-		twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
-		twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
-		if twilioAccountSid == "" {
-			tb.Fatalf("missing TWILIO_ACCOUNT_SID or set E2E_SKIP_SMS to skip")
-		}
-		if twilioAuthToken == "" {
-			tb.Fatalf("missing TWILIO_AUTH_TOKEN or set E2E_SKIP_SMS to skip")
-		}
+	realm := resp.Realm
 
+	// Configure SMS
+	twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+	twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
+	if twilioAccountSid == "" || twilioAuthToken == "" {
+		tb.Logf("🚧 🚧 Skipping sms tests (missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN)")
+	} else {
 		has, err := resp.Realm.HasSMSConfig(db)
 		if err != nil {
 			tb.Fatalf("failed to check if realm has sms config: %s", err)

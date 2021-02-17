@@ -24,7 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
-func TestHandleRegisterPhonne_ShowRegisterPhone(t *testing.T) {
+func TestHandleRegisterPhone_ShowRegisterPhone(t *testing.T) {
 	t.Parallel()
 
 	harness := envstest.NewServer(t, testDatabaseInstance)
