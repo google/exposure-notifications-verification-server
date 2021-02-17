@@ -18,6 +18,8 @@ import (
 	"context"
 	"os"
 	"testing"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 func TestTwilio_SendSMS(t *testing.T) {
@@ -76,7 +78,7 @@ func TestTwilio_SendSMS(t *testing.T) {
 		{
 			name: "sends",
 			from: "+15005550006",
-			to:   "+18558361987", // A real phone number
+			to:   project.TestPhoneNumber,
 			err:  false,
 		},
 	}

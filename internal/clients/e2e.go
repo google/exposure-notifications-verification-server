@@ -147,7 +147,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 
 			// Add a phone number unless SMS is skipped.
 			if !project.SkipE2ESMS {
-				codeReq.Phone = "+18558361987"
+				codeReq.Phone = project.TestPhoneNumber
 			}
 
 			codeResp, err := adminAPIClient.IssueCode(ctx, codeReq)
