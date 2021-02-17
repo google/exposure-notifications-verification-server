@@ -223,6 +223,10 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			FailClosed: true,
 		},
 
+		Features: config.FeatureConfig{
+			EnableAuthenticatedSMS: true,
+		},
+
 		AssetsPath:  ServerAssetsPath(),
 		LocalesPath: LocalesPath(),
 

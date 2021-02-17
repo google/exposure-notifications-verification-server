@@ -100,6 +100,11 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 			TokenSigningKeyIDs: []string{"v1"},
 			TokenIssuer:        "test-iss",
 		},
+
+		Features: config.FeatureConfig{
+			EnableAuthenticatedSMS: true,
+		},
+
 		RateLimit: *harness.RateLimiterConfig,
 		DevMode:   true,
 	}

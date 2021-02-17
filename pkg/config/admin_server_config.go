@@ -113,6 +113,10 @@ func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {
 	return &c.RateLimit
 }
 
+func (c *AdminAPIServerConfig) GetFeatureConfig() *FeatureConfig {
+	return &c.Features
+}
+
 func (c *AdminAPIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
 }
