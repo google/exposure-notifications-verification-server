@@ -197,7 +197,7 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
       # and do an outer join with default value 0 for the first stream. 
       # Then it computes the first stream / second stream getting the ratio of ERROR logs over ALL logs, 
       # and finally group by. The alert will fire when the error rate was 100% for the last 5 mins.
-      query    = <<-EOT
+      query = <<-EOT
       fetch cloud_scheduler_job
       | metric 'logging.googleapis.com/log_entry_count'
       | align delta(5m)
