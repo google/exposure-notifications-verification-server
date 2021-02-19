@@ -9,8 +9,9 @@
   - [Allowed Test Types](#allowed-test-types)
   - [Date Configuration](#date-configuration)
   - [Code Length & Expiration](#code-length--expiration)
+- [Settings, SMS](#settings-sms)
   - [SMS Text Template](#sms-text-template)
-- [Settings, Twilio SMS credentials](#settings-twilio-sms-credentials)
+- [Authenticated SMS](#authenticated-sms)
 - [Adding users](#adding-users)
 - [API keys](#api-keys)
 - [ENX redirector service](#enx-redirector-service)
@@ -122,23 +123,46 @@ If EN Express is enabled, these fields are not adjustable.
 Short codes are intended to be used where a case-worker may need to dictate the code to their patients
 whereas long codes may be more secure for realms where they may be sent via SMS (but may be more difficult to dictate and recall).
 
+## Settings, SMS
+
+To dispatch verification codes / links over SMS, a realm must provide their credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number) must be obtained from the Twilio console.
+
+![sms settings](images/admin/sms-settings.png "SMS settings")
+
 ### SMS Text Template
 
-It is possible to customize the text of the SMS message that gets sent to patients.
-See the help text on that page for guidance.
+It is possible to customize the text of the SMS message that gets sent to patients. See the help text on that page for guidance.
 
-![sms text](images/admin/settings04.png "SMS Template")
+![sms text template](images/admin/sms-template.png "SMS Template")
 
-The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, and `[longexpires]` may be included with brackets
-which will be programmatically substituted with values. It is recommended that the text of this SMS be composed
-in such a way that is respectful to the patient and does not reveal details about their diagnosis to potential onlookers of the phone's notifications with further information presented in-app.
+The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, and `[longexpires]` may be included with brackets which will be programmatically substituted with values. It is recommended that the text of this SMS be composed in such a way that is respectful to the patient and does not reveal details about their diagnosis to potential onlookers of the phone's notifications with further information presented in-app.
 
-## Settings, Twilio SMS credentials
 
-To dispatch verification codes / links over SMS, a realm must provide their credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number)
-must be obtained from the Twilio console.
+## Authenticated SMS
 
-![smssettings](images/admin/sms01.png "SMS settings")
+Authenticated SMS adds a cryptographic signature to SMS messages which Android and iOS use to validate the integrity of the SMS message. You should only enable Authenticated SMS if you have been instructed by Google or Apple to do so.
+
+Click "Authenticated SMS" in the main dropdown navigation menu. If you do not see "Authenticated SMS" in the menu, it means your system administrator has not enabled this functionality on the servers. Contact your server operator for more information.
+
+The default Authenticated SMS page will look like the following:
+
+![Authenticated SMS disabled](images/admin/authenticated-sms-disabled.png)
+
+Create an initial Authenticated SMS signing key version by clicking the "Create new signing key version":
+
+![Authenticated SMS create key version](images/admin/authenticated-sms-create-version.png)
+
+The page will refresh and you will see the new key version and an option to Enable Authenticated SMS:
+
+![Authenticated SMS created key version](images/admin/authenticated-sms-key-created.png)
+
+Click "Enable Authenticated SMS" to enable it:
+
+![Enable Authenticated SMS](images/admin/authenticated-sms-enable.png)
+
+Finally, share the resulting key information with Google and Apple:
+
+![Authenticated SMS key information](images/admin/authenticated-sms-enabled.png)
 
 ## Adding users
 
