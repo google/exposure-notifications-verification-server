@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -142,6 +141,8 @@ func (db *Database) Open(ctx context.Context) error {
 // OpenWithCacher creates a database connection with the cacher. This should
 // only be called once.
 func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) error {
+	logger := logging.FromContext(ctx).Named("database")
+
 	c := db.config
 
 	// Establish a connection to the database. We use this later to register
@@ -184,6 +185,13 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		return fmt.Errorf("failed to initialize gorm")
 	}
 
+	// Configure custom logger
+	gormLogger, err := NewGormZapLogger(logger)
+	if err != nil {
+		return fmt.Errorf("failed to configure logger: %w", err)
+	}
+	rawDB.SetLogger(gormLogger)
+
 	// Log SQL statements in debug mode.
 	if c.Debug {
 		rawDB = rawDB.LogMode(true)
@@ -201,7 +209,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// callbacks are really verbose and unnecessary.
 	if !c.Debug {
 		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
-		defer rawDB.SetLogger(gorm.Logger{LogWriter: log.New(os.Stdout, "\r\n", 0)})
+		defer rawDB.SetLogger(gormLogger)
 	}
 
 	// SMS configs
