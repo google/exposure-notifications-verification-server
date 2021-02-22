@@ -94,7 +94,7 @@ locals {
 
   e2e_runner_config = {
     HEALTH_AUTHORITY_CODE   = "com.example"
-    KEY_SERVER              = "https://example.com/v1/publish"
+    KEY_SERVER              = "https://example.com"
     VERIFICATION_ADMIN_API  = local.enable_lb ? "https://${var.adminapi_hosts[0]}" : google_cloud_run_service.adminapi.status.0.url
     VERIFICATION_SERVER_API = local.enable_lb ? "https://${var.apiserver_hosts[0]}" : google_cloud_run_service.apiserver.status.0.url
     E2E_SKIP_SMS            = var.e2e_skip_sms
