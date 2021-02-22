@@ -21,10 +21,12 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter"
@@ -34,9 +36,11 @@ import (
 type AdminAPIServerResponse struct {
 	Config      *config.AdminAPIServerConfig
 	Database    *database.Database
+	BadDatabase *database.Database
 	Cacher      cache.Cacher
 	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
+	Renderer    *render.Renderer
 	Server      *server.Server
 }
 
@@ -51,14 +55,18 @@ func NewAdminAPIServer(tb testing.TB, testDatabaseInstance *database.TestInstanc
 type AdminAPIServerConfigResponse struct {
 	Config      *config.AdminAPIServerConfig
 	Database    *database.Database
+	BadDatabase *database.Database
 	Cacher      cache.Cacher
 	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
+	Renderer    *render.Renderer
 }
 
 // NewAdminAPIServerConfig creates a new API server configuration.
 func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *AdminAPIServerConfigResponse {
 	tb.Helper()
+
+	ctx := project.TestContext(tb)
 
 	harness := NewTestHarness(tb, testDatabaseInstance)
 
@@ -90,12 +98,20 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 		tb.Fatal(err)
 	}
 
+	// Create the renderer.
+	renderer, err := render.New(ctx, "", true)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &AdminAPIServerConfigResponse{
 		Config:      cfg,
 		Database:    harness.Database,
+		BadDatabase: harness.Database,
 		Cacher:      harness.Cacher,
 		KeyManager:  harness.KeyManager,
 		RateLimiter: harness.RateLimiter,
+		Renderer:    renderer,
 	}
 }
 
@@ -112,9 +128,11 @@ func (r *AdminAPIServerConfigResponse) NewServer(tb testing.TB) *AdminAPIServerR
 	return &AdminAPIServerResponse{
 		Config:      r.Config,
 		Database:    r.Database,
+		BadDatabase: r.Database,
 		Cacher:      r.Cacher,
 		KeyManager:  r.KeyManager,
 		RateLimiter: r.RateLimiter,
+		Renderer:    r.Renderer,
 		Server:      srv,
 	}
 }

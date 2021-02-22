@@ -15,23 +15,18 @@
 package user_test
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleIndex(t *testing.T) {
@@ -40,31 +35,23 @@ func TestHandleIndex(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	realm, testUser, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleIndex()
 
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseBadPagination(t, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        testUser,
 			Permissions: rbac.UserRead,
 		}, handler)
 	})
@@ -72,33 +59,18 @@ func TestHandleIndex(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleIndex()
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(c.HandleIndex())
 
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        testUser,
 			Permissions: rbac.UserRead,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -108,20 +80,41 @@ func TestHandleIndex(t *testing.T) {
 		}
 	})
 
-	t.Run("lists", func(t *testing.T) {
+	t.Run("search", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserRead,
+		})
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
-			chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),
-			chromedp.WaitVisible(fmt.Sprintf(`tr#user-%d`, user.ID), chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", &url.Values{
+			"q": []string{"@example.com"},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserRead,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }

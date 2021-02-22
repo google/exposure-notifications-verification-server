@@ -15,26 +15,20 @@
 package user_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-
-	"github.com/chromedp/chromedp"
 )
 
 func TestHandleUpdate(t *testing.T) {
@@ -47,41 +41,32 @@ func TestHandleUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ctx = controller.WithSession(ctx, session)
 
 	// Create another user.
-	user := &database.User{
+	testUser := &database.User{
 		Email: "user@example.com",
 		Name:  "User",
 	}
-	if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
+	if err := harness.Database.SaveUser(testUser, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
-	if err := user.AddToRealm(harness.Database, realm, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
+	if err := testUser.AddToRealm(harness.Database, realm, 0, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}
+
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleUpdate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleUpdate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        testUser,
 			Permissions: rbac.UserWrite,
 		}, handler)
 	})
@@ -89,61 +74,32 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := c.HandleUpdate()
 
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        admin,
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodPut, u, strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"name": []string{"apple"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		})
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%d", testUser.ID),
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, 500; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -152,18 +108,13 @@ func TestHandleUpdate(t *testing.T) {
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodPut, u, strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"name": []string{""},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		})
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%d", testUser.ID),
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, 422; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -173,81 +124,48 @@ func TestHandleUpdate(t *testing.T) {
 		}
 	})
 
-	t.Run("updates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        admin,
+			Permissions: rbac.LegacyRealmAdmin,
+		})
 
-		u := fmt.Sprintf(`http://`+harness.Server.Addr()+`/realm/users/%d/edit`, user.ID)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
+			"name": []string{testUser.Name},
+			"permissions": []string{
+				fmt.Sprintf("%d", rbac.APIKeyRead),
+				fmt.Sprintf("%d", rbac.UserWrite),
+			},
+		})
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%d", testUser.ID),
+		})
+		handler.ServeHTTP(w, r)
 
-		for _, permission := range rbac.NamePermissionMap {
-			permission := permission
-			targets := []string{fmt.Sprintf(`input#permission-%s`, permission)}
-
-			// We also need to remove permissions that imply this permission, or it
-			// will be added back in.
-			for _, superPerm := range rbac.ImpliedBy(permission) {
-				targets = append(targets, fmt.Sprintf(`input#permission-%s`, superPerm))
-			}
-
-			// Build the actions as an array prior to run since super-permissions
-			// actions aren't known until runtime.
-			actions := []chromedp.Action{
-				browser.SetCookie(cookie),
-				chromedp.Navigate(u),
-				chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
-			}
-
-			// Fill out the form.
-			for _, target := range targets {
-				actions = append(actions, chromedp.RemoveAttribute(target, "checked", chromedp.ByQuery))
-			}
-			actions = append(actions, chromedp.Submit(`form#user-form`, chromedp.ByQuery))
-
-			actions = append(actions, chromedp.WaitVisible(`body#users-show`, chromedp.ByQuery))
-
-			if err := chromedp.Run(taskCtx, actions...); err != nil {
-				t.Fatal(err)
-			}
+		if got, want := w.Code, 303; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
 
-		// Assert the user has no permissions left
-		membership, err := user.FindMembership(harness.Database, realm.ID)
+		permission, err := testUser.FindMembership(harness.Database, realm.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got, want := int64(membership.Permissions), int64(0); got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-
-		// Now add permissions back
-		for _, permission := range rbac.NamePermissionMap {
-			permission := permission
-			target := fmt.Sprintf(`input#permission-%s`, permission)
-
-			if err := chromedp.Run(taskCtx,
-				browser.SetCookie(cookie),
-				chromedp.Navigate(u),
-				chromedp.WaitVisible(`body#users-edit`, chromedp.ByQuery),
-
-				chromedp.SetAttributeValue(target, "checked", "true", chromedp.ByQuery),
-				chromedp.Submit(`form#user-form`, chromedp.ByQuery),
-
-				chromedp.WaitVisible(`body#users-show`, chromedp.ByQuery),
-			); err != nil {
-				t.Fatal(err)
+		for _, p := range []rbac.Permission{
+			rbac.APIKeyRead,
+			rbac.UserRead,
+			rbac.UserWrite,
+		} {
+			if !permission.Can(p) {
+				t.Errorf("expected %q to be able to %q", permission.Permissions, p)
 			}
 		}
-
-		// Permissions should be back
-		membership, err = user.FindMembership(harness.Database, realm.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got, want := int64(membership.Permissions), int64(32766); got != want {
-			t.Errorf("expected %v to be %v", got, want)
+		if p := rbac.StatsRead; permission.Can(p) {
+			t.Errorf("expected %q to not be able to %q", permission.Permissions, p)
 		}
 	})
 }

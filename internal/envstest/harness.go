@@ -82,6 +82,8 @@ type TestHarnessResponse struct {
 	Database       *database.Database
 	DatabaseConfig *database.Config
 
+	BadDatabase *database.Database
+
 	ObservabilityConfig *observability.Config
 
 	KeyManager       keys.KeyManager
@@ -145,6 +147,10 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 		database.WithKeyManager(keyManagerConfig, keyManager),
 		database.WithSigningKeyManager(keyManagerConfig, signingKeyManager))
 
+	// Create the bad database.
+	badDB := *db //nolint:govet
+	badDB.SetRawDB(NewFailingDatabase())
+
 	// Create the rate limiter.
 	limiterStore, err := memorystore.New(&memorystore.Config{
 		Tokens:   30,
@@ -172,6 +178,8 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 
 		Database:       db,
 		DatabaseConfig: dbConfig,
+
+		BadDatabase: &badDB,
 
 		ObservabilityConfig: &observability.Config{ExporterType: "NOOP"},
 

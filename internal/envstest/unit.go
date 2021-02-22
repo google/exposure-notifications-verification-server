@@ -16,7 +16,6 @@ package envstest
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 )
 
 // ExerciseSessionMissing tests that the proper response code and HTML error
@@ -37,14 +35,8 @@ func ExerciseSessionMissing(t *testing.T, h http.Handler) {
 
 		ctx := project.TestContext(t)
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		h.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -66,14 +58,8 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		h.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 303; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -94,14 +80,8 @@ func ExerciseUserMissing(t *testing.T, h http.Handler) {
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		h.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 500; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -124,14 +104,8 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 		ctx = controller.WithMembership(ctx, &database.Membership{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		h.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -153,16 +127,7 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 		ctx = controller.WithMembership(ctx, membership)
 		ctx = controller.WithUser(ctx, membership.User)
 
-		r := httptest.NewRequest(http.MethodGet, "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		q := r.URL.Query()
-		q.Set(pagination.QueryKeyPage, "banana")
-		r.URL.RawQuery = q.Encode()
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/1?page=banana", nil)
 		h.ServeHTTP(w, r)
 		w.Flush()
 
@@ -190,14 +155,8 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 		ctx = controller.WithMembership(ctx, membership)
 		ctx = controller.WithUser(ctx, membership.User)
 
-		r := httptest.NewRequest(http.MethodGet, "/13940890", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/13940890", nil)
 		mux.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, 401; got != want {
 			t.Errorf("Expected %d to be %d", got, want)

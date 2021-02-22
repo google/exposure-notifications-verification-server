@@ -15,40 +15,54 @@
 package user_test
 
 import (
-	"context"
+	"net/http"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 )
 
-func TestImportBatch(t *testing.T) {
+func TestHandleImport(t *testing.T) {
 	t.Parallel()
 
+	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	_, _, session, err := harness.ProvisionAndLogin()
+	realm, testUser, session, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleImport()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users/import`),
-		chromedp.WaitVisible(`body#users-import`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserWrite,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, 200; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
 }
