@@ -192,7 +192,7 @@ func handleEndToEnd(cfg *config.E2ERunnerConfig, h *render.Renderer) http.Handle
 		ctx := r.Context()
 
 		if err := clients.RunEndToEnd(ctx, cfg); err != nil {
-			renderJSONError(w, r, h, err)
+			renderJSONError(w, r, h, fmt.Errorf("failed to run end-to-end: %w", err))
 			return
 		}
 
@@ -213,7 +213,7 @@ func handleENXRedirect(client *clients.ENXRedirectClient, h *render.Renderer) ht
 		ctx := r.Context()
 
 		if err := client.RunE2E(ctx); err != nil {
-			renderJSONError(w, r, h, err)
+			renderJSONError(w, r, h, fmt.Errorf("failed to run enx-redirect: %w", err))
 			return
 		}
 
