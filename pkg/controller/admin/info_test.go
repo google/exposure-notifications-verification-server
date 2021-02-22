@@ -67,7 +67,7 @@ func TestAdminInfo(t *testing.T) {
 		c.HandleInfoShow().ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("expected %d to be %d: %#v", got, want, w.Header())
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {

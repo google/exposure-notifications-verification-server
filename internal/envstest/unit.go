@@ -46,7 +46,7 @@ func ExerciseSessionMissing(t *testing.T, h http.Handler) {
 		h.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "session missing in request context"; !strings.Contains(got, want) {
@@ -75,7 +75,7 @@ func ExerciseMembershipMissing(t *testing.T, h http.Handler) {
 		h.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
+		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "/login/select-realm"; !strings.Contains(got, want) {
@@ -103,7 +103,7 @@ func ExerciseUserMissing(t *testing.T, h http.Handler) {
 		h.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "user missing"; !strings.Contains(got, want) {
@@ -133,7 +133,7 @@ func ExercisePermissionMissing(t *testing.T, h http.Handler) {
 		h.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 401; got != want {
+		if got, want := w.Code, http.StatusUnauthorized; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
@@ -166,7 +166,7 @@ func ExerciseBadPagination(t *testing.T, membership *database.Membership, h http
 		h.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 400; got != want {
+		if got, want := w.Code, http.StatusBadRequest; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Bad request"; !strings.Contains(got, want) {
@@ -199,7 +199,7 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 		mux.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 401; got != want {
+		if got, want := w.Code, http.StatusUnauthorized; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
