@@ -36,7 +36,7 @@ tabcheck:
 test:
 	@go test \
 		-short \
-		-tags=all \
+		-tags=google \
 		-count=1 \
 		-timeout=5m \
 		./...
@@ -44,7 +44,7 @@ test:
 
 test-acc:
 	@go test \
-		-tags=all \
+		-tags=google \
 		-count=1 \
 		-race \
 		-timeout=10m \
