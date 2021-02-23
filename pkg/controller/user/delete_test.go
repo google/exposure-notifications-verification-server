@@ -15,22 +15,17 @@
 package user_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -41,7 +36,7 @@ func TestHandleDelete(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, admin, session, err := harness.ProvisionAndLogin()
+	realm, admin, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,20 +53,11 @@ func TestHandleDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleDelete()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleDelete()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -86,18 +72,8 @@ func TestHandleDelete(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleDelete()).Methods(http.MethodDelete)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := c.HandleDelete()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -107,15 +83,11 @@ func TestHandleDelete(t *testing.T) {
 			Permissions: rbac.UserWrite,
 		})
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodDelete, u, nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodDelete, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%v", user.ID),
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -125,40 +97,32 @@ func TestHandleDelete(t *testing.T) {
 		}
 	})
 
-	t.Run("deletes", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        admin,
+			Permissions: rbac.LegacyRealmAdmin,
+		})
 
-		// Click "confirm" when it pops up.
-		confirmErrCh := envstest.AutoConfirmDialogs(taskCtx, true)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodDelete, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%v", user.ID),
+		})
+		handler.ServeHTTP(w, r)
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/users`),
-			chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),
-
-			chromedp.Click(fmt.Sprintf(`a#delete-user-%d`, user.ID), chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#users-index`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Header().Get("Location"), "/realm/users"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 
-		if err := <-confirmErrCh; err != nil {
-			t.Fatal(err)
-		}
-
-		memberships, _, err := realm.ListMemberships(harness.Database, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, m := range memberships {
-			if m.UserID == user.ID {
-				t.Errorf("expected user to be removed")
-			}
+		if record, err := user.FindMembership(harness.Database, realm.ID); !database.IsNotFound(err) {
+			t.Errorf("expected membership to be deleted, got %#v (%s)", record, err)
 		}
 	})
 }

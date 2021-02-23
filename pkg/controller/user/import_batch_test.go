@@ -15,10 +15,7 @@
 package user_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -28,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 func TestHandleImportBatch(t *testing.T) {
@@ -43,55 +39,27 @@ func TestHandleImportBatch(t *testing.T) {
 	}
 	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleImportBatch()
 
-	envstest.ExerciseMembershipMissing(t, handler)
-	envstest.ExercisePermissionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	ctx = controller.WithMembership(ctx, &database.Membership{
-		Realm:       realm,
-		User:        testUser,
-		Permissions: rbac.UserWrite,
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
 	})
 
-	// success
-	func() {
-		b, err := json.Marshal(api.UserBatchRequest{
-			Users: []api.BatchUser{
-				{
-					Email: "test@example.com",
-					Name:  "batch tester",
-				},
-			},
-			SendInvites: true,
+	t.Run("invalid_user", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserWrite,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
-		}
-	}()
-
-	// invalid user
-	func() {
-		b, err := json.Marshal(api.UserBatchRequest{
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.UserBatchRequest{
 			Users: []api.BatchUser{
 				{
 					Email: "thisisfine@example.com",
@@ -102,24 +70,37 @@ func TestHandleImportBatch(t *testing.T) {
 					Name:  "invalid tester",
 				},
 			},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserWrite,
+		})
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.UserBatchRequest{
+			Users: []api.BatchUser{
+				{
+					Email: "test@example.com",
+					Name:  "batch tester",
+				},
+			},
 			SendInvites: true,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
+		handler.ServeHTTP(w, r)
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
-	}()
+	})
 }

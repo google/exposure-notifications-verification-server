@@ -1,9 +1,12 @@
 name: CI
 
 on:
+  push:
+    branches:
+    - main
   pull_request:
     branches:
-    - 'main'
+    - main
 
 env:
   GOMAXPROCS: 7
@@ -28,9 +31,7 @@ jobs:
 
       - uses: actions/cache@v2
         with:
-          path: |-
-            ~/go/pkg/mod
-            ~/.cache/go-build
+          path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
@@ -39,9 +40,11 @@ jobs:
         shell: bash
         env:
           # The Twilio credentials are not actually a "secret" (they are test
-          # credentials).
+          # credentials). On pull requests from forks, the secrets are not
+          # available, so skip SMS in the e2e tests.
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          E2E_SKIP_SMS: ${{ secrets.TWILIO_AUTH_TOKEN == '' }}
         run: make test-acc
 
       - name: go-coverage

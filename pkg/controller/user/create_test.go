@@ -15,25 +15,20 @@
 package user_test
 
 import (
-	"context"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
 	"github.com/gorilla/sessions"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 func TestHandleCreate(t *testing.T) {
@@ -42,26 +37,16 @@ func TestHandleCreate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, admin, session, err := harness.ProvisionAndLogin()
+	realm, admin, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleCreate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleCreate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -71,15 +56,7 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleCreate()
 
 		ctx := ctx
@@ -90,19 +67,12 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name":        []string{"person"},
 			"email":       []string{"you@example.com"},
 			"permissions": []string{"2", "4", "8"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -115,14 +85,6 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleCreate()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -131,17 +93,10 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name": []string{""},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -151,43 +106,50 @@ func TestHandleCreate(t *testing.T) {
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        admin,
+			Permissions: rbac.LegacyRealmAdmin,
+		})
 
-		var apiKey string
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
-			chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"name":  []string{"Test User"},
+			"email": []string{"you@example.com"},
+		})
+		handler.ServeHTTP(w, r)
 
-			chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-			chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-			chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Header().Get("Location"), "/realm/users/2"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 
-		// Ensure API key is valid.
-		record, err := harness.Database.FindAuthorizedAppByAPIKey(apiKey)
+		records, _, err := realm.ListMemberships(harness.Database, pagination.UnlimitedResults)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if got, want := record.RealmID, realm.ID; got != want {
-			t.Errorf("expected %v to be %v", got, want)
+		var record *database.User
+		for _, r := range records {
+			if r.User.Name == "Test User" {
+				record = r.User
+				break
+			}
 		}
-		if got, want := record.Name, "Example API key"; got != want {
-			t.Errorf("expected %v to be %v", got, want)
+		if record == nil {
+			t.Fatalf("failed to find record: %#v", records)
 		}
-		if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
-			t.Errorf("expected %v to be %v", got, want)
+		if got, want := record.Name, "Test User"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+		if got, want := record.Email, "you@example.com"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 	})
 }

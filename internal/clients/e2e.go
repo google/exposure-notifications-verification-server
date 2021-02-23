@@ -15,13 +15,10 @@
 package clients
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 
 	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
@@ -87,13 +84,19 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 	adminAPIClient, err := NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
 		WithTimeout(timeout))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to make adminapi server client: %w", err)
 	}
 
 	apiServerClient, err := NewAPIServerClient(cfg.VerificationAPIServer, cfg.VerificationAPIServerKey,
 		WithTimeout(timeout))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to make apiserver client: %w", err)
+	}
+
+	keyServerClient, err := NewKeyServerClient(cfg.KeyServer,
+		WithTimeout(timeout))
+	if err != nil {
+		return fmt.Errorf("failed to make keyserver client: %w", err)
 	}
 
 	testType := "confirmed"
@@ -256,6 +259,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			defer recordLatency(ctx, time.Now(), "upload_to_key_server")
 			// Make the publish request.
 			logger.Infof("Publish TEKs to the key server")
+
 			publishReq := &verifyapi.Publish{
 				Keys:                teks,
 				HealthAuthorityID:   cfg.HealthAuthorityCode,
@@ -263,41 +267,15 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 				HMACKey:             base64.StdEncoding.EncodeToString(hmacSecret),
 				RevisionToken:       revisionToken,
 			}
-
-			client := &http.Client{
-				Timeout: timeout,
-			}
-
-			var b bytes.Buffer
-			if err := json.NewEncoder(&b).Encode(publishReq); err != nil {
-				return nil, err
-			}
-
-			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.KeyServer, &b)
-			if err != nil {
-				return nil, err
-			}
-			httpReq.Header.Set("Content-Type", "application/json")
-
-			httpResp, err := client.Do(httpReq)
-			if err != nil {
-				result = enobs.ResultNotOK
-				return nil, fmt.Errorf("error making request to publish teks: %w", err)
-			}
-			defer httpResp.Body.Close()
-
-			var publishResp verifyapi.PublishResponse
-			if err := json.NewDecoder(httpResp.Body).Decode(&publishResp); err != nil {
-				return nil, err
-			}
+			publishResp, err := keyServerClient.Publish(ctx, publishReq)
 			defer logger.Debugw("publish", "request", publishReq, "response", publishResp)
 			if publishResp.ErrorMessage != "" {
 				result = enobs.ResultNotOK
-				logger.Infow("failed to publish teks", "error", err, "keys", teks)
+				logger.Errorw("failed to publish teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("publish API error: %+v", publishResp)
 			}
 			logger.Infof("Inserted %v exposures", publishResp.InsertedExposures)
-			return &publishResp, nil
+			return publishResp, nil
 		}()
 		if err != nil {
 			return err

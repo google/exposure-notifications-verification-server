@@ -18,7 +18,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -26,8 +25,13 @@ import (
 // IntegrationSuite encompasses a local API server and Admin API server for
 // testing. Both servers run in-memory on the local machine.
 type IntegrationSuite struct {
-	adminAPIServerClient *clients.AdminAPIServerClient
-	apiServerClient      *clients.APIServerClient
+	AdminAPIAddress string
+	AdminAPIKey     string
+
+	APIServerAddress string
+	APIServerKey     string
+
+	ENXRedirectAddress string
 }
 
 // NewIntegrationSuite creates a new test suite for local integration testing.
@@ -38,12 +42,20 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 
 	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
+	enxRedirectConfig := NewENXRedirectServerConfig(tb, testDatabaseInstance)
 
 	// Point everything at the same database, cacher, and key manager.
 	adminAPIServerConfig.Database = apiServerConfig.Database
+	adminAPIServerConfig.BadDatabase = apiServerConfig.BadDatabase
 	adminAPIServerConfig.Cacher = apiServerConfig.Cacher
 	adminAPIServerConfig.KeyManager = apiServerConfig.KeyManager
 	adminAPIServerConfig.RateLimiter = apiServerConfig.RateLimiter
+	adminAPIServerConfig.Renderer = apiServerConfig.Renderer
+
+	enxRedirectConfig.Database = apiServerConfig.Database
+	enxRedirectConfig.BadDatabase = apiServerConfig.BadDatabase
+	enxRedirectConfig.Cacher = apiServerConfig.Cacher
+	enxRedirectConfig.Renderer = apiServerConfig.Renderer
 
 	db := adminAPIServerConfig.Database
 
@@ -60,11 +72,24 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 	realm := resp.Realm
 
 	// Configure SMS
-	twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
-	twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
-	if twilioAccountSid == "" || twilioAuthToken == "" {
+	if project.SkipE2ESMS {
 		tb.Logf("🚧 🚧 Skipping sms tests (missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN)")
+
+		// Also disable authenticated sms
+		resp.Realm.UseAuthenticatedSMS = false
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+			tb.Fatalf("failed to update realm: %v", err)
+		}
 	} else {
+		twilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+		if twilioAccountSid == "" {
+			tb.Fatalf("missing TWILIO_ACCOUNT_SID")
+		}
+		twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
+		if twilioAuthToken == "" {
+			tb.Fatalf("missing TWILIO_AUTH_TOKEN")
+		}
+
 		has, err := resp.Realm.HasSMSConfig(db)
 		if err != nil {
 			tb.Fatalf("failed to check if realm has sms config: %s", err)
@@ -99,29 +124,15 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 
 	adminAPIServer := adminAPIServerConfig.NewServer(tb)
 	apiServer := apiServerConfig.NewServer(tb)
-
-	adminAPIServerClient, err := clients.NewAdminAPIServerClient("http://"+adminAPIServer.Server.Addr(), resp.AdminAPIKey)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	apiServerClient, err := clients.NewAPIServerClient("http://"+apiServer.Server.Addr(), resp.DeviceAPIKey)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	enxRedirectServer := enxRedirectConfig.NewServer(tb)
 
 	return &IntegrationSuite{
-		adminAPIServerClient: adminAPIServerClient,
-		apiServerClient:      apiServerClient,
+		AdminAPIAddress: "http://" + adminAPIServer.Server.Addr(),
+		AdminAPIKey:     resp.AdminAPIKey,
+
+		APIServerAddress: "http://" + apiServer.Server.Addr(),
+		APIServerKey:     resp.DeviceAPIKey,
+
+		ENXRedirectAddress: "http://" + enxRedirectServer.Server.Addr(),
 	}
-}
-
-// AdminAPIServerClient returns the Admin API client.
-func (i *IntegrationSuite) AdminAPIServerClient() *clients.AdminAPIServerClient {
-	return i.adminAPIServerClient
-}
-
-// APIServerClient returns the API server client.
-func (i *IntegrationSuite) APIServerClient() *clients.APIServerClient {
-	return i.apiServerClient
 }

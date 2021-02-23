@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter"
@@ -35,9 +36,11 @@ import (
 type APIServerResponse struct {
 	Config      *config.APIServerConfig
 	Database    *database.Database
+	BadDatabase *database.Database
 	Cacher      cache.Cacher
 	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
+	Renderer    *render.Renderer
 	Server      *server.Server
 }
 
@@ -51,9 +54,11 @@ func NewAPIServer(tb testing.TB, testDatabaseInstance *database.TestInstance) *A
 type APIServerConfigResponse struct {
 	Config      *config.APIServerConfig
 	Database    *database.Database
+	BadDatabase *database.Database
 	Cacher      cache.Cacher
 	KeyManager  keys.KeyManager
 	RateLimiter limiter.Store
+	Renderer    *render.Renderer
 }
 
 // NewAPIServerConfig creates a new API server configuration.
@@ -116,12 +121,20 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 		tb.Fatal(err)
 	}
 
+	// Create the renderer.
+	renderer, err := render.New(ctx, "", true)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &APIServerConfigResponse{
 		Config:      cfg,
 		Database:    harness.Database,
+		BadDatabase: harness.Database,
 		Cacher:      harness.Cacher,
 		KeyManager:  harness.KeyManager,
 		RateLimiter: harness.RateLimiter,
+		Renderer:    renderer,
 	}
 }
 
@@ -138,9 +151,11 @@ func (r *APIServerConfigResponse) NewServer(tb testing.TB) *APIServerResponse {
 	return &APIServerResponse{
 		Config:      r.Config,
 		Database:    r.Database,
+		BadDatabase: r.Database,
 		Cacher:      r.Cacher,
 		KeyManager:  r.KeyManager,
 		RateLimiter: r.RateLimiter,
+		Renderer:    r.Renderer,
 		Server:      srv,
 	}
 }
