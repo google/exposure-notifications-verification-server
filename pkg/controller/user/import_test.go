@@ -61,7 +61,7 @@ func TestHandleImport(t *testing.T) {
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		handler.ServeHTTP(w, r)
 
-		if got, want := w.Code, 200; got != want {
+		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
