@@ -65,6 +65,12 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 	twilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
 	if twilioAccountSid == "" || twilioAuthToken == "" {
 		tb.Logf("🚧 🚧 Skipping sms tests (missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN)")
+
+		// Also disable authenticated sms
+		resp.Realm.UseAuthenticatedSMS = false
+		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+			tb.Fatalf("failed to update realm: %v", err)
+		}
 	} else {
 		has, err := resp.Realm.HasSMSConfig(db)
 		if err != nil {
