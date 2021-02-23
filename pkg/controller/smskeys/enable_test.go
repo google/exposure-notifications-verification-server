@@ -90,7 +90,7 @@ func TestHandleEnable(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {

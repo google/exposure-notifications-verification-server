@@ -133,7 +133,7 @@ func TestHandlePostAuthenticate(t *testing.T) {
 			handler.ServeHTTP(w, r)
 			w.Flush()
 
-			if got, want := w.Code, 303; got != want {
+			if got, want := w.Code, http.StatusSeeOther; got != want {
 				t.Errorf("Expected %d to be %d", got, want)
 			}
 			if got, want := w.Header().Get("Location"), tc.exp; !strings.Contains(got, want) {

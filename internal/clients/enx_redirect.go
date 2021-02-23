@@ -121,7 +121,7 @@ func (c *ENXRedirectClient) RunE2E(ctx context.Context) error {
 		return fmt.Errorf("failed to check android redirect: %w", err)
 	}
 	defer androidHTTPResp.Body.Close()
-	if got, want := androidHTTPResp.StatusCode, 303; got != want {
+	if got, want := androidHTTPResp.StatusCode, http.StatusSeeOther; got != want {
 		return fmt.Errorf("expected android redirect code %d to be %d", got, want)
 	}
 	if got, want := androidHTTPResp.Header.Get("Location"), "android.test.app"; !strings.Contains(got, want) {
@@ -134,7 +134,7 @@ func (c *ENXRedirectClient) RunE2E(ctx context.Context) error {
 		return fmt.Errorf("failed to check apple redirect: %w", err)
 	}
 	defer iosHTTPResp.Body.Close()
-	if got, want := iosHTTPResp.StatusCode, 303; got != want {
+	if got, want := iosHTTPResp.StatusCode, http.StatusSeeOther; got != want {
 		return fmt.Errorf("expected apple redirect code %d to be %d", got, want)
 	}
 	if got, want := iosHTTPResp.Header.Get("Location"), "ios.test.app"; !strings.Contains(got, want) {
@@ -147,7 +147,7 @@ func (c *ENXRedirectClient) RunE2E(ctx context.Context) error {
 		return fmt.Errorf("failed to check unknown redirect: %w", err)
 	}
 	defer unknownHTTPResp.Body.Close()
-	if got, want := unknownHTTPResp.StatusCode, 303; got != want {
+	if got, want := unknownHTTPResp.StatusCode, http.StatusSeeOther; got != want {
 		return fmt.Errorf("expected unknown redirect code %d to be %d", got, want)
 	}
 	// expecting generic landing redirect

@@ -85,7 +85,7 @@ func TestHandleEnableExpress(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
@@ -118,7 +118,7 @@ func TestHandleEnableExpress(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 422; got != want {
+		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "is already enrolled in EN Express"; !strings.Contains(got, want) {
@@ -151,7 +151,7 @@ func TestHandleEnableExpress(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 422; got != want {
+		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
@@ -190,7 +190,7 @@ func TestHandleEnableExpress(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
+		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 			t.Errorf("%#v", realm.ErrorMessages())
 		}

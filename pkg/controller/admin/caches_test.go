@@ -93,7 +93,7 @@ func TestAdminCaches(t *testing.T) {
 		mux.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
+		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
@@ -144,7 +144,7 @@ func TestAdminCaches(t *testing.T) {
 		mux.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
+		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
@@ -181,7 +181,7 @@ func TestAdminCaches(t *testing.T) {
 		mux.ServeHTTP(w, r)
 		w.Flush()
 
-		if got, want := w.Code, 303; got != want {
+		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
