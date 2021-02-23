@@ -1,4 +1,5 @@
 name: 'Close stale'
+
 on:
   schedule:
   - cron: '0 */12 * * *'

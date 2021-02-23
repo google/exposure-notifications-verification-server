@@ -1,6 +1,10 @@
 name: 'Terraform'
 
 on:
+  push:
+    paths:
+    - 'terraform/**'
+    - '.github/workflows/terraform*'
   pull_request:
     paths:
     - 'terraform/**'
