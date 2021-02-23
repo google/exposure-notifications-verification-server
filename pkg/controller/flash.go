@@ -23,6 +23,10 @@ import (
 func Flash(session *sessions.Session) *flash.Flash {
 	var values map[interface{}]interface{}
 	if session != nil {
+		if session.Values == nil {
+			session.Values = make(map[interface{}]interface{})
+		}
+
 		values = session.Values
 	}
 
