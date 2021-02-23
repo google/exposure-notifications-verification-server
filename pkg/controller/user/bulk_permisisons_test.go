@@ -17,7 +17,6 @@ package user_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -28,7 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleBulkPermissions(t *testing.T) {
@@ -37,74 +36,75 @@ func TestHandleBulkPermissions(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, testUser, session, err := harness.ProvisionAndLogin()
+	realm, testUser, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleBulkPermissions(database.BulkPermissionActionAdd)
 
-	envstest.ExerciseSessionMissing(t, handler)
-	envstest.ExerciseMembershipMissing(t, handler)
-	envstest.ExercisePermissionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	// success
-	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
-			Permissions: rbac.UserWrite | 1,
-		})
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
-		form := url.Values{}
-		form.Set("user_id", fmt.Sprint(testUser.ID))
-		form.Set("permission", "1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	t.Run("missing_permission", func(t *testing.T) {
+		t.Parallel()
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		session := new(sessions.Session)
 
-		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
-		}
-	}()
-
-	// Doesn't have permission "1"
-	func() {
+		ctx := controller.WithSession(ctx, session)
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        testUser,
 			Permissions: rbac.UserWrite,
 		})
 
-		form := url.Values{}
-		form.Set("user_id", fmt.Sprint(testUser.ID))
-		form.Set("permission", "1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"user_id":    []string{fmt.Sprintf("%d", testUser.ID)},
+			"permission": []string{"1"},
+		})
+		handler.ServeHTTP(w, r)
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
-	}()
+
+		flash := controller.Flash(session)
+		if got, want := strings.Join(flash.Errors(), ", "), "does not have all scopes which are being granted"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to include %q", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		session := new(sessions.Session)
+
+		ctx := controller.WithSession(ctx, session)
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserWrite | 1,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"user_id":    []string{fmt.Sprintf("%d", testUser.ID)},
+			"permission": []string{"1"},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+
+		flash := controller.Flash(session)
+		if got, want := strings.Join(flash.Alerts(), ", "), "updated permissions"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to include %q", got, want)
+		}
+	})
 }

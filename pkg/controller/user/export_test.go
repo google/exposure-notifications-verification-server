@@ -17,7 +17,6 @@ package user_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -28,8 +27,6 @@ import (
 	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
 
@@ -56,16 +53,11 @@ func TestHandleExport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleExport()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-		handler := c.HandleExport()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -75,13 +67,8 @@ func TestHandleExport(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/", c.HandleExport()).Methods(http.MethodGet)
+		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := c.HandleExport()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -91,16 +78,10 @@ func TestHandleExport(t *testing.T) {
 			Permissions: rbac.UserRead,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
 
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 500; got != want {
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
@@ -111,11 +92,6 @@ func TestHandleExport(t *testing.T) {
 	t.Run("csvs", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/", c.HandleExport()).Methods(http.MethodGet)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -124,16 +100,10 @@ func TestHandleExport(t *testing.T) {
 			Permissions: rbac.UserRead,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
 
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
-
-		if got, want := w.Code, 200; got != want {
+		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 

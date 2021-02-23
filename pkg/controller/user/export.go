@@ -60,7 +60,7 @@ func (c *Controller) HandleExport() http.Handler {
 		}
 
 		filename := fmt.Sprintf("%s-users.csv", time.Now().Format(project.RFC3339Squish))
-		c.h.RenderCSV(w, 200, filename, membershipsCSV(memberships))
+		c.h.RenderCSV(w, http.StatusOK, filename, membershipsCSV(memberships))
 	})
 }
 

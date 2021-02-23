@@ -35,6 +35,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
@@ -55,8 +56,10 @@ type TestServerResponse struct {
 	Cacher       cache.Cacher
 	Config       *config.ServerConfig
 	Database     *database.Database
+	BadDatabase  *database.Database
 	KeyManager   keys.KeyManager
 	RateLimiter  limiter.Store
+	Renderer     *render.Renderer
 	Server       *server.Server
 }
 
@@ -162,9 +165,11 @@ type ServerConfigResponse struct {
 	AuthProvider auth.Provider
 	Config       *config.ServerConfig
 	Database     *database.Database
+	BadDatabase  *database.Database
 	Cacher       cache.Cacher
 	KeyManager   keys.KeyManager
 	RateLimiter  limiter.Store
+	Renderer     *render.Renderer
 }
 
 // NewServerConfig creates a new server configuration. It creates all the keys,
@@ -252,13 +257,21 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		tb.Fatal(err)
 	}
 
+	// Create the renderer.
+	renderer, err := render.New(ctx, ServerAssetsPath(), true)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &ServerConfigResponse{
 		AuthProvider: authProvider,
 		Config:       cfg,
 		Database:     harness.Database,
+		BadDatabase:  harness.BadDatabase,
 		Cacher:       harness.Cacher,
 		KeyManager:   harness.KeyManager,
 		RateLimiter:  harness.RateLimiter,
+		Renderer:     renderer,
 	}
 }
 
@@ -277,9 +290,11 @@ func (r *ServerConfigResponse) NewServer(tb testing.TB) *TestServerResponse {
 		AuthProvider: r.AuthProvider,
 		Config:       r.Config,
 		Database:     r.Database,
+		BadDatabase:  r.BadDatabase,
 		Cacher:       r.Cacher,
 		KeyManager:   r.KeyManager,
 		RateLimiter:  r.RateLimiter,
+		Renderer:     r.Renderer,
 		Server:       srv,
 	}
 }

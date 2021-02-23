@@ -25,16 +25,19 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-envconfig"
 )
 
 // ENXRedirectServerResponse is the response from a test ENX redirect instance.
 type ENXRedirectServerResponse struct {
-	Config   *config.RedirectConfig
-	Database *database.Database
-	Cacher   cache.Cacher
-	Server   *server.Server
+	Config      *config.RedirectConfig
+	Database    *database.Database
+	BadDatabase *database.Database
+	Cacher      cache.Cacher
+	Renderer    *render.Renderer
+	Server      *server.Server
 }
 
 // NewENXRedirectServer creates a new test ENX redirect server instance. See
@@ -46,14 +49,18 @@ func NewENXRedirectServer(tb testing.TB, testDatabaseInstance *database.TestInst
 // ENXRedirectServerConfigResponse is the response from creating an Redirect server
 // config.
 type ENXRedirectServerConfigResponse struct {
-	Config   *config.RedirectConfig
-	Database *database.Database
-	Cacher   cache.Cacher
+	Config      *config.RedirectConfig
+	Database    *database.Database
+	BadDatabase *database.Database
+	Cacher      cache.Cacher
+	Renderer    *render.Renderer
 }
 
 // NewENXRedirectServerConfig creates a new ENX redirect server configuration.
 func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance) *ENXRedirectServerConfigResponse {
 	tb.Helper()
+
+	ctx := project.TestContext(tb)
 
 	harness := NewTestHarness(tb, testDatabaseInstance)
 
@@ -81,10 +88,18 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 		tb.Fatal(err)
 	}
 
+	// Create the renderer.
+	renderer, err := render.New(ctx, ENXRedirectAssetsPath(), true)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &ENXRedirectServerConfigResponse{
-		Config:   cfg,
-		Database: harness.Database,
-		Cacher:   harness.Cacher,
+		Config:      cfg,
+		Database:    harness.Database,
+		BadDatabase: harness.Database,
+		Cacher:      harness.Cacher,
+		Renderer:    renderer,
 	}
 }
 
@@ -99,10 +114,12 @@ func (r *ENXRedirectServerConfigResponse) NewServer(tb testing.TB) *ENXRedirectS
 	srv := NewHarnessServer(tb, mux)
 
 	return &ENXRedirectServerResponse{
-		Config:   r.Config,
-		Database: r.Database,
-		Cacher:   r.Cacher,
-		Server:   srv,
+		Config:      r.Config,
+		Database:    r.Database,
+		BadDatabase: r.Database,
+		Cacher:      r.Cacher,
+		Renderer:    r.Renderer,
+		Server:      srv,
 	}
 }
 

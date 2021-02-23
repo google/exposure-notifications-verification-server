@@ -17,8 +17,6 @@ package user_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -27,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 )
 
@@ -43,76 +40,58 @@ func TestHandleResetPassword(t *testing.T) {
 	}
 	ctx = controller.WithSession(ctx, session)
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, h)
-	router := mux.NewRouter()
-	router.Handle("/{id:[0-9]+}/reset-password", c.HandleResetPassword()).Methods(http.MethodPost)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleResetPassword()
 
-	// Needs membership
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
-		if result.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
-		}
-	}()
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
 
-	// Needs userwrite
-	func() {
-		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm: realm,
-			User:  testUser,
-		})
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := c.HandleResetPassword()
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
-		}
-	}()
-
-	// success
-	func() {
+		ctx := ctx
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        testUser,
 			Permissions: rbac.UserWrite,
 		})
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/%d/reset-password", testUser.ID), strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%d", testUser.ID),
+		})
+		handler.ServeHTTP(w, r)
 
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 303 SeeOther, got %d", result.StatusCode)
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
-	}()
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        testUser,
+			Permissions: rbac.UserWrite,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{
+			"id": fmt.Sprintf("%d", testUser.ID),
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	})
 }
