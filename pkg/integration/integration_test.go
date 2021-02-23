@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestIntegration2(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
