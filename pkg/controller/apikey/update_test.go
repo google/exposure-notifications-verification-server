@@ -15,25 +15,19 @@
 package apikey_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleUpdate(t *testing.T) {
@@ -46,11 +40,7 @@ func TestHandleUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ctx = controller.WithSession(ctx, session)
 
 	authApp := &database.AuthorizedApp{
 		RealmID: realm.ID,
@@ -60,16 +50,11 @@ func TestHandleUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleUpdate()
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleUpdate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -84,80 +69,43 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
+		c := apikey.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := c.HandleUpdate()
 
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/1", strings.NewReader(url.Values{
-			"name": []string{"apple"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
+			"name": []string{"Appy McApperson"},
+		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", authApp.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
-
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/1", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"name": []string{""},
 			"type": []string{"-1"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", authApp.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -167,26 +115,24 @@ func TestHandleUpdate(t *testing.T) {
 		}
 	})
 
-	t.Run("updates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyWrite,
+		})
 
-		u := fmt.Sprintf("http://%s/realm/apikeys/%d/edit", harness.Server.Addr(), authApp.ID)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
+			"name": []string{"Appy McApperson"},
+		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", authApp.ID)})
+		handler.ServeHTTP(w, r)
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(u),
-			chromedp.WaitVisible(`body#apikeys-edit`, chromedp.ByQuery),
-
-			chromedp.SetValue(`input#name`, "Updated name", chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		// Ensure updated
@@ -195,7 +141,7 @@ func TestHandleUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got, want := record.Name, "Updated name"; got != want {
+		if got, want := record.Name, "Appy McApperson"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})

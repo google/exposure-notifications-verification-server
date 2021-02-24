@@ -15,24 +15,18 @@
 package apikey_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 )
 
 func TestHandleShow(t *testing.T) {
@@ -45,6 +39,7 @@ func TestHandleShow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
 	authApp := &database.AuthorizedApp{
 		RealmID: realm.ID,
@@ -54,20 +49,11 @@ func TestHandleShow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleShow())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleShow()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -82,67 +68,41 @@ func TestHandleShow(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleShow()).Methods(http.MethodGet)
+		c := apikey.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(c.HandleShow())
 
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
 			Permissions: rbac.APIKeyRead,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", authApp.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("shows", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyRead,
+		})
 
-		u := fmt.Sprintf("http://%s/realm/apikeys/%d", harness.Server.Addr(), authApp.ID)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", authApp.ID)})
+		handler.ServeHTTP(w, r)
 
-		var name string
-
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(u),
-			chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-
-			chromedp.Text(`#apikey-name`, &name, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
-		}
-
-		if got, want := strings.TrimSpace(name), authApp.Name; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 }
