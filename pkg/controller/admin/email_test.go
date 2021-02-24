@@ -15,20 +15,14 @@
 package admin_test
 
 import (
-	"context"
 	"net/http"
-	"net/http/httptest"
-	"strings"
+	"net/url"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -36,94 +30,55 @@ func TestAdminEmail(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cfg := &config.ServerConfig{}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := c.HandleEmailUpdate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-		envstest.ExerciseSessionMissing(t, c.HandleEmailUpdate())
+
+		envstest.ExerciseSessionMissing(t, handler)
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := admin.New(cfg, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := c.HandleEmailUpdate()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		c.HandleEmailUpdate().ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("expected %d to be %d: %#v", got, want, w.Header())
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("updates", func(t *testing.T) {
 		t.Parallel()
 
-		_, _, session, err := harness.ProvisionAndLogin()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a browser runner.
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
-
 		wantSMTPAccount := "test=smtp-account"
 		wantSMTPPassword := "test-password"
 		wantSMTPHost := "smtp.test.example.com"
 		wantSMTPPort := "587"
 
-		if err := chromedp.Run(taskCtx,
-			// Pre-authenticate the user.
-			browser.SetCookie(cookie),
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-			// Visit /admin
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/email`),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
+			"smtp_account":  []string{wantSMTPAccount},
+			"smtp_password": []string{wantSMTPPassword},
+			"smtp_host":     []string{wantSMTPHost},
+			"smtp_port":     []string{wantSMTPPort},
+		})
+		handler.ServeHTTP(w, r)
 
-			// Wait for render.
-			chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
-
-			// Set fields and submit
-			chromedp.SetValue(`input#smtp-account`, wantSMTPAccount, chromedp.ByQuery),
-			chromedp.SetValue(`input#smtp-password`, wantSMTPPassword, chromedp.ByQuery),
-			chromedp.SetValue(`input#smtp-host`, wantSMTPHost, chromedp.ByQuery),
-			chromedp.SetValue(`input#smtp-port`, wantSMTPPort, chromedp.ByQuery),
-			chromedp.Submit(`form#email-form`, chromedp.ByQuery),
-
-			// Wait for render.
-			chromedp.WaitVisible(`body#admin-email-show`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
 		}
 
 		systemEmailConfig, err := harness.Database.SystemEmailConfig()

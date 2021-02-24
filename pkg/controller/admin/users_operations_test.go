@@ -17,7 +17,6 @@ package admin_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -29,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -38,69 +36,38 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	locales, err := i18n.Load(harness.Config.LocalesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	middlewares := []mux.MiddlewareFunc{
-		middleware.InjectCurrentPath(),
-		middleware.ProcessLocale(locales),
-	}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleSystemAdminCreate()))
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminCreate())
-		mux.Handle("/", c.HandleSystemAdminCreate())
-
-		envstest.ExerciseSessionMissing(t, mux)
-		envstest.ExerciseUserMissing(t, mux)
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseUserMissing(t, handler)
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		suffix, err := project.RandomHexString(6)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
+		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleSystemAdminCreate()))
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name":  []string{"Tester"},
-			"email": []string{fmt.Sprintf("tester-%s@example.com", suffix)},
-		}).Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+			"email": []string{"tester@example.com"},
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -110,26 +77,15 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name":  []string{"Tester"},
 			"email": []string{""}, // blank
-		}).Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -142,30 +98,19 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 	t.Run("renders", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodGet)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
 		suffix, err := project.RandomHexString(6)
@@ -173,26 +118,15 @@ func TestHandleSystemAdminCreate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminCreate()).Methods(http.MethodPost)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader((&url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name":  []string{"Tester"},
 			"email": []string{fmt.Sprintf("tester-%s@example.com", suffix)},
-		}).Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -204,63 +138,38 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	locales, err := i18n.Load(harness.Config.LocalesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	middlewares := []mux.MiddlewareFunc{
-		middleware.InjectCurrentPath(),
-		middleware.ProcessLocale(locales),
-	}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleSystemAdminRevoke()))
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminRevoke())
-		mux.Handle("/", c.HandleSystemAdminRevoke())
-
-		envstest.ExerciseSessionMissing(t, mux)
-		envstest.ExerciseUserMissing(t, mux)
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseUserMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
 			User: &database.User{},
-		}, mux)
+		}, handler)
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
+		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleSystemAdminRevoke()))
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -274,6 +183,7 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		user := &database.User{
 			Name:        "Tester",
 			Email:       fmt.Sprintf("tester-%s@example.com", suffix),
@@ -283,27 +193,15 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
-
-		session := &sessions.Session{
-			Values: make(map[interface{}]interface{}),
-		}
+		session := &sessions.Session{}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 		ctx = controller.WithUser(ctx, user)
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodGet, u, nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", user.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -334,23 +232,13 @@ func TestHandleSystemAdminRevoke(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleSystemAdminRevoke()).Methods(http.MethodGet)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodGet, u, nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", user.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -374,63 +262,38 @@ func TestHandleUserDelete(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	locales, err := i18n.Load(harness.Config.LocalesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	middlewares := []mux.MiddlewareFunc{
-		middleware.InjectCurrentPath(),
-		middleware.ProcessLocale(locales),
-	}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUserDelete()))
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserDelete())
-		mux.Handle("/", c.HandleUserDelete())
-
-		envstest.ExerciseSessionMissing(t, mux)
-		envstest.ExerciseUserMissing(t, mux)
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseUserMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
 			User: &database.User{},
-		}, mux)
+		}, handler)
 	})
 
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/", c.HandleUserDelete()).Methods(http.MethodGet)
+		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUserDelete()))
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodDelete, "/", nil)
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -453,27 +316,15 @@ func TestHandleUserDelete(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserDelete()).Methods(http.MethodGet)
-
-		session := &sessions.Session{
-			Values: make(map[interface{}]interface{}),
-		}
+		session := &sessions.Session{}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 		ctx = controller.WithUser(ctx, user)
 
-		u := fmt.Sprintf("/%d", user.ID)
-		r := httptest.NewRequest(http.MethodGet, u, nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", user.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -491,28 +342,36 @@ func TestHandleUserDelete(t *testing.T) {
 	t.Run("deletes", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleUserDelete()).Methods(http.MethodGet)
+		suffix, err := project.RandomHexString(6)
+		if err != nil {
+			t.Fatal(err)
+		}
+		user := &database.User{
+			Name:        "Tester",
+			Email:       fmt.Sprintf("tester-%s@example.com", suffix),
+			SystemAdmin: true,
+		}
+		if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithUser(ctx, &database.User{})
 
-		r := httptest.NewRequest(http.MethodGet, "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", user.ID)})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 		if got, want := w.Header().Get("Location"), "/admin/users"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
+		}
+
+		if _, err := harness.Database.FindUser(user.ID); !database.IsNotFound(err) {
+			t.Fatal(err)
 		}
 	})
 }
