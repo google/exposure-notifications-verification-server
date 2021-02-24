@@ -167,6 +167,12 @@
         delivered in the order in which they are sent. You should take special
         care to ensure that no links occur across a message boundary.
       </p>
+      <p>
+        If your message contains characters outside of the GSM-7 set, they may
+        be forced to a more expensive encoding, which could increase costs. To
+        see how your message will be encoding, use Twilio's more advanced
+        <a href="https://twiliodeved.github.io/message-segment-calculator/">message split analyzer</a>.
+      </p>
 
       <div id="message-bubbles" class="offset-sm-0 col-sm-12 offset-md-2 col-md-8 offset-lg-3 col-lg-6"></div>
     </div>
