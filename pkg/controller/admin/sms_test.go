@@ -15,125 +15,111 @@
 package admin_test
 
 import (
-	"context"
+	"net/http"
+	"net/url"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/gorilla/sessions"
 )
 
-func TestShowAdminSMS(t *testing.T) {
+func TestAdminSMS(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	// Get the default realm
-	realm, err := harness.Database.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleSMSUpdate())
 
-	// Get the system admin
-	admin, err := harness.Database.FindUser(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	// Log in the user.
-	session, err := harness.LoggedInSession(nil, admin.Email)
-	if err != nil {
-		t.Fatal(err)
-	}
+		envstest.ExerciseSessionMissing(t, handler)
+	})
 
-	// Set the current realm.
-	controller.StoreSessionRealm(session, realm)
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
 
-	// Mint a cookie for the session.
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Create a browser runner.
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(c.HandleSMSUpdate())
 
-	wantAccountSid := "abc123"
-	wantAuthToken := "def456"
-	wantFromNumber1 := "+11234567890"
-	wantFromNumber2 := "+99999999999"
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		handler.ServeHTTP(w, r)
 
-		// Visit /admin
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/sms`),
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
+			t.Errorf("expected %d to be %d: %#v", got, want, w.Header())
+		}
+	})
 
-		// Wait for render
-		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
+	t.Run("updates", func(t *testing.T) {
+		t.Parallel()
 
-		// Set fields
-		chromedp.SetValue(`input#twilio-account-sid`, wantAccountSid, chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-auth-token`, wantAuthToken, chromedp.ByQuery),
+		wantAccountSid := "abc123"
+		wantAuthToken := "def456"
+		wantFromNumber1 := "+11234567890"
+		wantFromNumber2 := "+99999999999"
 
-		// From number 1
-		chromedp.Click(`a#add-phone-number`, chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number-0-label`, "aaa", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number-0-value`, wantFromNumber1, chromedp.ByQuery),
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		// From number 2
-		chromedp.Click(`a#add-phone-number`, chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number-1-label`, "zzz", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number-1-value`, wantFromNumber2, chromedp.ByQuery),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"twilio_account_sid":          []string{wantAccountSid},
+			"twilio_auth_token":           []string{wantAuthToken},
+			"twilio_from_numbers.0.label": []string{"aaa"},
+			"twilio_from_numbers.0.value": []string{wantFromNumber1},
 
-		// Submit form
-		chromedp.Submit(`form#sms-form`, chromedp.ByQuery),
+			"twilio_from_numbers.1.label": []string{"zzz"},
+			"twilio_from_numbers.1.value": []string{wantFromNumber2},
+		})
+		handler.ServeHTTP(w, r)
 
-		// Wait for render.
-		chromedp.WaitVisible(`body#admin-sms-show`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
 
-	systemSMSConfig, err := harness.Database.SystemSMSConfig()
-	if err != nil {
-		t.Fatal(err)
-	}
+		systemSMSConfig, err := harness.Database.SystemSMSConfig()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if systemSMSConfig.TwilioAccountSid != wantAccountSid {
-		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAccountSid, wantAccountSid)
-	}
-	if systemSMSConfig.TwilioAuthToken != wantAuthToken {
-		t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAuthToken, wantAuthToken)
-	}
+		if systemSMSConfig.TwilioAccountSid != wantAccountSid {
+			t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAccountSid, wantAccountSid)
+		}
+		if systemSMSConfig.TwilioAuthToken != wantAuthToken {
+			t.Errorf("got: %s, want: %s", systemSMSConfig.TwilioAuthToken, wantAuthToken)
+		}
 
-	smsFromNumbers, err := harness.Database.SMSFromNumbers()
-	if err != nil {
-		t.Fatal(err)
-	}
+		smsFromNumbers, err := harness.Database.SMSFromNumbers()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if got, want := len(smsFromNumbers), 2; got != want {
-		t.Fatalf("expected %d to be %d", got, want)
-	}
+		if got, want := len(smsFromNumbers), 2; got != want {
+			t.Fatalf("expected %d to be %d", got, want)
+		}
 
-	aaa := smsFromNumbers[0]
-	if got, want := aaa.Label, "aaa"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := aaa.Value, wantFromNumber1; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
+		aaa := smsFromNumbers[0]
+		if got, want := aaa.Label, "aaa"; got != want {
+			t.Errorf("Expected %q to be %q", got, want)
+		}
+		if got, want := aaa.Value, wantFromNumber1; got != want {
+			t.Errorf("Expected %q to be %q", got, want)
+		}
 
-	zzz := smsFromNumbers[1]
-	if got, want := zzz.Label, "zzz"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := zzz.Value, wantFromNumber2; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
+		zzz := smsFromNumbers[1]
+		if got, want := zzz.Label, "zzz"; got != want {
+			t.Errorf("Expected %q to be %q", got, want)
+		}
+		if got, want := zzz.Value, wantFromNumber2; got != want {
+			t.Errorf("Expected %q to be %q", got, want)
+		}
+	})
 }

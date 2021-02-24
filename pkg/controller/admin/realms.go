@@ -144,6 +144,7 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		// Make the current user an admin of the realm they just created.
 		if err := currentUser.AddToRealm(c.db, realm, rbac.LegacyRealmAdmin, currentUser); err != nil {
 			flash.Error("Failed to add you as an admin to the realm: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderNewRealm(ctx, w, realm, smsConfig, emailConfig)
 			return
 		}

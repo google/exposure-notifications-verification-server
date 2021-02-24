@@ -15,14 +15,10 @@
 package admin_test
 
 import (
-	"context"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -30,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -39,64 +34,38 @@ func TestAdminCaches(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	locales, err := i18n.Load(harness.Config.LocalesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	middlewares := []mux.MiddlewareFunc{
-		middleware.InjectCurrentPath(),
-		middleware.ProcessLocale(locales),
-	}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleCachesClear()))
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear())
-		mux.Handle("/", c.HandleCachesClear())
-
-		envstest.ExerciseSessionMissing(t, mux)
+		envstest.ExerciseSessionMissing(t, handler)
 	})
 
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
-
-		session := &sessions.Session{
-			Values: map[interface{}]interface{}{},
-		}
+		session := &sessions.Session{}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 
-		r := httptest.NewRequest(http.MethodPut, "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Referer", "https://example.com/foo/bar")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "1"})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
-		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
+		if got, want := w.Header().Get("Location"), "/back"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
 
@@ -121,33 +90,22 @@ func TestAdminCaches(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := admin.New(harness.Config, cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, h)
+		c := admin.New(harness.Config, cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleCachesClear()))
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
-
-		session := &sessions.Session{
-			Values: map[interface{}]interface{}{},
-		}
+		session := &sessions.Session{}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 
-		r := httptest.NewRequest(http.MethodPut, "/realms:", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Referer", "https://example.com/foo/bar")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "realms:"})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
-		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
+		if got, want := w.Header().Get("Location"), "/back"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
 
@@ -164,60 +122,18 @@ func TestAdminCaches(t *testing.T) {
 	t.Run("clears", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Use(middlewares...)
-		mux.Handle("/{id}", c.HandleCachesClear()).Methods(http.MethodPut)
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		r := httptest.NewRequest(http.MethodPut, "/realms:", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Referer", "https://example.com/foo/bar")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "realms:"})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
-		if got, want := w.Header().Get("Location"), "https://example.com/foo/bar"; got != want {
+		if got, want := w.Header().Get("Location"), "/back"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
-		}
-	})
-
-	t.Run("renders", func(t *testing.T) {
-		t.Parallel()
-
-		_, _, session, err := harness.ProvisionAndLogin()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cookie, err := harness.SessionCookie(session)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Create a browser runner.
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
-
-		if err := chromedp.Run(taskCtx,
-			// Pre-authenticate the user.
-			browser.SetCookie(cookie),
-
-			// Visit /admin
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/admin/caches`),
-
-			// Wait for render.
-			chromedp.WaitVisible(`body#admin-caches-index`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
 		}
 	})
 }
