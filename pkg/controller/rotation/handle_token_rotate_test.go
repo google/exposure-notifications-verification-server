@@ -16,7 +16,6 @@ package rotation
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -62,21 +61,13 @@ func TestHandleRotate(t *testing.T) {
 
 		// Rotating should create a new key since none exists.
 		{
-			r, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			r = r.Clone(ctx)
-
-			w := httptest.NewRecorder()
-
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 			c.HandleRotate().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
 				t.Fatal(err)
 			}
-
 			if got, want := len(keys), 1; got != want {
 				t.Errorf("got %d keys, expected %d", got, want)
 			}
@@ -94,21 +85,13 @@ func TestHandleRotate(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			r, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			r = r.Clone(ctx)
-
-			w := httptest.NewRecorder()
-
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 			c.HandleRotate().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
 				t.Fatal(err)
 			}
-
 			if got, want := len(keys), 2; got != want {
 				t.Errorf("got %d keys, expected %d", got, want)
 			}
@@ -117,21 +100,13 @@ func TestHandleRotate(t *testing.T) {
 		// Rotating again should not create a new key (not enough time has elapsed
 		// since TokenSigningKeyMaxAge).
 		{
-			r, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			r = r.Clone(ctx)
-
-			w := httptest.NewRecorder()
-
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 			c.HandleRotate().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
 				t.Fatal(err)
 			}
-
 			if got, want := len(keys), 2; got != want {
 				t.Errorf("got %d keys, expected %d", got, want)
 			}
@@ -154,13 +129,7 @@ func TestHandleRotate(t *testing.T) {
 
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
 		c.HandleRotate().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
@@ -181,14 +150,8 @@ func TestHandleRotate(t *testing.T) {
 		db.SetRawDB(envstest.NewFailingDatabase())
 
 		c := New(cfg, db, keyManagerSigner, h)
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
 
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleRotate().ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {

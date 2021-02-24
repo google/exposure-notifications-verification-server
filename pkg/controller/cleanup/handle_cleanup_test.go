@@ -16,11 +16,11 @@ package cleanup
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -75,14 +75,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		apps, _, err := realm.ListAuthorizedApps(db, nil)
@@ -109,23 +102,20 @@ func TestHandleCleanup(t *testing.T) {
 			Code:          "12345678",
 			LongCode:      "12345678901122334455",
 			TestType:      "confirmed",
-			ExpiresAt:     time.Now().UTC().Add(2 * time.Second),
-			LongExpiresAt: time.Now().UTC().Add(2 * time.Second),
+			ExpiresAt:     time.Now().UTC().Add(24 * time.Hour),
+			LongExpiresAt: time.Now().UTC().Add(24 * time.Hour),
 		}
 		if err := db.SaveVerificationCode(code, realm); err != nil {
 			t.Fatal(err)
 		}
-
-		time.Sleep(5 * time.Second)
-
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
+		if err := db.RawDB().Model(code).UpdateColumns(&database.VerificationCode{
+			ExpiresAt:     time.Now().UTC().Add(-24 * time.Hour),
+			LongExpiresAt: time.Now().UTC().Add(-24 * time.Hour),
+		}).Error; err != nil {
 			t.Fatal(err)
 		}
-		r = r.Clone(ctx)
 
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		var codes []*database.VerificationCode
@@ -155,17 +145,13 @@ func TestHandleCleanup(t *testing.T) {
 		if err := db.RawDB().Save(token).Error; err != nil {
 			t.Fatal(err)
 		}
-
-		time.Sleep(5 * time.Second)
-
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
+		if err := db.RawDB().Model(token).UpdateColumns(&database.Token{
+			ExpiresAt: time.Now().UTC().Add(-24 * time.Hour),
+		}).Error; err != nil {
 			t.Fatal(err)
 		}
-		r = r.Clone(ctx)
 
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		var tokens []*database.Token
@@ -206,14 +192,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		apps, _, err := realm.ListMobileApps(db, nil)
@@ -237,14 +216,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		audits, _, err := db.ListAudits(nil)
@@ -275,14 +247,7 @@ func TestHandleCleanup(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleCleanup().ServeHTTP(w, r)
 
 		users, _, err := db.ListUsers(nil)
