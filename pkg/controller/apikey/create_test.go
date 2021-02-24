@@ -15,25 +15,19 @@
 package apikey_test
 
 import (
-	"context"
+	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/gorilla/sessions"
-
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleCreate(t *testing.T) {
@@ -46,22 +40,13 @@ func TestHandleCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx = controller.WithSession(ctx, session)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
+	handler := c.HandleCreate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleCreate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -71,76 +56,41 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
+		c := apikey.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleCreate()
 
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name": []string{"banana"},
 			"type": []string{"1"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := apikey.New(harness.Cacher, harness.Database, h)
-		handler := c.HandleCreate()
-
 		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        user,
 			Permissions: rbac.APIKeyWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"type": []string{"-1"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -150,27 +100,32 @@ func TestHandleCreate(t *testing.T) {
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		session := &sessions.Session{}
 
-		var apiKey string
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/apikeys/new`),
-			chromedp.WaitVisible(`body#apikeys-new`, chromedp.ByQuery),
+		ctx := ctx
+		ctx = controller.WithSession(ctx, session)
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.APIKeyWrite,
+		})
 
-			chromedp.SetValue(`input#name`, "Example API key", chromedp.ByQuery),
-			chromedp.SetValue(`select#type`, strconv.Itoa(int(database.APIKeyTypeDevice)), chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"name": []string{"Test API key"},
+			"type": []string{fmt.Sprintf("%d", database.APIKeyTypeDevice)},
+		})
+		handler.ServeHTTP(w, r)
 
-			chromedp.WaitVisible(`body#apikeys-show`, chromedp.ByQuery),
-			chromedp.Value(`#apikey-value`, &apiKey, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+
+		apiKey, ok := session.Values["apiKey"].(string)
+		if !ok {
+			t.Fatalf("expected apiKey in session: %#v", session.Values)
 		}
 
 		// Ensure API key is valid.
@@ -182,7 +137,7 @@ func TestHandleCreate(t *testing.T) {
 		if got, want := record.RealmID, realm.ID; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
-		if got, want := record.Name, "Example API key"; got != want {
+		if got, want := record.Name, "Test API key"; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 		if got, want := record.APIKeyType, database.APIKeyTypeDevice; got != want {
