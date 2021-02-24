@@ -17,7 +17,6 @@ package rotation
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/jinzhu/gorm"
 )
 
 func TestHandleVerificationRotation(t *testing.T) {
@@ -72,10 +72,10 @@ func TestHandleVerificationRotation(t *testing.T) {
 			t.Fatal(err)
 		}
 		// Initial state - 1 active signing key.
-		checkKeys(t, db, realm, 1, 0)
+		keys := checkKeys(t, db, realm, 1, 0)
 
-		// Wait the max age, and run the test.
-		time.Sleep(cfg.VerificationSigningKeyMaxAge + time.Second)
+		// Set the keys as old to trigger rotation.
+		expireKeys(t, db, keys)
 		invokeRotate(ctx, t, c)
 		// There should be 2 keys on the realm now, the older one should still be the active one.
 		checkKeys(t, db, realm, 2, 1)
@@ -87,7 +87,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 		checkKeys(t, db, realm, 2, 0)
 
 		// Wait long enough for original key to be deleted.
-		time.Sleep(cfg.VerificationActivationDelay + time.Second)
+		expireKeys(t, db, keys)
 		invokeRotate(ctx, t, c)
 		// Original key should be destroyed, only 1 key and it's active now.
 		checkKeys(t, db, realm, 1, 0)
@@ -106,13 +106,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
 		c.HandleVerificationRotate().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
@@ -139,14 +133,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 		}
 		c := New(cfg, db, keyManagerSigner, h)
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 		c.HandleVerificationRotate().ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
@@ -155,7 +142,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 	})
 }
 
-func checkKeys(tb testing.TB, db *database.Database, realm *database.Realm, count, active int) {
+func checkKeys(tb testing.TB, db *database.Database, realm *database.Realm, count, active int) []*database.SigningKey {
 	tb.Helper()
 
 	keys, err := realm.ListSigningKeys(db)
@@ -169,18 +156,27 @@ func checkKeys(tb testing.TB, db *database.Database, realm *database.Realm, coun
 	if !keys[active].Active {
 		tb.Fatalf("expected active key (%v) is not active", active)
 	}
+
+	return keys
+}
+
+func expireKeys(tb testing.TB, db *database.Database, keys []*database.SigningKey) {
+	for _, key := range keys {
+		if err := db.RawDB().Model(key).UpdateColumns(&database.SigningKey{
+			Model: gorm.Model{
+				CreatedAt: time.Now().UTC().Add(-720 * time.Hour),
+				UpdatedAt: time.Now().UTC().Add(-720 * time.Hour),
+			},
+		}).Error; err != nil {
+			tb.Fatal(err)
+		}
+	}
 }
 
 func invokeRotate(ctx context.Context, tb testing.TB, c *Controller) {
 	tb.Helper()
 
-	r, err := http.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
-	if err != nil {
-		tb.Fatal(err)
-	}
-
-	w := httptest.NewRecorder()
-
+	w, r := envstest.BuildJSONRequest(ctx, tb, http.MethodGet, "/", nil)
 	c.HandleVerificationRotate().ServeHTTP(w, r)
 
 	if w.Code != http.StatusOK {

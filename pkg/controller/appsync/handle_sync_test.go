@@ -60,34 +60,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
-
-		c.HandleSync().ServeHTTP(w, r)
-	})
-
-	t.Run("too_early", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		c, err := New(cfg, db, h)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
 		c.HandleSync().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
@@ -117,13 +90,7 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
 		c.HandleSync().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
@@ -142,16 +109,9 @@ func TestHandleSync(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		r, err := http.NewRequest(http.MethodGet, "/", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		r = r.Clone(ctx)
-
-		w := httptest.NewRecorder()
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
 		c.HandleSync().ServeHTTP(w, r)
-
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
