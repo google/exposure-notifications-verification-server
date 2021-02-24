@@ -121,4 +121,20 @@ func TestAdminEvents(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
+
+	t.Run("searches", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/?from=2020-01-02&to=2021-01-01", nil)
+		r = mux.SetURLVars(r, map[string]string{"realm_id": "0"})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
 }

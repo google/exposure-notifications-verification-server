@@ -82,4 +82,19 @@ func TestAdminMobileApps(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 	})
+
+	t.Run("searches", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/?q=appy", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
 }
