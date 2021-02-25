@@ -67,6 +67,7 @@ func NewRedirectConfig(ctx context.Context) (*RedirectConfig, error) {
 		return nil, err
 	}
 
+	// TODO(sethvargo): remove in 0.24+
 	if v := os.Getenv("ASSETS_PATH"); v != "" {
 		logger.Warnw("ASSETS_PATH is no longer used")
 	}

@@ -157,7 +157,7 @@ func loadTemplates(fsys fs.FS, htmltmpl *htmltemplate.Template, texttmpl *textte
 	// filepath.
 	return fs.WalkDir(fsys, ".", func(pth string, info fs.DirEntry, err error) error {
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if info.IsDir() {
@@ -216,17 +216,12 @@ func disabledIf(v bool) htmltemplate.HTMLAttr {
 // translate accepts a message printer (populated by middleware) and prints the
 // translated text for the given key. If the printer is nil, an error is
 // returned.
-func translate(l interface{}, key string, vars ...interface{}) (string, error) {
-	if l == nil {
+func translate(t gotext.Translator, key string, vars ...interface{}) (string, error) {
+	if t == nil {
 		return "", fmt.Errorf("missing translator")
 	}
 
-	typ, ok := l.(gotext.Translator)
-	if !ok {
-		return "", fmt.Errorf("%T is not gotext.Translator", l)
-	}
-
-	v := typ.Get(key, vars...)
+	v := t.Get(key, vars...)
 	if v == "" || v == key {
 		return "", fmt.Errorf("unknown i18n key %q", key)
 	}
