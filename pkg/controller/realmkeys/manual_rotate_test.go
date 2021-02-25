@@ -28,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -37,11 +36,6 @@ func TestHandleManualRotate(t *testing.T) {
 
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	cfg := &config.ServerConfig{}
 
@@ -52,7 +46,7 @@ func TestHandleManualRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleManualRotate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -67,7 +61,7 @@ func TestHandleManualRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleManualRotate()
 
 		ctx := ctx
@@ -107,7 +101,7 @@ func TestHandleManualRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleManualRotate()
 
 		ctx := ctx
@@ -144,7 +138,7 @@ func TestHandleManualRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleManualRotate()
 
 		realm := database.NewRealmWithDefaults("test")

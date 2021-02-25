@@ -38,7 +38,7 @@ func TestHandleRealmsIndex(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestHandleRealmsCreate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +201,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}

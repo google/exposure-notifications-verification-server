@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path/filepath"
 
+	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -84,7 +84,7 @@ func Server(
 	r.Use(populateTemplateVariables)
 
 	// Load localization
-	locales, err := i18n.Load(cfg.LocalesPath, i18n.WithReloading(cfg.DevMode))
+	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup i18n: %w", err)
 	}
@@ -94,7 +94,7 @@ func Server(
 	r.Use(processLocale)
 
 	// Create the renderer
-	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
+	h, err := render.New(ctx, assets.ServerFS(), cfg.DevMode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create renderer: %w", err)
 	}
@@ -149,15 +149,12 @@ func Server(
 	rateLimit := httplimiter.Handle
 
 	{
-		static := filepath.Join(cfg.AssetsPath, "static")
-		fs := http.FileServer(http.Dir(static))
-		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+		staticFS := assets.ServerStaticFS()
+		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 		// Browers and devices seem to always hit this - serve it to keep our logs
 		// cleaner.
-		r.Handle("/favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, filepath.Join(static, "favicon.ico"))
-		}))
+		r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
 	}
 
 	{

@@ -86,11 +86,15 @@ func TestI18n_matching(t *testing.T) {
 func TestLocaleMap_Lookup(t *testing.T) {
 	t.Parallel()
 
-	langOf := func(l *gotext.Locale) string {
-		return reflect.ValueOf(l).Elem().FieldByName("lang").String()
+	langOf := func(l gotext.Translator) string {
+		typ, ok := l.(*gotext.Po)
+		if !ok {
+			t.Fatalf("%T is not *gotext.Po", l)
+		}
+		return typ.Language
 	}
 
-	localeMap, err := Load(localesPath, WithReloading(true))
+	localeMap, err := Load(WithReloading(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +121,7 @@ func TestLocaleMap_Lookup(t *testing.T) {
 func TestLocaleMap_Canonicalize(t *testing.T) {
 	t.Parallel()
 
-	localeMap, err := Load(localesPath, WithReloading(true))
+	localeMap, err := Load(WithReloading(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,15 +172,5 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
-	}
-}
-
-func TestLocaleMap_Load(t *testing.T) {
-	t.Parallel()
-
-	// Successfully loading is tested in all other functions indirectly.
-
-	if _, err := Load("/not/a/real/directory", WithReloading(true)); err == nil {
-		t.Fatal("expected error")
 	}
 }

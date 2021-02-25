@@ -28,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -37,11 +36,6 @@ func TestHandleIndex(t *testing.T) {
 
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	cfg := &config.ServerConfig{}
 
@@ -52,7 +46,7 @@ func TestHandleIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleIndex()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -67,7 +61,7 @@ func TestHandleIndex(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleIndex()
 
 		realm, err := harness.Database.FindRealm(1)

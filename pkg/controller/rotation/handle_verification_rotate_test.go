@@ -40,7 +40,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 		t.Fatal("kms cannot manage signing keys")
 	}
 
-	h, err := render.New(ctx, "", true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

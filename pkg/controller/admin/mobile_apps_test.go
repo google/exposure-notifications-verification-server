@@ -35,7 +35,7 @@ func TestAdminMobileApps(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}

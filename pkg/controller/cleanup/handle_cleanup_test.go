@@ -42,7 +42,7 @@ func TestHandleCleanup(t *testing.T) {
 	}
 	tokenSigningKey := keys.TestSigningKey(t, keyManager)
 
-	h, err := render.New(ctx, "", true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

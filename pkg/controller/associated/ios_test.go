@@ -33,7 +33,7 @@ func TestIOSData(t *testing.T) {
 
 	cfg := &config.RedirectConfig{}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

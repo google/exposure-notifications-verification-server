@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -52,15 +51,10 @@ func TestHandleActivate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleActivate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -74,7 +68,7 @@ func TestHandleActivate(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleActivate()
 
 		ctx := ctx
@@ -108,7 +102,7 @@ func TestHandleActivate(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleActivate()
 
 		ctx := ctx
@@ -155,7 +149,7 @@ func TestHandleActivate(t *testing.T) {
 		}
 		signingKey := list[0]
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleActivate()
 
 		ctx := ctx

@@ -31,7 +31,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
@@ -66,12 +65,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := mobileapps.New(harness.Database, h)
+		c := mobileapps.New(harness.Database, harness.Renderer)
 		handler := c.HandleUpdate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -90,12 +84,7 @@ func TestHandleUpdate(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := mobileapps.New(harness.Database, h)
+		c := mobileapps.New(harness.Database, harness.Renderer)
 
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)
@@ -131,12 +120,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := mobileapps.New(harness.Database, h)
+		c := mobileapps.New(harness.Database, harness.Renderer)
 
 		mux := mux.NewRouter()
 		mux.Handle("/{id}", c.HandleUpdate()).Methods(http.MethodPut)

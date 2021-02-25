@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 	"github.com/lib/pq"
 )
@@ -47,15 +46,10 @@ func TestHandleSettings(t *testing.T) {
 	}
 	realm.AbusePreventionEnabled = true
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -66,7 +60,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("missing_upsert_permission", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -102,7 +96,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -157,7 +151,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -228,7 +222,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -314,7 +308,7 @@ func TestHandleSettings(t *testing.T) {
 
 				realm := database.NewRealmWithDefaults(fmt.Sprintf("security_bad_cidrs_%s", tc.field))
 
-				c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+				c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 				handler := c.HandleSettings()
 
 				ctx := ctx
@@ -363,7 +357,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -415,7 +409,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -463,7 +457,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -506,7 +500,7 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -541,7 +535,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -585,7 +579,7 @@ func TestHandleSettings(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx

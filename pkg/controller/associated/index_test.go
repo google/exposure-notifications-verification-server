@@ -18,7 +18,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -36,8 +35,7 @@ func TestIndex(t *testing.T) {
 
 	// Create config.
 	cfg := &config.RedirectConfig{
-		AssetsPath: filepath.Join(project.Root(), "cmd", "enx-redirect", "assets"),
-		DevMode:    true,
+		DevMode: true,
 		HostnameConfig: map[string]string{
 			"bad":   "nope",
 			"empty": "aa",

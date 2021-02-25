@@ -29,7 +29,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -52,11 +51,7 @@ func TestHandleEvents(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEvents()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -75,12 +70,7 @@ func TestHandleEvents(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEvents()
 
 		ctx := ctx

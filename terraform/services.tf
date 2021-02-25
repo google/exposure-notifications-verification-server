@@ -105,7 +105,6 @@ locals {
   }
 
   enx_redirect_config = {
-    ASSETS_PATH        = "/assets"
     HOSTNAME_TO_REGION = join(",", [for o in concat(var.enx_redirect_domain_map, var.enx_redirect_domain_map_add) : format("%s:%s", o.host, o.region)])
   }
 

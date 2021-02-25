@@ -92,7 +92,7 @@ func realMain(ctx context.Context) error {
 	defer db.Close()
 
 	// Create the renderer
-	h, err := render.New(ctx, "", cfg.DevMode)
+	h, err := render.New(ctx, nil, cfg.DevMode)
 	if err != nil {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}

@@ -19,7 +19,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -33,7 +32,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +153,7 @@ func TestRequireMembership(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -26,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -41,15 +40,10 @@ func TestHandleEnableExpress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEnableExpress()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -63,7 +57,7 @@ func TestHandleEnableExpress(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEnableExpress()
 
 		ctx := ctx
@@ -96,7 +90,7 @@ func TestHandleEnableExpress(t *testing.T) {
 	t.Run("already_enabled", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEnableExpress()
 
 		ctx := ctx
@@ -129,7 +123,7 @@ func TestHandleEnableExpress(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEnableExpress()
 
 		ctx := ctx
@@ -170,7 +164,7 @@ func TestHandleEnableExpress(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleEnableExpress()
 
 		ctx := ctx

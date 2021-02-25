@@ -52,7 +52,7 @@ func TestHandleExpire_ExpireCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +153,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}

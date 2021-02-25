@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -39,9 +38,7 @@ func TestServer(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	cfg := &config.ServerConfig{
-		LocalesPath: filepath.Join(project.Root(), "internal", "i18n", "locales"),
-	}
+	cfg := &config.ServerConfig{}
 	db := &database.Database{}
 	cacher, err := cache.NewNoop()
 	if err != nil {

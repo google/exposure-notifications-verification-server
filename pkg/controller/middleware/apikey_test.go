@@ -25,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 func TestRequireAPIKey(t *testing.T) {
@@ -59,11 +58,6 @@ func TestRequireAPIKey(t *testing.T) {
 		APIKeyType: database.APIKeyTypeStats,
 	}
 	wrongAPIKey, err := realm.CreateAuthorizedApp(db, wrongAuthApp, database.SystemTest)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +137,7 @@ func TestRequireAPIKey(t *testing.T) {
 			}
 
 			w := httptest.NewRecorder()
-			handler := middleware.RequireAPIKey(cacher, tc.db, h, []database.APIKeyType{
+			handler := middleware.RequireAPIKey(cacher, tc.db, harness.Renderer, []database.APIKeyType{
 				database.APIKeyTypeAdmin,
 			})(next)
 

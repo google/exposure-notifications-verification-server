@@ -57,7 +57,7 @@ func APIServer(
 	r.Use(obs)
 
 	// Create the renderer
-	h, err := render.New(ctx, "", cfg.DevMode)
+	h, err := render.New(ctx, nil, cfg.DevMode)
 	if err != nil {
 		return nil, closer, fmt.Errorf("failed to create renderer: %w", err)
 	}
