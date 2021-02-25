@@ -25,10 +25,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/gofrs/flock"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -64,13 +64,17 @@ const (
 // ApproxTime is a compare helper for clock skew.
 var ApproxTime = cmp.Options{cmpopts.EquateApproxTime(1 * time.Second)}
 
+// testDatabaseLockPath is the path to the lockfile on disk. Note that we cannot
+// instantiate the lock here because each instance must be unique or else it
+// thinks it's already locked.
+var testDatabaseLockPath = project.Root("db.lock")
+
 // TestInstance is a wrapper around the Docker-based database instance.
 type TestInstance struct {
 	pool      *dockertest.Pool
 	container *dockertest.Resource
 
-	db     *Database
-	dbLock sync.Mutex
+	db *Database
 
 	tmpdir     string
 	skipReason string
@@ -97,7 +101,20 @@ func MustTestInstance() *TestInstance {
 //
 // All database tests can be skipped by running `go test -short` or by setting
 // the `SKIP_DATABASE_TESTS` environment variable.
-func NewTestInstance() (*TestInstance, error) {
+func NewTestInstance() (instance *TestInstance, err error) {
+	lock := flock.New(testDatabaseLockPath)
+
+	if err = lock.Lock(); err != nil {
+		err = fmt.Errorf("failed to acquire lock: %w", err)
+		return
+	}
+	defer func() {
+		if err = lock.Unlock(); err != nil {
+			err = fmt.Errorf("failed to unlock: %w", err)
+			return
+		}
+	}()
+
 	// Querying for -short requires flags to be parsed.
 	if !flag.Parsed() {
 		flag.Parse()
@@ -105,88 +122,77 @@ func NewTestInstance() (*TestInstance, error) {
 
 	// Do not create an instance in -short mode.
 	if testing.Short() {
-		return &TestInstance{
+		instance = &TestInstance{
 			skipReason: "🚧 Skipping database tests (-short flag provided)!",
-		}, nil
+		}
+		return
 	}
 
 	// Do not create an instance if database tests are explicitly skipped.
 	if skip, _ := strconv.ParseBool(os.Getenv("SKIP_DATABASE_TESTS")); skip {
-		return &TestInstance{
+		instance = &TestInstance{
 			skipReason: "🚧 Skipping database tests (SKIP_DATABASE_TESTS is set)!",
-		}, nil
+		}
+		return
 	}
 
 	ctx := context.Background()
 
-	// Create the pool.
-	pool, err := dockertest.NewPool("")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create database docker pool: %w", err)
-	}
-
-	// Determine the container image to use.
-	repository, tag, err := postgresRepo()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine database repository: %w", err)
-	}
-
-	// Start the actual container.
-	container, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: repository,
-		Tag:        tag,
-		Env: []string{
-			"LANG=C",
-			"POSTGRES_DB=" + databaseName,
-			"POSTGRES_USER=" + databaseUser,
-			"POSTGRES_PASSWORD=" + databasePassword,
-		},
-	}, func(c *docker.HostConfig) {
-		c.AutoRemove = true
-		c.RestartPolicy = docker.RestartPolicy{Name: "no"}
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to start database container: %w", err)
-	}
-
-	// Stop the container after its been running for too long. No since test suite
-	// should take super long.
-	if err := container.Expire(120); err != nil {
-		return nil, fmt.Errorf("failed to expire database container: %w", err)
+	// If USE_REMOTE_POSTGRES is set, connect to an existing and provisioned
+	// Postgres database. Otherwise, create a local instance using dockertest.
+	var host, port, user, pass, dbname string
+	var pool *dockertest.Pool
+	var container *dockertest.Resource
+	if ok, _ := strconv.ParseBool(os.Getenv("USE_REMOTE_POSTGRES")); ok {
+		host, port, user, pass, dbname = newRemoteTestInstance()
+	} else {
+		host, port, user, pass, dbname, pool, container, err = newDockerTestInstance()
+		if err != nil {
+			err = fmt.Errorf("failed to setup dockertest: %w", err)
+			return
+		}
 	}
 
 	// Generate keys.
-	apiKeyDatabaseHMAC, err := generateKeys(2, 128)
+	var apiKeyDatabaseHMAC []envconfig.Base64Bytes
+	apiKeyDatabaseHMAC, err = generateKeys(2, 128)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate api key database hmac: %w", err)
+		err = fmt.Errorf("failed to generate api key database hmac: %w", err)
+		return
 	}
-	apiKeySignatureHMAC, err := generateKeys(2, 128)
+	var apiKeySignatureHMAC []envconfig.Base64Bytes
+	apiKeySignatureHMAC, err = generateKeys(2, 128)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate api key signature hmac: %w", err)
+		err = fmt.Errorf("failed to generate api key signature hmac: %w", err)
+		return
 	}
-	verificationCodeDatabaseHMAC, err := generateKeys(2, 128)
+	var verificationCodeDatabaseHMAC []envconfig.Base64Bytes
+	verificationCodeDatabaseHMAC, err = generateKeys(2, 128)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate verification code database hmac: %w", err)
+		err = fmt.Errorf("failed to generate verification code database hmac: %w", err)
+		return
 	}
 
 	// Create a temporary directory for the key manager,
-	tmpdir, err := os.MkdirTemp("", "")
+	var tmpdir string
+	tmpdir, err = os.MkdirTemp("", "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to make tmpdir: %w", err)
+		err = fmt.Errorf("failed to make tmpdir: %w", err)
+		return
 	}
 
 	// Build database configuration. This is required to connect to the database
 	// and to run the initial migrations.
-	config := &Config{
+	cfg := &Config{
 		APIKeyDatabaseHMAC:           apiKeyDatabaseHMAC,
 		APIKeySignatureHMAC:          apiKeySignatureHMAC,
 		VerificationCodeDatabaseHMAC: verificationCodeDatabaseHMAC,
 
-		Host:     container.GetBoundIP("5432/tcp"),
-		Port:     container.GetPort("5432/tcp"),
-		User:     databaseUser,
-		Name:     databaseName,
-		Password: databasePassword,
+		Host:     host,
+		Port:     port,
+		User:     user,
+		Name:     dbname,
+		Password: pass,
 		SSLMode:  "disable",
 		Secrets: secrets.Config{
 			Type: "IN_MEMORY",
@@ -202,30 +208,110 @@ func NewTestInstance() (*TestInstance, error) {
 	}
 
 	// Parse configuration and override with test data.
-	db, err := config.Load(ctx)
+	var db *Database
+	db, err = cfg.Load(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load database configuration: %w", err)
+		err = fmt.Errorf("failed to load database configuration: %w", err)
+		return
 	}
 
 	// Try to establish a connection to the database.
-	if err := db.Open(ctx); err != nil {
-		return nil, fmt.Errorf("failed to open database connection: %w", err)
+	if err = db.Open(ctx); err != nil {
+		err = fmt.Errorf("failed to open database connection: %w", err)
+		return
 	}
 	db.db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 	db.db.LogMode(false)
 
 	// Run database migrations.
-	if err := runMigrations(db); err != nil {
-		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	if err = runMigrations(db); err != nil {
+		err = fmt.Errorf("failed to run migrations: %w", err)
+		return
+	}
+
+	// Close connection.
+	if err = db.Close(); err != nil {
+		err = fmt.Errorf("failed to close initial connection: %w", err)
+		return
 	}
 
 	// Return the instance.
-	return &TestInstance{
+	instance = &TestInstance{
 		pool:      pool,
 		container: container,
 		db:        db,
 		tmpdir:    tmpdir,
-	}, nil
+	}
+	return
+}
+
+// newDockerTestInstance creates a new local database instance backed by dockertest.
+func newDockerTestInstance() (host, port, user, pass, dbname string, pool *dockertest.Pool, container *dockertest.Resource, err error) {
+	// Create the pool.
+	pool, err = dockertest.NewPool("")
+	if err != nil {
+		err = fmt.Errorf("failed to create database docker pool: %w", err)
+		return
+	}
+
+	// Determine the container image to use.
+	repository, tag, err := postgresRepo()
+	if err != nil {
+		err = fmt.Errorf("failed to determine database repository: %w", err)
+		return
+	}
+
+	// Start the actual container.
+	container, err = pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: repository,
+		Tag:        tag,
+		Env: []string{
+			"LANG=C",
+			"POSTGRES_DB=" + databaseName,
+			"POSTGRES_USER=" + databaseUser,
+			"POSTGRES_PASSWORD=" + databasePassword,
+		},
+	}, func(c *docker.HostConfig) {
+		c.AutoRemove = true
+		c.RestartPolicy = docker.RestartPolicy{Name: "no"}
+	})
+	if err != nil {
+		err = fmt.Errorf("failed to start database container: %w", err)
+		return
+	}
+
+	// Stop the container after its been running for too long. No since test suite
+	// should take super long.
+	if err = container.Expire(120); err != nil {
+		err = fmt.Errorf("failed to expire database container: %w", err)
+		return
+	}
+
+	host = container.GetBoundIP("5432/tcp")
+	port = container.GetPort("5432/tcp")
+	user = databaseUser
+	pass = databasePassword
+	dbname = databaseName
+	return
+}
+
+// newRemoteTestInstance creates a new instance backed by a remote postgres
+// instance. The postgres instance must be up, running, and accepting
+// connections.
+func newRemoteTestInstance() (host, port, user, pass, dbname string) {
+	envOrDefault := func(key, def string) string {
+		if v, ok := os.LookupEnv(key); ok {
+			return v
+		}
+		return def
+	}
+
+	host = envOrDefault("POSTGRES_HOST", "127.0.0.1")
+	port = envOrDefault("POSTGRES_PORT", "5432")
+	user = envOrDefault("POSTGRES_USER", databaseUser)
+	pass = envOrDefault("POSTGRES_PASSWORD", databasePassword)
+	dbname = envOrDefault("POSTGRES_DB", databaseName)
+	return
 }
 
 // MustClose is like Close except it prints the error to stderr and calls os.Exit.
@@ -252,16 +338,15 @@ func (i *TestInstance) Close() (retErr error) {
 	}()
 
 	defer func() {
+		if i.pool == nil || i.container == nil {
+			return
+		}
+
 		if err := i.pool.Purge(i.container); err != nil {
 			retErr = fmt.Errorf("failed to purge database container: %w", err)
 			return
 		}
 	}()
-
-	if err := i.db.Close(); err != nil {
-		retErr = fmt.Errorf("failed to close connection: %w", err)
-		return
-	}
 
 	return
 }
@@ -309,7 +394,7 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 	ctx := project.TestContext(tb)
 
 	// Clone the template database.
-	newDatabaseName, err := i.clone()
+	newDatabaseName, err := i.clone(ctx)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -345,18 +430,27 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 
 	// Close connection and delete database when done.
 	tb.Cleanup(func() {
-		// Close connection first. It is an error to drop a database with active
-		// connections.
-		if err := db.Close(); err != nil {
-			tb.Errorf("failed to close database connection: %s", err)
+		lock := flock.New(testDatabaseLockPath)
+
+		if err = lock.Lock(); err != nil {
+			tb.Fatalf("failed to acquire lock: %s", err)
 		}
+		defer func() {
+			if err = lock.Unlock(); err != nil {
+				tb.Fatalf("failed to release lock: %s", err)
+			}
+		}()
 
-		// Drop the database to keep the container from running out of resources.
+		if err = i.db.Open(ctx); err != nil {
+			tb.Fatalf("failed to open connection for cleanup: %s", err)
+		}
+		defer func() {
+			if err = i.db.Close(); err != nil {
+				tb.Fatalf("failed to close connection from cloning: %s", err)
+			}
+		}()
+
 		q := fmt.Sprintf(`DROP DATABASE IF EXISTS "%s" WITH (FORCE);`, newDatabaseName)
-
-		i.dbLock.Lock()
-		defer i.dbLock.Unlock()
-
 		if err := i.db.db.Exec(q).Error; err != nil {
 			tb.Errorf("failed to drop database %q: %s", newDatabaseName, err)
 		}
@@ -366,11 +460,36 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 }
 
 // clone creates a new database with a random name from the template instance.
-func (i *TestInstance) clone() (string, error) {
+func (i *TestInstance) clone(ctx context.Context) (name string, err error) {
+	lock := flock.New(testDatabaseLockPath)
+
+	if err = lock.Lock(); err != nil {
+		err = fmt.Errorf("failed to acquire lock: %w", err)
+		return
+	}
+	defer func() {
+		if err = lock.Unlock(); err != nil {
+			err = fmt.Errorf("failed to release lock: %w", err)
+			return
+		}
+	}()
+
+	if err = i.db.Open(ctx); err != nil {
+		err = fmt.Errorf("failed to open connection for cloning: %w", err)
+		return
+	}
+	defer func() {
+		if err = i.db.Close(); err != nil {
+			err = fmt.Errorf("failed to close connection from cloning: %w", err)
+			return
+		}
+	}()
+
 	// Generate a random database name.
-	name, err := randomDatabaseName()
+	name, err = randomDatabaseName()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate random database name: %w", err)
+		err = fmt.Errorf("failed to generate random database name: %w", err)
+		return
 	}
 
 	// Setup context and create SQL command. Unfortunately we cannot use parameter
@@ -378,16 +497,13 @@ func (i *TestInstance) clone() (string, error) {
 	// is not. Fortunately both inputs can be trusted in this case.
 	q := fmt.Sprintf(`CREATE DATABASE "%s" WITH TEMPLATE "%s";`, name, databaseName)
 
-	// Unfortunately postgres does not allow parallel database creation from the
-	// same template, so this is guarded with a lock.
-	i.dbLock.Lock()
-	defer i.dbLock.Unlock()
-
 	// Clone the template database as the new random database name.
-	if err := i.db.db.Exec(q).Error; err != nil {
-		return "", fmt.Errorf("failed to clone template database: %w", err)
+	if err = i.db.db.Exec(q).Error; err != nil {
+		err = fmt.Errorf("failed to clone template database: %w", err)
+		return
 	}
-	return name, nil
+
+	return
 }
 
 // runMigrations runs the migrations for the database.

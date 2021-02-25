@@ -39,8 +39,10 @@ const TestPhoneNumber = "+18558361987"
 var _, self, _, _ = runtime.Caller(0)
 
 // Root returns the filepath to the root of this project.
-func Root() string {
-	return filepath.Join(filepath.Dir(self), "..", "..")
+func Root(more ...string) string {
+	root := []string{filepath.Dir(self), "..", ".."}
+	root = append(root, more...)
+	return filepath.Join(root...)
 }
 
 // AllDigits returns true if all runes of a string are digits.

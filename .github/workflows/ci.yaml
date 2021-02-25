@@ -16,6 +16,22 @@ jobs:
     name: test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:13-alpine
+        env:
+          LANG: C
+          POSTGRES_DB: test-db-template
+          POSTGRES_USER: test-user
+          POSTGRES_PASSWORD: testing123
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Cancel previous
         uses: styfle/cancel-workflow-action@0.7.0
@@ -42,6 +58,15 @@ jobs:
       - name: go-test
         shell: bash
         env:
+          GOMAXPROCS: 14
+
+          USE_REMOTE_POSTGRES: 1
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: test-db-template
+          POSTGRES_USER: test-user
+          POSTGRES_PASSWORD: testing123
+
           # The Twilio credentials are not actually a "secret" (they are test
           # credentials). On pull requests from forks, the secrets are not
           # available, so skip SMS in the e2e tests.

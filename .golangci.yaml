@@ -51,7 +51,6 @@ linters:
   - 'interfacer'
   - 'makezero'
   - 'misspell'
-  - 'nakedret'
   - 'noctx'
   - 'nolintlint'
   - 'paralleltest'

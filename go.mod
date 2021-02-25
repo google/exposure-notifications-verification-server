@@ -13,6 +13,7 @@ require (
 	github.com/chromedp/chromedp v0.6.5
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/color v1.10.0 // indirect
+	github.com/gofrs/flock v0.8.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
 	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect
