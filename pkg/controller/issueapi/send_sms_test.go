@@ -89,6 +89,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
+
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 	db := harness.Database
 
@@ -129,7 +130,7 @@ func TestSMS_sendSMS(t *testing.T) {
 	ctx = controller.WithMembership(ctx, membership)
 
 	harness.Config.SMSSigning.FailClosed = false
-	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 
 	request := &api.IssueCodeRequest{
 		TestType:    "confirmed",

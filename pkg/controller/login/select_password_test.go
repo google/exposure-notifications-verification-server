@@ -15,89 +15,76 @@
 package login_test
 
 import (
-	"context"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleSelectPassword_ShowSelectPassword(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
 
-	_, _, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+	handler := c.HandleShowSelectNewPassword()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/manage-account?mode=resetPassword&oobCode=invalid`),
-		chromedp.WaitVisible(`body#select-password`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
+		}
+	})
 }
 
 func TestHandleSelectPassword_SubmitNewPassword(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	_, user, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = controller.WithSession(ctx, session)
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
 	handler := c.HandleSubmitNewPassword()
 
-	envstest.ExerciseSessionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	// success
-	func() {
-		form := url.Values{}
-		form.Add("email", user.Email)
-		form.Add("password", "SufficientlyComplex&1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
+		envstest.ExerciseSessionMissing(t, handler)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		user, err := harness.Database.FindUser(1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"email":    []string{user.Email},
+			"password": []string{"SufficientlyComplex&1"},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
+	})
 }

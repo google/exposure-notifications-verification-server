@@ -15,39 +15,39 @@
 package login_test
 
 import (
-	"context"
+	"net/http"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleVerifyEmailReceive_ShowVerifyEmail(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
 
-	_, _, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+	handler := c.HandleReceiveVerifyEmail()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/manage-account?mode=verifyEmail&oobCode=invalid`),
-		chromedp.WaitVisible(`body#verify-email-check`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
 }

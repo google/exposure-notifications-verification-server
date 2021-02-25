@@ -15,11 +15,7 @@
 package issueapi_test
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -29,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 var testDatabaseInstance *database.TestInstance
@@ -52,11 +47,7 @@ func TestIssueMalformed(t *testing.T) {
 	}
 	realm.AllowBulkUpload = true
 
-	r, err := render.New(ctx, "", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, r)
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 
 	cases := []struct {
 		name       string
@@ -150,25 +141,13 @@ func TestIssueMalformed(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			localCtx := controller.WithMembership(ctx, tc.membership)
-			var reader io.Reader
-			if tc.req != nil {
-				b, err := json.Marshal(tc.req)
-				if err != nil {
-					t.Fatal(err)
-				}
-				reader = bytes.NewBuffer(b)
-			}
-			req, err := http.NewRequestWithContext(localCtx, http.MethodGet, "http://example.com", reader)
-			req.Header.Add("content-type", "application/json")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ctx := ctx
+			ctx = controller.WithMembership(ctx, tc.membership)
 
-			recorder := httptest.NewRecorder()
-			tc.fn(recorder, req)
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", tc.req)
+			tc.fn(w, r)
 
-			if got, want := recorder.Code, tc.code; got != want {
+			if got, want := w.Code, tc.code; got != want {
 				t.Errorf("incorrect error code. got %d, want %d", got, want)
 			}
 		})

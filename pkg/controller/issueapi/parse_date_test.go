@@ -27,12 +27,12 @@ func TestDateValidation(t *testing.T) {
 
 	utc, err := time.LoadLocation("UTC")
 	if err != nil {
-		t.Fatalf("error loading utc")
+		t.Fatal(err)
 	}
 	var aug1 time.Time
 	aug1, err = time.ParseInLocation(project.RFC3339Date, "2020-08-01", utc)
 	if err != nil {
-		t.Fatalf("error parsing date")
+		t.Fatal(err)
 	}
 
 	cases := []struct {
