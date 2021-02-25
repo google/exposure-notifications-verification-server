@@ -18,7 +18,6 @@ package keyutils
 import (
 	"context"
 	"crypto"
-	"crypto/dsa"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -68,8 +67,6 @@ func (c *PublicKeyCache) GetPublicKey(ctx context.Context, id string, kms keys.K
 
 	switch pub := raw.(type) {
 	case *rsa.PublicKey:
-		return pub, nil
-	case *dsa.PublicKey:
 		return pub, nil
 	case *ecdsa.PublicKey:
 		return pub, nil
