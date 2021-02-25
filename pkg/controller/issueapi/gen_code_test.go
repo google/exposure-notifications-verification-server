@@ -84,7 +84,7 @@ func TestCommitCode(t *testing.T) {
 	}
 	ctx = controller.WithRealm(ctx, realm)
 
-	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 
 	numCodes := 100
 	codes := make([]string, 0, numCodes)
@@ -220,7 +220,7 @@ func TestIssueCode(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+			c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 
 			harness.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
 			result := c.IssueCode(ctx, tc.vCode, realm)

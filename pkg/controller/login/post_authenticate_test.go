@@ -16,7 +16,6 @@ package login_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -36,16 +34,11 @@ func TestHandlePostAuthenticate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+	handler := c.HandlePostAuthenticate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
-		handler := c.HandlePostAuthenticate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -114,9 +107,6 @@ func TestHandlePostAuthenticate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
-			handler := c.HandlePostAuthenticate()
-
 			ctx := ctx
 			ctx = controller.WithSession(ctx, &sessions.Session{})
 			ctx = controller.WithMembership(ctx, &database.Membership{
@@ -125,13 +115,8 @@ func TestHandlePostAuthenticate(t *testing.T) {
 				Permissions: tc.perms,
 			})
 
-			r := httptest.NewRequest(http.MethodGet, "/", nil)
-			r = r.Clone(ctx)
-
-			w := httptest.NewRecorder()
-
+			w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 			handler.ServeHTTP(w, r)
-			w.Flush()
 
 			if got, want := w.Code, http.StatusSeeOther; got != want {
 				t.Errorf("Expected %d to be %d", got, want)

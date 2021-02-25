@@ -16,75 +16,58 @@ package login_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleSession_HandleSubmit(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	_, _, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ctx = controller.WithSession(ctx, session)
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, h)
+	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
 	handler := c.HandleCreateSession()
 
-	envstest.ExerciseSessionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	// session requires form token
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
+		envstest.ExerciseSessionMissing(t, handler)
+	})
+
+	t.Run("missing_id_token", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusBadRequest; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	})
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+	t.Run("missing_session_info", func(t *testing.T) {
+		t.Parallel()
 
-		if result.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"idToken": []string{"abcd1234"},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusUnauthorized; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
-
-	// session info missing (because localauth requires extra info in the cookie)
-	func() {
-		form := url.Values{}
-		form.Set("idToken", "foo")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
-		}
-	}()
+	})
 }

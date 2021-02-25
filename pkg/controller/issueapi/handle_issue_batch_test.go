@@ -15,10 +15,8 @@
 package issueapi_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -28,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 )
 
@@ -67,12 +64,7 @@ func TestIssueBatch(t *testing.T) {
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	tzMinOffset := 0
 
-	h, err := render.New(ctx, "", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, h)
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 	handler := c.HandleBatchIssueAPI()
 
 	cases := []struct {
@@ -187,21 +179,11 @@ func TestIssueBatch(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var b bytes.Buffer
-			if err := json.NewEncoder(&b).Encode(tc.request); err != nil {
-				t.Fatal(err)
-			}
-
-			ctx := controller.WithRealm(ctx, realm)
+			ctx := ctx
+			ctx = controller.WithRealm(ctx, realm)
 			ctx = controller.WithAuthorizedApp(ctx, authApp)
-			r, err := http.NewRequestWithContext(ctx, http.MethodPost, "/", &b)
-			if err != nil {
-				t.Fatal(err)
-			}
-			r.Header.Set("Accept", "application/json")
-			r.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
 
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", tc.request)
 			handler.ServeHTTP(w, r)
 
 			if got, want := w.Code, tc.httpStatusCode; got != want {

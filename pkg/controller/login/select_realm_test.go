@@ -15,61 +15,150 @@
 package login_test
 
 import (
-	"context"
+	"net/http"
+	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	t.Run("no_realms", func(t *testing.T) {
+		t.Parallel()
 
-	_, user, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+		handler := c.HandleSelectRealm()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+		ctx := project.TestContext(t)
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{})
+		ctx = controller.WithMemberships(ctx, []*database.Membership{})
 
-	// Member of one realm
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/select-realm`),
-		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Body.String(), "not a member of any realms"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
 
-	// Member of two realms
+	t.Run("no_realms_system_admin", func(t *testing.T) {
+		t.Parallel()
 
-	realm2 := database.NewRealmWithDefaults("another realm")
-	if err := harness.Database.SaveRealm(realm2, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	if err := user.AddToRealm(harness.Database, realm2, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/login/select-realm`),
-		chromedp.WaitVisible(`body#select-realm`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+		handler := c.HandleSelectRealm()
+
+		ctx := project.TestContext(t)
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithUser(ctx, &database.User{
+			SystemAdmin: true,
+		})
+		ctx = controller.WithMemberships(ctx, []*database.Membership{})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Header().Get("Location"), "/admin"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	t.Run("single_realm", func(t *testing.T) {
+		t.Parallel()
+
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+		handler := c.HandleSelectRealm()
+
+		session := &sessions.Session{
+			Values: make(map[interface{}]interface{}),
+		}
+		realm := &database.Realm{}
+		user := &database.User{}
+
+		controller.StoreSessionRealm(session, realm)
+
+		ctx := project.TestContext(t)
+		ctx = controller.WithSession(ctx, session)
+		ctx = controller.WithUser(ctx, user)
+		ctx = controller.WithMemberships(ctx, []*database.Membership{
+			{
+				User:  user,
+				Realm: realm,
+			},
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Header().Get("Location"), "/login/post-authenticate"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
+		}
+	})
+
+	t.Run("multi_realm", func(t *testing.T) {
+		t.Parallel()
+
+		harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
+		handler := c.HandleSelectRealm()
+
+		session := &sessions.Session{
+			Values: make(map[interface{}]interface{}),
+		}
+		realm := &database.Realm{}
+		user := &database.User{}
+
+		controller.StoreSessionRealm(session, realm)
+
+		ctx := project.TestContext(t)
+		ctx = controller.WithSession(ctx, session)
+		ctx = controller.WithUser(ctx, user)
+		ctx = controller.WithMemberships(ctx, []*database.Membership{
+			{
+				User:  user,
+				Realm: realm,
+			},
+			{
+				User:  user,
+				Realm: &database.Realm{},
+			},
+			{
+				User:  user,
+				Realm: &database.Realm{},
+			},
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Body.String(), "select a realm"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
+		}
+	})
 }

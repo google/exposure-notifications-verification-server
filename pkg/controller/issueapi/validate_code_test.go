@@ -58,8 +58,6 @@ func TestValidate(t *testing.T) {
 	authApp := &database.AuthorizedApp{
 		Model: gorm.Model{ID: 123},
 	}
-	ctx = controller.WithAuthorizedApp(ctx, authApp)
-	ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
 	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
 
@@ -171,6 +169,10 @@ func TestValidate(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
+			ctx := ctx
+			ctx = controller.WithAuthorizedApp(ctx, authApp)
+			ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
 			verCode, result := c.BuildVerificationCode(ctx, &tc.request, realm)
 			if verCode != nil {

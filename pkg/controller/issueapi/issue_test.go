@@ -61,8 +61,11 @@ func TestIssueOne(t *testing.T) {
 	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
 		t.Fatal(err)
 	}
-	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, nil)
+
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
+
 	cases := []struct {
 		name           string
 		request        api.IssueCodeRequest
