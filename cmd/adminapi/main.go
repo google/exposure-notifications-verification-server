@@ -21,6 +21,8 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
@@ -33,12 +35,10 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
-
-	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().
 		With("build_id", buildinfo.BuildID).

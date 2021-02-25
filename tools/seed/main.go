@@ -24,6 +24,8 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
+	"os/signal"
+	"syscall"
 	"time"
 
 	firebase "firebase.google.com/go"
@@ -40,7 +42,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 
 	"github.com/sethvargo/go-envconfig"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 var flagStats = flag.Bool("stats", false, "generate codes and statistics")
@@ -48,7 +49,7 @@ var flagStats = flag.Bool("stats", false, "generate codes and statistics")
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().Named("seed")
 	ctx = logging.WithLogger(ctx, logger)

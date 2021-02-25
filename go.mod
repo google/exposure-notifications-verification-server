@@ -1,6 +1,6 @@
 module github.com/google/exposure-notifications-verification-server
 
-go 1.15
+go 1.16
 
 require (
 	cloud.google.com/go v0.77.0
@@ -48,7 +48,6 @@ require (
 	github.com/sethvargo/go-password v0.2.0
 	github.com/sethvargo/go-redisstore v0.3.0-opencensus
 	github.com/sethvargo/go-retry v0.1.0
-	github.com/sethvargo/go-signalcontext v0.1.0
 	github.com/sethvargo/zapw v0.1.0
 	github.com/sirupsen/logrus v1.7.1 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect

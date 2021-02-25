@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -67,7 +67,7 @@ func (c *Client) ChangePasswordWithCode(ctx context.Context, code, newPassword s
 	defer resp.Body.Close()
 
 	status := resp.StatusCode
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 	}

@@ -15,7 +15,7 @@
 package database
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"reflect"
 	"testing"
@@ -72,7 +72,7 @@ func exerciseValidation(t *testing.T, i validateable, structField, field string)
 
 	// Create db
 	var db gorm.DB
-	db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 
 	// Run the validation.
 	_ = i.BeforeSave(&gorm.DB{})

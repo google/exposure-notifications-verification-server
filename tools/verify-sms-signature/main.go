@@ -22,11 +22,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 const (
@@ -44,7 +45,7 @@ var (
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().Named("verify-sms-signature")
 	ctx = logging.WithLogger(ctx, logger)

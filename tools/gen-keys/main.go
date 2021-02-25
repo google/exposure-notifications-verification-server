@@ -20,19 +20,19 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().Named("gen-keys")
 	ctx = logging.WithLogger(ctx, logger)

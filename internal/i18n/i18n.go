@@ -17,7 +17,7 @@ package i18n
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/leonelquinteros/gotext"
@@ -103,7 +103,7 @@ func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
 // load loads the locales into the LocaleMap. Callers must take out a mutex
 // before calling.
 func (l *LocaleMap) load() error {
-	entries, err := ioutil.ReadDir(l.path)
+	entries, err := os.ReadDir(l.path)
 	if err != nil {
 		return fmt.Errorf("failed to load locales: %w", err)
 	}

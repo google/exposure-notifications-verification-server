@@ -15,7 +15,7 @@
 package redirect_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -137,7 +137,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusNotFound; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +161,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusNotFound; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -185,7 +185,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusNotFound; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -209,7 +209,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusNotFound; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -234,7 +234,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusSeeOther; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -264,7 +264,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusNotFound; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -289,7 +289,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusSeeOther; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -319,7 +319,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusSeeOther; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -348,7 +348,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusSeeOther; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -377,7 +377,7 @@ func TestIndex(t *testing.T) {
 		defer resp.Body.Close()
 
 		if got, want := resp.StatusCode, http.StatusSeeOther; got != want {
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
