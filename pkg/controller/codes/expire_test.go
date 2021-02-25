@@ -15,39 +15,31 @@
 package codes_test
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleExpire_ExpireCode(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cookie, err := harness.SessionCookie(session)
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,47 +52,85 @@ func TestHandleExpire_ExpireCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vc := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       false,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := harness.Database.SaveVerificationCode(vc, realm); err != nil {
+	locales, err := i18n.Load(harness.Config.LocalesPath)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	c := codes.NewServer(harness.Config, harness.Database, harness.Renderer)
+	handler := middleware.ProcessLocale(locales)(c.HandleExpirePage())
 
-	confirmErrCh := envstest.AutoConfirmDialogs(taskCtx, true)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/`+vc.UUID),
-		chromedp.WaitVisible(`body#codes-show`, chromedp.ByQuery),
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
-		chromedp.Click(`#code-expire`, chromedp.ByQuery),
-		chromedp.WaitVisible(`body#codes-show`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
 
-	if err := <-confirmErrCh; err != nil {
-		t.Fatal(err)
-	}
+		c := codes.NewServer(harness.Config, harness.BadDatabase, harness.Renderer)
+		handler := middleware.ProcessLocale(locales)(c.HandleExpirePage())
 
-	now := time.Now().UTC()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        &database.User{},
+			Permissions: rbac.CodeExpire | rbac.CodeRead,
+		})
 
-	if code, err := realm.FindVerificationCodeByUUID(harness.Database, vc.UUID); err != nil {
-		t.Fatal(err)
-	} else if code.ExpiresAt.After(now) {
-		t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
-	}
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"uuid": "aaa-bbb-ccc-ddd"})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		code := &database.VerificationCode{
+			RealmID:       realm.ID,
+			Code:          "00000001",
+			LongCode:      "00000001ABC",
+			Claimed:       false,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+		}
+		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        &database.User{},
+			Permissions: rbac.CodeExpire | rbac.CodeRead,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"uuid": code.UUID})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+
+		record, err := realm.FindVerificationCodeByUUID(harness.Database, code.UUID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if now := time.Now().UTC(); record.ExpiresAt.After(now) {
+			t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
+		}
+	})
 }
 
 func TestHandleExpireAPI_ExpireCode(t *testing.T) {
@@ -108,9 +138,9 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, _, _, err := harness.ProvisionAndLogin()
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,116 +153,113 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vc := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       false,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-		IssuingAppID:  authApp.ID,
-	}
-	if err := harness.Database.SaveVerificationCode(vc, realm); err != nil {
+	locales, err := i18n.Load(harness.Config.LocalesPath)
+	if err != nil {
 		t.Fatal(err)
 	}
 
-	config := &config.AdminAPIServerConfig{}
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
-	c := codes.NewAPI(ctx, config, harness.Database, h)
-	handler := c.HandleExpireAPI()
+	c := codes.NewServer(harness.Config, harness.Database, harness.Renderer)
+	handler := middleware.ProcessLocale(locales)(c.HandleExpireAPI())
 
-	// not-authorized
-	func() {
-		b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
+	t.Run("unauthorized", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, nil)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: "123e4567-e89b-12d3-a456-426614174000",
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusUnauthorized; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("not_found", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: "123e4567-e89b-12d3-a456-426614174000",
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusNotFound; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("bad_uuid", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: "aaa-bbb-ccc",
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusNotFound; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("bad_request", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", map[string]string{
+			"hello": "world",
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusBadRequest; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		code := &database.VerificationCode{
+			RealmID:       realm.ID,
+			Code:          "00000001",
+			LongCode:      "00000001ABC",
+			Claimed:       false,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+			IssuingAppID:  authApp.ID,
+		}
+		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+			t.Fatal(err)
+		}
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: code.UUID,
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+
+		record, err := realm.FindVerificationCodeByUUID(harness.Database, code.UUID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
-
-		if result.StatusCode != http.StatusUnauthorized {
-			t.Errorf("expected status 401 Unauthorized, got %d", result.StatusCode)
-		}
-	}()
-
-	// successful request
-	ctx = controller.WithAuthorizedApp(ctx, authApp)
-	func() {
-		b, err := json.Marshal(api.ExpireCodeRequest{UUID: vc.UUID})
-		if err != nil {
-			t.Fatal(err)
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
-
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
-		}
-
-		now := time.Now().UTC()
-
-		if code, err := realm.FindVerificationCodeByUUID(harness.Database, vc.UUID); err != nil {
-			t.Fatal(err)
-		} else if code.ExpiresAt.After(now) {
+		if now := time.Now().UTC(); record.ExpiresAt.After(now) {
 			t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
 		}
-	}()
-
-	// invalid request
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader("invalid request"))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-		if result.StatusCode != http.StatusBadRequest {
-			t.Errorf("expected status 400 BadRequest, got %d", result.StatusCode)
-		}
-	}()
-
-	// not-found uuid
-	func() {
-		b, err := json.Marshal(api.ExpireCodeRequest{UUID: "123e4567-e89b-12d3-a456-426614174000"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", bytes.NewReader(b))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close() // likely no-op for test, but we have a presubmit looking for it
-
-		if result.StatusCode != http.StatusNotFound {
-			t.Errorf("expected status 404 notFound, got %d", result.StatusCode)
-		}
-	}()
+	})
 }

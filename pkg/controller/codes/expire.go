@@ -59,6 +59,13 @@ func (c *Controller) HandleExpirePage() http.Handler {
 		ctx := r.Context()
 		vars := mux.Vars(r)
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
@@ -71,13 +78,6 @@ func (c *Controller) HandleExpirePage() http.Handler {
 
 		currentRealm := membership.Realm
 		currentUser := membership.User
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
 
 		// Retrieve once to check permissions.
 		code, _, apiErr := c.checkCodeStatus(r, vars["uuid"])
