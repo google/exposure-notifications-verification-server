@@ -30,9 +30,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// This goes to the value of a <input type="datetime-local">
-const rfc3339PartialLocal = "2006-01-02T15:04:05"
-
 func TestAdminEvents(t *testing.T) {
 	t.Parallel()
 

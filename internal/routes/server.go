@@ -226,7 +226,7 @@ func Server(
 		sub.Handle("/issue", issueapiController.HandleIssueUI()).Methods(http.MethodPost)
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueUI()).Methods(http.MethodPost)
 
-		codesController := codes.NewServer(ctx, cfg, db, h)
+		codesController := codes.NewServer(cfg, db, h)
 		codesRoutes(sub, codesController)
 	}
 

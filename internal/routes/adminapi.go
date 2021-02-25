@@ -111,7 +111,7 @@ func AdminAPI(
 		sub.Handle("/issue", issueapiController.HandleIssueAPI()).Methods(http.MethodPost)
 		sub.Handle("/batch-issue", issueapiController.HandleBatchIssueAPI()).Methods(http.MethodPost)
 
-		codesController := codes.NewAPI(ctx, cfg, db, h)
+		codesController := codes.NewAPI(cfg, db, h)
 		sub.Handle("/checkcodestatus", codesController.HandleCheckCodeStatus()).Methods(http.MethodPost)
 		sub.Handle("/expirecode", codesController.HandleExpireAPI()).Methods(http.MethodPost)
 	}

@@ -15,55 +15,100 @@
 package codes_test
 
 import (
-	"context"
+	"net/http"
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleIndex_ShowRecentCodes(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+	locales, err := i18n.Load(harness.Config.LocalesPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := codes.NewServer(harness.Config, harness.Database, harness.Renderer)
+	handler := middleware.ProcessLocale(locales)(c.HandleIndex())
 
-	vc := &database.VerificationCode{
-		RealmID:       realm.ID,
-		Code:          "00000001",
-		LongCode:      "00000001ABC",
-		Claimed:       true,
-		TestType:      "confirmed",
-		ExpiresAt:     time.Now().Add(time.Hour),
-		LongExpiresAt: time.Now().Add(time.Hour),
-	}
-	if err := harness.Database.SaveVerificationCode(vc, realm); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/status`),
-		chromedp.WaitVisible(`body#codes-index`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("internal_error", func(t *testing.T) {
+		t.Parallel()
+
+		c := codes.NewServer(harness.Config, harness.BadDatabase, harness.Renderer)
+		handler := middleware.ProcessLocale(locales)(c.HandleIndex())
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       &database.Realm{},
+			User:        &database.User{},
+			Permissions: rbac.CodeRead,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusInternalServerError; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		code := &database.VerificationCode{
+			RealmID:       realm.ID,
+			Code:          "00000001",
+			LongCode:      "00000001ABC",
+			Claimed:       true,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+		}
+		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       &database.Realm{},
+			User:        &database.User{},
+			Permissions: rbac.CodeRead,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
 }
