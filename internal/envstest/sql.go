@@ -19,7 +19,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 
 	"github.com/jinzhu/gorm"
@@ -34,7 +34,7 @@ func NewFailingDatabase() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 	db.LogMode(false)
 	return db
 }

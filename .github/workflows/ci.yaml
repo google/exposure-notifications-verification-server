@@ -27,13 +27,16 @@ jobs:
 
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.15'
+          go-version: '1.16'
 
       - uses: actions/cache@v2
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-test-${{ hashFiles('**/go.sum') }}
           restore-keys: |
+            ${{ runner.os }}-go-test-
             ${{ runner.os }}-go-
 
       - name: go-test
@@ -76,10 +79,25 @@ jobs:
       - name: Install pcregrep
         run: sudo apt-get -yqq install pcregrep
 
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-lint-
+            ${{ runner.os }}-go-
+
       - name: go-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.36.0
+          version: 'v1.37'
+          skip-go-installation: true
           only-new-issues: true
 
       - name: zapw-logger

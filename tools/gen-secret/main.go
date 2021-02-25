@@ -22,11 +22,12 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	"github.com/sethvargo/go-signalcontext"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
@@ -39,7 +40,7 @@ var (
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().Named("gen-secret")
 	ctx = logging.WithLogger(ctx, logger)

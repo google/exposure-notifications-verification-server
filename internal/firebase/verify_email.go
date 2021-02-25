@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -58,7 +58,7 @@ func (c *Client) SendEmailVerification(ctx context.Context, idToken string) erro
 	defer resp.Body.Close()
 
 	if status := resp.StatusCode; status != http.StatusOK {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("response was %d, but failed to read body: %w", status, err)
 		}

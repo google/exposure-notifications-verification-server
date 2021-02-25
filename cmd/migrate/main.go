@@ -19,6 +19,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -28,7 +30,6 @@ import (
 
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sethvargo/go-envconfig"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 var (
@@ -39,7 +40,7 @@ var (
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().
 		With("build_id", buildinfo.BuildID).

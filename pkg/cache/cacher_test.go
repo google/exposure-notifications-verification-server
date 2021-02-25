@@ -170,7 +170,9 @@ func TestMultiKeyFunc(t *testing.T) {
 	}
 }
 
-type hashFailer struct{}
+type hashFailer struct {
+	r int64
+}
 
 func (h *hashFailer) Write(_ []byte) (int, error) { return 0, fmt.Errorf("nope") }
 func (h *hashFailer) Sum(_ []byte) []byte         { return nil }
@@ -179,7 +181,10 @@ func (h *hashFailer) Size() int                   { return 0 }
 func (h *hashFailer) BlockSize() int              { return 0 }
 
 var hashFailerFn = func() hash.Hash {
-	return &hashFailer{}
+	return &hashFailer{
+		// Force the struct to have non-object equality on each initialization.
+		r: time.Now().Unix(),
+	}
 }
 
 func TestHashKeyFunc(t *testing.T) {

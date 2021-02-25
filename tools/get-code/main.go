@@ -19,14 +19,14 @@ import (
 	"context"
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-
-	"github.com/sethvargo/go-signalcontext"
 )
 
 var (
@@ -42,7 +42,7 @@ var (
 func main() {
 	flag.Parse()
 
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	if os.Getenv("LOG_LEVEL") == "" {
 		os.Setenv("LOG_LEVEL", "DEBUG")

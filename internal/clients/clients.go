@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -176,7 +175,7 @@ func (c *client) do(req *http.Request, out interface{}) (*http.Response, error) 
 	errPrefix := fmt.Sprintf("%s %s - %d", strings.ToUpper(req.Method), req.URL.String(), resp.StatusCode)
 
 	r := io.LimitReader(resp.Body, c.maxBodySize)
-	body, err := ioutil.ReadAll(r)
+	body, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to read body: %w", errPrefix, err)
 	}

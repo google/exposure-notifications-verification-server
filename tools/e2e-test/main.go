@@ -17,16 +17,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/sethvargo/go-signalcontext"
 )
 
 func main() {
-	ctx, done := signalcontext.OnInterrupt()
+	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	logger := logging.NewLoggerFromEnv().Named("e2e-test")
 	ctx = logging.WithLogger(ctx, logger)

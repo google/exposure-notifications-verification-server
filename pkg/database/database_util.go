@@ -20,7 +20,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -170,7 +170,7 @@ func NewTestInstance() (*TestInstance, error) {
 	}
 
 	// Create a temporary directory for the key manager,
-	tmpdir, err := ioutil.TempDir("", "")
+	tmpdir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to make tmpdir: %w", err)
 	}
@@ -211,7 +211,7 @@ func NewTestInstance() (*TestInstance, error) {
 	if err := db.Open(ctx); err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
-	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 	db.db.LogMode(false)
 
 	// Run database migrations.
@@ -340,7 +340,7 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatalf("failed to open database connection: %s", err)
 	}
-	db.db.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+	db.db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 	db.db.LogMode(false)
 
 	// Close connection and delete database when done.

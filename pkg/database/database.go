@@ -21,7 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"sort"
 	"strconv"
@@ -208,7 +208,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 	// Disable the gorm logger here unless were in debug mode. The logs for
 	// callbacks are really verbose and unnecessary.
 	if !c.Debug {
-		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(ioutil.Discard, "", 0)})
+		rawDB.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 		defer rawDB.SetLogger(gormLogger)
 	}
 

@@ -16,7 +16,6 @@ package envstest
 
 import (
 	"context"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -118,7 +117,7 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 	}
 
 	// Create the key manager.
-	tmpdir, err := ioutil.TempDir("", "")
+	tmpdir, err := os.MkdirTemp("", "")
 	if err != nil {
 		tb.Fatal(err)
 	}
