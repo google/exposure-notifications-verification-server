@@ -72,6 +72,15 @@ func TestGormZapLogger(t *testing.T) {
 			exp: "DEBUG\tthe british are coming",
 		},
 		{
+			name: "error",
+			in: []interface{}{
+				"error",
+				"pkg/database/mobile_app.go:235",
+				fmt.Errorf("something is broken"),
+			},
+			exp: "ERROR\tgorm error\t{\"caller\": \"pkg/database/mobile_app.go:235\", \"error\": \"something is broken\"}",
+		},
+		{
 			name: "log",
 			in: []interface{}{
 				"log",
