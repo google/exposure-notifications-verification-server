@@ -106,6 +106,7 @@ resource "google_cloud_run_service" "server" {
             local.firebase_config,
             local.gcp_config,
             local.rate_limit_config,
+            local.server_config,
             local.session_config,
             local.signing_config,
             local.issue_config,
