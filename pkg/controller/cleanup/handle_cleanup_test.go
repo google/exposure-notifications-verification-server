@@ -49,7 +49,7 @@ func TestHandleCleanup(t *testing.T) {
 
 	config := &config.CleanupConfig{
 		TokenSigning: config.TokenSigningConfig{
-			TokenSigningKeys: []string{tokenSigningKey},
+			TokenSigningKey: tokenSigningKey,
 		},
 		SigningTokenKeyMaxAge: 1 * time.Second,
 	}

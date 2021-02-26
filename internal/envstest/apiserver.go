@@ -100,10 +100,9 @@ func NewAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstan
 			CertificateAudience:   "test-aud",
 		},
 		TokenSigning: config.TokenSigningConfig{
-			Keys:               *harness.KeyManagerConfig,
-			TokenSigningKeys:   []string{tokenSigningKey},
-			TokenSigningKeyIDs: []string{"v1"},
-			TokenIssuer:        "test-iss",
+			Keys:            *harness.KeyManagerConfig,
+			TokenSigningKey: tokenSigningKey,
+			TokenIssuer:     "test-iss",
 		},
 
 		Features: config.FeatureConfig{

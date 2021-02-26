@@ -281,7 +281,7 @@ func realMain(ctx context.Context) error {
 	if !ok {
 		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", tokenKeyManager)
 	}
-	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.ParentKeyName(), database.SystemTest); err != nil {
+	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.TokenSigningKey, database.SystemTest); err != nil {
 		return fmt.Errorf("failed to rotate token signing key: %w", err)
 	}
 

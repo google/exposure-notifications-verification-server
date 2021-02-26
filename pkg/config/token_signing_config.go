@@ -28,76 +28,24 @@ type TokenSigningConfig struct {
 	// configuration.
 	Keys keys.Config `env:", prefix=TOKEN_"`
 
-	// TokenSigningKeys is the parent token signing key (not the actual signing
-	// version). It is an array for backwards-compatibility, but in practice it
-	// should only have one element.
-	//
-	// Previously it was a list of all possible signing key versions, but those
-	// have moved into the database.
-	//
-	// TODO(sethvargo): Convert to string in 0.22+.
-	TokenSigningKeys []string `env:"TOKEN_SIGNING_KEY, required"`
-
-	// TokenSigningKeyIDs specifies the list of kids, corresponding to the
-	// TokenSigningKey
-	//
-	// TODO(sethvargo): Remove in 0.22+.
-	//
-	// Deprecated: moved into the database.
-	TokenSigningKeyIDs []string `env:"TOKEN_SIGNING_KEY_ID, default=v1"`
+	// TokenSigningKey is the parent token signing key (not the actual signing
+	// version).
+	TokenSigningKey string `env:"TOKEN_SIGNING_KEY, required"`
 
 	// TokenIssuer is the `iss` field on the JWT.
 	TokenIssuer string `env:"TOKEN_ISSUER, default=diagnosis-verification-example"`
 }
 
-// ParentKeyName returns the name of the parent key.
-func (t *TokenSigningConfig) ParentKeyName() string {
-	// Validation prevents this slice from being empty.
-	value := t.TokenSigningKeys[0]
-
-	// This is Google-specific, but that's the only platform where we can
-	// meaningfully detect this.
-	if idx := strings.Index(t.TokenSigningKeys[0], "/cryptoKeyVersions"); idx != -1 {
-		value = value[0:idx]
-	}
-
-	return value
-}
-
-// FindKeyByKid attempts to find the matching signing key for the given kid. The
-// boolean indicates whether the search was successful.
-//
-// TODO(sethvargo): remove in 0.22+.
-func (t *TokenSigningConfig) FindKeyByKid(kid string) (string, bool) {
-	idx := -1
-	for i, v := range t.TokenSigningKeyIDs {
-		if v == kid {
-			idx = i
-			break
-		}
-	}
-
-	if idx == -1 {
-		return "", false
-	}
-
-	// This is safe to index because the validation check ensures the lengths are
-	// equal.
-	return t.TokenSigningKeys[idx], true
-}
-
 // Validate validates the configuration.
 func (t *TokenSigningConfig) Validate() error {
-	if len(t.TokenSigningKeys) == 0 {
-		return fmt.Errorf("TOKEN_SIGNING_KEY must have at least one element")
+	if t.TokenSigningKey == "" {
+		return fmt.Errorf("TOKEN_SIGNING_KEY is required")
 	}
-
-	if len(t.TokenSigningKeyIDs) == 0 {
-		return fmt.Errorf("TOKEN_SIGNING_KEY_ID must have at least one entry")
+	if strings.Contains(t.TokenSigningKey, ",") {
+		return fmt.Errorf("TOKEN_SIGNING_KEY can only contain one element")
 	}
-
-	if len(t.TokenSigningKeys) != len(t.TokenSigningKeyIDs) {
-		return fmt.Errorf("TOKEN_SIGNING_KEY and TOKEN_SIGNING_KEY_ID must be lists of the same length")
+	if strings.Contains(t.TokenSigningKey, "/cryptoKeyVersions") {
+		return fmt.Errorf("TOKEN_SIGNING_KEY must be the path to a parent crypto key (not the version)")
 	}
 
 	return nil

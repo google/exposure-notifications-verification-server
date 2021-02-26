@@ -46,8 +46,7 @@ func TestHandleRotate(t *testing.T) {
 
 	cfg := &config.RotationConfig{
 		TokenSigning: config.TokenSigningConfig{
-			TokenSigningKeys:   []string{tokenSigningKey},
-			TokenSigningKeyIDs: []string{"v1"},
+			TokenSigningKey: tokenSigningKey,
 		},
 		TokenSigningKeyMaxAge: 30 * time.Second,
 	}
@@ -120,8 +119,7 @@ func TestHandleRotate(t *testing.T) {
 
 		cfg := &config.RotationConfig{
 			TokenSigning: config.TokenSigningConfig{
-				TokenSigningKeys:   []string{tokenSigningKey},
-				TokenSigningKeyIDs: []string{"v1"},
+				TokenSigningKey: tokenSigningKey,
 			},
 			TokenSigningKeyMaxAge: 30 * time.Second,
 			MinTTL:                5 * time.Minute,
