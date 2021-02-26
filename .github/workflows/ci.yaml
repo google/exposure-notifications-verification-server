@@ -98,7 +98,6 @@ jobs:
         with:
           version: 'v1.37'
           skip-go-installation: true
-          only-new-issues: true
 
       - name: zapw-logger
         shell: bash
