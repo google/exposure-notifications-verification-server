@@ -9,7 +9,7 @@ on:
     - main
 
 env:
-  GOMAXPROCS: 7
+  GOMAXPROCS: 30
 
 jobs:
   test:
