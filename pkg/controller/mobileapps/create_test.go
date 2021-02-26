@@ -15,15 +15,12 @@
 package mobileapps_test
 
 import (
-	"context"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -31,8 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/sessions"
-
-	"github.com/chromedp/chromedp"
 )
 
 func TestHandleCreate(t *testing.T) {
@@ -41,21 +36,16 @@ func TestHandleCreate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	realm, user, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := mobileapps.New(harness.Database, harness.Renderer)
+	handler := c.HandleCreate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
-		handler := c.HandleCreate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -65,10 +55,7 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
+		c := mobileapps.New(harness.BadDatabase, harness.Renderer)
 		handler := c.HandleCreate()
 
 		ctx := ctx
@@ -79,35 +66,22 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"name":   []string{"banana"},
 			"url":    []string{"http://example.com"},
 			"os":     []string{"1"},
 			"app_id": []string{"com.example.app"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		c := mobileapps.New(harness.Database, harness.Renderer)
-		handler := c.HandleCreate()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -116,15 +90,8 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPost, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -134,33 +101,36 @@ func TestHandleCreate(t *testing.T) {
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps/new`),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"name":   []string{"Example mobile app"},
+			"url":    []string{"https://example.com"},
+			"os":     []string{strconv.Itoa(int(database.OSTypeIOS))},
+			"app_id": []string{"com.example.app"},
+		})
+		handler.ServeHTTP(w, r)
 
-			chromedp.SetValue(`input#name`, "Example mobile app", chromedp.ByQuery),
-			chromedp.SetValue(`input#url`, "https://example.com", chromedp.ByQuery),
-			chromedp.SetValue(`select#os`, strconv.Itoa(int(database.OSTypeIOS)), chromedp.ByQuery),
-			chromedp.SetValue(`input#app-id`, "com.example.app", chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#mobileapps-show`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Header().Get("Location"), "/realm/mobile-apps/1"; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 
 		record, err := realm.FindMobileApp(harness.Database, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if got, want := record.RealmID, realm.ID; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}

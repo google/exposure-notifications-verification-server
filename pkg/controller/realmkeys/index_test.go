@@ -15,39 +15,49 @@
 package realmkeys_test
 
 import (
-	"context"
+	"net/http"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleIndex(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	_, _, session, err := harness.ProvisionAndLogin()
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
+	handler := c.HandleIndex()
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/keys`),
-		chromedp.WaitVisible(`body#keys`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       &database.Realm{},
+			User:        &database.User{},
+			Permissions: rbac.SettingsRead,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+	})
 }

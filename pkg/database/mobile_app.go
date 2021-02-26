@@ -234,7 +234,7 @@ func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
 			Where("id = ?", a.ID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
-			return fmt.Errorf("failed to get existing mobile app")
+			return fmt.Errorf("failed to get existing mobile app: %w", err)
 		}
 
 		// Save the app

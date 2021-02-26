@@ -15,242 +15,85 @@
 package realmadmin_test
 
 import (
-	"context"
+	"net/http"
+	"net/url"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleSettings_SMS(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create a system configuration.
-	if err := harness.Database.SaveSMSConfig(&database.SMSConfig{
-		TwilioAccountSid: "sid",
-		TwilioAuthToken:  "token",
-	}); err != nil {
-		t.Fatal(err)
-	}
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleSettings())
 
-	// Create a system phone number.
-	smsFromNumber := &database.SMSFromNumber{
-		Label: "Default",
-		Value: "+15005550006",
-	}
-	if err := harness.Database.CreateOrUpdateSMSFromNumbers([]*database.SMSFromNumber{smsFromNumber}); err != nil {
-		t.Fatal(err)
-	}
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	// Mint a cookie for the session.
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+		envstest.ExerciseSessionMissing(t, handler)
+	})
 
-	// Create a browser runner.
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("updates", func(t *testing.T) {
+		t.Parallel()
 
-	var twilioAccountSid string
-	var twilioAuthToken string
-	var twilioFromNumber string
+		wantAccountSid := "abc123"
+		wantAuthToken := "def456"
+		wantFromNumber := "+11234567890"
 
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        &database.User{},
+			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
+		})
 
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#sms`),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"sms":                []string{"1"},
+			"twilio_account_sid": []string{wantAccountSid},
+			"twilio_auth_token":  []string{wantAuthToken},
+			"twilio_from_number": []string{wantFromNumber},
 
-		// Wait for render.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
+			"sms_text_label_0":    []string{"Default SMS template"},
+			"sms_text_template_0": []string{"This is your [code]"},
 
-		// Fill out the form.
-		chromedp.SetValue(`input#twilio-account-sid`, "accountSid", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-auth-token`, "authToken", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "+1234567890", chromedp.ByQuery),
+			"sms_text_label_1":    []string{"Custom SMS template"},
+			"sms_text_template_1": []string{"This is your [longcode]"},
+		})
+		handler.ServeHTTP(w, r)
 
-		// Click submit.
-		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
 
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-
-		chromedp.Value(`input#twilio-account-sid`, &twilioAccountSid, chromedp.ByQuery),
-		chromedp.Value(`input#twilio-auth-token`, &twilioAuthToken, chromedp.ByQuery),
-		chromedp.Value(`input#twilio-from-number`, &twilioFromNumber, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check form
-	if got, want := twilioAccountSid, "accountSid"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := twilioAuthToken, project.PasswordSentinel; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := twilioFromNumber, "+1234567890"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-
-	{
-		// Check database
 		smsConfig, err := realm.SMSConfig(harness.Database)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if smsConfig == nil {
-			t.Fatal("expected smsConfig")
+		if smsConfig.TwilioAccountSid != wantAccountSid {
+			t.Errorf("expected %q to be %q", smsConfig.TwilioAccountSid, wantAccountSid)
 		}
-
-		if got, want := smsConfig.TwilioAccountSid, "accountSid"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if smsConfig.TwilioAuthToken != wantAuthToken {
+			t.Errorf("expected %q to be %q", smsConfig.TwilioAuthToken, wantAuthToken)
 		}
-		if got, want := smsConfig.TwilioAuthToken, "authToken"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if smsConfig.TwilioFromNumber != wantFromNumber {
+			t.Errorf("expected %q to be %q", smsConfig.TwilioFromNumber, wantFromNumber)
 		}
-		if got, want := smsConfig.TwilioFromNumber, "+1234567890"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-	}
-
-	// Update
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
-
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#sms`),
-
-		// Wait for render.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#twilio-account-sid`, "accountSid-new", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "+1987654320", chromedp.ByQuery),
-
-		// Click submit.
-		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	{
-		// Check database again
-		smsConfig, err := realm.SMSConfig(harness.Database)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if smsConfig == nil {
-			t.Fatal("expected smsConfig")
-		}
-
-		if got, want := smsConfig.TwilioAccountSid, "accountSid-new"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-		if got, want := smsConfig.TwilioAuthToken, "authToken"; got != want {
-			// should not change
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-		if got, want := smsConfig.TwilioFromNumber, "+1987654320"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-	}
-
-	// Delete
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
-
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#sms`),
-
-		// Wait for render.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#twilio-account-sid`, "", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-auth-token`, "", chromedp.ByQuery),
-		chromedp.SetValue(`input#twilio-from-number`, "", chromedp.ByQuery),
-
-		// Click submit.
-		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check database again
-	if _, err := realm.SMSConfig(harness.Database); !database.IsNotFound(err) {
-		t.Fatal("expected smsConfig to be deleted")
-	}
-
-	// Update realm to be allowed to use the system config.
-	realm.CanUseSystemSMSConfig = true
-	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	// Update to use system config
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
-
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#sms`),
-
-		// Wait for render.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.Click(`input#use-system-sms-config`, chromedp.ByQuery),
-		chromedp.SendKeys(`select#sms-from-number-id`, `Default`),
-		chromedp.SendKeys(`select#sms-country`, `Mexico`),
-
-		// Click submit.
-		chromedp.Click(`input#update-sms`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#sms`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	{
-		realm, err := harness.Database.FindRealm(realm.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if got, want := realm.UseSystemSMSConfig, true; got != want {
-			t.Errorf("expected %t to be %t", got, want)
-		}
-
-		if got, want := realm.SMSFromNumberID, smsFromNumber.ID; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-
-		if got, want := realm.SMSCountry, "mx"; got != want {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-	}
+	})
 }

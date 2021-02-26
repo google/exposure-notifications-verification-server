@@ -15,15 +15,10 @@
 package mobileapps_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -40,21 +35,16 @@ func TestHandleDisable(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	realm, user, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := mobileapps.New(harness.Database, harness.Renderer)
+	handler := c.HandleDisable()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
-		handler := c.HandleDisable()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -69,13 +59,8 @@ func TestHandleDisable(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
-
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", c.HandleDisable()).Methods(http.MethodPut)
+		c := mobileapps.New(harness.BadDatabase, harness.Renderer)
+		handler := c.HandleDisable()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -85,24 +70,16 @@ func TestHandleDisable(t *testing.T) {
 			Permissions: rbac.MobileAppWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/1", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
-		mux.ServeHTTP(w, r)
-		w.Flush()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "1"})
+		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
-		}
 	})
 
-	t.Run("disables", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
 		app := &database.MobileApp{
@@ -116,27 +93,23 @@ func TestHandleDisable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppWrite,
+		})
 
-		// Click "confirm" when it pops up.
-		confirmErrCh := envstest.AutoConfirmDialogs(taskCtx, true)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", app.ID)})
+		handler.ServeHTTP(w, r)
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps`),
-			chromedp.WaitVisible(`body#mobileapps-index`, chromedp.ByQuery),
-
-			chromedp.Click(fmt.Sprintf(`a#disable-mobileapp-%d`, app.ID), chromedp.ByQuery),
-
-			chromedp.WaitVisible(`body#mobileapps-index`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-
-		if err := <-confirmErrCh; err != nil {
-			t.Fatal(err)
+		if got, want := w.Header().Get("Location"), "/realm/mobile-apps"; got != want {
+			t.Errorf("expected %s to be %s", got, want)
 		}
 
 		record, err := realm.FindMobileApp(harness.Database, app.ID)

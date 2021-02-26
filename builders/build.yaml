@@ -79,6 +79,7 @@ steps:
   - '-o=./bin/'
   - './cmd/...'
   waitFor:
+  - 'restore-cache'
   - 'mkdir-bin'
 
 - id: 'save-cache'

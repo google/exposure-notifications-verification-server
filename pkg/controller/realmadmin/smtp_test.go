@@ -15,174 +15,84 @@
 package realmadmin_test
 
 import (
-	"context"
+	"net/http"
+	"net/url"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-
-	"github.com/chromedp/chromedp"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
-func TestHandleSettings_SMTP(t *testing.T) {
+func TestHandleSettings_Email(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, _, session, err := harness.ProvisionAndLogin()
+	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Mint a cookie for the session.
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleSettings())
 
-	// Create a browser runner.
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	var smtpAccount string
-	var smtpPassword string
-	var smtpHost string
+		envstest.ExerciseSessionMissing(t, handler)
+	})
 
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
+	t.Run("updates", func(t *testing.T) {
+		t.Parallel()
 
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#email`),
+		wantSMTPAccount := "my-account"
+		wantSMTPPassword := "my-password"
+		wantSMTPHost := "example.com"
+		wantSMTPPort := "123"
 
-		// Wait for render.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        &database.User{},
+			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
+		})
 
-		// Fill out the form.
-		chromedp.SetValue(`input#smtp-account`, "myAccount", chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-password`, "superSecret", chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-host`, "1.1.1.1", chromedp.ByQuery),
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"email":         []string{"1"},
+			"smtp_account":  []string{wantSMTPAccount},
+			"smtp_password": []string{wantSMTPPassword},
+			"smtp_host":     []string{wantSMTPHost},
+			"smtp_port":     []string{wantSMTPPort},
+		})
+		handler.ServeHTTP(w, r)
 
-		// Click submit.
-		chromedp.Click(`input#update-smtp`, chromedp.ByQuery),
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
 
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
-
-		chromedp.Value(`input#smtp-account`, &smtpAccount, chromedp.ByQuery),
-		chromedp.Value(`input#smtp-password`, &smtpPassword, chromedp.ByQuery),
-		chromedp.Value(`input#smtp-host`, &smtpHost, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check form
-	if got, want := smtpAccount, "myAccount"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := smtpPassword, project.PasswordSentinel; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-	if got, want := smtpHost, "1.1.1.1"; got != want {
-		t.Errorf("Expected %q to be %q", got, want)
-	}
-
-	{
-		// Check database
 		emailConfig, err := realm.EmailConfig(harness.Database)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if emailConfig == nil {
-			t.Fatal("expected emailConfig")
+		if emailConfig.SMTPAccount != wantSMTPAccount {
+			t.Errorf("expected %q to be %q", emailConfig.SMTPAccount, wantSMTPAccount)
 		}
-
-		if got, want := emailConfig.SMTPAccount, "myAccount"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if emailConfig.SMTPPassword != wantSMTPPassword {
+			t.Errorf("expected %q to be %q", emailConfig.SMTPPassword, wantSMTPPassword)
 		}
-		if got, want := emailConfig.SMTPPassword, "superSecret"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if emailConfig.SMTPHost != wantSMTPHost {
+			t.Errorf("expected %q to be %q", emailConfig.SMTPHost, wantSMTPHost)
 		}
-		if got, want := emailConfig.SMTPHost, "1.1.1.1"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+		if emailConfig.SMTPPort != wantSMTPPort {
+			t.Errorf("expected %q to be %q", emailConfig.SMTPPort, wantSMTPPort)
 		}
-	}
-
-	// Update
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
-
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#email`),
-
-		// Wait for render.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#smtp-account`, "myAccount-new", chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-host`, "1.1.1.1-new", chromedp.ByQuery),
-
-		// Click submit.
-		chromedp.Click(`input#update-smtp`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	{
-		// Check database again
-		emailConfig, err := realm.EmailConfig(harness.Database)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if emailConfig == nil {
-			t.Fatal("expected emailConfig")
-		}
-
-		if got, want := emailConfig.SMTPAccount, "myAccount-new"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-		if got, want := emailConfig.SMTPPassword, "superSecret"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-		if got, want := emailConfig.SMTPHost, "1.1.1.1-new"; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
-		}
-	}
-
-	// Delete
-	if err := chromedp.Run(taskCtx,
-		// Pre-authenticate the user.
-		browser.SetCookie(cookie),
-
-		// Visit page.
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/settings#email`),
-
-		// Wait for render.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
-
-		// Fill out the form.
-		chromedp.SetValue(`input#smtp-account`, "", chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-password`, "", chromedp.ByQuery),
-		chromedp.SetValue(`input#smtp-host`, "", chromedp.ByQuery),
-
-		// Click submit.
-		chromedp.Click(`input#update-smtp`, chromedp.ByQuery),
-
-		// Wait for the page to reload.
-		chromedp.WaitVisible(`div#email`, chromedp.ByQuery),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check database again
-	if _, err := realm.EmailConfig(harness.Database); !database.IsNotFound(err) {
-		t.Fatal("expected emailConfig to be deleted")
-	}
+	})
 }
