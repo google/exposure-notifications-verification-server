@@ -85,19 +85,7 @@ func (c *Controller) validateToken(ctx context.Context, verToken string) (string
 
 		tokenSigningKey, err := c.db.FindTokenSigningKeyByUUIDCached(ctx, c.cacher, kid)
 		if err != nil {
-			if database.IsNotFound(err) {
-				// Fallback to searching the pre-database keys, which were specified via
-				// environment variables.
-				//
-				// TODO(sethvargo): remove in 0.22+
-				keyID, ok := c.config.TokenSigning.FindKeyByKid(kid)
-				if !ok {
-					return nil, fmt.Errorf("no key corresponds to kid %q", kid)
-				}
-				tokenSigningKey = &database.TokenSigningKey{KeyVersionID: keyID}
-			} else {
-				return nil, fmt.Errorf("failed to lookup token signing key: %w", err)
-			}
+			return nil, fmt.Errorf("failed to lookup token signing key: %w", err)
 		}
 
 		publicKey, err := c.pubKeyCache.GetPublicKey(ctx, tokenSigningKey.KeyVersionID, c.kms)

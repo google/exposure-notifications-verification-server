@@ -86,10 +86,8 @@ locals {
     SMS_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
     SMS_FAIL_CLOSED = false
 
-    # TODO(sethvargo): in 0.22+, this should be the parent crypto key (not the
-    # crypto key version).
     TOKEN_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
-    TOKEN_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.token-signer-version.id, "//cloudkms.googleapis.com/v1/")
+    TOKEN_SIGNING_KEY = trimprefix(google_kms_crypto_key.token-signer.id, "//cloudkms.googleapis.com/v1/")
   }
 
   e2e_runner_config = {

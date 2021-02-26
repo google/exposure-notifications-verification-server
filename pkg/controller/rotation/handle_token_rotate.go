@@ -78,7 +78,7 @@ func (c *Controller) HandleRotate() http.Handler {
 				}
 			}
 
-			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.ParentKeyName(), RotationActor)
+			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.TokenSigningKey, RotationActor)
 			if err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to rotate token signing key: %w", err))
 				result = enobs.ResultError("FAILED")
