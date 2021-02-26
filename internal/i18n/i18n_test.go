@@ -25,8 +25,6 @@ import (
 	"github.com/leonelquinteros/gotext"
 )
 
-var localesPath = filepath.Join(project.Root(), "internal", "i18n", "locales")
-
 // TestI18n_matching constructs the superset of all i18n strings and then
 // ensures all translation files define said strings.
 func TestI18n_matching(t *testing.T) {

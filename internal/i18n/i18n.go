@@ -28,9 +28,6 @@ import (
 const (
 	// defaultLocale is the default fallback locale when all else fails.
 	defaultLocale = "en"
-
-	// defaultDomain is the domain to load.
-	defaultDomain = "default"
 )
 
 //go:embed locales/**/*
