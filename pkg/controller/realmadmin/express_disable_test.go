@@ -16,7 +16,6 @@ package realmadmin_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -33,18 +32,13 @@ func TestHandleDisableExpress(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	_, user, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	handler := c.HandleDisableExpress()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleDisableExpress()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -54,10 +48,7 @@ func TestHandleDisableExpress(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+		c := realmadmin.New(harness.Config, harness.BadDatabase, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleDisableExpress()
 
 		ctx := ctx
@@ -66,32 +57,20 @@ func TestHandleDisableExpress(t *testing.T) {
 			Realm: &database.Realm{
 				EnableENExpress: true,
 			},
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 
 	t.Run("not_enabled", func(t *testing.T) {
 		t.Parallel()
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleDisableExpress()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -99,18 +78,12 @@ func TestHandleDisableExpress(t *testing.T) {
 			Realm: &database.Realm{
 				EnableENExpress: false,
 			},
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -123,27 +96,18 @@ func TestHandleDisableExpress(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleDisableExpress()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
 				EnableENExpress: true,
 			},
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -153,7 +117,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		}
 	})
 
-	t.Run("disables_express", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
 		realm := database.NewRealmWithDefaults("realmy2")
@@ -165,35 +129,28 @@ func TestHandleDisableExpress(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleDisableExpress()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
+		}
+		if got, want := w.Header().Get("Location"), "/realm/settings"; got != want {
+			t.Errorf("expected %s to be %s", got, want)
 		}
 
 		realm, err := harness.Database.FindRealm(realm.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if got, want := realm.EnableENExpress, false; got != want {
 			t.Errorf("expected %t to be %t", got, want)
 		}

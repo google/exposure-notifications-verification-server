@@ -15,18 +15,13 @@
 package mobileapps_test
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -39,21 +34,16 @@ func TestHandleIndex(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	realm, user, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := mobileapps.New(harness.Database, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
-		handler := c.HandleIndex()
 
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
@@ -67,11 +57,8 @@ func TestHandleIndex(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := mobileapps.New(harness.Database, harness.Renderer)
-		handler := c.HandleIndex()
+		c := mobileapps.New(harness.BadDatabase, harness.Renderer)
+		handler := middleware.InjectCurrentPath()(c.HandleIndex())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -81,24 +68,15 @@ func TestHandleIndex(t *testing.T) {
 			Permissions: rbac.MobileAppRead,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
-		}
 	})
 
-	t.Run("lists", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
 		app := &database.MobileApp{
@@ -112,17 +90,19 @@ func TestHandleIndex(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        user,
+			Permissions: rbac.MobileAppRead,
+		})
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/mobile-apps`),
-			chromedp.WaitVisible(`body#mobileapps-index`, chromedp.ByQuery),
-			chromedp.WaitVisible(fmt.Sprintf(`tr#mobileapp-%d`, app.ID), chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 }

@@ -17,9 +17,7 @@ package realmkeys_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
@@ -53,9 +51,13 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 	handler := c.HandleActivate()
 
-	envstest.ExerciseSessionMissing(t, handler)
-	envstest.ExerciseMembershipMissing(t, handler)
-	envstest.ExercisePermissionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
+
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
+	})
 
 	ctx = controller.WithMembership(ctx, &database.Membership{
 		User:        user,
@@ -63,71 +65,54 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		Permissions: rbac.SettingsWrite,
 	})
 
-	// no form bound
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	t.Run("no_form", func(t *testing.T) {
+		t.Parallel()
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", nil)
+		handler.ServeHTTP(w, r)
 
 		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
+	})
 
-	// no key exists
-	func() {
-		form := url.Values{}
-		form.Add("id", "1")
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	t.Run("invalid_key_id", func(t *testing.T) {
+		t.Parallel()
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", &url.Values{
+			"id": []string{"1234567"},
+		})
+		handler.ServeHTTP(w, r)
 
 		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
+	})
 
-	if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	list, err := realm.ListSigningKeys(harness.Database)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
 
-	// success
-	func() {
-		form := url.Values{}
-		form.Add("id", fmt.Sprint(list[0].ID))
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(form.Encode()))
+		if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+		list, err := realm.ListSigningKeys(harness.Database)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", &url.Values{
+			"id": []string{fmt.Sprintf("%d", list[0].ID)},
+		})
+		handler.ServeHTTP(w, r)
 
-		if result.StatusCode != http.StatusSeeOther {
-			t.Errorf("expected status 301 SeeOther, got %d", result.StatusCode)
+		// shows original page with error flash
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
+		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
+			t.Errorf("expected %s to be %s", got, want)
+		}
+	})
 }

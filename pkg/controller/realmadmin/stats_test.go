@@ -15,62 +15,51 @@
 package realmadmin_test
 
 import (
-	"context"
+	"net/http"
 	"testing"
 
-	"github.com/chromedp/chromedp"
-	"github.com/google/exposure-notifications-verification-server/internal/browser"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleStats(t *testing.T) {
 	t.Parallel()
 
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	_, _, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cookie, err := harness.SessionCookie(session)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	handler := c.HandleStats()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		envstest.ExerciseSessionMissing(t, c.HandleStats())
-		envstest.ExerciseMembershipMissing(t, c.HandleStats())
-		envstest.ExercisePermissionMissing(t, c.HandleStats())
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
 	})
 
 	t.Run("renders", func(t *testing.T) {
 		t.Parallel()
 
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       &database.Realm{},
+			User:        &database.User{},
+			Permissions: rbac.StatsRead,
+		})
 
-		errCh := envstest.CaptureJavascriptErrors(taskCtx)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		handler.ServeHTTP(w, r)
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/realm/stats`),
-			chromedp.WaitVisible(`body#realmadmin-stats`, chromedp.ByQuery),
-		); err != nil {
-			t.Fatal(err)
-		}
-
-		select {
-		case err := <-errCh:
-			t.Error(err)
-		default:
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 }

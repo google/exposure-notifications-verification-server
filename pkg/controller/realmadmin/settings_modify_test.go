@@ -17,7 +17,6 @@ package realmadmin_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"strings"
@@ -27,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -46,11 +46,11 @@ func TestHandleSettings(t *testing.T) {
 	}
 	realm.AbusePreventionEnabled = true
 
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	handler := middleware.InjectCurrentPath()(c.HandleSettings())
+
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -60,9 +60,6 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("missing_upsert_permission", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -71,20 +68,11 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnauthorized; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Unauthorized"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 
@@ -96,9 +84,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -107,20 +92,13 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"general":         []string{"1"},
 			"name":            []string{"new-realmy"},
 			"region_code":     []string{"TT2"},
 			"welcome_message": []string{"hello there"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -130,7 +108,6 @@ func TestHandleSettings(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if got, want := realm.Name, "new-realmy"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
@@ -151,9 +128,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -162,7 +136,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"codes":              []string{"1"},
 			"allowed_test_types": []string{"2"},
 			"require_date":       []string{"1"},
@@ -171,15 +145,8 @@ func TestHandleSettings(t *testing.T) {
 			"code_duration":      []string{"60"},
 			"long_code_length":   []string{"22"},
 			"long_code_duration": []string{"24"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -189,7 +156,6 @@ func TestHandleSettings(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if got, want := realm.AllowedTestTypes, database.TestTypeConfirmed; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
@@ -222,9 +188,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -233,7 +196,7 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"security":                       []string{"1"},
 			"email_verified_mode":            []string{"2"},
 			"mfa_mode":                       []string{"2"},
@@ -243,15 +206,8 @@ func TestHandleSettings(t *testing.T) {
 			"allowed_cidrs_adminapi":         []string{"0.0.0.0/0\n1.1.1.1/0"},
 			"allowed_cidrs_apiserver":        []string{"0.0.0.0/0\n2.2.2.2/0"},
 			"allowed_cidrs_server":           []string{"0.0.0.0/0\n3.3.3.3/0"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -261,7 +217,6 @@ func TestHandleSettings(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		if got, want := realm.EmailVerifiedMode, database.MFAOptional; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
@@ -308,9 +263,6 @@ func TestHandleSettings(t *testing.T) {
 
 				realm := database.NewRealmWithDefaults(fmt.Sprintf("security_bad_cidrs_%s", tc.field))
 
-				c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-				handler := c.HandleSettings()
-
 				ctx := ctx
 				ctx = controller.WithSession(ctx, &sessions.Session{})
 				ctx = controller.WithMembership(ctx, &database.Membership{
@@ -319,18 +271,11 @@ func TestHandleSettings(t *testing.T) {
 					Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 				})
 
-				r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+				w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 					"security": []string{"1"},
 					tc.field:   []string{"bad"},
-				}.Encode()))
-				r = r.Clone(ctx)
-				r.Header.Set("Accept", "text/html")
-				r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-				w := httptest.NewRecorder()
-
+				})
 				handler.ServeHTTP(w, r)
-				w.Flush()
 
 				if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 					t.Errorf("Expected %d to be %d", got, want)
@@ -357,9 +302,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -368,20 +310,13 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"abuse_prevention":              []string{"1"},
 			"abuse_prevention_enabled":      []string{"1"},
 			"abuse_prevention_limit_factor": []string{"10.5"},
 			"abuse_prevention_burst":        []string{"100"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -409,9 +344,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -420,19 +352,12 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"sms":                 []string{"1"},
 			"sms_text_label_0":    []string{"Default SMS template"},
 			"sms_text_template_0": []string{"[longcode]"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -457,9 +382,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -468,20 +390,13 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"sms":                 []string{"1"},
 			"twilio_account_sid":  []string{"abcd1234"},
 			"sms_text_label_0":    []string{"Default SMS template"},
 			"sms_text_template_0": []string{"[longcode]"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -500,9 +415,6 @@ func TestHandleSettings(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -511,18 +423,11 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"email":        []string{"1"},
 			"smtp_account": []string{"abcd1234"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -535,9 +440,6 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
-		handler := c.HandleSettings()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -546,18 +448,11 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(url.Values{
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"codes":       []string{"1"},
 			"code_length": []string{"2"},
-		}.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -576,10 +471,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+		c := realmadmin.New(harness.Config, harness.BadDatabase, harness.RateLimiter, harness.Renderer)
 		handler := c.HandleSettings()
 
 		ctx := ctx
@@ -590,14 +482,8 @@ func TestHandleSettings(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
