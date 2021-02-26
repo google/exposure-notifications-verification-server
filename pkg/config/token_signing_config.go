@@ -44,6 +44,9 @@ func (t *TokenSigningConfig) Validate() error {
 	if strings.Contains(t.TokenSigningKey, ",") {
 		return fmt.Errorf("TOKEN_SIGNING_KEY can only contain one element")
 	}
+	if strings.Contains(t.TokenSigningKey, "/cryptoKeyVersions") {
+		return fmt.Errorf("TOKEN_SIGNING_KEY must be the path to a parent crypto key (not the version)")
+	}
 
 	return nil
 }
