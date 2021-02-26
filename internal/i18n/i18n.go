@@ -16,8 +16,9 @@
 package i18n
 
 import (
+	"embed"
 	"fmt"
-	"os"
+	"path"
 	"sync"
 
 	"github.com/leonelquinteros/gotext"
@@ -32,12 +33,14 @@ const (
 	defaultDomain = "default"
 )
 
+//go:embed locales/**/*
+var localesFS embed.FS
+
 // LocaleMap is a map of locale names to their data structure.
 type LocaleMap struct {
-	data    map[string]*gotext.Locale
+	data    map[string]gotext.Translator
 	matcher language.Matcher
 
-	path       string
 	reload     bool
 	reloadLock sync.Mutex
 }
@@ -48,7 +51,7 @@ type LocaleMap struct {
 // If reloading is enabled, the locales are reloaded before lookup. If reloading
 // fails, it panics. For this reason, you should not enable reloading in
 // production.
-func (l *LocaleMap) Lookup(ids ...string) *gotext.Locale {
+func (l *LocaleMap) Lookup(ids ...string) gotext.Translator {
 	if l.reload {
 		l.reloadLock.Lock()
 		defer l.reloadLock.Unlock()
@@ -103,20 +106,25 @@ func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
 // load loads the locales into the LocaleMap. Callers must take out a mutex
 // before calling.
 func (l *LocaleMap) load() error {
-	entries, err := os.ReadDir(l.path)
+	entries, err := localesFS.ReadDir("locales")
 	if err != nil {
 		return fmt.Errorf("failed to load locales: %w", err)
 	}
 
-	data := make(map[string]*gotext.Locale, len(entries))
+	data := make(map[string]gotext.Translator, len(entries))
 	names := make([]language.Tag, 0, len(entries))
 	for _, entry := range entries {
 		name := entry.Name()
 		names = append(names, language.Make(name))
 
-		locale := gotext.NewLocale(l.path, name)
-		locale.AddDomain(defaultDomain)
-		data[name] = locale
+		b, err := localesFS.ReadFile(path.Join("locales", name, "default.po"))
+		if err != nil {
+			return fmt.Errorf("failed to read %q: %w", name, err)
+		}
+
+		po := gotext.NewPoTranslator()
+		po.Parse(b)
+		data[name] = po
 	}
 
 	l.data = data
@@ -140,10 +148,8 @@ func WithReloading(v bool) Option {
 //
 // Due to the heavy I/O, callers should cache the resulting value and only call
 // Load when data needs to be refreshed.
-func Load(pth string, opts ...Option) (*LocaleMap, error) {
-	l := &LocaleMap{
-		path: pth,
-	}
+func Load(opts ...Option) (*LocaleMap, error) {
+	l := &LocaleMap{}
 
 	for _, opt := range opts {
 		l = opt(l)

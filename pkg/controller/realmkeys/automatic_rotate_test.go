@@ -28,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -37,11 +36,6 @@ func TestHandleAutomaticRotate(t *testing.T) {
 
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	cfg := &config.ServerConfig{}
 
@@ -52,7 +46,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleAutomaticRotate()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -67,7 +61,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -106,7 +100,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -149,7 +143,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleAutomaticRotate()
 
 		ctx := ctx
@@ -189,7 +183,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleAutomaticRotate()
 
 		realm := database.NewRealmWithDefaults("test")

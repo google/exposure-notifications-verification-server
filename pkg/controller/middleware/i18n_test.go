@@ -17,7 +17,6 @@ package middleware_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
@@ -32,7 +31,7 @@ func TestProcessLocale(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	locales, err := i18n.Load(filepath.Join(project.Root(), "internal", "i18n", "locales"))
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,12 +91,12 @@ func TestProcessLocale(t *testing.T) {
 					t.Fatalf("expected locale to be populated in template map")
 				}
 
-				locale, ok := v.(*gotext.Locale)
+				tr, ok := v.(gotext.Translator)
 				if !ok {
 					t.Fatalf("expected %T to be *gotext.Locale", v)
 				}
 
-				if got, want := locale.Get("nav.issue-code"), tc.exp; got != want {
+				if got, want := tr.Get("nav.issue-code"), tc.exp; got != want {
 					t.Errorf("Expected %q to be %q", got, want)
 				}
 			})).ServeHTTP(w, r)

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -48,7 +49,7 @@ func ENXRedirect(
 	r.Use(obs)
 
 	// Create the renderer
-	h, err := render.New(ctx, cfg.AssetsPath, cfg.DevMode)
+	h, err := render.New(ctx, assets.ENXRedirectFS(), cfg.DevMode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create renderer: %w", err)
 	}

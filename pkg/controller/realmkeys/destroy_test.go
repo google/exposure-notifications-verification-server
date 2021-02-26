@@ -29,7 +29,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/mux"
 )
 
@@ -47,15 +46,11 @@ func TestRealmKeys_SubmitDestroy(t *testing.T) {
 
 	cfg := &config.ServerConfig{}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatalf("failed to create renderer: %v", err)
-	}
 	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, h)
+	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 	handler := c.HandleDestroy()
 
 	envstest.ExerciseSessionMissing(t, handler)

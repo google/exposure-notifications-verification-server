@@ -30,7 +30,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -53,11 +52,7 @@ func TestHandleIndex(t *testing.T) {
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := mobileapps.New(harness.Database, h)
+		c := mobileapps.New(harness.Database, harness.Renderer)
 		handler := c.HandleIndex()
 
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -75,12 +70,7 @@ func TestHandleIndex(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		c := mobileapps.New(harness.Database, h)
+		c := mobileapps.New(harness.Database, harness.Renderer)
 		handler := c.HandleIndex()
 
 		ctx := ctx

@@ -23,8 +23,7 @@ import (
 	"fmt"
 	htmltemplate "html/template"
 	"io"
-	"os"
-	"path/filepath"
+	"io/fs"
 	"reflect"
 	"strconv"
 	"strings"
@@ -75,11 +74,12 @@ type Renderer struct {
 	templates     *htmltemplate.Template
 	textTemplates *texttemplate.Template
 	templatesLock sync.RWMutex
-	templatesRoot string
+
+	fs fs.FS
 }
 
 // New creates a new renderer with the given details.
-func New(ctx context.Context, root string, debug bool) (*Renderer, error) {
+func New(ctx context.Context, fsys fs.FS, debug bool) (*Renderer, error) {
 	logger := logging.FromContext(ctx)
 
 	r := &Renderer{
@@ -90,7 +90,7 @@ func New(ctx context.Context, root string, debug bool) (*Renderer, error) {
 				return bytes.NewBuffer(make([]byte, 0, 1024))
 			},
 		},
-		templatesRoot: root,
+		fs: fsys,
 	}
 
 	// Load initial templates
@@ -130,26 +130,32 @@ func (r *Renderer) loadTemplates() error {
 	r.templatesLock.Lock()
 	defer r.templatesLock.Unlock()
 
-	if r.templatesRoot == "" {
+	if r.fs == nil {
 		return nil
 	}
 
-	tmpl := htmltemplate.New("").
+	htmltmpl := htmltemplate.New("").
 		Option("missingkey=zero").
 		Funcs(templateFuncs())
-	txttmpl := texttemplate.New("").
+
+	texttmpl := texttemplate.New("").
 		Funcs(textFuncs())
-	if err := loadTemplates(tmpl, txttmpl, r.templatesRoot); err != nil {
+
+	if err := loadTemplates(r.fs, htmltmpl, texttmpl); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
 
-	r.templates = tmpl
-	r.textTemplates = txttmpl
+	r.templates = htmltmpl
+	r.textTemplates = texttmpl
 	return nil
 }
 
-func loadTemplates(tmpl *htmltemplate.Template, txttmpl *texttemplate.Template, root string) error {
-	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+func loadTemplates(fsys fs.FS, htmltmpl *htmltemplate.Template, texttmpl *texttemplate.Template) error {
+	// You might be thinking to yourself, wait, why don't you just use
+	// template.ParseFS(fsys, "**/*.html"). Well, still as of Go 1.16, glob
+	// doesn't support shopt globbing, so you still have to walk the entire
+	// filepath.
+	return fs.WalkDir(fsys, ".", func(pth string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -159,14 +165,14 @@ func loadTemplates(tmpl *htmltemplate.Template, txttmpl *texttemplate.Template, 
 		}
 
 		if strings.HasSuffix(info.Name(), ".html") {
-			if _, err := tmpl.ParseFiles(path); err != nil {
-				return fmt.Errorf("failed to parse %s: %w", path, err)
+			if _, err := htmltmpl.ParseFS(fsys, pth); err != nil {
+				return fmt.Errorf("failed to parse %s: %w", pth, err)
 			}
 		}
 
 		if strings.HasSuffix(info.Name(), ".txt") {
-			if _, err := txttmpl.ParseFiles(path); err != nil {
-				return fmt.Errorf("failed to parse %s: %w", path, err)
+			if _, err := texttmpl.ParseFS(fsys, pth); err != nil {
+				return fmt.Errorf("failed to parse %s: %w", pth, err)
 			}
 		}
 
@@ -210,12 +216,12 @@ func disabledIf(v bool) htmltemplate.HTMLAttr {
 // translate accepts a message printer (populated by middleware) and prints the
 // translated text for the given key. If the printer is nil, an error is
 // returned.
-func translate(l *gotext.Locale, key string, vars ...interface{}) (string, error) {
-	if l == nil {
-		return "", fmt.Errorf("missing locale")
+func translate(t gotext.Translator, key string, vars ...interface{}) (string, error) {
+	if t == nil {
+		return "", fmt.Errorf("missing translator")
 	}
 
-	v := l.Get(key, vars...)
+	v := t.Get(key, vars...)
 	if v == "" || v == key {
 		return "", fmt.Errorf("unknown i18n key %q", key)
 	}

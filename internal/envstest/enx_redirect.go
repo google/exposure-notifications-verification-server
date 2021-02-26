@@ -16,10 +16,10 @@ package envstest
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -69,7 +69,6 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 		Database:      *harness.DatabaseConfig,
 		Observability: *harness.ObservabilityConfig,
 		Cache:         *harness.CacheConfig,
-		AssetsPath:    ENXRedirectAssetsPath(),
 		HostnameConfig: map[string]string{
 			"e2e-test.test.local": "e2e-test",
 		},
@@ -89,7 +88,7 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 	}
 
 	// Create the renderer.
-	renderer, err := render.New(ctx, ENXRedirectAssetsPath(), true)
+	renderer, err := render.New(ctx, assets.ENXRedirectFS(), true)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -121,9 +120,4 @@ func (r *ENXRedirectServerConfigResponse) NewServer(tb testing.TB) *ENXRedirectS
 		Renderer:    r.Renderer,
 		Server:      srv,
 	}
-}
-
-// ENXRedirectAssetsPath returns the path to the ENX redirector assets.
-func ENXRedirectAssetsPath() string {
-	return filepath.Join(project.Root(), "cmd", "enx-redirect", "assets")
 }

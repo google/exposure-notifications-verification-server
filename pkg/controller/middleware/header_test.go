@@ -19,7 +19,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -29,7 +28,7 @@ func TestRequireHeader(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +79,7 @@ func TestRequireHeaderValues(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,13 +23,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 func TestHandleStats(t *testing.T) {
 	t.Parallel()
 
-	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
 	_, _, session, err := harness.ProvisionAndLogin()
@@ -42,11 +40,7 @@ func TestHandleStats(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, h)
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

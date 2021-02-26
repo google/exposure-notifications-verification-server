@@ -51,7 +51,7 @@ func TestHandleShow_ShowCodeStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	locales, err := i18n.Load(harness.Config.LocalesPath)
+	locales, err := i18n.Load()
 	if err != nil {
 		t.Fatal(err)
 	}

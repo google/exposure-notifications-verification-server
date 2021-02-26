@@ -294,7 +294,7 @@ steps:
   name: 'docker:19'
   args:
   - 'build'
-  - '--file=builders/enx-redirect.dockerfile'
+  - '--file=builders/service.dockerfile'
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/enx-redirect:${_TAG}'
   - '.'
   waitFor:
@@ -452,7 +452,7 @@ steps:
   name: 'docker:19'
   args:
   - 'build'
-  - '--file=builders/server.dockerfile'
+  - '--file=builders/service.dockerfile'
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/server:${_TAG}'
   - '.'
   waitFor:

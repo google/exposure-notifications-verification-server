@@ -28,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/gorilla/sessions"
 )
 
@@ -45,15 +44,10 @@ func TestHandleEnable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	h, err := render.New(ctx, envstest.ServerAssetsPath(), true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleEnable()
 
 		envstest.ExerciseSessionMissing(t, handler)
@@ -67,7 +61,7 @@ func TestHandleEnable(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 		harness.Database.SetRawDB(envstest.NewFailingDatabase())
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleEnable()
 
 		ctx := ctx
@@ -107,7 +101,7 @@ func TestHandleEnable(t *testing.T) {
 		}
 		realm.UseAuthenticatedSMS = false
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, h)
+		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
 		handler := c.HandleEnable()
 
 		ctx := ctx

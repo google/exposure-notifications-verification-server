@@ -99,7 +99,7 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 	}
 
 	// Create the renderer.
-	renderer, err := render.New(ctx, "", true)
+	renderer, err := render.New(ctx, nil, true)
 	if err != nil {
 		tb.Fatal(err)
 	}

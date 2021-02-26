@@ -34,7 +34,7 @@ func TestHandleSync(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	h, err := render.New(ctx, "", true)
+	h, err := render.New(ctx, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
+	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
@@ -232,9 +232,6 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			EnableAuthenticatedSMS: true,
 		},
 
-		AssetsPath:  ServerAssetsPath(),
-		LocalesPath: LocalesPath(),
-
 		CookieKeys:  config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
 		CSRFAuthKey: randomBytes(tb, 32),
 
@@ -258,7 +255,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 	}
 
 	// Create the renderer.
-	renderer, err := render.New(ctx, ServerAssetsPath(), true)
+	renderer, err := render.New(ctx, assets.ServerFS(), true)
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -334,14 +331,4 @@ func CaptureJavascriptErrors(ctx context.Context) <-chan error {
 	})
 
 	return errCh
-}
-
-// ServerAssetsPath returns the path to the UI server assets.
-func ServerAssetsPath() string {
-	return filepath.Join(project.Root(), "cmd", "server", "assets")
-}
-
-// LocalesPath returns the path to the i18n locales.
-func LocalesPath() string {
-	return filepath.Join(project.Root(), "internal", "i18n", "locales")
 }

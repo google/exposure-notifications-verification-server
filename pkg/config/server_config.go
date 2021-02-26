@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	firebase "firebase.google.com/go"
@@ -86,9 +88,6 @@ type ServerConfig struct {
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
-	AssetsPath  string `env:"ASSETS_PATH, default=./cmd/server/assets"`
-	LocalesPath string `env:"LOCALES_PATH, default=./internal/i18n/locales"`
-
 	// For EN Express, the link will be
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
 	// This repository contains a redirect service that can be used for this purpose.
@@ -107,10 +106,21 @@ type ServerConfig struct {
 
 // NewServerConfig initializes and validates a ServerConfig struct.
 func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
+	logger := logging.FromContext(ctx).Named("ServerConfig")
+
 	var config ServerConfig
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
 	}
+
+	// TODO(sethvargo): remove in 0.24+
+	if v := os.Getenv("ASSETS_PATH"); v != "" {
+		logger.Warnw("ASSETS_PATH is no longer used")
+	}
+	if v := os.Getenv("LOCALES_PATH"); v != "" {
+		logger.Warnw("LOCALES_PATH is no longer used")
+	}
+
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 	return &config, nil

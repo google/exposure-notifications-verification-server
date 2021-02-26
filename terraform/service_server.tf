@@ -100,8 +100,6 @@ resource "google_cloud_run_service" "server" {
 
         dynamic "env" {
           for_each = merge(
-            { "ASSETS_PATH" = "/assets" },
-            { "LOCALES_PATH" = "/locales" },
             local.cache_config,
             local.csrf_config,
             local.database_config,
