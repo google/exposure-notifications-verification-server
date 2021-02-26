@@ -31,6 +31,9 @@ const (
 // SkipE2ESMS controls whether the e2e runners use SMS.
 var SkipE2ESMS, _ = strconv.ParseBool(os.Getenv("E2E_SKIP_SMS"))
 
+// devMode indicates whether the project is running in development mode.
+var devMode, _ = strconv.ParseBool(os.Getenv("DEV_MODE"))
+
 // TestPhoneNumber is a test phone number to use for tests. It's a "real" phone
 // number (Google's support phone number), but none of the tests actually send
 // SMS.
@@ -39,8 +42,10 @@ const TestPhoneNumber = "+18558361987"
 var _, self, _, _ = runtime.Caller(0)
 
 // Root returns the filepath to the root of this project.
-func Root() string {
-	return filepath.Join(filepath.Dir(self), "..", "..")
+func Root(more ...string) string {
+	root := []string{filepath.Dir(self), "..", ".."}
+	root = append(root, more...)
+	return filepath.Join(root...)
 }
 
 // AllDigits returns true if all runes of a string are digits.
@@ -64,4 +69,9 @@ func TestTimeout() time.Duration {
 		return v
 	}
 	return 120 * time.Second
+}
+
+// DevMode indicates whether the project is running in development mode.
+func DevMode() bool {
+	return devMode
 }

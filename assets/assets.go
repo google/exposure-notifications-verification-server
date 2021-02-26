@@ -18,13 +18,20 @@ package assets
 import (
 	"embed"
 	"io/fs"
+	"os"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 //go:embed server server/**/*
 var serverFS embed.FS
 
 // ServerFS returns the file system for the server assets.
-func ServerFS() embed.FS {
+func ServerFS() fs.FS {
+	if project.DevMode() {
+		return os.DirFS(project.Root("assets", "server"))
+	}
+
 	return serverFS
 }
 
@@ -40,6 +47,9 @@ func ServerStaticFS() fs.FS {
 var enxRedirectFS embed.FS
 
 // ENXRedirectFS returns the file system for the enx-redirect assets.
-func ENXRedirectFS() embed.FS {
+func ENXRedirectFS() fs.FS {
+	if project.DevMode() {
+		return os.DirFS(project.Root("assets", "enx-redirect"))
+	}
 	return enxRedirectFS
 }
