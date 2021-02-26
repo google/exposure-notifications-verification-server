@@ -42,6 +42,12 @@
 {{define "navbar"}}
 {{$currentMembership := .currentMembership}}
 <header class="mb-3">
+  {{with $v := .systemNotice}}
+    <div class="d-block px-3 py-2 text-center text-bold bg-warning mb-n3">
+      {{$v | safeHTML}}
+    </div>
+  {{end}}
+
   {{if $currentMembership}}
     {{$currentRealm := $currentMembership.Realm}}
     <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
