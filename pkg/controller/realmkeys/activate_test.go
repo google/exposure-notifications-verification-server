@@ -22,12 +22,12 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/gorilla/sessions"
 )
 
 func TestRealmKeys_SubmitActivate(t *testing.T) {
@@ -36,19 +36,16 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServer(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	realm, user, _, err := harness.ProvisionAndLogin()
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithSession(ctx, session)
 
-	cfg := &config.ServerConfig{}
-
-	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
+	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 	handler := c.HandleActivate()
 
 	t.Run("middleware", func(t *testing.T) {
@@ -59,14 +56,16 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		envstest.ExercisePermissionMissing(t, handler)
 	})
 
-	ctx = controller.WithMembership(ctx, &database.Membership{
-		User:        user,
-		Realm:       realm,
-		Permissions: rbac.SettingsWrite,
-	})
-
 	t.Run("no_form", func(t *testing.T) {
 		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:        user,
+			Realm:       realm,
+			Permissions: rbac.SettingsWrite,
+		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", nil)
 		handler.ServeHTTP(w, r)
@@ -79,6 +78,14 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 
 	t.Run("invalid_key_id", func(t *testing.T) {
 		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:        user,
+			Realm:       realm,
+			Permissions: rbac.SettingsWrite,
+		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", &url.Values{
 			"id": []string{"1234567"},
@@ -101,6 +108,14 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:        user,
+			Realm:       realm,
+			Permissions: rbac.SettingsWrite,
+		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "", &url.Values{
 			"id": []string{fmt.Sprintf("%d", list[0].ID)},
