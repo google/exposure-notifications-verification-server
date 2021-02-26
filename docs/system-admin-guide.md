@@ -11,6 +11,7 @@
 - [Adding ENX redirect domains](#adding-enx-redirect-domains)
 - [Clearing caches](#clearing-caches)
 - [Getting system information](#getting-system-information)
+- [Adding system notices](#adding-system-notices)
 
 <!-- /TOC -->
 
@@ -281,3 +282,15 @@ Or by choosing "System admin" from the dropdown and selecting the "Info" tab.
 ![Info show](images/system-admin/info-show.png "Info show")
 
 Supply this information when requested.
+
+## Adding system notices
+
+If the system is experiencing a partial outage, or if you want to provide notice
+of upcoming downtime, you can set the `SYSTEM_NOTICE` environment variable to
+markdown text and restart the service. Doing so will cause a yellow banner to
+appear on all pages with your message.
+
+![System notice show](images/system-admin/system-notice.png "System notice show")
+
+To clear the message, remove the environment variable or set it to the empty
+string.

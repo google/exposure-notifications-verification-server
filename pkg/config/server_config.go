@@ -20,9 +20,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -54,6 +57,11 @@ type ServerConfig struct {
 	Observability observability.Config
 	Cache         cache.Config
 	Features      FeatureConfig
+
+	// SystemNotice is an optional notice that will be presented at the top of all
+	// pages on the UI if provided. It supports markdown syntax.
+	SystemNotice string `env:"SYSTEM_NOTICE"`
+	systemNotice string
 
 	// Certificate signing key settings, needed for public key / settings display.
 	CertificateSigning CertificateSigningConfig
@@ -121,6 +129,12 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 		logger.Warnw("LOCALES_PATH is no longer used")
 	}
 
+	// Parse system notice - do this once since it's displayed on every page.
+	if v := project.TrimSpace(config.SystemNotice); v != "" {
+		raw := blackfriday.Run([]byte(v))
+		config.systemNotice = string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+	}
+
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
 	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
 	return &config, nil
@@ -181,6 +195,10 @@ func (c *ServerConfig) IsMaintenanceMode() bool {
 
 func (c *ServerConfig) GetAuthenticatedSMSFailClosed() bool {
 	return c.SMSSigning.FailClosed
+}
+
+func (c *ServerConfig) ParsedSystemNotice() string {
+	return c.systemNotice
 }
 
 // FirebaseConfig represents configuration specific to firebase auth.
