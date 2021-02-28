@@ -92,6 +92,19 @@ func (kssd *KeyServerStatsDay) BeforeSave(tx *gorm.DB) error {
 	return kssd.ErrorOrNil()
 }
 
+func (kssd *KeyServerStatsDay) TotalPublishRequests() int64 {
+	var sum int64
+	for _, v := range kssd.PublishRequests {
+		sum += v
+	}
+	return sum
+}
+
+func (db *Database) HasKeyServerStats(realmID uint) bool {
+	s, err := db.GetKeyServerStats(realmID)
+	return err == nil && s != nil
+}
+
 // GetKeyServerStats retrieves the configuration for gathering key-server statistics
 func (db *Database) GetKeyServerStats(realmID uint) (*KeyServerStats, error) {
 	var stats KeyServerStats

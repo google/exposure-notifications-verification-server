@@ -65,6 +65,14 @@ type RealmStat struct {
 	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
+func (s *RealmStat) CodeClaimAgeDistributionAsStrings() []string {
+	str := make([]string, len(s.CodeClaimAgeDistribution))
+	for i, v := range s.CodeClaimAgeDistribution {
+		str[i] = strconv.Itoa(int(v))
+	}
+	return str
+}
+
 // MarshalCSV returns bytes in CSV format.
 func (s RealmStats) MarshalCSV() ([]byte, error) {
 	// Do nothing if there's no records

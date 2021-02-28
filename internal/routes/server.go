@@ -438,6 +438,9 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 
 	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
 	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
+
+	r.Handle("/composite.csv", c.HandleComposite(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/composite.json", c.HandleComposite(stats.TypeJSON)).Methods(http.MethodGet)
 }
 
 // realmadminRoutes are the realm admin routes.

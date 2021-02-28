@@ -12,7 +12,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    TEK publish metrics
+    Total TEKs Published
   </div>
   <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
@@ -93,7 +93,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">TEK publish metrics</h5>
+        <h5 class="modal-title">Total TEKs Published</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -107,18 +107,6 @@
         <strong>Total # TEKs published</strong>
         <p>
           This line tracks the total number of TEKs published to the key-server.
-        </p>
-
-        <strong>Requests with revisions</strong>
-        <p>
-          This line tracks the total number of publish requests that contained
-          at least one TEK revision
-        </p>
-
-        <strong>Request missing onset</strong>
-        <p>
-          This line tracks the total number of publish requests where no onset date
-          was provided. These request are not included in the onset to upload distribution.
         </p>
       </div>
     </div>
@@ -253,14 +241,10 @@
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
     dataTable.addColumn('number', 'Total # TEKs published');
-    dataTable.addColumn('number', 'Revision requests');
-    dataTable.addColumn('number', 'Requests missing onset');
 
     stats.reverse().forEach(function(row) {
       dataTable.addRow([utcDate(row.day),
-        row.total_teks_published,
-        row.requests_with_revisions,
-        row.requests_missing_onset_date,
+        row.total_teks_published
       ]);
     });
 
@@ -270,7 +254,7 @@
     dateFormatter.format(dataTable, 0);
 
     let options = {
-      colors: ['#28a745', '#a76e28', '#a72898'],
+      colors: ['#28a745'],
       chartArea: {
         left: 60,
         right: 40,
@@ -304,12 +288,15 @@
 
     let dataTable = new google.visualization.DataTable();
     dataTable.addColumn('date', 'Date');
+    dataTable.addColumn('number', 'Total');
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+    dataTable.addColumn('number', 'Missing Onset Date');
     dataTable.addColumn('number', 'Unknown OS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'Android');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'IOS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}})
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});   
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
@@ -318,6 +305,13 @@
       let iosCount = parseInt(row.publish_requests.ios);
 
       dataTable.addRow([utcDate(row.day),
+        total,        
+         "<ul class='chart-tooltip'>"+
+          "<li><strong>Total:</strong>" + total + "</li>"+
+          "<li><strong>Android:</strong>" + androidCount + "</li>"+
+          "<li><strong>iOS:</strong>" + iosCount + "</li>"+
+          "<li><strong>Unknown:</strong>" + unknownCount + "</li></ul>",
+        row.requests_missing_onset_date,
         row.publish_requests.unknown,
         "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
           "<li>Count: " + unknownCount + "</li>" +
@@ -329,7 +323,7 @@
         row.publish_requests.ios,
         "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
           "<li>Count: " + iosCount + "</li>" +
-          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
+          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",        
       ]);
     });
 
@@ -339,7 +333,7 @@
     dateFormatter.format(dataTable, 0);
 
     let options = {
-      colors: ['#6c757d', '#28a745', '#007bff'],
+      colors: ['#ee8c00', '#ea4335', '#6c757d', '#28a745', '#007bff'],
       chartArea: {
         left: 60,
         right: 40,
@@ -352,12 +346,17 @@
         format: 'M/d',
         gridlines: { color: 'transparent' },
       },
+      seriesType: 'bars',
+      series: {
+        0: {type: 'line'},
+        1: {type: 'line'},
+      },
       legend: { position: 'top' },
       isStacked: true,
       tooltip: {isHtml: true},
     };
 
-    let chart = new google.visualization.ColumnChart($div.get(0));
+    let chart = new google.visualization.ComboChart($div.get(0));
     chart.draw(dataTable, options);
     chartData.push({
       chart: chart,
