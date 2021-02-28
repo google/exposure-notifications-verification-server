@@ -247,6 +247,9 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
+		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:stats:key_server", callbackPurgeCache(ctx, cacher, "stats:realm:key_server_enabled", "key_server_stats", "realm_id"))
+		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:stats:key_server", callbackPurgeCache(ctx, cacher, "stats:realm:key_server_enabled", "key_server_stats", "realm_id"))
+
 		// Users
 		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
 		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:users:by_id", callbackPurgeCache(ctx, cacher, "users:by_id", "users", "id"))
@@ -366,6 +369,10 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, tab
 
 		if scope.HasError() {
 			return
+		}
+
+		for _, f := range scope.Fields() {
+			log.Printf("field: %v value: %v", f.DBName, f.Field.Interface())
 		}
 
 		keys := make([]string, 0, len(columns))

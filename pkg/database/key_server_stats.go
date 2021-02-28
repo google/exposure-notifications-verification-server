@@ -102,11 +102,27 @@ func (kssd *KeyServerStatsDay) TotalPublishRequests() int64 {
 	return sum
 }
 
-// HasKeyServerStats returns true if the provided realm has key
+// GetKeyServerStatsCached returns true if the provided realm has key
 // server stats enabled.
-func (db *Database) HasKeyServerStats(realmID uint) bool {
-	s, err := db.GetKeyServerStats(realmID)
-	return err == nil && s != nil
+func (db *Database) GetKeyServerStatsCached(ctx context.Context, realmID uint, cacher cache.Cacher) (*KeyServerStats, error) {
+	var kss *KeyServerStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:key_server_enabled",
+		Key:       strconv.FormatUint(uint64(realmID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &kss, 30*time.Minute, func() (interface{}, error) {
+		val, err := db.GetKeyServerStats(realmID)
+		if err != nil {
+			if IsNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return val, nil
+	}); err != nil {
+		return nil, err
+	}
+	return kss, nil
 }
 
 // GetKeyServerStats retrieves the configuration for gathering key-server statistics
@@ -128,9 +144,12 @@ func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 
 // DeleteKeyServerStats disables gathering key-server statistics and removes the entry
 func (db *Database) DeleteKeyServerStats(realmID uint) error {
+	kss := KeyServerStats{
+		RealmID: realmID,
+	}
 	return db.db.Unscoped().
-		Where("realm_id = ?", realmID).
-		Delete(&KeyServerStats{}).
+		Set("gorm:delete_option", "RETURNING *").
+		Delete(&kss).
 		Error
 }
 

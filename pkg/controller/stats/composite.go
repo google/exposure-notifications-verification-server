@@ -241,7 +241,12 @@ func (c *Controller) HandleComposite(typ Type) http.Handler {
 			statsMap[rs.Date] = day
 		}
 
-		if c.db.HasKeyServerStats(currentRealm.ID) {
+		keyServerStats, err := c.db.GetKeyServerStatsCached(ctx, currentRealm.ID, c.cacher)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		if keyServerStats != nil {
 			days, err := c.db.ListKeyServerStatsDaysCached(ctx, currentRealm.ID, c.cacher)
 			if err != nil {
 				controller.InternalError(w, r, c.h, err)

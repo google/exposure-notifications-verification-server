@@ -298,7 +298,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(cfg, db, limiterStore, h)
+		realmadminController := realmadmin.New(cfg, db, limiterStore, h, cacher)
 		realmadminRoutes(sub, realmadminController)
 
 		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
