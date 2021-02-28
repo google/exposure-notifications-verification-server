@@ -65,19 +65,25 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
 
 	var code string
+	var html string
 	if err := chromedp.Run(taskCtx,
 		browser.SetCookie(cookie),
 		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
+		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
 		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
+		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
 
 		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
 		chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
+		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
 		chromedp.Click(`#submit`, chromedp.ByQuery),
 
+		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
 		chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
 		chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
+		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
 	); err != nil {
-		t.Fatal(err)
+		t.Fatalf("failed to issue code: %s\nlast html:\n\n%s", err, html)
 	}
 
 	// Verify code length.
