@@ -32,12 +32,7 @@ func TestHandleEvents(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, user, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
 	handler := middleware.InjectCurrentPath()(c.HandleEvents())
@@ -49,8 +44,8 @@ func TestHandleEvents(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseBadPagination(t, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.AuditRead,
 		}, handler)
 	})
@@ -64,8 +59,8 @@ func TestHandleEvents(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.AuditRead,
 		})
 
@@ -80,11 +75,16 @@ func TestHandleEvents(t *testing.T) {
 	t.Run("lists", func(t *testing.T) {
 		t.Parallel()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.AuditRead,
 		})
 
@@ -99,11 +99,16 @@ func TestHandleEvents(t *testing.T) {
 	t.Run("searches", func(t *testing.T) {
 		t.Parallel()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.AuditRead,
 		})
 

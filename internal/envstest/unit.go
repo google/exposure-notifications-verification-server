@@ -147,16 +147,14 @@ func ExerciseIDNotFound(t *testing.T, membership *database.Membership, h http.Ha
 	t.Run("id_not_found", func(t *testing.T) {
 		t.Parallel()
 
-		mux := mux.NewRouter()
-		mux.Handle("/{id}", h)
-
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, membership)
 		ctx = controller.WithUser(ctx, membership.User)
 
-		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/13940890", nil)
-		mux.ServeHTTP(w, r)
+		w, r := BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": "13940890"})
+		h.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusUnauthorized; got != want {
 			t.Errorf("Expected %d to be %d", got, want)

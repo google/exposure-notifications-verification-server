@@ -35,23 +35,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, user, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	app := &database.MobileApp{
-		RealmID: realm.ID,
-		Name:    "Appy",
-		AppID:   "com.example.app",
-		URL:     "https://app.example.com",
-		OS:      database.OSTypeIOS,
-	}
-	if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := mobileapps.New(harness.Database, harness.Renderer)
 	handler := c.HandleUpdate()
@@ -63,8 +47,8 @@ func TestHandleUpdate(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.MobileAppWrite,
 		}, handler)
 	})
@@ -78,8 +62,8 @@ func TestHandleUpdate(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.MobileAppWrite,
 		})
 
@@ -97,11 +81,27 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		app := &database.MobileApp{
+			RealmID: realm.ID,
+			Name:    "Appy1",
+			AppID:   "com.example.app1",
+			URL:     "https://app1.example.com",
+			OS:      database.OSTypeIOS,
+		}
+		if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.MobileAppWrite,
 		})
 
@@ -123,11 +123,27 @@ func TestHandleUpdate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		app := &database.MobileApp{
+			RealmID: realm.ID,
+			Name:    "Appy2",
+			AppID:   "com.example.app2",
+			URL:     "https://app2.example.com",
+			OS:      database.OSTypeIOS,
+		}
+		if err := harness.Database.SaveMobileApp(app, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.MobileAppWrite,
 		})
 

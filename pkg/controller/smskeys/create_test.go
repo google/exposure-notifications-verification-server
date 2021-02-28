@@ -16,13 +16,11 @@ package smskeys_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -35,25 +33,22 @@ func TestHandleCreate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	realm, err := harness.Database.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cfg := &config.ServerConfig{}
-
-	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
+	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
+	handler := c.HandleCreateKey()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleCreateKey()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -63,10 +58,7 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
+		c := smskeys.New(harness.Config, harness.BadDatabase, publicKeyCache, harness.Renderer)
 		handler := c.HandleCreateKey()
 
 		ctx := ctx
@@ -77,28 +69,19 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
-	t.Run("creates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
-
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleCreateKey()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -108,17 +91,11 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Header().Get("Location"), "/realm/sms-keys"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)

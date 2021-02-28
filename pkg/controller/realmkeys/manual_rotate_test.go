@@ -16,13 +16,11 @@ package realmkeys_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -35,19 +33,17 @@ func TestHandleManualRotate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cfg := &config.ServerConfig{}
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
+	handler := c.HandleManualRotate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-		handler := c.HandleManualRotate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -56,13 +52,6 @@ func TestHandleManualRotate(t *testing.T) {
 
 	t.Run("not_enabled", func(t *testing.T) {
 		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-		handler := c.HandleManualRotate()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -74,17 +63,11 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Body.String(), "Already in manual key rotation mode"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
@@ -94,14 +77,7 @@ func TestHandleManualRotate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
+		c := realmkeys.New(harness.Config, harness.BadDatabase, harness.KeyManager, publicKeyCache, harness.Renderer)
 		handler := c.HandleManualRotate()
 
 		ctx := ctx
@@ -114,17 +90,11 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
@@ -133,13 +103,6 @@ func TestHandleManualRotate(t *testing.T) {
 
 	t.Run("enables", func(t *testing.T) {
 		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-		handler := c.HandleManualRotate()
 
 		realm := database.NewRealmWithDefaults("test")
 		realm.AutoRotateCertificateKey = true
@@ -155,17 +118,11 @@ func TestHandleManualRotate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodPut, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)

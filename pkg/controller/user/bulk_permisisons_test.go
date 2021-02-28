@@ -34,12 +34,7 @@ func TestHandleBulkPermissions(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, testUser, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleBulkPermissions(database.BulkPermissionActionAdd)
@@ -55,9 +50,14 @@ func TestHandleBulkPermissions(t *testing.T) {
 	t.Run("missing_permission", func(t *testing.T) {
 		t.Parallel()
 
-		session := new(sessions.Session)
+		_, testUser, realm := provisionUsers(t, harness.Database)
 
-		ctx := controller.WithSession(ctx, session)
+		session := &sessions.Session{
+			Values: make(map[interface{}]interface{}),
+		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, session)
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        testUser,
@@ -83,12 +83,13 @@ func TestHandleBulkPermissions(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		session := new(sessions.Session)
+		admin, testUser, realm := provisionUsers(t, harness.Database)
 
-		ctx := controller.WithSession(ctx, session)
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        testUser,
+			User:        admin,
 			Permissions: rbac.UserWrite | 1,
 		})
 
@@ -102,9 +103,12 @@ func TestHandleBulkPermissions(t *testing.T) {
 			t.Errorf("expected %d to be %d", got, want)
 		}
 
-		flash := controller.Flash(session)
-		if got, want := strings.Join(flash.Alerts(), ", "), "updated permissions"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to include %q", got, want)
+		record, err := testUser.FindMembership(harness.Database, realm.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !record.Can(1) {
+			t.Errorf("expected %q to be able to %q", record.Permissions, 1)
 		}
 	})
 }

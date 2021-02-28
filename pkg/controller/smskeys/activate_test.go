@@ -17,14 +17,12 @@ package smskeys_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -37,25 +35,18 @@ func TestHandleActivate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, user, _, err := harness.ProvisionAndLogin()
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cfg := &config.ServerConfig{}
-
-	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
+	handler := c.HandleActivate()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleActivate()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -65,76 +56,56 @@ func TestHandleActivate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		harness := envstest.NewServerConfig(t, testDatabaseInstance)
-		harness.Database.SetRawDB(envstest.NewFailingDatabase())
-
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
+		c := smskeys.New(harness.Config, harness.BadDatabase, publicKeyCache, harness.Renderer)
 		handler := c.HandleActivate()
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		u := &url.Values{"id": []string{"123456"}}
-
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", &url.Values{})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
-		}
-		if got, want := w.Body.String(), "Internal server error"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleActivate()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		u := &url.Values{"id": []string{"123456"}}
-
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", &url.Values{
+			"id": []string{"123456789"},
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Body.String(), "does not exist"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
 		}
 	})
 
-	t.Run("activates", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		t.Parallel()
+
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if _, err := realm.CreateSMSSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
 			t.Fatal(err)
@@ -149,31 +120,21 @@ func TestHandleActivate(t *testing.T) {
 		}
 		signingKey := list[0]
 
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleActivate()
-
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
 
-		u := &url.Values{"id": []string{fmt.Sprintf("%d", signingKey.ID)}}
-
-		r := httptest.NewRequest(http.MethodPut, "/", strings.NewReader(u.Encode()))
-		r = r.Clone(ctx)
-		r.Header.Set("Accept", "text/html")
-		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", &url.Values{
+			"id": []string{fmt.Sprintf("%d", signingKey.ID)},
+		})
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
 		}
 		if got, want := w.Header().Get("Location"), "/realm/sms-keys"; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)

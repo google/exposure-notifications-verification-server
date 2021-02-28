@@ -23,7 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
@@ -34,26 +34,9 @@ func TestHandleDelete(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, admin, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create another user.
-	user := &database.User{
-		Email: "user@example.com",
-		Name:  "User",
-	}
-	if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	if err := user.AddToRealm(harness.Database, realm, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleDelete()
 
 	t.Run("middleware", func(t *testing.T) {
@@ -63,8 +46,8 @@ func TestHandleDelete(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
-			Realm:       realm,
-			User:        admin,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.UserWrite,
 		}, handler)
 	})
@@ -72,8 +55,10 @@ func TestHandleDelete(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleDelete()
+
+		admin, testUser, realm := provisionUsers(t, harness.Database)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -84,9 +69,7 @@ func TestHandleDelete(t *testing.T) {
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodDelete, "/", nil)
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%v", user.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", testUser.ID)})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
@@ -100,6 +83,8 @@ func TestHandleDelete(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		admin, testUser, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -109,9 +94,7 @@ func TestHandleDelete(t *testing.T) {
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodDelete, "/", nil)
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%v", user.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", testUser.ID)})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
@@ -121,7 +104,7 @@ func TestHandleDelete(t *testing.T) {
 			t.Errorf("expected %q to be %q", got, want)
 		}
 
-		if record, err := user.FindMembership(harness.Database, realm.ID); !database.IsNotFound(err) {
+		if record, err := testUser.FindMembership(harness.Database, realm.ID); !database.IsNotFound(err) {
 			t.Errorf("expected membership to be deleted, got %#v (%s)", record, err)
 		}
 	})

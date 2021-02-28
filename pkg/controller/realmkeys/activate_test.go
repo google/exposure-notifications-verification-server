@@ -34,12 +34,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, user, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
@@ -62,8 +57,8 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			User:        user,
-			Realm:       realm,
+			User:        &database.User{},
+			Realm:       &database.Realm{},
 			Permissions: rbac.SettingsWrite,
 		})
 
@@ -71,7 +66,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		handler.ServeHTTP(w, r)
 
 		// shows original page with error flash
-		if got, want := w.Code, http.StatusOK; got != want {
+		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
@@ -82,8 +77,8 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			User:        user,
-			Realm:       realm,
+			User:        &database.User{},
+			Realm:       &database.Realm{},
 			Permissions: rbac.SettingsWrite,
 		})
 
@@ -93,13 +88,18 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		handler.ServeHTTP(w, r)
 
 		// shows original page with error flash
-		if got, want := w.Code, http.StatusOK; got != want {
+		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
 			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
+
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
 			t.Fatal(err)
@@ -112,7 +112,7 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			User:        user,
+			User:        &database.User{},
 			Realm:       realm,
 			Permissions: rbac.SettingsWrite,
 		})
@@ -122,7 +122,6 @@ func TestRealmKeys_SubmitActivate(t *testing.T) {
 		})
 		handler.ServeHTTP(w, r)
 
-		// shows original page with error flash
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}

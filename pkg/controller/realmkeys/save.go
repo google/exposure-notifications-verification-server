@@ -55,6 +55,7 @@ func (c *Controller) HandleSave() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
@@ -67,6 +68,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			flash.Error("Failed to update realm: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 		}
 

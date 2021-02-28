@@ -25,7 +25,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -35,14 +35,9 @@ func TestHandleCreate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, admin, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleCreate()
 
 	t.Run("middleware", func(t *testing.T) {
@@ -56,8 +51,10 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleCreate()
+
+		admin, _, realm := provisionUsers(t, harness.Database)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -85,6 +82,8 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
 
+		admin, _, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -109,6 +108,8 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		admin, _, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -126,8 +127,8 @@ func TestHandleCreate(t *testing.T) {
 		if got, want := w.Code, http.StatusSeeOther; got != want {
 			t.Errorf("expected %d to be %d", got, want)
 		}
-		if got, want := w.Header().Get("Location"), "/realm/users/2"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+		if got, want := w.Header().Get("Location"), "/realm/users/"; !strings.HasPrefix(got, want) {
+			t.Errorf("expected %q to start with %q", got, want)
 		}
 
 		records, _, err := realm.ListMemberships(harness.Database, pagination.UnlimitedResults)

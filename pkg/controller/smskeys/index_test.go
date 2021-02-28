@@ -16,13 +16,11 @@ package smskeys_test
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -35,19 +33,17 @@ func TestHandleIndex(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	cfg := &config.ServerConfig{}
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
+	handler := c.HandleIndex()
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleIndex()
 
 		envstest.ExerciseSessionMissing(t, handler)
 		envstest.ExerciseMembershipMissing(t, handler)
@@ -56,13 +52,6 @@ func TestHandleIndex(t *testing.T) {
 
 	t.Run("no_keys", func(t *testing.T) {
 		t.Parallel()
-
-		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-		if err != nil {
-			t.Fatal(err)
-		}
-		c := smskeys.New(cfg, harness.Database, publicKeyCache, harness.Renderer)
-		handler := c.HandleIndex()
 
 		realm, err := harness.Database.FindRealm(1)
 		if err != nil {
@@ -77,14 +66,8 @@ func TestHandleIndex(t *testing.T) {
 			Permissions: rbac.SettingsRead | rbac.SettingsWrite,
 		})
 
-		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r = r.Clone(ctx)
-		r.Header.Set("Content-Type", "text/html")
-
-		w := httptest.NewRecorder()
-
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", nil)
 		handler.ServeHTTP(w, r)
-		w.Flush()
 
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
