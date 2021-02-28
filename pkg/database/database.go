@@ -371,10 +371,6 @@ func callbackPurgeCache(ctx context.Context, cacher cache.Cacher, namespace, tab
 			return
 		}
 
-		for _, f := range scope.Fields() {
-			log.Printf("field: %v value: %v", f.DBName, f.Field.Interface())
-		}
-
 		keys := make([]string, 0, len(columns))
 		for _, column := range columns {
 			field, ok := scope.FieldByName(column)

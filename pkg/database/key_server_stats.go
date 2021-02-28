@@ -144,12 +144,12 @@ func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 
 // DeleteKeyServerStats disables gathering key-server statistics and removes the entry
 func (db *Database) DeleteKeyServerStats(realmID uint) error {
-	kss := KeyServerStats{
+	kss := &KeyServerStats{
 		RealmID: realmID,
 	}
 	return db.db.Unscoped().
 		Set("gorm:delete_option", "RETURNING *").
-		Delete(&kss).
+		Delete(kss).
 		Error
 }
 
