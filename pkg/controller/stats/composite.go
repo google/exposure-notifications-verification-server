@@ -144,7 +144,7 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (s *CompositeStats) UnmarshalJSON(b []byte) error {
+func (c *CompositeStats) UnmarshalJSON(b []byte) error {
 	if len(b) == 0 {
 		return nil
 	}
