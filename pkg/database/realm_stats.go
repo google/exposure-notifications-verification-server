@@ -134,10 +134,10 @@ type jsonRealmStat struct {
 
 type jsonRealmStatStats struct {
 	Date time.Time               `json:"date"`
-	Data *JsonRealmStatStatsData `json:"data"`
+	Data *JSONRealmStatStatsData `json:"data"`
 }
 
-type JsonRealmStatStatsData struct {
+type JSONRealmStatStatsData struct {
 	CodesIssued           uint    `json:"codes_issued"`
 	CodesClaimed          uint    `json:"codes_claimed"`
 	CodesInvalid          uint    `json:"codes_invalid"`
@@ -158,7 +158,7 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 	for _, stat := range s {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
-			Data: &JsonRealmStatStatsData{
+			Data: &JSONRealmStatStatsData{
 				CodesIssued:           stat.CodesIssued,
 				CodesClaimed:          stat.CodesClaimed,
 				CodesInvalid:          stat.CodesInvalid,

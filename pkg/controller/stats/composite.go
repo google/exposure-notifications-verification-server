@@ -62,7 +62,7 @@ type jsonCompositeStatStats struct {
 }
 
 type jsonCompositeStatStatsData struct {
-	database.JsonRealmStatStatsData
+	database.JSONRealmStatStatsData
 	keyserver.StatsDay
 
 	// the only field that isn't from an embedded struct.
