@@ -210,8 +210,6 @@
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      console.log(data);
-
       if (data.statistics) {
         $issueAgeSlider.attr('min', Math.min(smoothing, data.statistics.length));
         $issueAgeSlider.attr('max', data.statistics.length);
