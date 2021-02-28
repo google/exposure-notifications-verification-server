@@ -33,7 +33,7 @@ func TestHandleStats(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer, harness.Cacher)
 	handler := c.HandleStats()
 
 	t.Run("middleware", func(t *testing.T) {
