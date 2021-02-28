@@ -17,97 +17,75 @@ package realmkeys_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 func TestRealmKeys_SubmitDestroy(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, user, session, err := harness.ProvisionAndLogin()
+	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, harness.Config.CertificateSigning.PublicKeyCacheDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx = controller.WithSession(ctx, session)
-
-	cfg := &config.ServerConfig{}
-
-	publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, harness.Cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := realmkeys.New(cfg, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
+	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
 	handler := c.HandleDestroy()
 
-	envstest.ExerciseSessionMissing(t, handler)
-	envstest.ExerciseMembershipMissing(t, handler)
-	envstest.ExercisePermissionMissing(t, handler)
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
 
-	ctx = controller.WithMembership(ctx, &database.Membership{
-		User:        user,
-		Realm:       realm,
-		Permissions: rbac.SettingsWrite,
+		envstest.ExerciseSessionMissing(t, handler)
+		envstest.ExerciseMembershipMissing(t, handler)
+		envstest.ExercisePermissionMissing(t, handler)
 	})
 
-	// no 'id' var
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		realm, err := harness.Database.FindRealm(1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
-
-		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		for i := 0; i < 3; i++ {
+			if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
+				t.Fatal(err)
+			}
 		}
-	}()
-
-	if _, err := realm.CreateSigningKeyVersion(ctx, harness.Database, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	list, err := realm.ListSigningKeys(harness.Database)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// success
-	func() {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "", strings.NewReader(""))
+		list, err := realm.ListSigningKeys(harness.Database)
 		if err != nil {
 			t.Fatal(err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": fmt.Sprint(list[0].ID)})
-		req.Header.Set("Accept", "text/html")
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		w := httptest.NewRecorder()
-		handler.ServeHTTP(w, req)
-		result := w.Result()
-		defer result.Body.Close()
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:        &database.User{},
+			Realm:       realm,
+			Permissions: rbac.SettingsWrite,
+		})
 
-		// shows original page with error flash
-		if result.StatusCode != http.StatusOK {
-			t.Errorf("expected status 200 OK, got %d", result.StatusCode)
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", nil)
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", list[0].ID)})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-	}()
+		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
+			t.Errorf("expected %s to be %s", got, want)
+		}
+	})
 }

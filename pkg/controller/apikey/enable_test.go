@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/jinzhu/gorm"
 )
 
@@ -34,25 +35,7 @@ func TestHandleEnable(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, user, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = controller.WithSession(ctx, session)
-
-	now := time.Now().UTC().Add(-5 * time.Second)
-	authApp := &database.AuthorizedApp{
-		RealmID: realm.ID,
-		Name:    "Appy",
-		Model: gorm.Model{
-			DeletedAt: &now,
-		},
-	}
-	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleEnable()
@@ -64,8 +47,8 @@ func TestHandleEnable(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		}, handler)
 	})
@@ -76,10 +59,28 @@ func TestHandleEnable(t *testing.T) {
 		c := apikey.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleEnable()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		now := time.Now().UTC().Add(-5 * time.Second)
+		authApp := &database.AuthorizedApp{
+			RealmID: realm.ID,
+			Name:    "Appy1",
+			Model: gorm.Model{
+				DeletedAt: &now,
+			},
+		}
+		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		})
 
@@ -95,10 +96,28 @@ func TestHandleEnable(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		now := time.Now().UTC().Add(-5 * time.Second)
+		authApp := &database.AuthorizedApp{
+			RealmID: realm.ID,
+			Name:    "Appy2",
+			Model: gorm.Model{
+				DeletedAt: &now,
+			},
+		}
+		if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		})
 

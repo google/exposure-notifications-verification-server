@@ -35,25 +35,7 @@ func TestHandleUpdate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, admin, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = controller.WithSession(ctx, session)
-
-	// Create another user.
-	testUser := &database.User{
-		Email: "user@example.com",
-		Name:  "User",
-	}
-	if err := harness.Database.SaveUser(testUser, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	if err := testUser.AddToRealm(harness.Database, realm, 0, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleUpdate()
@@ -65,8 +47,8 @@ func TestHandleUpdate(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.UserWrite,
 		}, handler)
 	})
@@ -78,18 +60,17 @@ func TestHandleUpdate(t *testing.T) {
 		handler := c.HandleUpdate()
 
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        admin,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.LegacyRealmAdmin,
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"name": []string{"apple"},
 		})
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%d", testUser.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": "123456789"})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
@@ -99,6 +80,8 @@ func TestHandleUpdate(t *testing.T) {
 
 	t.Run("validation", func(t *testing.T) {
 		t.Parallel()
+
+		admin, testUser, realm := provisionUsers(t, harness.Database)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -111,9 +94,7 @@ func TestHandleUpdate(t *testing.T) {
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "/", &url.Values{
 			"name": []string{""},
 		})
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%d", testUser.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", testUser.ID)})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
@@ -126,6 +107,8 @@ func TestHandleUpdate(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
+
+		admin, testUser, realm := provisionUsers(t, harness.Database)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -142,9 +125,7 @@ func TestHandleUpdate(t *testing.T) {
 				fmt.Sprintf("%d", rbac.UserWrite),
 			},
 		})
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%d", testUser.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", testUser.ID)})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {

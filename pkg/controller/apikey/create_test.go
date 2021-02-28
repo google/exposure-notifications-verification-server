@@ -34,13 +34,7 @@ func TestHandleCreate(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, user, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = controller.WithSession(ctx, session)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleCreate()
@@ -60,9 +54,10 @@ func TestHandleCreate(t *testing.T) {
 		handler := c.HandleCreate()
 
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		})
 
@@ -81,9 +76,10 @@ func TestHandleCreate(t *testing.T) {
 		t.Parallel()
 
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm:       realm,
-			User:        user,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		})
 
@@ -103,13 +99,20 @@ func TestHandleCreate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
-		session := &sessions.Session{}
+		realm, err := harness.Database.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		session := &sessions.Session{
+			Values: make(map[interface{}]interface{}),
+		}
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, session)
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        user,
+			User:        &database.User{},
 			Permissions: rbac.APIKeyWrite,
 		})
 

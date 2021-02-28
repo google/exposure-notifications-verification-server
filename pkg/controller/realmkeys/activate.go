@@ -52,6 +52,7 @@ func (c *Controller) HandleActivate() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
@@ -59,11 +60,12 @@ func (c *Controller) HandleActivate() http.Handler {
 		kid, err := currentRealm.SetActiveSigningKey(c.db, form.SigningKeyID, currentUser)
 		if err != nil {
 			flash.Error("Unable to set active signing key: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
-		flash.Alert("Updated active signing key to %q", kid)
 
+		flash.Alert("Updated active signing key to %q", kid)
 		c.redirectShow(ctx, w, r)
 	})
 }

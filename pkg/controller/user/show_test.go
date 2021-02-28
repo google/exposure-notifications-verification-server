@@ -26,19 +26,14 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleShow(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
-
-	realm, testUser, session, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = controller.WithSession(ctx, session)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleShow()
@@ -50,8 +45,8 @@ func TestHandleShow(t *testing.T) {
 		envstest.ExerciseMembershipMissing(t, handler)
 		envstest.ExercisePermissionMissing(t, handler)
 		envstest.ExerciseIDNotFound(t, &database.Membership{
-			Realm:       realm,
-			User:        testUser,
+			Realm:       &database.Realm{},
+			User:        &database.User{},
 			Permissions: rbac.UserRead,
 		}, handler)
 	})
@@ -62,10 +57,13 @@ func TestHandleShow(t *testing.T) {
 		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleShow()
 
+		admin, testUser, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        testUser,
+			User:        admin,
 			Permissions: rbac.UserRead,
 		})
 
@@ -83,17 +81,18 @@ func TestHandleShow(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		admin, testUser, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
-			User:        testUser,
+			User:        admin,
 			Permissions: rbac.UserRead,
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
-		r = mux.SetURLVars(r, map[string]string{
-			"id": fmt.Sprintf("%d", testUser.ID),
-		})
+		r = mux.SetURLVars(r, map[string]string{"id": fmt.Sprintf("%d", testUser.ID)})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusOK; got != want {

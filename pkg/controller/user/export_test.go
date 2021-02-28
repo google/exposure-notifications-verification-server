@@ -24,7 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	userpkg "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/sessions"
@@ -34,26 +34,9 @@ func TestHandleExport(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
-	harness := envstest.NewServer(t, testDatabaseInstance)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	realm, admin, _, err := harness.ProvisionAndLogin()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create another user.
-	user := &database.User{
-		Email: "user@example.com",
-		Name:  "User",
-	}
-	if err := harness.Database.SaveUser(user, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-	if err := user.AddToRealm(harness.Database, realm, rbac.LegacyRealmAdmin, database.SystemTest); err != nil {
-		t.Fatal(err)
-	}
-
-	c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
+	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
 	handler := c.HandleExport()
 
 	t.Run("middleware", func(t *testing.T) {
@@ -67,8 +50,10 @@ func TestHandleExport(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		c := userpkg.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
+		c := user.New(harness.AuthProvider, harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleExport()
+
+		admin, _, realm := provisionUsers(t, harness.Database)
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -92,6 +77,8 @@ func TestHandleExport(t *testing.T) {
 	t.Run("csvs", func(t *testing.T) {
 		t.Parallel()
 
+		admin, _, realm := provisionUsers(t, harness.Database)
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
@@ -110,8 +97,7 @@ func TestHandleExport(t *testing.T) {
 		d := time.Now().UTC().Format(project.RFC3339Date)
 		exp := fmt.Sprintf(`name,email,joined
 System admin,super@example.com,%s
-User,user@example.com,%s
-`, d, d)
+`, d)
 		if got, want := w.Body.String(), exp; !strings.Contains(got, want) {
 			t.Errorf("Expected %q to contain %q", got, want)
 		}

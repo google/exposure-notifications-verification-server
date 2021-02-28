@@ -49,6 +49,7 @@ func (c *Controller) HandleDestroy() http.Handler {
 
 		if err := currentRealm.DestroySigningKeyVersion(ctx, c.db, vars["id"], currentUser); err != nil {
 			flash.Error("Failed to destroy signing key version: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}
