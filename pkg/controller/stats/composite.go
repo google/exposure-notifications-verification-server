@@ -61,33 +61,11 @@ type jsonCompositeStatStats struct {
 }
 
 type jsonCompositeStatStatsData struct {
-	// Fields that come from the realm stats
-	CodesIssued           uint    `json:"codes_issued"`
-	CodesClaimed          uint    `json:"codes_claimed"`
-	CodesInvalid          uint    `json:"codes_invalid"`
-	TokensClaimed         uint    `json:"tokens_claimed"`
-	TokensInvalid         uint    `json:"tokens_invalid"`
-	CodeClaimMeanAge      uint    `json:"code_claim_mean_age_seconds"`
-	CodeClaimDistribution []int32 `json:"code_claim_age_distribution"`
+	database.JsonRealmStatStatsData
+	keyserver.StatsDay
 
-	// Fields that come from the key server stats
-	TotalPublishRequests int64                     `json:"total_publish_requests"`
-	PublishRequests      keyserver.PublishRequests `json:"publish_requests"`
-	TotalTEKsPublished   int64                     `json:"total_teks_published"`
-	// RevisionRequests is the number of publish requests that contained at least one TEK revision.
-	RevisionRequests int64 `json:"requests_with_revisions"`
-	// TEKAgeDistribution shows a distribution of the oldest tek in an upload.
-	// The count at index 0-15 represent the number of uploads there the oldest TEK is that value.
-	// Index 16 represents > 15 days.
-	TEKAgeDistribution []int64 `json:"tek_age_distribution"`
-	// OnsetToUploadDistribution shows a distribution of onset to upload, the index is in days.
-	// The count at index 0-29 represents the number of uploads with that symptom onset age.
-	// Index 30 represents > 29 days.
-	OnsetToUploadDistribution []int64 `json:"onset_to_upload_distribution"`
-
-	// RequestsMissingOnsetDate is the number of publish requests where no onset date
-	// was provided. These request are not included in the onset to upload distribution.
-	RequestsMissingOnsetDate int64 `json:"requests_missing_onset_date"`
+	// the only field that isn't from an embedded struct.
+	TotalPublishRequests int64 `json:"total_publish_requests"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
