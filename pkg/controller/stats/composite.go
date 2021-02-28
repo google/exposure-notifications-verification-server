@@ -35,8 +35,10 @@ import (
 )
 
 // Type assertions for CompositeStats
-var _ icsv.Marshaler = (CompositeStats)(nil)
-var _ json.Marshaler = (CompositeStats)(nil)
+var (
+	_ icsv.Marshaler = (CompositeStats)(nil)
+	_ json.Marshaler = (CompositeStats)(nil)
+)
 
 // CompositeStats is an internal type for collecting unifed realm and key server stats.
 type CompositeStats []*CompositeDay
