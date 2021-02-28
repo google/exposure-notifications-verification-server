@@ -51,8 +51,9 @@ type CompositeDay struct {
 }
 
 type jsonCompositeStat struct {
-	RealmID uint                      `json:"realm_id"`
-	Stats   []*jsonCompositeStatStats `json:"statistics"`
+	RealmID           uint                      `json:"realm_id"`
+	HasKeyServerStats bool                      `json:"has_key_server_stats"`
+	Stats             []*jsonCompositeStatStats `json:"statistics"`
 }
 
 type jsonCompositeStatStats struct {
@@ -75,6 +76,7 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct{}{})
 	}
 	var realmID uint
+	hasKeyServerStats := false
 
 	stats := make([]*jsonCompositeStatStats, 0, len(c))
 	for _, stat := range c {
@@ -93,6 +95,7 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 			data.CodeClaimDistribution = stat.RealmStats.CodeClaimAgeDistribution
 		}
 		if stat.KeyServerStats != nil {
+			hasKeyServerStats = true
 			data.TotalPublishRequests = stat.KeyServerStats.PublishRequests.Total()
 			data.PublishRequests = stat.KeyServerStats.PublishRequests
 			data.TotalTEKsPublished = stat.KeyServerStats.TotalTEKsPublished
@@ -115,6 +118,7 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 
 	var result jsonCompositeStat
 	result.RealmID = realmID
+	result.HasKeyServerStats = hasKeyServerStats
 	result.Stats = stats
 
 	b, err := json.Marshal(result)
@@ -244,7 +248,6 @@ func (c *Controller) HandleComposite(typ Type) http.Handler {
 				return
 			}
 
-			needsSort := false
 			for _, ksDay := range days {
 				compDay, ok := statsMap[ksDay.Day]
 				if !ok {
@@ -253,16 +256,13 @@ func (c *Controller) HandleComposite(typ Type) http.Handler {
 						Day: ksDay.Day,
 					}
 					stats = append(stats, compDay)
-					needsSort = true
 				}
 				compDay.KeyServerStats = ksDay.ToResponse()
 			}
 
-			if needsSort {
-				sort.Slice(stats, func(i, j int) bool {
-					return stats[i].Day.Before(stats[j].Day)
-				})
-			}
+			sort.Slice(stats, func(i, j int) bool {
+				return stats[i].Day.Before(stats[j].Day)
+			})
 		}
 
 		switch typ {

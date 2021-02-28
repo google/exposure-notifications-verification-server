@@ -65,6 +65,8 @@ type RealmStat struct {
 	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
+// CodeClaimAgeDistributionAsStrings returns CodeClaimAgeDistribution as
+// []string instead of []int32. Useful for serialization.
 func (s *RealmStat) CodeClaimAgeDistributionAsStrings() []string {
 	str := make([]string, len(s.CodeClaimAgeDistribution))
 	for i, v := range s.CodeClaimAgeDistribution {

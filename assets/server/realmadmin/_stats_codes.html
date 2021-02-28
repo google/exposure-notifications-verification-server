@@ -15,13 +15,12 @@
     <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
     <span>
       <span class="mr-1">Export as:</span>
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm.json" target="_blank">JSON</a>
       {{if .hasKeyServerStats}}
-      (legacy code data) |
-      <span class="mr-1">Composite Data:</span>
-      <a href="/stats/composite.csv" class="mr-1">CSV</a>
-      <a href="/stats/composite.json" target="_blank">JSON</a>  
+      <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm/composite.json" target="_blank">JSON</a>  
+      {{else}}
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a> 
       {{end}}
     </span>
   </small>
@@ -206,7 +205,7 @@
 
   function drawRealmCharts() {
     $.ajax({
-      url: '/stats/composite.json',
+      url: '/stats/realm/composite.json',
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
@@ -241,6 +240,7 @@
       return;
     }
 
+    let hasKeyServerStats = data.has_key_server_stats;
     let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
 
     let dataTable = new google.visualization.DataTable();
@@ -249,16 +249,16 @@
     dataTable.addColumn('number', 'Codes Claimed');
     dataTable.addColumn('number', 'Invalid Codes');
     dataTable.addColumn('number', 'Tokens Claimed');
-    {{if .hasKeyServerStats}}
-    dataTable.addColumn('number', 'Publish Requests');
-    {{end}}
+    if (hasKeyServerStats) {
+      dataTable.addColumn('number', 'Publish Requests');
+    }
 
     data.statistics.reverse().forEach(function(row) {
-      {{if .hasKeyServerStats}}
-      dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.total_publish_requests]);
-      {{else}}
-      dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed]);
-      {{end}}
+      if (hasKeyServerStats) {
+        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.total_publish_requests]);
+      } else {
+        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed]);
+      }
     });
 
     let dateFormatter = new google.visualization.DateFormat({
