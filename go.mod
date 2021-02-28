@@ -63,4 +63,5 @@ require (
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	honnef.co/go/tools v0.1.1 // indirect
+	mvdan.cc/gofumpt v0.1.0 // indirect
 )

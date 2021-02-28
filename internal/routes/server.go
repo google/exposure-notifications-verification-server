@@ -298,7 +298,7 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		realmadminController := realmadmin.New(cfg, db, limiterStore, h)
+		realmadminController := realmadmin.New(cfg, db, limiterStore, h, cacher)
 		realmadminRoutes(sub, realmadminController)
 
 		publicKeyCache, err := keyutils.NewPublicKeyCache(ctx, cacher, cfg.CertificateSigning.PublicKeyCacheDuration)
@@ -438,6 +438,9 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 
 	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
 	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
+
+	r.Handle("/realm/composite.csv", c.HandleComposite(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/composite.json", c.HandleComposite(stats.TypeJSON)).Methods(http.MethodGet)
 }
 
 // realmadminRoutes are the realm admin routes.

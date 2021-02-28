@@ -65,6 +65,16 @@ type RealmStat struct {
 	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
+// CodeClaimAgeDistributionAsStrings returns CodeClaimAgeDistribution as
+// []string instead of []int32. Useful for serialization.
+func (s *RealmStat) CodeClaimAgeDistributionAsStrings() []string {
+	str := make([]string, len(s.CodeClaimAgeDistribution))
+	for i, v := range s.CodeClaimAgeDistribution {
+		str[i] = strconv.Itoa(int(v))
+	}
+	return str
+}
+
 // MarshalCSV returns bytes in CSV format.
 func (s RealmStats) MarshalCSV() ([]byte, error) {
 	// Do nothing if there's no records
@@ -124,10 +134,10 @@ type jsonRealmStat struct {
 
 type jsonRealmStatStats struct {
 	Date time.Time               `json:"date"`
-	Data *jsonRealmStatStatsData `json:"data"`
+	Data *JSONRealmStatStatsData `json:"data"`
 }
 
-type jsonRealmStatStatsData struct {
+type JSONRealmStatStatsData struct {
 	CodesIssued           uint    `json:"codes_issued"`
 	CodesClaimed          uint    `json:"codes_claimed"`
 	CodesInvalid          uint    `json:"codes_invalid"`
@@ -148,7 +158,7 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 	for _, stat := range s {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
-			Data: &jsonRealmStatStatsData{
+			Data: &JSONRealmStatStatsData{
 				CodesIssued:           stat.CodesIssued,
 				CodesClaimed:          stat.CodesClaimed,
 				CodesInvalid:          stat.CodesInvalid,

@@ -92,6 +92,39 @@ func (kssd *KeyServerStatsDay) BeforeSave(tx *gorm.DB) error {
 	return kssd.ErrorOrNil()
 }
 
+// TotalPublishRequests returns the sum of all publish requests for this
+// day, which are stored by operating system.
+func (kssd *KeyServerStatsDay) TotalPublishRequests() int64 {
+	var sum int64
+	for _, v := range kssd.PublishRequests {
+		sum += v
+	}
+	return sum
+}
+
+// GetKeyServerStatsCached returns true if the provided realm has key
+// server stats enabled.
+func (db *Database) GetKeyServerStatsCached(ctx context.Context, realmID uint, cacher cache.Cacher) (*KeyServerStats, error) {
+	var kss *KeyServerStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:key_server_enabled",
+		Key:       strconv.FormatUint(uint64(realmID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &kss, 30*time.Minute, func() (interface{}, error) {
+		val, err := db.GetKeyServerStats(realmID)
+		if err != nil {
+			if IsNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return val, nil
+	}); err != nil {
+		return nil, err
+	}
+	return kss, nil
+}
+
 // GetKeyServerStats retrieves the configuration for gathering key-server statistics
 func (db *Database) GetKeyServerStats(realmID uint) (*KeyServerStats, error) {
 	var stats KeyServerStats
@@ -111,9 +144,12 @@ func (db *Database) SaveKeyServerStats(stats *KeyServerStats) error {
 
 // DeleteKeyServerStats disables gathering key-server statistics and removes the entry
 func (db *Database) DeleteKeyServerStats(realmID uint) error {
+	kss := &KeyServerStats{
+		RealmID: realmID,
+	}
 	return db.db.Unscoped().
-		Where("realm_id = ?", realmID).
-		Delete(&KeyServerStats{}).
+		Set("gorm:delete_option", "RETURNING *").
+		Delete(kss).
 		Error
 }
 
@@ -121,7 +157,7 @@ func (db *Database) DeleteKeyServerStats(realmID uint) error {
 func (db *Database) ListKeyServerStats() ([]*KeyServerStats, error) {
 	var stats []*KeyServerStats
 	if err := db.db.
-		Model(&KeyServerStatsDay{}).
+		Model(&KeyServerStats{}).
 		Find(&stats).
 		Error; err != nil {
 		return nil, err

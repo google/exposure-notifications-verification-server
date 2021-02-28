@@ -40,7 +40,7 @@ func TestHandleSettings(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer, harness.Cacher)
 	handler := middleware.InjectCurrentPath()(c.HandleSettings())
 
 	t.Run("middleware", func(t *testing.T) {
@@ -475,7 +475,7 @@ func TestHandleSettings(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		t.Parallel()
 
-		c := realmadmin.New(harness.Config, harness.BadDatabase, harness.RateLimiter, harness.Renderer)
+		c := realmadmin.New(harness.Config, harness.BadDatabase, harness.RateLimiter, harness.Renderer, harness.Cacher)
 		handler := c.HandleSettings()
 
 		ctx := ctx

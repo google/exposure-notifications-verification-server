@@ -40,7 +40,7 @@ func TestHandleSettings_SMS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer)
+	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer, harness.Cacher)
 	handler := middleware.InjectCurrentPath()(c.HandleSettings())
 
 	t.Run("middleware", func(t *testing.T) {

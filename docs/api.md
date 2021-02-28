@@ -1,22 +1,22 @@
 <!-- TOC depthFrom:1 -->
 
-- [API access](#api-access)
-- [API usage](#api-usage)
-  - [Authenticating](#authenticating)
-  - [Error reporting](#error-reporting)
-- [API Methods](#api-methods)
-  - [`/api/verify`](#apiverify)
-  - [`/api/certificate`](#apicertificate)
-- [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-  - [`/api/checkcodestatus`](#apicheckcodestatus)
-  - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*`](#apistats)
-- [Chaffing requests](#chaffing-requests)
-- [Response codes overview](#response-codes-overview)
+- [API access](#api-access)	
+- [API usage](#api-usage)	
+  - [Authenticating](#authenticating)	
+  - [Error reporting](#error-reporting)	
+- [API Methods](#api-methods)	
+  - [`/api/verify`](#apiverify)	
+  - [`/api/certificate`](#apicertificate)	
+- [Admin APIs](#admin-apis)	
+  - [`/api/issue`](#apiissue)	
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)	
+  - [`/api/batch-issue`](#apibatch-issue)	
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)	
+  - [`/api/checkcodestatus`](#apicheckcodestatus)	
+  - [`/api/expirecode`](#apiexpirecode)	
+  - [`/api/stats/*`](#apistats)	
+- [Chaffing requests](#chaffing-requests)	
+- [Response codes overview](#response-codes-overview)	
 
 <!-- /TOC -->
 
@@ -501,6 +501,9 @@ endpoints without notice.
 -  `/api/stats/realm/key-server.{csv,json}` - Daily statistics gathered from the
    key-server if enabled for the realm. This includes publish requests, EN days
    active before upload, and onset-to-upload distribution.
+  
+-   `/api/stats/realm/composite.{csv,json}` - Daily statistics for the realm
+   including all realm and key server information.
 
 -   `/api/stats/realm/users.{csv,json}` - Daily statistics for codes issued by
     realm user. These statistics only include codes issued by humans logged into

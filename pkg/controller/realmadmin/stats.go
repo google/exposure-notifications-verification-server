@@ -42,7 +42,7 @@ func (c *Controller) HandleStats() http.Handler {
 			return
 		}
 
-		s, err := c.db.GetKeyServerStats(membership.RealmID)
+		s, err := c.db.GetKeyServerStatsCached(ctx, membership.RealmID, c.cacher)
 		if err != nil && !database.IsNotFound(err) {
 			controller.InternalError(w, r, c.h, err)
 			return
