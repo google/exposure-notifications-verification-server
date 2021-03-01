@@ -1,3 +1,5 @@
+TEST
+
 # Exposure Notification Temporary Exposure Key Verification
 
 Contributions to this project are welcomed. We request that you
