@@ -1,0 +1,228 @@
+msgid ""
+msgstr ""
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Kode masalah"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Kode masalah massal"
+
+msgid "nav.check-code-status"
+msgstr "Periksa kode status"
+
+msgid "nav.api-keys"
+msgstr "Kunci API"
+
+msgid "nav.mobile-apps"
+msgstr "Aplikasi seluler"
+
+msgid "nav.event-log"
+msgstr "Log peristiwa"
+
+msgid "nav.signing-keys"
+msgstr "Kunci penandatanganan"
+
+msgid "nav.authenticated-sms"
+msgstr "Autentikasi SMS"
+
+msgid "nav.statistics"
+msgstr "Statistik"
+
+msgid "nav.users"
+msgstr "Pengguna"
+
+msgid "nav.settings"
+msgstr "Pengaturan"
+
+msgid "nav.change-realm"
+msgstr "Ubah domain"
+
+msgid "nav.select-realm"
+msgstr "Pilih domain"
+
+msgid "nav.system-admin"
+msgstr "Admin sistem"
+
+msgid "nav.my-account"
+msgstr "Akun saya"
+
+msgid "nav.sign-out"
+msgstr "Keluar"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Buat kode verifikasi"
+
+msgid "codes.issue.instructions"
+msgstr "Lengkapi formulir berikut untuk menerbitkan token sekali pakai untuk memverifikasi pasien. Jangan kirimkan formulir ini sampai Anda siap untuk menyampaikan kode tersebut kepada pasien."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnosis"
+
+msgid "codes.issue.dates-header"
+msgstr "Tanggal"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Tes positif"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Hasil tes positif yang dikonfirmasi dari sumber pengujian resmi"
+
+msgid "codes.issue.likely-test"
+msgstr "Kemungkinan diagnosis"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Diagnosis klinis tanpa tes"
+
+msgid "codes.issue.negative-test"
+msgstr "Tes negatif"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Hasil tes negatif yang dikonfirmasi dari sumber pengujian resmi"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Tanggal pengujian (waktu setempat)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Gejala timbul (waktu setempat)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "Pesan teks SMS (disarankan)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Nomor telepon pasien"
+
+msgid "codes.issue.sms-template-label"
+msgstr "Template SMS"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "Pasien akan menerima SMS dengan template pesan yang dipilih."
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "Jika tersedia, sistem akan mengirimkan pesan teks berisi kode tersebut kepada pasien. Ini harus nomor telepon yang dapat menerima pesan teks SMS."
+
+msgid "codes.issue.create-code-button"
+msgstr "Buat kode verifikasi"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Setel ulang dan kembali"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "Tautan verifikasi SMS"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "Berhasil mengirim SMS ke %s. Anjurkan pasien untuk memeriksa pesan teks mereka di ponsel mereka di mana Pemberitahuan Paparan diaktifkan."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Kode pendek cadangan"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Bagikan kode ini dengan pasien jika mereka tidak menerima pesan teks SMS di ponsel mereka."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Kode pendek yang dihasilkan"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Segera bagikan kode ini dengan pasien."
+
+msgid "codes.issue.uuid-header"
+msgstr "Pengenal unik"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Gunakan ini untuk melihat apakah kode verifikasi telah ditukarkan."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Kadaluarsa dalam"
+
+msgid "codes.issue.countdown-expired"
+msgstr "KEDALUWARSA"
+
+
+#
+# bulk-issue codes
+# ----------
+
+msgid "codes.bulk-issue.header"
+msgstr "Masalah massal"
+
+msgid "codes.bulk-issue.receipt-header"
+msgstr "Kwitansi"
+
+msgid "codes.bulk-issue.errors-header"
+msgstr "Kesalahan"
+
+msgid "codes.bulk-issue.success-header"
+msgstr "Kode berhasil diterbitkan"
+
+msgid "codes.bulk-issue.no-sms-provider"
+msgstr "Tidak ada penyedia SMS yang dikonfigurasi untuk bidang ini. Silakan hubungi administrator domain untuk mengaktifkan fitur ini."
+
+msgid "codes.bulk-issue.select-csv"
+msgstr "Pilih berkas CSV..."
+
+msgid "codes.bulk-issue.csv-format1"
+msgstr "Berkas CSV harus dalam format %s."
+
+msgid "codes.bulk-issue.csv-format2"
+msgstr "Setiap entri harus muncul di barisnya masing-masing, dan nomor telepon harus dalam format %s dan tanggal dalam %s."
+
+msgid "codes.bulk-issue.line-num"
+msgstr "Penguraian CSV akan dimulai dari baris ini. Mulai dari 1 untuk berkas baru. Ini dapat digunakan untuk melanjutkan pengunggahan yang dibatalkan atau sebagian."
+
+msgid "codes.bulk-issue.retry-code"
+msgstr "Kode coba lagi"
+
+msgid "codes.bulk-issue.new-retry-code"
+msgstr "Buat kode baru"
+
+msgid "codes.bulk-issue.retry-code-detail"
+msgstr "Kode coba lagi adalah sandi untuk status unggahan massal ini jika gagal selama pemrosesan. Jika Anda mencoba mengunggah ini lagi dengan kode coba lagi yang sama, server akan dapat mencoba lagi menerbitkan kode untuk ponsel yang belum berhasil diberitahukan. Anda dapat menggunakan kode coba lagi yang sama untuk semua unggahan Anda, tetapi jagalah seperti kata sandi."
+
+msgid "codes.bulk-issue.remember-code"
+msgstr "Ingat kode"
+
+msgid "codes.bulk-issue.remember-code-detail"
+msgstr "Simpan kode coba lagi dalam cookie di browser Anda."
+
+msgid "codes.bulk-issue.issue-codes"
+msgstr "Kode masalah"
+
+msgid "codes.bulk-issue.cancel"
+msgstr "Batalkan"
+
+msgid "codes.bulk-issue.phone-number"
+msgstr "Nomor telepon"
+
+msgid "codes.bulk-issue.test-date"
+msgstr "Tanggal tes"
+
+msgid "codes.bulk-issue.save-results"
+msgstr "Simpan log hasil kode"
+
+msgid "codes.bulk-issue.save-results-success"
+msgstr "kode diterbitkan."
+
+msgid "codes.bulk-issue.save-results-fail"
+msgstr "kode gagal."
+
+msgid "codes.bulk-issue.save-results-detail"
+msgstr "Tautan di atas memungkinkan Anda mengunduh berkas log dari hasil penerbitan massal Anda. Ini mengikuti format CSV yang sama sebagai masukan dengan pelacakan UUID yang ditambahkan untuk kode yang berhasil diterbitkan atau kode kesalahan dan pesan untuk kegagalan. Anda dapat melakukan koreksi pada baris berkas ini dan menggunakannya untuk mencoba mengunggahnya lagi."
+
+msgid "codes.bulk-issue.too-many-fail"
+msgstr "Terlalu banyak kesalahan kode untuk menampilkan hasil"
+
+msgid "codes.bulk-issue.too-many-success"
+msgstr "Terlalu banyak kode yang diterbitkan untuk menampilkan hasil"
