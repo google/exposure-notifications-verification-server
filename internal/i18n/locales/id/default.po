@@ -11,10 +11,10 @@ msgstr ""
 # ----------------
 
 msgid "nav.issue-code"
-msgstr "Kode masalah"
+msgstr "Kode terbitan"
 
 msgid "nav.bulk-issue-codes"
-msgstr "Kode masalah massal"
+msgstr "Kode terbitan massal"
 
 msgid "nav.check-code-status"
 msgstr "Periksa kode status"
@@ -198,7 +198,7 @@ msgid "codes.bulk-issue.remember-code-detail"
 msgstr "Simpan kode coba lagi dalam cookie di browser Anda."
 
 msgid "codes.bulk-issue.issue-codes"
-msgstr "Kode masalah"
+msgstr "Kode terbitan"
 
 msgid "codes.bulk-issue.cancel"
 msgstr "Batalkan"
