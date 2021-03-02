@@ -1738,6 +1738,55 @@ func (r *Realm) QuotaKey(hmacKey []byte) (string, error) {
 	return fmt.Sprintf("realm:quota:%s", dig), nil
 }
 
+// RecordChaffEvent records that the realm received a chaff event on the given
+// date. This is not a counter, but a boolean: chaff was either received or it
+// wasn't. This is used to help server operators identify if an app is not
+// sending chaff requests.
+func (r *Realm) RecordChaffEvent(db *Database, t time.Time) error {
+	t = timeutils.UTCMidnight(t)
+
+	realmSQL := `
+		INSERT INTO realm_chaff_events(realm_id, date)
+			VALUES ($1, $2)
+		ON CONFLICT (realm_id, date) DO NOTHING`
+	if err := db.db.Exec(realmSQL, r.ID, t).Error; err != nil {
+		return fmt.Errorf("failed to record chaff event: %w", err)
+	}
+
+	return nil
+}
+
+// ListChaffEvents returns the chaff events for the realm, ordered by date.
+func (r *Realm) ListChaffEvents(db *Database) ([]*RealmChaffEvent, error) {
+	stop := timeutils.UTCMidnight(time.Now().UTC())
+	start := stop.Add(6 * -24 * time.Hour)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	sql := `
+		SELECT
+			d.date AS date,
+			CASE
+				WHEN s.realm_id IS NULL THEN false
+				ELSE true
+			END AS present
+		FROM (
+			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
+		) d
+		LEFT JOIN realm_chaff_events s ON s.realm_id = $1 AND s.date = d.date
+		ORDER BY date DESC`
+
+	var events []*RealmChaffEvent
+	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&events).Error; err != nil {
+		if IsNotFound(err) {
+			return events, nil
+		}
+		return nil, err
+	}
+	return events, nil
+}
+
 // ToCIDRList converts the newline-separated and/or comma-separated CIDR list
 // into an array of strings.
 func ToCIDRList(s string) ([]string, error) {

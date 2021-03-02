@@ -1100,3 +1100,69 @@ func TestRealm_Audits(t *testing.T) {
 		t.Errorf("expected %d audits, got %d: %v", want, got, audits)
 	}
 }
+
+func TestRealm_ListAndRecordChaffEvent(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := timeutils.UTCMidnight(time.Now().UTC())
+
+	expectEvents := func(tb testing.TB, i int) {
+		tb.Helper()
+
+		events, err := realm.ListChaffEvents(db)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		if got, want := len(events), i; got != want {
+			tb.Errorf("expected %d events, got %d: %#v", want, got, events)
+		}
+	}
+
+	expectPresents := func(tb testing.TB, i int) {
+		tb.Helper()
+
+		events, err := realm.ListChaffEvents(db)
+		if err != nil {
+			tb.Fatal(err)
+		}
+
+		var total int
+		for _, event := range events {
+			if event.Present {
+				total++
+			}
+		}
+		if got, want := total, i; got != want {
+			tb.Errorf("expected %d present events, got %d: %#v", want, got, events)
+		}
+	}
+
+	// Listing with no events succeeds
+	expectEvents(t, 7)
+
+	// Create event
+	if err := realm.RecordChaffEvent(db, now); err != nil {
+		t.Fatal(err)
+	}
+	expectEvents(t, 7)
+	expectPresents(t, 1)
+
+	// Create event on same day (conflict should do nothing)
+	if err := realm.RecordChaffEvent(db, now); err != nil {
+		t.Fatal(err)
+	}
+	expectEvents(t, 7)
+	expectPresents(t, 1)
+
+	if err := realm.RecordChaffEvent(db, now.Add(-36*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	expectEvents(t, 7)
+	expectPresents(t, 2)
+}

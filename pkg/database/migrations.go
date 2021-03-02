@@ -2090,6 +2090,25 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS code_claim_mean_age`)
 			},
 		},
+		{
+			ID: "00094-AddRealmChaffEvents",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE TABLE realm_chaff_events (
+						realm_id INTEGER NOT NULL REFERENCES realms(id),
+						date DATE NOT NULL,
+						PRIMARY KEY (realm_id, date)
+					)`,
+					`CREATE INDEX idx_realm_chaff_events_realm_id ON realm_chaff_events(realm_id)`,
+					`CREATE INDEX idx_realm_chaff_events_date ON realm_chaff_events(date)`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE IF EXISTS realm_chaff_events`,
+					`DROP INDEX IF EXISTS idx_realm_chaff_events_realm_id`,
+					`DROP INDEX IF EXISTS idx_realm_chaff_events_date`)
+			},
+		},
 	}
 }
 

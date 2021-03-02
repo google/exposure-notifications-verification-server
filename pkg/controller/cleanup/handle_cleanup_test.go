@@ -259,4 +259,32 @@ func TestHandleCleanup(t *testing.T) {
 			t.Errorf("got %d users, expected %d", got, want)
 		}
 	})
+
+	t.Run("chaff_events", func(t *testing.T) {
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		realm, err := db.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := realm.RecordChaffEvent(db, deletedAt); err != nil {
+			t.Fatal(err)
+		}
+
+		c := New(config, db, keyManagerSigner, h)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
+		c.HandleCleanup().ServeHTTP(w, r)
+
+		events, err := realm.ListChaffEvents(db)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, event := range events {
+			if event.Present {
+				t.Errorf("expected event to not be present: %#v", event)
+			}
+		}
+	})
 }

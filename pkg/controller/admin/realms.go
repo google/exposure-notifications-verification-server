@@ -56,9 +56,16 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 			return
 		}
 
+		realmChaffEvents, err := c.db.HasRealmChaffEventsMap()
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("Realms - System Admin")
 		m["realms"] = realms
+		m["realmChaffEvents"] = realmChaffEvents
 		m["memberships"] = membershipsMap
 		m["query"] = q
 		m["paginator"] = paginator
@@ -223,6 +230,12 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 			return
 		}
 
+		chaffEvents, err := realm.ListChaffEvents(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		var quotaLimit, quotaRemaining uint64
 		if realm.AbusePreventionEnabled {
 			key, err := realm.QuotaKey(c.config.RateLimit.HMACKey)
@@ -240,14 +253,14 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
 			return
 		}
 
@@ -256,7 +269,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, quotaLimit, quotaRemaining)
+				c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
 				return
 			}
 
@@ -271,6 +284,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	realm *database.Realm, membership *database.Membership, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
+	chaffEvents []*database.RealmChaffEvent,
 	quotaLimit, quotaRemaining uint64) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm: %s - System Admin", realm.Name)
@@ -278,6 +292,7 @@ func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	m["membership"] = membership
 	m["systemSMSConfig"] = smsConfig
 	m["systemEmailConfig"] = emailConfig
+	m["chaffEvents"] = chaffEvents
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
