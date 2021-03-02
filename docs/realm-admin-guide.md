@@ -1,26 +1,33 @@
 <!-- TOC depthFrom:2 -->
 
 - [Access protection recommendations](#access-protection-recommendations)
-  - [Account protection](#account-protection)
-  - [API key protection](#api-key-protection)
+    - [Account protection](#account-protection)
+    - [API key protection](#api-key-protection)
 - [Settings, enabling EN Express](#settings-enabling-en-express)
 - [Settings, code settings](#settings-code-settings)
-  - [Bulk Issue Codes](#bulk-issue-codes)
-  - [Allowed Test Types](#allowed-test-types)
-  - [Date Configuration](#date-configuration)
-  - [Code Length & Expiration](#code-length--expiration)
+    - [Bulk Issue Codes](#bulk-issue-codes)
+    - [Allowed Test Types](#allowed-test-types)
+    - [Date Configuration](#date-configuration)
+    - [Code Length & Expiration](#code-length--expiration)
 - [Settings, SMS](#settings-sms)
-  - [SMS Text Template](#sms-text-template)
+    - [SMS Text Template](#sms-text-template)
 - [Authenticated SMS](#authenticated-sms)
 - [Adding users](#adding-users)
 - [API keys](#api-keys)
 - [ENX redirector service](#enx-redirector-service)
 - [Mobile apps](#mobile-apps)
 - [Statistics](#statistics)
-  - [Key server statistics](#key-server-statistics)
+    - [Key server statistics](#key-server-statistics)
+    - [All charts available](#all-charts-available)
+        - [Codes issued and used](#codes-issued-and-used)
+        - [Code usage latency](#code-usage-latency)
+        - [Total TEKs published](#total-teks-published)
+        - [Total publish requests](#total-publish-requests)
+        - [EN days active before upload](#en-days-active-before-upload)
+        - [Onset to upload](#onset-to-upload)
 - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
-  - [Automatic Rotation](#automatic-rotation)
-  - [Manual Rotation](#manual-rotation)
+    - [Automatic Rotation](#automatic-rotation)
+    - [Manual Rotation](#manual-rotation)
 
 <!-- /TOC -->
 
@@ -307,9 +314,65 @@ enhanced statistics collection from the corresponding key server. **Enabling the
 - Onset upload distribution: reflects the distribution of the time between the
   TEK's symptom onset time and when the key was uploaded.
 
-Here is an example of the statistics page:
+### All charts available
 
-![stats](images/admin/stats.png "Verification server stats")
+#### Codes issued and used
+
+This chart shows all of the process points involved in issuing and using a verification code.
+
+* The delta between codes issued and codes claimed can be used as a rudimentary measure of adoption.
+* The delta between codes claimed and tokens claimed indicates users that enter a valid verification code but don't get through the consent to share data screen.
+* The delta between tokens claimed and publish requests indicates that a user got past the consent screen but keys were not uploaded.
+
+![stats](images/admin/stats01.png "codes issued and used chart")
+
+#### Code usage latency
+
+There are two charts here. The first is a histogram showing how quickly users are using
+verification codes (once successfully used).
+
+The second shows the mean of the code usage time (in minutes).
+
+![stats](images/admin/stats02.png "code usage latency charts")
+
+#### Total TEKs published
+
+This chart shows the total number of temporary exposure keys published due to
+verification certificates issued by your public health authority.
+
+![stats](images/admin/stats03.png "total TEKs published")
+
+
+#### Total publish requests
+
+This chart shows a stacked bar chart of the total number of publish requests (uploads
+to the key sever) due to verification certificates issued by your public health authority.
+
+The total line is an overlay that provides the OS breakdown as a tooltip.
+
+Missing onset date, indicates the count of the number of publish request where the verification
+certificate did not contain a test date or a symptom onset date and the user also
+declined to provide a symptom onset date, or one was not known. In that case, those requests
+received default values according to the configuration of the key server.
+
+![stats](images/admin/stats04.png "total publish requests by operating system")
+
+#### EN days active before upload
+
+This histogram shows, based on publish requests, how many days a device had EN activated
+before reporting a diagnosis. Ideally this chart will skew to the right (active longer).
+
+![stats](images/admin/stats05.png "EN days activate before upload")
+
+#### Onset to upload
+
+This histogram shows, based on publish requests where a symptom onset or test date was provided,
+how many days ago that symptom onset date was compared to the upload date.
+
+The lower this chart skews, the healthier the testing pipeline and verification code delivery
+system is.
+
+![stats](images/admin/stats06.png "Onset-to-upload chart")
 
 ## Rotating certificate signing keys
 
