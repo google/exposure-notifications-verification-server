@@ -25,14 +25,16 @@ func TestRealmUserStats_MarshalCSV(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name  string
-		stats RealmUserStats
-		exp   string
+		name    string
+		stats   RealmUserStats
+		expCSV  string
+		expJSON string
 	}{
 		{
-			name:  "empty",
-			stats: nil,
-			exp:   "",
+			name:    "empty",
+			stats:   nil,
+			expCSV:  ``,
+			expJSON: `{}`,
 		},
 		{
 			name: "single",
@@ -46,9 +48,10 @@ func TestRealmUserStats_MarshalCSV(t *testing.T) {
 					CodesIssued: 10,
 				},
 			},
-			exp: `date,realm_id,user_id,name,email,codes_issued
+			expCSV: `date,realm_id,user_id,name,email,codes_issued
 2020-02-03,1,1,You,you@example.com,10
 `,
+			expJSON: `{"realm_id":1,"statistics":[{"date":"2020-02-03T00:00:00Z","issuer_data":[{"user_id":1,"name":"You","email":"you@example.com","codes_issued":10}]}]}`,
 		},
 		{
 			name: "multi",
@@ -78,11 +81,12 @@ func TestRealmUserStats_MarshalCSV(t *testing.T) {
 					CodesIssued: 15,
 				},
 			},
-			exp: `date,realm_id,user_id,name,email,codes_issued
+			expCSV: `date,realm_id,user_id,name,email,codes_issued
 2020-02-03,1,1,You,you@example.com,10
 2020-02-04,1,2,Them,them@example.com,45
 2020-02-05,1,3,Us,us@example.com,15
 `,
+			expJSON: `{"realm_id":1,"statistics":[{"date":"2020-02-05T00:00:00Z","issuer_data":[{"user_id":3,"name":"Us","email":"us@example.com","codes_issued":15}]},{"date":"2020-02-04T00:00:00Z","issuer_data":[{"user_id":2,"name":"Them","email":"them@example.com","codes_issued":45}]},{"date":"2020-02-03T00:00:00Z","issuer_data":[{"user_id":1,"name":"You","email":"you@example.com","codes_issued":10}]}]}`,
 		},
 	}
 
@@ -96,7 +100,7 @@ func TestRealmUserStats_MarshalCSV(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(string(b), tc.exp); diff != "" {
+			if diff := cmp.Diff(string(b), tc.expCSV); diff != "" {
 				t.Errorf("bad csv (+got, -want): %s", diff)
 			}
 
@@ -104,10 +108,8 @@ func TestRealmUserStats_MarshalCSV(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			a := &RealmUserStats{}
-			err = a.UnmarshalJSON(b)
-			if err != nil {
-				t.Fatal(err)
+			if got, want := string(b), tc.expJSON; got != want {
+				t.Errorf("bad json, expected \n%s\nto be\n%s\n", got, want)
 			}
 		})
 	}
