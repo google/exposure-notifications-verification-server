@@ -25,14 +25,16 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name  string
-		stats AuthorizedAppStats
-		exp   string
+		name    string
+		stats   AuthorizedAppStats
+		expCSV  string
+		expJSON string
 	}{
 		{
-			name:  "empty",
-			stats: nil,
-			exp:   "",
+			name:    "empty",
+			stats:   nil,
+			expCSV:  ``,
+			expJSON: `{}`,
 		},
 		{
 			name: "single",
@@ -49,9 +51,10 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					AuthorizedAppType: "device",
 				},
 			},
-			exp: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
+			expCSV: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
 2020-02-03,1,Appy,device,10,4,2,3,1
 `,
+			expJSON: `{"authorized_app_id":1,"authorized_app_name":"Appy","authorized_app_type":"device","statistics":[{"date":"2020-02-03T00:00:00Z","data":{"codes_issued":10,"codes_claimed":4,"codes_invalid":2,"tokens_claimed":3,"tokens_invalid":1}}]}`,
 		},
 		{
 			name: "multi",
@@ -90,11 +93,12 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 					AuthorizedAppType: "stats",
 				},
 			},
-			exp: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
+			expCSV: `date,authorized_app_id,authorized_app_name,authorized_app_type,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid
 2020-02-03,1,Appy,device,10,10,2,4,2
 2020-02-04,1,Mc,admin,45,44,5,3,2
 2020-02-05,1,Apperson,stats,15,13,4,6,2
 `,
+			expJSON: `{"authorized_app_id":1,"authorized_app_name":"Appy","authorized_app_type":"device","statistics":[{"date":"2020-02-05T00:00:00Z","data":{"codes_issued":15,"codes_claimed":13,"codes_invalid":4,"tokens_claimed":6,"tokens_invalid":2}},{"date":"2020-02-04T00:00:00Z","data":{"codes_issued":45,"codes_claimed":44,"codes_invalid":5,"tokens_claimed":3,"tokens_invalid":2}},{"date":"2020-02-03T00:00:00Z","data":{"codes_issued":10,"codes_claimed":10,"codes_invalid":2,"tokens_claimed":4,"tokens_invalid":2}}]}`,
 		},
 	}
 
@@ -108,7 +112,7 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(string(b), tc.exp); diff != "" {
+			if diff := cmp.Diff(string(b), tc.expCSV); diff != "" {
 				t.Errorf("bad csv (+got, -want): %s", diff)
 			}
 
@@ -116,10 +120,8 @@ func TestAuthorizedAppStats_MarshalCSV(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			a := &AuthorizedAppStats{}
-			err = a.UnmarshalJSON(b)
-			if err != nil {
-				t.Fatal(err)
+			if got, want := string(b), tc.expJSON; got != want {
+				t.Errorf("bad json, expected \n%s\nto be\n%s\n", got, want)
 			}
 		})
 	}

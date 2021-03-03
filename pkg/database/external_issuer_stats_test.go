@@ -25,14 +25,16 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name  string
-		stats ExternalIssuerStats
-		exp   string
+		name    string
+		stats   ExternalIssuerStats
+		expCSV  string
+		expJSON string
 	}{
 		{
-			name:  "empty",
-			stats: nil,
-			exp:   "",
+			name:    "empty",
+			stats:   nil,
+			expCSV:  ``,
+			expJSON: `{}`,
 		},
 		{
 			name: "single",
@@ -44,9 +46,10 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 					CodesIssued: 10,
 				},
 			},
-			exp: `date,realm_id,issuer_id,codes_issued
+			expCSV: `date,realm_id,issuer_id,codes_issued
 2020-02-03,1,user:2,10
 `,
+			expJSON: `{"realm_id":1,"statistics":[{"date":"2020-02-03T00:00:00Z","issuer_data":[{"issuer_id":"user:2","codes_issued":10}]}]}`,
 		},
 		{
 			name: "multi",
@@ -70,11 +73,12 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 					CodesIssued: 15,
 				},
 			},
-			exp: `date,realm_id,issuer_id,codes_issued
+			expCSV: `date,realm_id,issuer_id,codes_issued
 2020-02-03,1,user:2,10
 2020-02-04,1,user:2,45
 2020-02-05,1,user:2,15
 `,
+			expJSON: `{"realm_id":1,"statistics":[{"date":"2020-02-05T00:00:00Z","issuer_data":[{"issuer_id":"user:2","codes_issued":15}]},{"date":"2020-02-04T00:00:00Z","issuer_data":[{"issuer_id":"user:2","codes_issued":45}]},{"date":"2020-02-03T00:00:00Z","issuer_data":[{"issuer_id":"user:2","codes_issued":10}]}]}`,
 		},
 	}
 
@@ -88,8 +92,16 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(string(b), tc.exp); diff != "" {
+			if diff := cmp.Diff(string(b), tc.expCSV); diff != "" {
 				t.Errorf("bad csv (+got, -want): %s", diff)
+			}
+
+			b, err = tc.stats.MarshalJSON()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := string(b), tc.expJSON; got != want {
+				t.Errorf("bad json, expected \n%s\nto be\n%s\n", got, want)
 			}
 		})
 	}
