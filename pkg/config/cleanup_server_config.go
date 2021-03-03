@@ -51,6 +51,10 @@ type CleanupConfig struct {
 	KeyServerStatsMaxAge time.Duration `env:"KEY_SERVER_STATS_MAX_AGE, default=720h"`
 	MobileAppMaxAge      time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
+	// RealmChaffEventMaxAge is the maximum amount of time to store whether a
+	// realm had received a chaff request.
+	RealmChaffEventMaxAge time.Duration `env:"REALM_CHAFF_EVENT_MAX_AGE, default=168h"` // 7 days
+
 	// SigningTokenKeyMaxAge is the maximum amount of time that a rotated signing
 	// token key should remain unpurged.
 	SigningTokenKeyMaxAge time.Duration `env:"SIGNING_TOKEN_KEY_MAX_AGE, default=36h"`

@@ -104,6 +104,34 @@
           {{end}}
 
           <hr>
+          <h6 class="mb-2">Chaff usage</h6>
+          <p>Dates are in UTC</p>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th scope="col" width="150"></th>
+                {{range .chaffEvents}}
+                  <th scope="col" class="text-center">{{.Date.Format "01/02"}}</th>
+                {{end}}
+              </tr>
+              <tr>
+                <th scope="row">Used chaff</th>
+                {{range .chaffEvents}}
+                  {{if .Present}}
+                    <td class="text-center">
+                      <span class="oi oi-circle-check text-success"></span>
+                    </td>
+                  {{else}}
+                    <td class="text-center">
+                      <span class="oi oi-circle-x text-danger"></span>
+                    </td>
+                  {{end}}
+                {{end}}
+              </tr>
+            </thead>
+          </table>
+
+          <hr>
           <h6 class="mb-2">Abuse prevention</h6>
           {{if $realm.AbusePreventionEnabled}}
           <div class="text-success">Enabled</div>

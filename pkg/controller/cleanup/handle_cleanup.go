@@ -167,7 +167,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
-		// Verification signing key references.
+		// Verification signing key references
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "VERIFICATION_SIGNING_KEY")
@@ -189,6 +189,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged key-server stats", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// Realm chaff events
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "REALM_CHAFF_EVENT")
+			if count, err := c.db.PurgeRealmChaffEvents(c.config.RealmChaffEventMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge realm chaff events: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged realm chaff events", "count", count)
 				result = enobs.ResultOK
 			}
 		}()
