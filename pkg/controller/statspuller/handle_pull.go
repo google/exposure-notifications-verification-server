@@ -15,17 +15,25 @@
 package statspuller
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	v1 "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
+	"github.com/hashicorp/go-multierror"
+	"github.com/sethvargo/go-retry"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -69,68 +77,110 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
+		var merr *multierror.Error
+		var merrLock sync.Mutex
+		sem := semaphore.NewWeighted(c.config.MaxWorkers)
+		var wg sync.WaitGroup
 		for _, realmStat := range statsConfigs {
-			realmID := realmStat.RealmID
+			if err := sem.Acquire(ctx, 1); err != nil {
+				controller.InternalError(w, r, c.h, fmt.Errorf("failed to acquire semaphore: %w", err))
+				return
+			}
 
-			var err error
-			client := c.defaultKeyServerClient
-			if realmStat.KeyServerURLOverride != "" {
-				client, err = clients.NewKeyServerClient(
-					realmStat.KeyServerURLOverride,
-					clients.WithTimeout(c.config.DownloadTimeout),
-					clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
-				if err != nil {
-					logger.Errorw("failed to create key server client", "error", err)
-					continue
+			wg.Add(1)
+			go func(ctx context.Context, realmStat *database.KeyServerStats) {
+				defer sem.Release(1)
+				defer wg.Done()
+				if err := c.pullOneStat(ctx, realmStat); err != nil {
+					merrLock.Lock()
+					defer merrLock.Unlock()
+					merr = multierror.Append(merr, fmt.Errorf("failed to pull stats for realm %d: %w", realmStat.RealmID, err))
 				}
-			}
+			}(ctx, realmStat)
+		}
+		wg.Wait()
 
-			s, err := certapi.GetSignerForRealm(ctx, realmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
-			if err != nil {
-				logger.Errorw("failed to retrieve signer for realm", "realmID", realmID, "error", err)
-				continue
-			}
-
-			audience := c.config.KeyServerStatsAudience
-			if realmStat.KeyServerAudienceOverride != "" {
-				audience = realmStat.KeyServerAudienceOverride
-			}
-
-			now := time.Now().UTC()
-			claims := &jwt.StandardClaims{
-				Audience:  audience,
-				ExpiresAt: now.Add(5 * time.Minute).UTC().Unix(),
-				IssuedAt:  now.Unix(),
-				Issuer:    s.Issuer,
-			}
-			token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-			token.Header["kid"] = s.KeyID
-
-			signedJWT, err := jwthelper.SignJWT(token, s.Signer)
-			if err != nil {
-				logger.Errorw("failed to stat-pull token", "error", err)
-				continue
-			}
-
-			resp, err := client.Stats(ctx, &v1.StatsRequest{}, signedJWT)
-			if err != nil {
-				logger.Errorw("failed make stats call", "error", err)
-				continue
-			}
-
-			for _, d := range resp.Days {
-				if d == nil {
-					continue
-				}
-				day := database.MakeKeyServerStatsDay(realmID, d)
-				if err = c.db.SaveKeyServerStatsDay(day); err != nil {
-					logger.Errorw("failed saving stats day", "error", err)
-				}
-			}
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
+			logger.Errorw("failed to pull stats", "errors", errs)
+			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
+				OK:     false,
+				Errors: project.ErrorsToStrings(errs),
+			})
+			return
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,
 		})
 	})
+}
+
+func (c *Controller) pullOneStat(ctx context.Context, realmStat *database.KeyServerStats) error {
+	realmID := realmStat.RealmID
+
+	client := c.defaultKeyServerClient
+	if realmStat.KeyServerURLOverride != "" {
+		var err error
+		client, err = clients.NewKeyServerClient(
+			realmStat.KeyServerURLOverride,
+			clients.WithTimeout(c.config.DownloadTimeout),
+			clients.WithMaxBodySize(c.config.FileSizeLimitBytes))
+		if err != nil {
+			return fmt.Errorf("failed to create key server client: %w", err)
+		}
+	}
+
+	s, err := certapi.GetSignerForRealm(ctx, realmID, c.config.CertificateSigning, c.signerCache, c.db, c.kms)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve signer for realm %d: %w", realmID, err)
+	}
+
+	audience := c.config.KeyServerStatsAudience
+	if realmStat.KeyServerAudienceOverride != "" {
+		audience = realmStat.KeyServerAudienceOverride
+	}
+
+	now := time.Now().UTC()
+	claims := &jwt.StandardClaims{
+		Audience:  audience,
+		ExpiresAt: now.Add(5 * time.Minute).UTC().Unix(),
+		IssuedAt:  now.Unix(),
+		Issuer:    s.Issuer,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token.Header["kid"] = s.KeyID
+
+	signedJWT, err := jwthelper.SignJWT(token, s.Signer)
+	if err != nil {
+		return fmt.Errorf("failed to stat-pull token: %w", err)
+	}
+
+	// Attempt to download the stats with retries. We intentionally re-use the
+	// same JWT because it's valid for 5min and don't want the overhead of
+	// reconstructing and signing it.
+	var resp *v1.StatsResponse
+	b, _ := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxRetries(3, b)
+	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+		var err error
+		resp, err = client.Stats(ctx, &v1.StatsRequest{}, signedJWT)
+		if err != nil {
+			return retry.RetryableError(fmt.Errorf("failed to make stats call: %w", err))
+		}
+		return nil
+	}); err != nil {
+		return errors.Unwrap(err)
+	}
+
+	for _, d := range resp.Days {
+		if d == nil {
+			continue
+		}
+		day := database.MakeKeyServerStatsDay(realmID, d)
+		if err = c.db.SaveKeyServerStatsDay(day); err != nil {
+			return fmt.Errorf("failed to save stats day: %w", err)
+		}
+	}
+
+	return nil
 }
