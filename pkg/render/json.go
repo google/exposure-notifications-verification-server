@@ -59,7 +59,7 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 		w.WriteHeader(code)
 
 		// Return an OK response.
-		if code >= 200 && code < 300 {
+		if code >= http.StatusOK && code < http.StatusMultipleChoices {
 			fmt.Fprint(w, jsonOKResp)
 			return
 		}

@@ -60,20 +60,20 @@ func TestLoadCurrentMembership(t *testing.T) {
 		{
 			name: "no_user",
 			user: nil,
-			code: 500,
+			code: http.StatusInternalServerError,
 		},
 		{
 			name:  "no_realm",
 			user:  user,
 			realm: nil,
-			code:  200,
+			code:  http.StatusOK,
 		},
 		{
 			name:        "no_memberships",
 			user:        user,
 			realm:       realm,
 			memberships: nil,
-			code:        200,
+			code:        http.StatusOK,
 		},
 		{
 			name:  "memberships_missing",
@@ -82,7 +82,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 			memberships: []*database.Membership{
 				{RealmID: 2, Realm: nil},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:  "memberships_found",
@@ -92,7 +92,7 @@ func TestLoadCurrentMembership(t *testing.T) {
 				{RealmID: realm.ID, Realm: realm},
 			},
 			found: true,
-			code:  200,
+			code:  http.StatusOK,
 		},
 	}
 
@@ -168,7 +168,7 @@ func TestRequireMembership(t *testing.T) {
 		{
 			name:       "missing",
 			membership: nil,
-			code:       400,
+			code:       http.StatusBadRequest,
 		},
 		{
 			name: "default",
@@ -176,7 +176,7 @@ func TestRequireMembership(t *testing.T) {
 				User:  &database.User{},
 				Realm: &database.Realm{},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 	}
 

@@ -42,12 +42,12 @@ func TestRequireHeader(t *testing.T) {
 	}{
 		{
 			name: "missing",
-			code: 401,
+			code: http.StatusUnauthorized,
 		},
 		{
 			name:    "present",
 			headers: map[string]string{"x-custom-header": "1"},
-			code:    200,
+			code:    http.StatusOK,
 		},
 	}
 
@@ -94,17 +94,17 @@ func TestRequireHeaderValues(t *testing.T) {
 	}{
 		{
 			name: "missing",
-			code: 401,
+			code: http.StatusUnauthorized,
 		},
 		{
 			name:    "present_invalid",
 			headers: map[string]string{"x-custom-header": "42"},
-			code:    401,
+			code:    http.StatusUnauthorized,
 		},
 		{
 			name:    "present_valid",
 			headers: map[string]string{"x-custom-header": "1"},
-			code:    200,
+			code:    http.StatusOK,
 		},
 	}
 

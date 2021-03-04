@@ -43,14 +43,14 @@ func TestRecovery(t *testing.T) {
 		{
 			name:    "default",
 			handler: emptyHandler(),
-			code:    200,
+			code:    http.StatusOK,
 		},
 		{
 			name: "panic",
 			handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("oops")
 			}),
-			code: 500,
+			code: http.StatusInternalServerError,
 		},
 	}
 

@@ -79,7 +79,7 @@ func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if code := resp.StatusCode; code < 200 || code > 299 {
+	if code := resp.StatusCode; code < http.StatusOK || code >= http.StatusMultipleChoices {
 		var terr TwilioError
 		if err := json.Unmarshal(respBody, &terr); err != nil {
 			return fmt.Errorf("twilio error %d: %s", code, respBody)

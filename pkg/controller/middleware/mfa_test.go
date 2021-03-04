@@ -54,7 +54,7 @@ func TestRequireMFA(t *testing.T) {
 		{
 			name:       "missing_membership",
 			membership: nil,
-			code:       400,
+			code:       http.StatusBadRequest,
 		},
 		{
 			name:        "optional_verified",
@@ -64,7 +64,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptional,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "optional_not_verified",
@@ -74,7 +74,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptional,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "optional_prompt_verified",
@@ -84,7 +84,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "optional_prompt_not_verified",
@@ -94,7 +94,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 303,
+			code: http.StatusSeeOther,
 		},
 		{
 			name:        "optional_prompt_not_verified_prompted",
@@ -105,7 +105,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "required_verified",
@@ -115,7 +115,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "required_not_verified",
@@ -125,7 +125,7 @@ func TestRequireMFA(t *testing.T) {
 					MFAMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 303,
+			code: http.StatusSeeOther,
 		},
 		{
 			name:        "required_not_grace_allowed",
@@ -138,7 +138,7 @@ func TestRequireMFA(t *testing.T) {
 				},
 				CreatedAt: time.Now().UTC(),
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:        "required_not_grace_expired",
@@ -151,7 +151,7 @@ func TestRequireMFA(t *testing.T) {
 				},
 				CreatedAt: time.Now().UTC().Add(-30 * 24 * time.Hour),
 			},
-			code: 303,
+			code: http.StatusSeeOther,
 		},
 	}
 
@@ -193,7 +193,7 @@ func TestRequireMFA(t *testing.T) {
 			if got, want := w.Code, tc.code; got != want {
 				t.Errorf("Expected %d to be %d", got, want)
 			}
-			if tc.code == 200 {
+			if tc.code == http.StatusOK {
 				stored := controller.MFAPromptedFromSession(session)
 				if !stored {
 					t.Errorf("expected mfa prompted to have been stored")

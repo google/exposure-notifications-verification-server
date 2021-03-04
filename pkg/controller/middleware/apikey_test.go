@@ -76,31 +76,31 @@ func TestRequireAPIKey(t *testing.T) {
 		{
 			name:   "no_key",
 			apiKey: "",
-			code:   401,
+			code:   http.StatusUnauthorized,
 			db:     db,
 		},
 		{
 			name:   "non_existent_key",
 			apiKey: "abcd1234",
-			code:   401,
+			code:   http.StatusUnauthorized,
 			db:     db,
 		},
 		{
 			name:   "bad_database_conn",
 			apiKey: apiKey,
-			code:   500,
+			code:   http.StatusInternalServerError,
 			db:     badDB,
 		},
 		{
 			name:   "wrong_type",
 			apiKey: wrongAPIKey,
-			code:   401,
+			code:   http.StatusUnauthorized,
 			db:     db,
 		},
 		{
 			name:   "valid",
 			apiKey: apiKey,
-			code:   200,
+			code:   http.StatusOK,
 			db:     db,
 			next: func(t *testing.T) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

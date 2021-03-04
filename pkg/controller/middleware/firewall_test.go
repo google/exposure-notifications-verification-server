@@ -48,19 +48,19 @@ func TestProcessFirewall(t *testing.T) {
 		{
 			name: "no_realm",
 			ctx:  ctx,
-			code: 400,
+			code: http.StatusBadRequest,
 		},
 		{
 			name: "realm_in_context",
 			ctx:  controller.WithRealm(ctx, &database.Realm{}),
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name: "membership_in_context",
 			ctx: controller.WithMembership(ctx, &database.Membership{
 				Realm: &database.Realm{},
 			}),
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name: "all_allowed4",
@@ -68,7 +68,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"0.0.0.0/0"},
 			}),
 			remoteAddr: "1.2.3.4",
-			code:       200,
+			code:       http.StatusOK,
 		},
 		{
 			name: "all_allowed6",
@@ -76,7 +76,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"::/0"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
-			code:       200,
+			code:       http.StatusOK,
 		},
 		{
 			name: "single_allowed_ip4",
@@ -84,7 +84,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "1.2.3.4",
-			code:       200,
+			code:       http.StatusOK,
 		},
 		{
 			name: "single_allowed_ip6",
@@ -92,7 +92,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"2001::/0"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
-			code:       200,
+			code:       http.StatusOK,
 		},
 		{
 			name: "single_allowed_xff",
@@ -101,7 +101,7 @@ func TestProcessFirewall(t *testing.T) {
 			}),
 			remoteAddr: "9.8.7.6",
 			xff:        "1.2.3.4, 5.6.7.8",
-			code:       200,
+			code:       http.StatusOK,
 		},
 		{
 			name: "single_reject_ip4",
@@ -109,7 +109,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "9.8.7.6",
-			code:       401,
+			code:       http.StatusUnauthorized,
 		},
 		{
 			name: "single_reject_ip6",
@@ -117,7 +117,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"2000::/64"},
 			}),
 			remoteAddr: "2001:db8::8a2e:370:7334",
-			code:       401,
+			code:       http.StatusUnauthorized,
 		},
 		{
 			name: "single_reject_xff",
@@ -126,7 +126,7 @@ func TestProcessFirewall(t *testing.T) {
 			}),
 			remoteAddr: "1.2.3.4",          // xff is preferred over remote ip
 			xff:        "5.6.7.8, 1.2.3.4", // Only trusts the first value in xff
-			code:       401,
+			code:       http.StatusUnauthorized,
 		},
 	}
 
