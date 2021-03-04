@@ -44,7 +44,7 @@ func TestRequireEmailVerified(t *testing.T) {
 	requireEmailVerified := middleware.RequireEmailVerified(authProvider, h)
 
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 
 	cases := []struct {
@@ -57,7 +57,7 @@ func TestRequireEmailVerified(t *testing.T) {
 		{
 			name:       "missing_membership",
 			membership: nil,
-			code:       400,
+			code:       http.StatusBadRequest,
 		},
 		{
 			name:          "optional_verified",
@@ -67,7 +67,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFAOptional,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:          "optional_not_verified",
@@ -77,7 +77,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFAOptional,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:          "optional_prompt_verified",
@@ -87,7 +87,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:          "optional_prompt_not_verified",
@@ -97,7 +97,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 303,
+			code: http.StatusSeeOther,
 		},
 		{
 			name:          "optional_prompt_not_verified_prompted",
@@ -108,7 +108,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFAOptionalPrompt,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:          "required_verified",
@@ -118,7 +118,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFARequired,
 				},
 			},
-			code: 200,
+			code: http.StatusOK,
 		},
 		{
 			name:          "required_not_verified",
@@ -128,7 +128,7 @@ func TestRequireEmailVerified(t *testing.T) {
 					EmailVerifiedMode: database.MFARequired,
 				},
 			},
-			code: 303,
+			code: http.StatusSeeOther,
 		},
 	}
 

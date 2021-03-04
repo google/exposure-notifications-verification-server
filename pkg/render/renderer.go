@@ -24,6 +24,7 @@ import (
 	htmltemplate "html/template"
 	"io"
 	"io/fs"
+	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
@@ -42,16 +43,16 @@ import (
 // primarily here to catch if someone, in the future, accidentally includes a
 // bad status code.
 var allowedResponseCodes = map[int]struct{}{
-	200: {},
-	400: {},
-	401: {},
-	404: {},
-	405: {},
-	409: {},
-	412: {},
-	413: {},
-	429: {},
-	500: {},
+	http.StatusOK:                    {},
+	http.StatusBadRequest:            {},
+	http.StatusUnauthorized:          {},
+	http.StatusNotFound:              {},
+	http.StatusMethodNotAllowed:      {},
+	http.StatusConflict:              {},
+	http.StatusPreconditionFailed:    {},
+	http.StatusRequestEntityTooLarge: {},
+	http.StatusTooManyRequests:       {},
+	http.StatusInternalServerError:   {},
 }
 
 // Renderer is responsible for rendering various content and templates like HTML
