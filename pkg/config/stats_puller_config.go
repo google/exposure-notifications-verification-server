@@ -59,6 +59,10 @@ type StatsPullerConfig struct {
 	// StatsPullerMinPeriod defines the period for which the stats puller will hold a lock
 	// which prevents other calls from entering.
 	StatsPullerMinPeriod time.Duration `env:"STATS_PULLER_MIN_PERIOD, default=5m"`
+
+	// MaxWorkers is the maximum number of parallel workers to use when pulling
+	// statistics. The value must be greater than 0.
+	MaxWorkers int64 `env:"STATS_PULLER_MAX_WORKERS, default=5"`
 }
 
 // NewStatsPullerConfig returns the config for the stats-puller service.

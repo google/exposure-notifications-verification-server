@@ -55,6 +55,7 @@ require (
 	go.opencensus.io v0.22.6
 	go.uber.org/zap v1.16.0
 	golang.org/x/oauth2 v0.0.0-20210216194517-16ff1888fd2e // indirect
+	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/sys v0.0.0-20210216224549-f992740a1bac // indirect
 	golang.org/x/text v0.3.5
 	golang.org/x/tools v0.1.0
