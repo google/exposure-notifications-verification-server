@@ -192,15 +192,15 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
     condition_monitoring_query_language {
       duration = "0s"
       # NOTE: The query below will be evaluated every 30s. It will look at the latest point that
-      # represents the total count of log entries for the past 5m (align delta (5m)),
+      # represents the total count of log entries for the past 10m (align delta (10m)),
       # and fork it to two streams, one representing only ERROR logs, one representing ALL logs,
       # and do an outer join with default value 0 for the first stream.
       # Then it computes the first stream / second stream getting the ratio of ERROR logs over ALL logs,
-      # and finally group by. The alert will fire when the error rate was 100% for the last 5 mins.
+      # and finally group by. The alert will fire when the error rate was 100% for the last 10 mins.
       query = <<-EOT
       fetch cloud_scheduler_job
       | metric 'logging.googleapis.com/log_entry_count'
-      | align delta(5m)
+      | align delta(10m)
       | { t_0: filter metric.severity == 'ERROR'
         ; t_1: ident }
       | outer_join [0]
