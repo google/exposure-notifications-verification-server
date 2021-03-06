@@ -176,7 +176,7 @@ resource "google_cloud_run_service_iam_member" "rotation-invoker" {
 resource "google_cloud_scheduler_job" "rotation-worker" {
   name             = "rotation-worker"
   region           = var.cloudscheduler_location
-  schedule         = "*/5 * * * *"
+  schedule         = "2,32 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
@@ -205,7 +205,7 @@ resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
   region = var.cloudscheduler_location
 
   // This schedule is offset from the token rotation schedule.
-  schedule         = "2,32 * * * *"
+  schedule         = "*/15 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "600s"
 
