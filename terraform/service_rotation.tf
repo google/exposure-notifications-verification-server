@@ -180,7 +180,7 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
   region           = var.cloudscheduler_location
   schedule         = "2,32 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "960s"
+  attempt_deadline = "${google_cloud_run_service.rotation.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3
