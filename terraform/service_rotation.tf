@@ -76,9 +76,11 @@ resource "google_cloud_run_service" "rotation" {
       lookup(var.service_annotations, "rotation", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.rotation.email
+      timeout_seconds      = 900
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/rotation:initial"
@@ -178,7 +180,7 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
   region           = var.cloudscheduler_location
   schedule         = "2,32 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "600s"
+  attempt_deadline = "960s"
 
   retry_config {
     retry_count = 3
@@ -207,7 +209,7 @@ resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
   // This schedule is offset from the token rotation schedule.
   schedule         = "*/15 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "600s"
+  attempt_deadline = "${google_cloud_run_service.rotation.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3

@@ -64,10 +64,11 @@ resource "google_cloud_run_service" "modeler" {
       lookup(var.service_annotations, "modeler", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.modeler.email
-      timeout_seconds      = 120
+      timeout_seconds      = 900
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/modeler:initial"
@@ -162,7 +163,7 @@ resource "google_cloud_scheduler_job" "modeler-worker" {
   region           = var.cloudscheduler_location
   schedule         = "0 */6 * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "600s"
+  attempt_deadline = "${google_cloud_run_service.modeler.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3

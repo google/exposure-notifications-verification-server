@@ -83,10 +83,11 @@ resource "google_cloud_run_service" "server" {
       lookup(var.service_annotations, "server", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.server.email
-      timeout_seconds      = 25
+      timeout_seconds      = 10
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/server:initial"
@@ -189,10 +190,12 @@ resource "google_compute_backend_service" "server" {
   name     = "server"
   project  = var.project
 
+  security_policy = google_compute_security_policy.cloud-armor.name
+
   backend {
     group = google_compute_region_network_endpoint_group.server[0].id
   }
-  security_policy = google_compute_security_policy.cloud-armor.name
+
   log_config {
     enable      = var.enable_lb_logging
     sample_rate = var.enable_lb_logging ? 1 : null

@@ -81,7 +81,7 @@ resource "google_cloud_run_service" "enx-redirect" {
   template {
     spec {
       service_account_name = google_service_account.enx-redirect.email
-      timeout_seconds      = 25
+      timeout_seconds      = 10
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/enx-redirect:initial"
@@ -168,15 +168,18 @@ resource "google_compute_region_network_endpoint_group" "enx-redirect" {
 }
 
 resource "google_compute_backend_service" "enx-redirect" {
-  count    = local.enable_lb ? 1 : 0
+  count = local.enable_lb ? 1 : 0
+
   provider = google-beta
   name     = "enx-redirect"
   project  = var.project
 
+  security_policy = google_compute_security_policy.cloud-armor.name
+
   backend {
     group = google_compute_region_network_endpoint_group.enx-redirect.id
   }
-  security_policy = google_compute_security_policy.cloud-armor.name
+
   log_config {
     enable      = var.enable_lb_logging
     sample_rate = var.enable_lb_logging ? 1 : null

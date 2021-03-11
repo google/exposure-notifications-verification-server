@@ -76,9 +76,11 @@ resource "google_cloud_run_service" "cleanup" {
       lookup(var.service_annotations, "cleanup", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.cleanup.email
+      timeout_seconds      = 900
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/cleanup:initial"
@@ -181,7 +183,7 @@ resource "google_cloud_scheduler_job" "cleanup-worker" {
   region           = var.cloudscheduler_location
   schedule         = "0 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "600s"
+  attempt_deadline = "${google_cloud_run_service.cleanup.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3
