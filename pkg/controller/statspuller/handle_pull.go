@@ -100,7 +100,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 		}
 		wg.Wait()
 
-		if err := merr.ErrorOrNil(); err != nil {
+		if merr != nil {
 			errs := merr.WrappedErrors()
 			logger.Errorw("failed to pull stats", "errors", errs)
 			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
