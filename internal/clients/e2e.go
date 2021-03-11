@@ -269,7 +269,7 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 			}
 			publishResp, err := keyServerClient.Publish(ctx, publishReq)
 			defer logger.Debugw("publish", "request", publishReq, "response", publishResp)
-			if publishResp.ErrorMessage != "" {
+			if err != nil || publishResp.ErrorMessage != "" {
 				result = enobs.ResultNotOK
 				logger.Errorw("failed to publish teks", "error", err, "keys", teks)
 				return nil, fmt.Errorf("publish API error: %+v", publishResp)
