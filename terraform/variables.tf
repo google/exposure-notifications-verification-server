@@ -342,6 +342,18 @@ variable "e2e_skip_sms" {
   description = "Skip SMS tests when executing the e2e runner. Set this to true to not send SMS. You must also configure the e2e realm with proper test credentials."
 }
 
+variable "connection_draining_timeout" {
+  type        = number
+  default     = 60
+  description = "Number of seconds to allow connections to drain."
+}
+
+variable "connection_timeout" {
+  type        = number
+  default     = 60
+  description = "Number of seconds to wait for a backend to return a response."
+}
+
 terraform {
   required_version = ">= 0.14.2"
 
