@@ -67,7 +67,6 @@ resource "google_cloud_run_service" "modeler" {
   template {
     spec {
       service_account_name = google_service_account.modeler.email
-      timeout_seconds      = 120
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/modeler:initial"

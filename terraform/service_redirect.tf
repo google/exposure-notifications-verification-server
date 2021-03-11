@@ -81,7 +81,6 @@ resource "google_cloud_run_service" "enx-redirect" {
   template {
     spec {
       service_account_name = google_service_account.enx-redirect.email
-      timeout_seconds      = 25
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/enx-redirect:initial"
