@@ -158,15 +158,10 @@ resource "google_compute_backend_service" "modeler" {
   name     = "modeler"
   project  = var.project
 
-  security_policy = google_compute_security_policy.cloud-armor.name
-
-  connection_draining_timeout_sec = var.connection_draining_timeout
-  timeout_sec                     = var.connection_timeout
-
   backend {
     group = google_compute_region_network_endpoint_group.modeler.id
   }
-
+  security_policy = google_compute_security_policy.cloud-armor.name
   log_config {
     enable      = var.enable_lb_logging
     sample_rate = var.enable_lb_logging ? 1 : null
