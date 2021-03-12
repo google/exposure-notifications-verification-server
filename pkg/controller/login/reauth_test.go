@@ -35,17 +35,42 @@ func TestHandleReauth_ShowLogin(t *testing.T) {
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
 	handler := c.HandleReauth()
 
-	t.Run("success", func(t *testing.T) {
-		t.Parallel()
+	cases := []struct {
+		name   string
+		path   string
+		status int
+	}{
+		{
+			name:   "valid_reauth",
+			path:   "/?redir=login/register-phone",
+			status: http.StatusOK,
+		},
+		{
+			name:   "invalid_reauth",
+			path:   "/?redir=google.com",
+			status: http.StatusSeeOther,
+		},
+		{
+			name:   "no_reauth",
+			path:   "/",
+			status: http.StatusSeeOther,
+		},
+	}
 
-		ctx := ctx
-		ctx = controller.WithSession(ctx, &sessions.Session{})
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
-		handler.ServeHTTP(w, r)
+			ctx := ctx
+			ctx = controller.WithSession(ctx, &sessions.Session{})
 
-		if got, want := w.Code, http.StatusOK; got != want {
-			t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
-		}
-	})
+			w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, tc.path, nil)
+			handler.ServeHTTP(w, r)
+
+			if got, want := w.Code, tc.status; got != want {
+				t.Errorf("Expected %d to be %d: %s", got, want, w.Body.String())
+			}
+		})
+	}
 }
