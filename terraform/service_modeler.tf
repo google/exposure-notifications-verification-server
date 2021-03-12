@@ -139,39 +139,6 @@ resource "google_cloud_run_service" "modeler" {
   }
 }
 
-resource "google_compute_region_network_endpoint_group" "modeler" {
-  name     = "modeler"
-  provider = google-beta
-  project  = var.project
-  region   = var.region
-
-  network_endpoint_type = "SERVERLESS"
-
-  cloud_run {
-    service = google_cloud_run_service.modeler.name
-  }
-}
-
-resource "google_compute_backend_service" "modeler" {
-  count    = local.enable_lb ? 1 : 0
-  provider = google-beta
-  name     = "modeler"
-  project  = var.project
-
-  backend {
-    group = google_compute_region_network_endpoint_group.modeler.id
-  }
-  security_policy = google_compute_security_policy.cloud-armor.name
-  log_config {
-    enable      = var.enable_lb_logging
-    sample_rate = var.enable_lb_logging ? 1 : null
-  }
-}
-
-output "modeler_url" {
-  value = google_cloud_run_service.modeler.status.0.url
-}
-
 #
 # Create scheduler job to invoke the service on a fixed interval.
 #
