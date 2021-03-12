@@ -23,10 +23,12 @@ import (
 
 var (
 	allowedRedirects = map[string]struct{}{
-		"login/register-phone": struct{}{},
+		"login/register-phone": {},
 	}
 )
 
+// redirectAllowed ensures that someone trying to force a re-auth
+// is directing the user to a known page that requres re-auth.
 func redirectAllowed(r string) bool {
 	_, ok := allowedRedirects[r]
 	return ok
