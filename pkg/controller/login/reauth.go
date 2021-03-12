@@ -21,11 +21,9 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
-var (
-	allowedRedirects = map[string]struct{}{
-		"login/register-phone": {},
-	}
-)
+var allowedRedirects = map[string]struct{}{
+	"login/register-phone": {},
+}
 
 // redirectAllowed ensures that someone trying to force a re-auth
 // is directing the user to a known page that requres re-auth.
