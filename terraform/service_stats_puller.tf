@@ -70,9 +70,11 @@ resource "google_cloud_run_service" "stats-puller" {
       lookup(var.service_annotations, "stats-puller", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.stats-puller.email
+      timeout_seconds      = 900
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/stats-puller:initial"
@@ -171,7 +173,7 @@ resource "google_cloud_scheduler_job" "stats-puller-worker" {
   region           = var.cloudscheduler_location
   schedule         = "10,20,30 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "600s"
+  attempt_deadline = "${google_cloud_run_service.stats-puller.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3

@@ -64,9 +64,11 @@ resource "google_cloud_run_service" "e2e-runner" {
       lookup(var.service_annotations, "e2e-runner", {})
     )
   }
+
   template {
     spec {
       service_account_name = google_service_account.e2e-runner.email
+      timeout_seconds      = 120
 
       containers {
         image = "gcr.io/${var.project}/github.com/google/exposure-notifications-verification-server/e2e-runner:initial"
@@ -168,7 +170,7 @@ resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   region           = var.cloudscheduler_location
   schedule         = "0,10,20,30,40,50,55 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "30s"
+  attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3
@@ -195,7 +197,7 @@ resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
   region           = var.cloudscheduler_location
   schedule         = "0,5,15,25,35,45,55 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "30s"
+  attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3
@@ -222,7 +224,7 @@ resource "google_cloud_scheduler_job" "e2e-enx-redirect-workflow" {
   region           = var.cloudscheduler_location
   schedule         = "0,5,15,25,35,45,55 * * * *"
   time_zone        = "America/Los_Angeles"
-  attempt_deadline = "30s"
+  attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
     retry_count = 3
