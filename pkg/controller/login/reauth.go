@@ -21,21 +21,34 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
+var (
+	allowedRedirects = map[string]struct{}{
+		"login/register-phone": struct{}{},
+	}
+)
+
+func redirectAllowed(r string) bool {
+	_, ok := allowedRedirects[r]
+	return ok
+}
+
 func (c *Controller) HandleReauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		// No session redirect for reauth
 
-		if r := r.FormValue("redir"); r != "" {
+		if r := r.FormValue("redir"); redirectAllowed(r) {
 			m := controller.TemplateMapFromContext(ctx)
 			m["loginRedirect"] = r
 
 			session := controller.SessionFromContext(ctx)
 			flash := controller.Flash(session)
 			flash.Alert("This operation is sensitive and requires recent authentication. Please sign-in again.")
+			c.renderLogin(ctx, w)
+			return
 		}
 
-		c.renderLogin(ctx, w)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	})
 }
