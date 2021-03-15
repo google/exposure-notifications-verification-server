@@ -15,11 +15,16 @@
 package envstest
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	keydatabase "github.com/google/exposure-notifications-server/pkg/database"
+	"github.com/google/exposure-notifications-server/pkg/enkstest"
 )
 
 // IntegrationSuite encompasses a local API server and Admin API server for
@@ -31,14 +36,23 @@ type IntegrationSuite struct {
 	APIServerAddress string
 	APIServerKey     string
 
+	KeyServerAddress string
+	KeyServerData    *enkstest.BootstrapResponse
+
 	ENXRedirectAddress string
 }
 
 // NewIntegrationSuite creates a new test suite for local integration testing.
-func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInstance) *IntegrationSuite {
+func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInstance, testKeyServerDatabaseInstance *keydatabase.TestInstance) *IntegrationSuite {
 	tb.Helper()
 
 	ctx := project.TestContext(tb)
+
+	keyServer := enkstest.NewServer(tb, testKeyServerDatabaseInstance)
+	keyServerData, err := enkstest.Bootstrap(ctx, keyServer.Env)
+	if err != nil {
+		tb.Fatalf("failed to bootstrap key server: %v", err)
+	}
 
 	adminAPIServerConfig := NewAdminAPIServerConfig(tb, testDatabaseInstance)
 	apiServerConfig := NewAPIServerConfig(tb, testDatabaseInstance)
@@ -70,6 +84,41 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 	})
 
 	realm := resp.Realm
+	realm.UseRealmCertificateKey = true
+	realm.CertificateIssuer = "test-iss"
+	realm.CertificateAudience = "test-aud"
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		tb.Fatalf("failed to update to realm certificates: %v", err)
+	}
+
+	if _, err := realm.CreateSigningKeyVersion(ctx, db, database.SystemTest); err != nil {
+		tb.Fatalf("failed to create certificate signing key version: %v", err)
+	}
+
+	certificateSigningKey, err := realm.CurrentSigningKey(db)
+	if err != nil {
+		tb.Fatalf("failed to get current signing key: %v", err)
+	}
+
+	signer, err := apiServerConfig.KeyManager.NewSigner(ctx, certificateSigningKey.ManagedKeyID())
+	if err != nil {
+		tb.Fatalf("failed to get certificate signer: %v", err)
+	}
+
+	x509Bytes, err := x509.MarshalPKIXPublicKey(signer.Public())
+	if err != nil {
+		tb.Fatalf("failed to marshal certificate signer public key: %v", err)
+	}
+	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509Bytes})
+
+	// Insert the verification server's public key into the key server as a
+	// recognized health authority.
+	updatedHealthAuthorityKey := keyServerData.HealthAuthorityKey
+	updatedHealthAuthorityKey.Version = certificateSigningKey.GetKID()
+	updatedHealthAuthorityKey.PublicKeyPEM = string(pemBytes)
+	if err := keyServer.AddHealthAuthorityKey(ctx, keyServerData.HealthAuthority, updatedHealthAuthorityKey); err != nil {
+		tb.Fatalf("failed to update health authority key: %v", err)
+	}
 
 	// Configure SMS
 	if project.SkipE2ESMS {
@@ -132,6 +181,9 @@ func NewIntegrationSuite(tb testing.TB, testDatabaseInstance *database.TestInsta
 
 		APIServerAddress: "http://" + apiServer.Server.Addr(),
 		APIServerKey:     resp.DeviceAPIKey,
+
+		KeyServerAddress: "http://" + keyServer.Server.Addr(),
+		KeyServerData:    keyServerData,
 
 		ENXRedirectAddress: "http://" + enxRedirectServer.Server.Addr(),
 	}

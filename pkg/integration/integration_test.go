@@ -25,13 +25,22 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+
+	keydatabase "github.com/google/exposure-notifications-server/pkg/database"
 )
 
-var testDatabaseInstance *database.TestInstance
+var (
+	testDatabaseInstance          *database.TestInstance
+	testKeyServerDatabaseInstance *keydatabase.TestInstance
+)
 
 func TestMain(m *testing.M) {
 	testDatabaseInstance = database.MustTestInstance()
 	defer testDatabaseInstance.MustClose()
+
+	testKeyServerDatabaseInstance = keydatabase.MustTestInstance()
+	defer testKeyServerDatabaseInstance.MustClose()
+
 	m.Run()
 }
 
@@ -40,14 +49,20 @@ func TestIntegration(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	integrationSuite := envstest.NewIntegrationSuite(t, testDatabaseInstance)
+	integrationSuite := envstest.NewIntegrationSuite(t, testDatabaseInstance, testKeyServerDatabaseInstance)
 
 	cfg := &config.E2ERunnerConfig{
 		VerificationAdminAPIServer: integrationSuite.AdminAPIAddress,
 		VerificationAdminAPIKey:    integrationSuite.AdminAPIKey,
 		VerificationAPIServer:      integrationSuite.APIServerAddress,
 		VerificationAPIServerKey:   integrationSuite.APIServerKey,
-		DoRevise:                   true,
+
+		// The test key server is kind of like a reverse proxy with the actual
+		// "exposure" service residing at /publish.
+		KeyServer:           integrationSuite.KeyServerAddress + "/publish/",
+		HealthAuthorityCode: integrationSuite.KeyServerData.AuthorizedApp.AppPackageName,
+
+		DoRevise: true,
 	}
 
 	if err := clients.RunEndToEnd(ctx, cfg); err != nil {
