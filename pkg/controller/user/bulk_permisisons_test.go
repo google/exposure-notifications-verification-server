@@ -66,7 +66,7 @@ func TestHandleBulkPermissions(t *testing.T) {
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"user_id":    []string{fmt.Sprintf("%d", testUser.ID)},
-			"permission": []string{"1"},
+			"permission": []string{fmt.Sprintf("%d", rbac.SettingsWrite)},
 		})
 		handler.ServeHTTP(w, r)
 
@@ -90,12 +90,12 @@ func TestHandleBulkPermissions(t *testing.T) {
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm:       realm,
 			User:        admin,
-			Permissions: rbac.UserWrite | 1,
+			Permissions: rbac.UserWrite | rbac.SettingsWrite,
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"user_id":    []string{fmt.Sprintf("%d", testUser.ID)},
-			"permission": []string{"1"},
+			"permission": []string{fmt.Sprintf("%d", rbac.SettingsWrite)},
 		})
 		handler.ServeHTTP(w, r)
 
@@ -107,7 +107,7 @@ func TestHandleBulkPermissions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !record.Can(1) {
+		if !record.Can(rbac.SettingsWrite) {
 			t.Errorf("expected %q to be able to %q", record.Permissions, 1)
 		}
 	})
