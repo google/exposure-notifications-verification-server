@@ -64,6 +64,16 @@ func Can(given Permission, target Permission) bool {
 func CompileAndAuthorize(actorPermission Permission, toUpdate []Permission) (Permission, error) {
 	var permission Permission
 	for _, update := range toUpdate {
+		// Verify the provided permission is a known permission. This prevents a
+		// security vulnerability whereby a carefully crafted request is able to
+		// provide a value that correctly passes an the bitwise AND check and then
+		// modifies the target permission using OR to escalate privilege.
+		if _, ok := PermissionMap[update]; !ok {
+			if update != LegacyRealmAdmin && update != LegacyRealmUser {
+				return 0, fmt.Errorf("provided permission %v is unknown", update)
+			}
+		}
+
 		// Verify that the user making changes has the permissions they are trying
 		// to grant. It is not valid for someone to grant permissions larger than
 		// they currently have.

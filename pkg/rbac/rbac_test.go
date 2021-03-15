@@ -57,6 +57,30 @@ func TestRequiredPermissions(t *testing.T) {
 			t.Errorf("expected error")
 		}
 	})
+
+	t.Run("legacy_admin", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := CompileAndAuthorize(LegacyRealmAdmin, []Permission{LegacyRealmAdmin}); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("legacy_user", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := CompileAndAuthorize(LegacyRealmAdmin, []Permission{LegacyRealmUser}); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("escalate", func(t *testing.T) {
+		t.Parallel()
+
+		if _, err := CompileAndAuthorize(UserRead|UserWrite, []Permission{16383}); err == nil {
+			t.Errorf("expected error")
+		}
+	})
 }
 
 func TestImpliedBy(t *testing.T) {
