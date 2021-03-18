@@ -369,6 +369,8 @@ func (c *Controller) HandleSettings() http.Handler {
 					controller.InternalError(w, r, c.h, err)
 					return
 				}
+
+				flash.Warning("It can take up to 5 minutes for the new SMS configuration to be fully propagated.")
 			}
 		}
 
@@ -408,6 +410,8 @@ func (c *Controller) HandleSettings() http.Handler {
 					controller.InternalError(w, r, c.h, err)
 					return
 				}
+
+				flash.Warning("It can take up to 5 minutes for the new email configuration to be fully propagated.")
 			}
 		}
 
