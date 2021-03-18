@@ -247,6 +247,7 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:realms:by_id", callbackPurgeCache(ctx, cacher, "realms:by_id", "realms", "id"))
 
+		// Stats
 		rawDB.Callback().Update().After("gorm:update").Register("purge_cache:stats:key_server", callbackPurgeCache(ctx, cacher, "stats:realm:key_server_enabled", "key_server_stats", "realm_id"))
 		rawDB.Callback().Delete().After("gorm:delete").Register("purge_cache:stats:key_server", callbackPurgeCache(ctx, cacher, "stats:realm:key_server_enabled", "key_server_stats", "realm_id"))
 
