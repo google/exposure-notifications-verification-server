@@ -23,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
+	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -89,6 +90,7 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 			}
 		}
 
+		stats.Record(ctx, mVerificationSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,
 		})

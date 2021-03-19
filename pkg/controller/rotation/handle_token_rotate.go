@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/hashicorp/go-multierror"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
@@ -100,6 +101,7 @@ func (c *Controller) HandleRotate() http.Handler {
 			}
 		}
 
+		stats.Record(ctx, mTokenSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,
 		})

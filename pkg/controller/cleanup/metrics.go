@@ -27,8 +27,9 @@ import (
 const metricPrefix = observability.MetricRoot + "/cleanup"
 
 var (
-	mLatencyMs     = stats.Float64(metricPrefix+"/requests", "The number of cleanup requests.", stats.UnitMilliseconds)
 	mClaimRequests = stats.Int64(metricPrefix+"/claim_requests", "The number of cleanup claim requests.", stats.UnitDimensionless)
+	mLatencyMs     = stats.Float64(metricPrefix+"/requests", "The number of cleanup requests.", stats.UnitMilliseconds)
+	mSuccess       = stats.Int64(metricPrefix+"/success", "successful execution", stats.UnitDimensionless)
 )
 
 // itemTagKey indicating what type of items is cleaned up in this step.
@@ -60,6 +61,13 @@ func init() {
 			Measure:     mClaimRequests,
 			Description: "The count of the cleanup claim requests",
 			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/success",
+			Description: "Number of successes",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mSuccess,
 			Aggregation: view.Count(),
 		},
 	}...)

@@ -23,6 +23,7 @@ import (
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/hashicorp/go-multierror"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
@@ -218,6 +219,7 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}
 
+		stats.Record(ctx, mSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
 			OK: true,
 		})

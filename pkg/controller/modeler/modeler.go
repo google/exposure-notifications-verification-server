@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
+	"go.opencensus.io/stats"
 
 	"github.com/sethvargo/go-limiter"
 )
@@ -69,6 +70,7 @@ func (c *Controller) HandleModel() http.Handler {
 			return
 		}
 
+		stats.Record(ctx, mSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
