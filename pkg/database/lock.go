@@ -23,12 +23,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var ErrCleanupWrongGeneration = errors.New("cleanup wrong generation")
+var ErrWrongGeneration = errors.New("wrong generation")
 
-// CleanupStatus represents a distributed lock that spaces operations out.
+// LockStatus represents a distributed lock that spaces operations out.
 // These are only self expring locks (NotBefore) and are not explicitly
 // released.
-type CleanupStatus struct {
+type LockStatus struct {
 	gorm.Model
 	Type       string `gorm:"type:varchar(50);unique_index"`
 	Generation uint
@@ -54,8 +54,8 @@ func (db *Database) TryLock(ctx context.Context, lockName string, lockDuration t
 }
 
 // CreateLock is used to create a new 'cleanup' type/row in the database.
-func (db *Database) CreateLock(cType string) (*CleanupStatus, error) {
-	var cstat CleanupStatus
+func (db *Database) CreateLock(cType string) (*LockStatus, error) {
+	var status LockStatus
 
 	sql := `INSERT INTO cleanup_statuses (type, generation, not_before)
 		VALUES ($1, $2, $3)
@@ -65,43 +65,43 @@ func (db *Database) CreateLock(cType string) (*CleanupStatus, error) {
 	now := time.Now().UTC()
 	if err := db.db.
 		Raw(sql, cType, 1, now).
-		Scan(&cstat).Error; err != nil {
+		Scan(&status).Error; err != nil {
 		return nil, err
 	}
-	return &cstat, nil
+	return &status, nil
 }
 
 // FindLockStatus looks up the current cleanup state in the database by cleanup type.
-func (db *Database) FindLockStatus(cType string) (*CleanupStatus, error) {
-	var cstat CleanupStatus
-	if err := db.db.Where("type = ?", cType).First(&cstat).Error; err != nil {
+func (db *Database) FindLockStatus(cType string) (*LockStatus, error) {
+	var status LockStatus
+	if err := db.db.Where("type = ?", cType).First(&status).Error; err != nil {
 		return nil, err
 	}
-	return &cstat, nil
+	return &status, nil
 }
 
 // ClaimLock attempts to obtain a lock for the specified `lockTime` so that
 // that type of cleanup can be performed exclusively by the owner.
-func (db *Database) ClaimLock(current *CleanupStatus, lockTime time.Duration) (*CleanupStatus, error) {
-	var cstat CleanupStatus
+func (db *Database) ClaimLock(current *LockStatus, lockTime time.Duration) (*LockStatus, error) {
+	var status LockStatus
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Model(&CleanupStatus{}).
+			Model(&LockStatus{}).
 			Where("type = ?", current.Type).
-			First(&cstat).
+			First(&status).
 			Error; err != nil {
 			return err
 		}
-		if cstat.Generation != current.Generation {
-			return ErrCleanupWrongGeneration
+		if status.Generation != current.Generation {
+			return ErrWrongGeneration
 		}
 
-		cstat.Generation++
-		cstat.NotBefore = time.Now().UTC().Add(lockTime)
-		return tx.Save(&cstat).Error
+		status.Generation++
+		status.NotBefore = time.Now().UTC().Add(lockTime)
+		return tx.Save(&status).Error
 	}); err != nil {
 		return nil, err
 	}
-	return &cstat, nil
+	return &status, nil
 }

@@ -24,6 +24,7 @@ import (
 
 	"github.com/gonum/matrix/mat64"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -32,6 +33,8 @@ import (
 
 	"github.com/sethvargo/go-limiter"
 )
+
+const modelerLock = "modelerLock"
 
 // Controller is a controller for the modeler service.
 type Controller struct {
@@ -51,6 +54,11 @@ func New(ctx context.Context, config *config.Modeler, db *database.Database, lim
 	}
 }
 
+type Result struct {
+	OK     bool     `json:"ok"`
+	Errors []string `json:"errors,omitempty"`
+}
+
 // HandleModel accepts an HTTP trigger and re-generates the models.
 func (c *Controller) HandleModel() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,9 +66,21 @@ func (c *Controller) HandleModel() http.Handler {
 
 		logger := logging.FromContext(ctx).Named("modeler.HandleModel")
 
-		if err := c.db.ClaimModelerStatus(); err != nil {
-			logger.Errorw("failed to claim modeler status", "error", err)
-			c.h.RenderJSON500(w, err)
+		ok, err := c.db.TryLock(ctx, modelerLock, 15*time.Minute)
+		if err != nil {
+			logger.Errorw("failed to acquire lock", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
+				OK:     false,
+				Errors: []string{err.Error()},
+			})
+			return
+		}
+		if !ok {
+			logger.Debugw("skipping (too early)")
+			c.h.RenderJSON(w, http.StatusOK, &Result{
+				OK:     false,
+				Errors: []string{"too early"},
+			})
 			return
 		}
 
@@ -70,33 +90,45 @@ func (c *Controller) HandleModel() http.Handler {
 			return
 		}
 
+		if merr := c.rebuildModels(ctx); merr != nil {
+			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
+					OK:     false,
+					Errors: project.ErrorsToStrings(errs),
+				})
+				return
+			}
+		}
+
 		stats.Record(ctx, mSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, nil)
+		c.h.RenderJSON(w, http.StatusOK, &Result{OK: true})
 	})
 }
 
 // rebuildModels iterates over all models with abuse prevention enabled,
 // calculates the new limits, and updates the new limits.
-func (c *Controller) rebuildModels(ctx context.Context) error {
+func (c *Controller) rebuildModels(ctx context.Context) *multierror.Error {
 	logger := logging.FromContext(ctx).Named("modeler.rebuildModels")
+
+	var merr *multierror.Error
 
 	// Get all realm IDs in a single operation so we can iterate realm-by-realm to
 	// avoid a full table lock during stats calculation.
 	ids, err := c.db.AbusePreventionEnabledRealmIDs()
 	if err != nil {
-		return fmt.Errorf("failed to fetch ids: %w", err)
+		merr = multierror.Append(merr, fmt.Errorf("failed to fetch ids: %w", err))
+		return merr
 	}
 	logger.Debugw("building models", "count", len(ids))
 
 	// Process all models.
-	var merr *multierror.Error
 	for _, id := range ids {
 		if err := c.rebuildModel(ctx, id); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to update realm %d: %w", id, err))
 		}
 	}
 
-	return merr.ErrorOrNil()
+	return merr
 }
 
 // rebuildModel rebuilds and updates the model for a single model.

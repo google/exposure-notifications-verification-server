@@ -57,18 +57,18 @@ func TestDatabase_CreateLock(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-	cleanup1, err := db.CreateLock("x")
+	lock1, err := db.CreateLock("x")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// If the cleanup already exists, it's a noop
-	cleanup2, err := db.CreateLock("x")
+	// If the lock already exists, it's a noop
+	lock2, err := db.CreateLock("x")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if got, want := cleanup1.ID, cleanup2.ID; got != want {
+	if got, want := lock1.ID, lock2.ID; got != want {
 		t.Errorf("Expected %d to be %d", got, want)
 	}
 }
@@ -100,9 +100,9 @@ func TestDatabase_ClaimLock(t *testing.T) {
 		t.Parallel()
 
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-		cleanup, err := db.ClaimLock(&CleanupStatus{Type: "nope"}, 5*time.Second)
+		lock, err := db.ClaimLock(&LockStatus{Type: "nope"}, 5*time.Second)
 		if !IsNotFound(err) {
-			t.Errorf("expected error, got: %v: %v", err, cleanup)
+			t.Errorf("expected error, got: %v: %v", err, lock)
 		}
 	})
 
@@ -115,11 +115,11 @@ func TestDatabase_ClaimLock(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err := db.ClaimLock(&CleanupStatus{
+		_, err := db.ClaimLock(&LockStatus{
 			Type:       "dirty",
 			Generation: 2,
 		}, 1*time.Second)
-		if got, want := err, ErrCleanupWrongGeneration; !errors.Is(err, want) {
+		if got, want := err, ErrWrongGeneration; !errors.Is(err, want) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	})
@@ -133,7 +133,7 @@ func TestDatabase_ClaimLock(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		cleanup, err := db.ClaimLock(&CleanupStatus{
+		lock, err := db.ClaimLock(&LockStatus{
 			Type:       "dirty",
 			Generation: 1,
 		}, 1*time.Second)
@@ -141,11 +141,11 @@ func TestDatabase_ClaimLock(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got, want := cleanup.Generation, uint(2); got != want {
+		if got, want := lock.Generation, uint(2); got != want {
 			t.Errorf("expected generation %d to be %d", got, want)
 		}
 
-		if got, now := cleanup.NotBefore, time.Now().UTC(); !got.After(now) {
+		if got, now := lock.NotBefore, time.Now().UTC(); !got.After(now) {
 			t.Errorf("expected %q to be after %q", got, now)
 		}
 	})
