@@ -94,6 +94,15 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00005-CreateCleanups",
 			Migrate: func(tx *gorm.DB) error {
+				// CleanupStatus is the model that existed at the time of this
+				// migration.
+				type CleanupStatus struct {
+					gorm.Model
+					Type       string `gorm:"type:varchar(50);unique_index"`
+					Generation uint
+					NotBefore  time.Time
+				}
+
 				if err := tx.AutoMigrate(&CleanupStatus{}).Error; err != nil {
 					return err
 				}
@@ -962,6 +971,13 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 		{
 			ID: "00043-CreateModelerStatus",
 			Migrate: func(tx *gorm.DB) error {
+				// ModelerStatus is the legacy definition that existed when this
+				// migration first existed.
+				type ModelerStatus struct {
+					ID        uint `gorm:"primary_key"`
+					NotBefore time.Time
+				}
+
 				if err := tx.AutoMigrate(&ModelerStatus{}).Error; err != nil {
 					return err
 				}
@@ -2107,6 +2123,27 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DROP TABLE IF EXISTS realm_chaff_events`,
 					`DROP INDEX IF EXISTS idx_realm_chaff_events_realm_id`,
 					`DROP INDEX IF EXISTS idx_realm_chaff_events_date`)
+			},
+		},
+		{
+			ID: "00095-DropModelerStatuses",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE IF EXISTS modeler_statuses`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return fmt.Errorf("cannot rollback")
+			},
+		},
+		{
+			ID: "00096-RenameCleanupStatus",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE cleanup_statuses RENAME TO lock_statuses`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE lock_statuses RENAME TO cleanup_statuses`)
 			},
 		},
 	}
