@@ -33,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/jwthelper"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sethvargo/go-retry"
+	"go.opencensus.io/stats"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -110,6 +111,7 @@ func (c *Controller) HandlePullStats() http.Handler {
 			return
 		}
 
+		stats.Record(ctx, mSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &Result{
 			OK: true,
 		})

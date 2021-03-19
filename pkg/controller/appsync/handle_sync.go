@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -69,6 +70,8 @@ func (c *Controller) HandleSync() http.Handler {
 				return
 			}
 		}
+
+		stats.Record(ctx, mSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, &AppSyncResult{OK: true})
 	})
 }
