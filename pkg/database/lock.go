@@ -57,7 +57,7 @@ func (db *Database) TryLock(ctx context.Context, lockName string, lockDuration t
 func (db *Database) CreateLock(cType string) (*LockStatus, error) {
 	var status LockStatus
 
-	sql := `INSERT INTO cleanup_statuses (type, generation, not_before)
+	sql := `INSERT INTO lock_statuses (type, generation, not_before)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (type) DO UPDATE SET type = EXCLUDED.type
 		RETURNING *`

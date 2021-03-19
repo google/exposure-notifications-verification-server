@@ -2126,7 +2126,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00094-DropModelerStatuses",
+			ID: "00095-DropModelerStatuses",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`DROP TABLE IF EXISTS modeler_statuses`)
@@ -2136,7 +2136,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00095-RenameCleanupStatus",
+			ID: "00096-RenameCleanupStatus",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE cleanup_statuses RENAME TO lock_statuses`)
