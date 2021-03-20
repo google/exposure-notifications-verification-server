@@ -221,6 +221,13 @@ variable "enx_redirect_domain_map_add" {
   description = "Redirect domains and environments to be added to the next cert."
 }
 
+variable "db_phone_number_hmac_count" {
+  type = number
+  default = 1
+
+  description = "Number of HMAC keys to create for HMACing phone numbers in the database. Increase by 1 to force a rotation."
+}
+
 variable "db_apikey_db_hmac_count" {
   type    = number
   default = 1
