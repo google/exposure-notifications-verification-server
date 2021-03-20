@@ -131,12 +131,22 @@ func TestIssueToken(t *testing.T) {
 	acceptConfirmed := api.AcceptTypes{
 		api.TestTypeConfirmed: struct{}{},
 	}
+	acceptConfirmedAndSelfReport := api.AcceptTypes{
+		api.TestTypeConfirmed:  struct{}{},
+		api.TestTypeUserReport: struct{}{},
+	}
+
+	validNonce := generateNonce(t)
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	realm, err := db.FindRealm(1)
 	if err != nil {
 		t.Fatal(err)
+	}
+	realm.EnableUserReport()
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("unable to enable user-report on test realm: %v", err)
 	}
 
 	authApp := &AuthorizedApp{
@@ -150,6 +160,7 @@ func TestIssueToken(t *testing.T) {
 	cases := []struct {
 		Name         string
 		Verification func() *VerificationCode
+		Nonce        []byte
 		Accept       api.AcceptTypes
 		UseLongCode  bool
 		Error        string
@@ -292,6 +303,62 @@ func TestIssueToken(t *testing.T) {
 			Accept: acceptConfirmed,
 			Error:  ErrUnsupportedTestType.Error(),
 		},
+		{
+			Name: "user_report_verification",
+			Verification: func() *VerificationCode {
+				return &VerificationCode{
+					Code:          "8675309",
+					LongCode:      "8675309A",
+					TestType:      "user-report",
+					SymptomDate:   &symptomDate,
+					ExpiresAt:     time.Now().Add(time.Hour),
+					LongExpiresAt: time.Now().Add(time.Hour),
+					PhoneNumber:   "+15138675309",
+					Nonce:         validNonce,
+				}
+			},
+			Nonce:    validNonce,
+			Accept:   acceptConfirmedAndSelfReport,
+			Error:    "",
+			TokenAge: time.Hour,
+		},
+		{
+			Name: "user_report_incorrect_nonce",
+			Verification: func() *VerificationCode {
+				return &VerificationCode{
+					Code:          "11221122",
+					LongCode:      "11221122ABC",
+					TestType:      "user-report",
+					SymptomDate:   &symptomDate,
+					ExpiresAt:     time.Now().Add(time.Hour),
+					LongExpiresAt: time.Now().Add(time.Hour),
+					PhoneNumber:   "+12068675309",
+					Nonce:         validNonce,
+				}
+			},
+			Nonce:    []byte{1, 2, 3, 4}, // This is not the right nonce ;)
+			Accept:   acceptConfirmedAndSelfReport,
+			Error:    "verification code not found",
+			TokenAge: time.Hour,
+		},
+		{
+			Name: "user_report_no_nonce",
+			Verification: func() *VerificationCode {
+				return &VerificationCode{
+					Code:          "22112211",
+					LongCode:      "22112211ABC",
+					TestType:      "user-report",
+					SymptomDate:   &symptomDate,
+					ExpiresAt:     time.Now().Add(time.Hour),
+					LongExpiresAt: time.Now().Add(time.Hour),
+					PhoneNumber:   "+15558675309",
+					Nonce:         validNonce,
+				}
+			},
+			Accept:   acceptConfirmedAndSelfReport,
+			Error:    "verification code not found",
+			TokenAge: time.Hour,
+		},
 	}
 
 	for _, tc := range cases {
@@ -323,7 +390,18 @@ func TestIssueToken(t *testing.T) {
 				time.Sleep(tc.Delay)
 			}
 
-			tok, err := db.VerifyCodeAndIssueToken(now, authApp, code, tc.Accept, tc.TokenAge)
+			request := &IssueTokenRequest{
+				Time:        now,
+				AuthApp:     authApp,
+				VerCode:     code,
+				AcceptTypes: tc.Accept,
+				ExpireAfter: tc.TokenAge,
+			}
+			// Add a nonce to the request, if one be there.
+			if len(tc.Nonce) > 0 {
+				request.Nonce = tc.Nonce
+			}
+			tok, err := db.VerifyCodeAndIssueToken(request)
 			if err != nil {
 				if tc.Error == "" {
 					t.Fatalf("error issuing token: %v", err)

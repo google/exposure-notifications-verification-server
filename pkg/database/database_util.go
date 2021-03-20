@@ -168,6 +168,10 @@ func NewTestInstance() (*TestInstance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate verification code database hmac: %w", err)
 	}
+	phoneHMAC, err := generateKeys(2, 128)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate phone number database hmac: %w", err)
+	}
 
 	// Create a temporary directory for the key manager,
 	tmpdir, err := os.MkdirTemp("", "")
@@ -181,6 +185,7 @@ func NewTestInstance() (*TestInstance, error) {
 		APIKeyDatabaseHMAC:           apiKeyDatabaseHMAC,
 		APIKeySignatureHMAC:          apiKeySignatureHMAC,
 		VerificationCodeDatabaseHMAC: verificationCodeDatabaseHMAC,
+		PhoneNumberHMAC:              phoneHMAC,
 
 		Host:     container.GetBoundIP("5432/tcp"),
 		Port:     container.GetPort("5432/tcp"),

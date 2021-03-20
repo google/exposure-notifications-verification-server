@@ -15,20 +15,49 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 )
 
-// IssueAPIConfig is an interface that represents what is needed of the verification
+// IssueAPIVars is an interface that represents what is needed of the verification
 // code issue API.
+type IssueAPIVars struct {
+	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
+	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
+	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
+
+	// For EN Express, the link will be
+	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
+	// This repository contains a redirect service that can be used for this purpose.
+	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
+}
+
+func (c *IssueAPIVars) Validate() error {
+	fields := []struct {
+		Var  time.Duration
+		Name string
+	}{
+		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
+	}
+
+	for _, f := range fields {
+		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
+			return err
+		}
+	}
+
+	c.ENExpressRedirectDomain = strings.ToLower(c.ENExpressRedirectDomain)
+
+	return nil
+}
+
 type IssueAPIConfig interface {
-	GetCollisionRetryCount() uint
-	GetAllowedSymptomAge() time.Duration
-	GetEnforceRealmQuotas() bool
+	IssueConfig() *IssueAPIVars
+
 	GetRateLimitConfig() *ratelimit.Config
 	GetFeatureConfig() *FeatureConfig
-	GetENXRedirectDomain() string
 	IsMaintenanceMode() bool
 
 	// GetAuthenticatedSMSFailClosed indicates how the system should behave when

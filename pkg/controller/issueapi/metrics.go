@@ -25,6 +25,8 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
+const userReportMetricPrefix = observability.MetricRoot + "/api/userreport"
+
 var (
 	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
 
@@ -33,6 +35,11 @@ var (
 	mSMSLatencyMs = stats.Float64(metricPrefix+"/sms_request", "# of sms requests", stats.UnitMilliseconds)
 
 	mRealmTokenUsed = stats.Int64(metricPrefix+"/realm_token_used", "# of realm token used.", stats.UnitDimensionless)
+
+	// separate metrics related to user report API.
+	mUserReportLatencyMs = stats.Float64(userReportMetricPrefix+"/request", "verify requests latency", stats.UnitMilliseconds)
+
+	mUserReportColission = stats.Int64(userReportMetricPrefix+"/phone_colission", "# of attempts to use a phone number multiple times for self report", stats.UnitDimensionless)
 )
 
 func init() {
@@ -77,6 +84,27 @@ func init() {
 			Description: "The count of # of realm token used.",
 			TagKeys:     observability.CommonTagKeys(),
 			Measure:     mRealmTokenUsed,
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        userReportMetricPrefix + "/request_count",
+			Measure:     mUserReportLatencyMs,
+			Description: "Count of user report requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        userReportMetricPrefix + "/request_latency",
+			Measure:     mUserReportLatencyMs,
+			Description: "Latency distribution of user report requests",
+			TagKeys:     observability.APITagKeys(),
+			Aggregation: ochttp.DefaultLatencyDistribution,
+		},
+		{
+			Name:        userReportMetricPrefix + "/phone_colission",
+			Description: "The count of # phone number colissions on user initiated report.",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mUserReportColission,
 			Aggregation: view.Count(),
 		},
 	}...)

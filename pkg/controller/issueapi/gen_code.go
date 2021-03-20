@@ -17,6 +17,7 @@ package issueapi
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -65,7 +66,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 				"limit", limit,
 				"reset", reset)
 
-			if c.config.GetEnforceRealmQuotas() {
+			if c.config.IssueConfig().EnforceRealmQuotas {
 				return &IssueResult{
 					obsResult:   enobs.ResultError("QUOTA_EXCEEDED"),
 					HTTPCode:    http.StatusTooManyRequests,
@@ -76,7 +77,14 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 		stats.Record(ctx, mRealmTokenUsed.M(1))
 	}
 
-	if err := c.CommitCode(ctx, vCode, realm, c.config.GetCollisionRetryCount()); err != nil {
+	if err := c.CommitCode(ctx, vCode, realm, c.config.IssueConfig().CollisionRetryCount); err != nil {
+		if errors.Is(err, database.ErrAlreadyReported) {
+			return &IssueResult{
+				obsResult:   enobs.ResultError("DUPLICATE_USER_REPORT"),
+				HTTPCode:    http.StatusTooManyRequests,
+				ErrorReturn: api.Errorf("phone number not current eligible for user report").WithCode(api.ErrUserReportTryLater),
+			}
+		}
 		logger.Errorw("failed to issue code", "error", err)
 		return &IssueResult{
 			obsResult:   enobs.ResultError("FAILED_TO_ISSUE_CODE"),

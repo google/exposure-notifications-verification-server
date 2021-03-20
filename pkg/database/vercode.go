@@ -16,9 +16,6 @@ package database
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha512"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -48,15 +45,18 @@ const (
 var (
 	// ValidTestTypes is a map containing the valid test types.
 	ValidTestTypes = map[string]struct{}{
-		"confirmed": {},
-		"likely":    {},
-		"negative":  {},
+		"confirmed":   {},
+		"likely":      {},
+		"negative":    {},
+		"user-report": {},
 	}
 
-	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, or negative")
+	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, negative, or self_report")
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeAlreadyClaimed = errors.New("code already claimed")
 	ErrCodeTooShort       = errors.New("verification code is too short")
+	// User-report errors
+	ErrAlreadyReported = errors.New("phone number not eligible for user report, try again later.")
 )
 
 // VerificationCode represents a verification code in the database.
@@ -74,6 +74,11 @@ type VerificationCode struct {
 	TestDate      *time.Time
 	ExpiresAt     time.Time
 	LongExpiresAt time.Time
+
+	UserReportID *uint
+	// These are used in building a user report
+	Nonce       []byte `gorm:"-"`
+	PhoneNumber string `gorm:"-"`
 
 	// IssuingUserID is the ID of the user in the database that created this
 	// verification code. This is only populated if the code was created via the
@@ -258,13 +263,45 @@ func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
 func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) error {
-	if err := vc.Validate(realm); err != nil {
-		return err
-	}
-	if vc.Model.ID == 0 {
-		return db.db.Create(vc).Error
-	}
-	return db.db.Save(vc).Error
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		if err := vc.Validate(realm); err != nil {
+			return err
+		}
+
+		// If there is a nonce present, this verification code requests that
+		// the phone number not exist in the de-duplicate table.
+		var userReport *UserReport
+		var err error
+		if len(vc.Nonce) > 0 {
+			if len(vc.PhoneNumber) == 0 {
+				return fmt.Errorf("request has nonce but no phone number for SMS, invalid combination")
+			}
+			userReport, err = db.FindUserReport(tx, vc.PhoneNumber)
+			if err != nil && !IsNotFound(err) {
+				return fmt.Errorf("findUserReport: %w", err)
+			}
+			if userReport != nil {
+				return ErrAlreadyReported
+			}
+
+			userReport, err = db.NewUserReport(vc.PhoneNumber, vc.Nonce)
+			if err != nil {
+				return fmt.Errorf("newUserReport: %w", err)
+			}
+			if err := tx.Create(userReport).Error; err != nil {
+				return ErrAlreadyReported
+			}
+		}
+		if userReport != nil {
+			vc.UserReportID = &userReport.ID
+			vc.LongExpiresAt = vc.ExpiresAt // Self report expiration codes are all short.
+		}
+
+		if vc.Model.ID == 0 {
+			return tx.Create(vc).Error
+		}
+		return tx.Save(vc).Error
+	})
 }
 
 // DeleteVerificationCode deletes the code if it exists. This is a hard delete.
@@ -378,27 +415,11 @@ func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) 
 // GenerateVerificationCodeHMAC generates the HMAC of the code using the latest
 // key.
 func (db *Database) GenerateVerificationCodeHMAC(verCode string) (string, error) {
-	keys := db.config.VerificationCodeDatabaseHMAC
-	if len(keys) < 1 {
-		return "", fmt.Errorf("expected at least 1 hmac key")
-	}
-	sig := hmac.New(sha512.New, keys[0])
-	if _, err := sig.Write([]byte(verCode)); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
+	return initialHMAC(db.config.VerificationCodeDatabaseHMAC, verCode)
 }
 
 // generateVerificationCodeHMACs is a helper for generating all possible HMACs of a
 // token.
 func (db *Database) generateVerificationCodeHMACs(v string) ([]string, error) {
-	sigs := make([]string, 0, len(db.config.VerificationCodeDatabaseHMAC))
-	for _, key := range db.config.VerificationCodeDatabaseHMAC {
-		sig := hmac.New(sha512.New, key)
-		if _, err := sig.Write([]byte(v)); err != nil {
-			return nil, err
-		}
-		sigs = append(sigs, base64.RawURLEncoding.EncodeToString(sig.Sum(nil)))
-	}
-	return sigs, nil
+	return allAllowedHMACs(db.config.VerificationCodeDatabaseHMAC, v)
 }

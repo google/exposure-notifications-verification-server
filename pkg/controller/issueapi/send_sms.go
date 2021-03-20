@@ -86,7 +86,7 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 
 	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
 
-	message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.GetENXRedirectDomain(), request.SMSTemplateLabel)
+	message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.IssueConfig().ENExpressRedirectDomain, request.SMSTemplateLabel)
 	if err != nil {
 		result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
 		return err

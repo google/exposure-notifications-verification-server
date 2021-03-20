@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -91,15 +92,10 @@ type ServerConfig struct {
 	CSRFAuthKey envconfig.Base64Bytes `env:"CSRF_AUTH_KEY,required"`
 
 	// Application Config
-	ServerName          string        `env:"SERVER_NAME,default=Diagnosis Verification Server"`
-	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
-	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
+	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 
-	// For EN Express, the link will be
-	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
-	// This repository contains a redirect service that can be used for this purpose.
-	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
+	// Issue is configuration specific to the code issue APIs.
+	Issue IssueAPIVars
 
 	// If Dev mode is true, cookies aren't required to be sent over secure channels.
 	// This includes CSRF protection base cookie. You want this false in production (the default).
@@ -147,7 +143,6 @@ func (c *ServerConfig) Validate() error {
 	}{
 		{c.SessionDuration, "SESSION_DURATION"},
 		{c.RevokeCheckPeriod, "REVOKE_CHECK_DURATION"},
-		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
 	}
 
 	for _, f := range fields {
@@ -156,29 +151,24 @@ func (c *ServerConfig) Validate() error {
 		}
 	}
 
-	c.ENExpressRedirectDomain = strings.ToLower(c.ENExpressRedirectDomain)
+	if err := c.Issue.Validate(); err != nil {
+		return fmt.Errorf("failed to validate issue API configuration: %w", err)
+	}
 
 	return nil
 }
 
-func (c *ServerConfig) GetENXRedirectDomain() string {
-	return c.ENExpressRedirectDomain
-}
-
-func (c *ServerConfig) GetCollisionRetryCount() uint {
-	return c.CollisionRetryCount
-}
-
-func (c *ServerConfig) GetAllowedSymptomAge() time.Duration {
-	return c.AllowedSymptomAge
-}
-
-func (c *ServerConfig) GetEnforceRealmQuotas() bool {
-	return c.EnforceRealmQuotas
+func (c *ServerConfig) IssueConfig() *IssueAPIVars {
+	return &c.Issue
 }
 
 func (c *ServerConfig) GetRateLimitConfig() *ratelimit.Config {
 	return &c.RateLimit
+}
+
+// The server module doesn't handle self report.
+func (c *ServerConfig) GetUserReportTimeout() *time.Duration {
+	return nil
 }
 
 func (c *ServerConfig) GetFeatureConfig() *FeatureConfig {

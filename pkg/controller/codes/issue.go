@@ -58,8 +58,8 @@ func (c *Controller) HandleIssue() http.Handler {
 
 		// Set test date params
 		now := time.Now().UTC()
-		pastDaysDuration := -1 * c.serverconfig.AllowedSymptomAge
-		displayAllowedDays := fmt.Sprintf("%.0f", c.serverconfig.AllowedSymptomAge.Hours()/24.0)
+		pastDaysDuration := -1 * c.serverconfig.IssueConfig().AllowedSymptomAge
+		displayAllowedDays := fmt.Sprintf("%.0f", c.serverconfig.IssueConfig().AllowedSymptomAge.Hours()/24.0)
 		m["maxDate"] = now.Format(project.RFC3339Date)
 		m["minDate"] = now.Add(pastDaysDuration).Format(project.RFC3339Date)
 		m["maxSymptomDays"] = displayAllowedDays

@@ -102,7 +102,10 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 		return
 	}
 
-	res := c.IssueOne(ctx, &request)
+	internalRequest := &IssueRequestInternal{
+		IssueRequest: &request,
+	}
+	res := c.IssueOne(ctx, internalRequest)
 	result.HTTPCode = res.HTTPCode
 
 	switch res.HTTPCode {

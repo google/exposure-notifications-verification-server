@@ -29,6 +29,15 @@ import (
 	"go.opencensus.io/tag"
 )
 
+// IssueRequestInternal is used to join the base issue request with the
+// optional nonce. If the nonce is provided and the the report type
+// is self_report (user initiated code), then extra safeguards are applied.
+type IssueRequestInternal struct {
+	IssueRequest *api.IssueCodeRequest
+	// These files are for user initiated report
+	Nonce []byte
+}
+
 // IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
 type IssueResult struct {
 	VerCode     *database.VerificationCode
@@ -58,13 +67,13 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 }
 
 // IssueOne handles validating a single IssueCodeRequest, issuing a new code, and sending an SMS message.
-func (c *Controller) IssueOne(ctx context.Context, request *api.IssueCodeRequest) *IssueResult {
-	results := c.IssueMany(ctx, []*api.IssueCodeRequest{request})
+func (c *Controller) IssueOne(ctx context.Context, request *IssueRequestInternal) *IssueResult {
+	results := c.IssueMany(ctx, []*IssueRequestInternal{request})
 	return results[0]
 }
 
 // IssueMany handles validating a list of IssueCodeRequest, issuing new codes, and sending SMS messages.
-func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeRequest) []*IssueResult {
+func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInternal) []*IssueResult {
 	realm := controller.RealmFromContext(ctx)
 
 	logger := logging.FromContext(ctx).Named("issueapi.IssueMany").
@@ -73,11 +82,13 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.BuildVerificationCode(ctx, req, realm)
+		vCode, result := c.BuildVerificationCode(ctx, req.IssueRequest, realm)
 		if result != nil {
 			results[i] = result
 			continue
 		}
+		vCode.Nonce = req.Nonce
+		vCode.PhoneNumber = req.IssueRequest.Phone
 		results[i] = c.IssueCode(ctx, vCode, realm)
 	}
 
@@ -110,7 +121,7 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*api.IssueCodeReq
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
 				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
-			}(requests[i], result)
+			}(requests[i].IssueRequest, result)
 		}
 		wg.Wait()
 	}

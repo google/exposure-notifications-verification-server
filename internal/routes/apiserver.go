@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -117,6 +118,19 @@ func APIServer(
 	closer = func() {
 		verifyChaffTracker.Close()
 		certChaffTracker.Close()
+	}
+
+	// The user-report handler is only installed if this functionality is enabled.
+	if cfg.Features.EnableUserReport {
+		sub := r.PathPrefix("/api/user-report").Subrouter()
+		sub.Use(requireAPIKey)
+		sub.Use(processFirewall)
+		sub.Use(middleware.ProcessChaff(db, verifyChaffTracker, middleware.ChaffHeaderDetector()))
+		sub.Use(rateLimit)
+
+		// POST /api/user-report
+		issueController := issueapi.New(cfg, db, limiterStore, certificateSigner, h)
+		sub.Handle("", issueController.HandleUserReport()).Methods(http.MethodPost)
 	}
 
 	{

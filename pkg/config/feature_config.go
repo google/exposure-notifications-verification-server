@@ -23,6 +23,10 @@ type FeatureConfig struct {
 	// and enable/disable this feature. There is no launch timeline for GA.
 	// This should not be used without prior coordination with Apple/Google.
 	EnableAuthenticatedSMS bool `env:"ENABLE_AUTHENTICATED_SMS, default=false"`
+
+	// EnableUserReport allows for realms to enable user initiated diagnosis reporting,
+	// via API + SMS.
+	EnableUserReport bool `env:"ENABLE_USER_REPORT, default=false"`
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known

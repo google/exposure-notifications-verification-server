@@ -2146,6 +2146,30 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE lock_statuses RENAME TO cleanup_statuses`)
 			},
 		},
+		{
+			ID: "00097-AddUserReport",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE TABLE user_reports (
+						id BIGSERIAL,
+						phone_hash TEXT NOT NULL,
+						nonce TEXT NOT NULL,
+						code_claimed BOOLEAN NOT NULL DEFAULT false,
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						PRIMARY KEY (id))`,
+					`CREATE UNIQUE INDEX uix_user_report_phone_hash ON user_reports (phone_hash)`,
+					`CREATE INDEX IF NOT EXISTS idx_user_report_created_at ON user_reports (created_at)`,
+					`ALTER TABLE verification_codes
+						ADD COLUMN IF NOT EXISTS user_report_id INTEGER`,
+					`ALTER TABLE verification_codes ADD CONSTRAINT fk_user_report_id FOREIGN KEY(user_report_id) REFERENCES user_reports(id) ON DELETE SET NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE verification_codes DROP COLUMN IF EXISTS user_report_id`,
+					`DROP TABLE IF EXISTS user_reports`)
+			},
+		},
 	}
 }
 

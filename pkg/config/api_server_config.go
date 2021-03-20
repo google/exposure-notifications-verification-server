@@ -28,12 +28,17 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
+var _ IssueAPIConfig = (*APIServerConfig)(nil)
+
 // APIServerConfig represnets the environment based configuration for the API server.
 type APIServerConfig struct {
 	Database      database.Config
 	Observability observability.Config
 	Cache         cache.Config
 	Features      FeatureConfig
+
+	// SMSSigning defines the SMS signing configuration.
+	SMSSigning SMSSigningConfig
 
 	// DevMode produces additional debugging information. Do not enable in
 	// production environments.
@@ -57,6 +62,9 @@ type APIServerConfig struct {
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
+
+	// variables for Issue API
+	Issue IssueAPIVars
 }
 
 // NewAPIServerConfig returns the environment config for the API server.
@@ -87,9 +95,34 @@ func (c *APIServerConfig) Validate() error {
 		return fmt.Errorf("failed to validate signing token configuration: %w", err)
 	}
 
+	if err := c.Issue.Validate(); err != nil {
+		return fmt.Errorf("failed to validate issue API configuration: %w", err)
+	}
+
 	return nil
 }
 
 func (c *APIServerConfig) ObservabilityExporterConfig() *observability.Config {
 	return &c.Observability
+}
+
+func (c *APIServerConfig) IssueConfig() *IssueAPIVars {
+	return &c.Issue
+}
+
+func (c *APIServerConfig) GetRateLimitConfig() *ratelimit.Config {
+	return &c.RateLimit
+}
+
+func (c *APIServerConfig) GetFeatureConfig() *FeatureConfig {
+	return &c.Features
+}
+
+// The apiserver only supports self report which doesn't use
+func (c *APIServerConfig) GetAuthenticatedSMSFailClosed() bool {
+	return c.SMSSigning.FailClosed
+}
+
+func (c *APIServerConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
 }

@@ -111,7 +111,14 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 
 	// Exchange the code for a verification certificate.
 	allowedTypes := api.AcceptTypes{api.TestTypeConfirmed: struct{}{}}
-	token, err := harness.Database.VerifyCodeAndIssueToken(now, authApp, code, allowedTypes, 30*time.Minute)
+	request := &database.IssueTokenRequest{
+		Time:        now,
+		AuthApp:     authApp,
+		VerCode:     code,
+		AcceptTypes: allowedTypes,
+		ExpireAfter: 30 * time.Minute,
+	}
+	token, err := harness.Database.VerifyCodeAndIssueToken(request)
 	if err != nil {
 		t.Fatal(err)
 	}

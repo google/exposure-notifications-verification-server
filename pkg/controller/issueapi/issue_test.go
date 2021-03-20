@@ -68,24 +68,28 @@ func TestIssueOne(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		request        api.IssueCodeRequest
+		request        *issueapi.IssueRequestInternal
 		responseErr    string
 		httpStatusCode int
 	}{
 		{
-			name: "success",
-			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: symptomDate,
-				Phone:       "+15005550006",
+			name: "confirmed_test",
+			request: &issueapi.IssueRequestInternal{
+				IssueRequest: &api.IssueCodeRequest{
+					TestType:    "confirmed",
+					SymptomDate: symptomDate,
+					Phone:       "+15005550006",
+				},
 			},
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "invalid test type",
-			request: api.IssueCodeRequest{
-				TestType:    "invalid",
-				SymptomDate: symptomDate,
+			name: "invalid_test_type",
+			request: &issueapi.IssueRequestInternal{
+				IssueRequest: &api.IssueCodeRequest{
+					TestType:    "invalid",
+					SymptomDate: symptomDate,
+				},
 			},
 			responseErr:    api.ErrInvalidTestType,
 			httpStatusCode: http.StatusBadRequest,
@@ -98,7 +102,7 @@ func TestIssueOne(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := c.IssueOne(ctx, &tc.request)
+			result := c.IssueOne(ctx, tc.request)
 			resp := result.IssueCodeResponse()
 
 			if result.HTTPCode != tc.httpStatusCode {
@@ -108,7 +112,7 @@ func TestIssueOne(t *testing.T) {
 				t.Errorf("did not receive expected errorCode. got %q, want %q", resp.ErrorCode, tc.responseErr)
 			}
 
-			if tc.responseErr == "" && tc.request.Phone != "" && resp.ExpiresAt == resp.LongExpiresAt {
+			if tc.responseErr == "" && tc.request.IssueRequest.Phone != "" && resp.ExpiresAt == resp.LongExpiresAt {
 				t.Errorf("Long expiry should be longer than short when a phone is provided.")
 			}
 		})
