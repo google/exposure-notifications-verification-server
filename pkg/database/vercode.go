@@ -55,8 +55,7 @@ var (
 	ErrCodeAlreadyExpired = errors.New("code already expired")
 	ErrCodeAlreadyClaimed = errors.New("code already claimed")
 	ErrCodeTooShort       = errors.New("verification code is too short")
-	// User-report errors
-	ErrAlreadyReported = errors.New("phone number not eligible for user report, try again later.")
+	ErrAlreadyReported    = errors.New("phone number not eligible for user report, try again later")
 )
 
 // VerificationCode represents a verification code in the database.
