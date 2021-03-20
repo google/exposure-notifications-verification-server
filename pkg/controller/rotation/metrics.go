@@ -59,14 +59,14 @@ func init() {
 			Aggregation: view.Count(),
 		},
 		{
-			Name:        metricPrefix + "/token_success",
+			Name:        metricPrefix + "/token/success",
 			Description: "Number of token rotation successes",
 			TagKeys:     observability.CommonTagKeys(),
 			Measure:     mTokenSuccess,
 			Aggregation: view.Count(),
 		},
 		{
-			Name:        metricPrefix + "/verification_success",
+			Name:        metricPrefix + "/verification/success",
 			Description: "Number of verification rotation successes",
 			TagKeys:     observability.CommonTagKeys(),
 			Measure:     mVerificationSuccess,
