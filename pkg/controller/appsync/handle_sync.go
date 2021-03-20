@@ -63,6 +63,7 @@ func (c *Controller) HandleSync() http.Handler {
 		// If there are any errors, return them
 		if merr := c.syncApps(ctx, apps); merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
+				logger.Errorw("failed to sync apps", "errors", errs)
 				c.h.RenderJSON(w, http.StatusInternalServerError, &AppSyncResult{
 					OK:     false,
 					Errors: project.ErrorsToStrings(errs),

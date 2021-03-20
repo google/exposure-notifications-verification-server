@@ -168,7 +168,7 @@ resource "google_cloud_run_service_iam_member" "appsync-invoker" {
 resource "google_cloud_scheduler_job" "appsync-worker" {
   name             = "appsync-worker"
   region           = var.cloudscheduler_location
-  schedule         = "0 */6 * * *"
+  schedule         = "0 */4 * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "${google_cloud_run_service.appsync.template[0].spec[0].timeout_seconds + 60}s"
 

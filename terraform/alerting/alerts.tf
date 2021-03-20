@@ -14,6 +14,8 @@
 
 locals {
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
+  custom_prefix   = "custom.googleapis.com/opencensus/en-verification-server"
+
   p99_latency_thresholds = {
     adminapi = "5s"
   }
@@ -40,7 +42,7 @@ resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
       duration = "600s"
       query    = <<-EOT
       fetch
-      generic_task :: custom.googleapis.com/opencensus/en-verification-server/e2e/request_count
+      generic_task :: ${local.custom_prefix}/e2e/request_count
       | {
         NOT_OK: filter metric.result == 'NOT_OK' | align
         ;
@@ -112,7 +114,7 @@ resource "google_monitoring_alert_policy" "rate_limited_count" {
       duration = "300s"
       query    = <<-EOT
       fetch
-      generic_task :: custom.googleapis.com/opencensus/en-verification-server/ratelimit/limitware/request_count
+      generic_task :: ${local.custom_prefix}/ratelimit/limitware/request_count
       | filter metric.result = "RATE_LIMITED"
       | align
       | window 1m
@@ -183,34 +185,26 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   ]
 }
 
-resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
+resource "google_monitoring_alert_policy" "ForwardProgressFailed" {
+  for_each = var.forward_progress_indicators
+
   project      = var.project
-  display_name = "CloudSchedulerJobFailed"
+  display_name = "ForwardProgressFailed"
   combiner     = "OR"
+
   conditions {
-    display_name = "Cloud Scheduler Job Error Ratio"
+    display_name = each.key
+
     condition_monitoring_query_language {
       duration = "0s"
-      # NOTE: The query below will be evaluated every 30s. It will look at the latest point that
-      # represents the total count of log entries for the past 10m (align delta (10m)),
-      # and fork it to two streams, one representing only ERROR logs, one representing ALL logs,
-      # and do an outer join with default value 0 for the first stream.
-      # Then it computes the first stream / second stream getting the ratio of ERROR logs over ALL logs,
-      # and finally group by. The alert will fire when the error rate was 100% for the last 10 mins.
-      query = <<-EOT
-      fetch cloud_scheduler_job
-      | metric 'logging.googleapis.com/log_entry_count'
-      | align delta(10m)
-      | { t_0: filter metric.severity == 'ERROR'
-        ; t_1: ident }
-      | outer_join [0]
-      | value
-          [t_0_value_log_entry_count_div:
-            div(t_0.value.log_entry_count, t_1.value.log_entry_count)]
-      | group_by [resource.job_id],
-          [t_0_value_log_entry_count_div_sum: sum(t_0_value_log_entry_count_div)]
-      | condition t_0_value_log_entry_count_div_sum >= 1
+      query    = <<-EOT
+      fetch generic_task
+      | metric '${local.custom_prefix}/${each.value.metric}'
+      | align delta_gauge(${each.value.window})
+      | group_by [], [val: aggregate(value.success)]
+      | absent_for ${each.value.window}
       EOT
+
       trigger {
         count = 1
       }
@@ -218,11 +212,11 @@ resource "google_monitoring_alert_policy" "CloudSchedulerJobFailed" {
   }
 
   documentation {
-    content   = "${local.playbook_prefix}/CloudSchedulerJobFailed.md"
+    content   = "${local.playbook_prefix}/ForwardProgressFailed.md"
     mime_type = "text/markdown"
   }
 
-  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,
@@ -239,7 +233,7 @@ resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
       duration = "600s"
       query    = <<-EOT
       fetch
-      generic_task :: custom.googleapis.com/opencensus/en-verification-server/user/upstream_user_recreate_count
+      generic_task :: ${local.custom_prefix}/user/upstream_user_recreate_count
       | align rate(5m)
       | every 1m
       | group_by [], [val: sum(value.upstream_user_recreate_count)]
@@ -271,7 +265,7 @@ resource "google_monitoring_alert_policy" "AuthenticatedSMSFailure" {
       duration = "60s"
       query    = <<-EOT
       fetch
-      generic_task :: custom.googleapis.com/opencensus/en-verification-server/api/issue/authenticated_sms_failure_count
+      generic_task :: ${local.custom_prefix}/api/issue/authenticated_sms_failure_count
       | align rate(5m)
       | every 1m
       | group_by [metric.realm], [val: sum(value.authenticated_sms_failure_count)]
