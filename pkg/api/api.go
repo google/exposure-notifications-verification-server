@@ -375,10 +375,13 @@ type UserReportRequest struct {
 type UserReportResponse struct {
 	Padding Padding `json:"padding"`
 
-	// LongExpiresAt and LongExpiresAtTimestamp represents the time when the long
-	// code expires, in UTC seconds since epoch.
-	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
-	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`
+	// ExpiresAt is a RFC1123 formatted string formatted timestamp, in UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAt string `json:"expiresAt"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
 
 	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`

@@ -120,8 +120,8 @@ func (c *Controller) HandleUserReport() http.Handler {
 			return
 		case http.StatusOK:
 			c.h.RenderJSON(w, http.StatusOK, &api.UserReportResponse{
-				LongExpiresAt:          res.IssueCodeResponse().ExpiresAt,
-				LongExpiresAtTimestamp: res.IssueCodeResponse().LongExpiresAtTimestamp,
+				ExpiresAt:          res.IssueCodeResponse().ExpiresAt,
+				ExpiresAtTimestamp: res.IssueCodeResponse().ExpiresAtTimestamp,
 			})
 			return
 		default:
