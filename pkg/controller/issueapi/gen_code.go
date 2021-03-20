@@ -79,9 +79,10 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 
 	if err := c.CommitCode(ctx, vCode, realm, c.config.IssueConfig().CollisionRetryCount); err != nil {
 		if errors.Is(err, database.ErrAlreadyReported) {
+			stats.Record(ctx, mUserReportColission.M(1))
 			return &IssueResult{
 				obsResult:   enobs.ResultError("DUPLICATE_USER_REPORT"),
-				HTTPCode:    http.StatusTooManyRequests,
+				HTTPCode:    http.StatusConflict,
 				ErrorReturn: api.Errorf("phone number not current eligible for user report").WithCode(api.ErrUserReportTryLater),
 			}
 		}

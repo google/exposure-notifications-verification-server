@@ -102,7 +102,7 @@ func TestUserReport(t *testing.T) {
 				Platform:    "android",
 				Nonce:       nonce,
 			},
-			httpStatusCode: http.StatusTooManyRequests,
+			httpStatusCode: http.StatusConflict,
 			responseErr:    "user_report_try_later",
 		},
 		{

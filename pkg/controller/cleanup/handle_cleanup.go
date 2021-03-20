@@ -223,9 +223,9 @@ func (c *Controller) HandleCleanup() http.Handler {
 		// Claimed user reports
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
-			item = tag.Upsert(itemTagKey, "USER_REPORTS")
-			if count, err := c.db.PurgeUserReports(c.config.UserReportMaxAge); err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("failed to purge user reports: %w", err))
+			item = tag.Upsert(itemTagKey, "CLAIMED_USER_REPORTS")
+			if count, err := c.db.PurgeClaimedUserReports(c.config.UserReportMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge claimed user reports: %w", err))
 				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged user reports", "count", count)

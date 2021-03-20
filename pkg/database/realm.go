@@ -309,6 +309,7 @@ func (r *Realm) AllowsUserReport() bool {
 }
 
 // EnableUserReport adds the TestTypeUserReport to this realm.
+// This does not save the realm to the database.
 func (r *Realm) EnableUserReport() {
 	r.AllowedTestTypes = r.AllowedTestTypes | TestTypeUserReport
 }

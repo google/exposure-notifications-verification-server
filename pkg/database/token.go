@@ -277,7 +277,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 				if IsNotFound(err) {
 					return ErrVerificationCodeNotFound
 				}
-				return err
+				return fmt.Errorf("unable to look up associated user_report record: %w", err)
 			}
 
 			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)

@@ -25,7 +25,7 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/api/issue"
 
-const userReportMetricPrefix = observability.MetricRoot + "/api/userreport"
+const userReportMetricPrefix = observability.MetricRoot + "/api/user_report"
 
 var (
 	mLatencyMs = stats.Float64(metricPrefix+"/request", "# of code issue requests", stats.UnitMilliseconds)
@@ -39,7 +39,7 @@ var (
 	// separate metrics related to user report API.
 	mUserReportLatencyMs = stats.Float64(userReportMetricPrefix+"/request", "verify requests latency", stats.UnitMilliseconds)
 
-	mUserReportColission = stats.Int64(userReportMetricPrefix+"/phone_colission", "# of attempts to use a phone number multiple times for self report", stats.UnitDimensionless)
+	mUserReportColission = stats.Int64(userReportMetricPrefix+"/phone_collision", "# of attempts to use a phone number multiple times for self report", stats.UnitDimensionless)
 )
 
 func init() {

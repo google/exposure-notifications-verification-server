@@ -348,7 +348,7 @@ type ExpireCodeResponse struct {
 //
 // A phone number is required. The verification code is only presented over SMS.
 //
-// The nonce field must be a 128 random bytes, base64 encoded.
+// The nonce field must be a 256 random bytes, base64 encoded.
 // This nonce field must be passed back on the VerifyCodeRequest request later.
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY

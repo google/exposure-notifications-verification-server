@@ -129,7 +129,7 @@ func TestPurgeUserReports(t *testing.T) {
 			name:    "claimed",
 			claimed: true,
 			method: func() (int64, error) {
-				return db.PurgeUserReports(500 * time.Millisecond)
+				return db.PurgeClaimedUserReports(500 * time.Millisecond)
 			},
 		},
 	}

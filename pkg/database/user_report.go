@@ -32,17 +32,24 @@ const (
 type UserReport struct {
 	Errorable
 
+	// ID is an auto-increment primary key
 	ID uint
 
+	// PhoneHash is the base64 encoded HMAC of the phone number used to create a user report
 	PhoneHash string `json:"-"` // unique
-	Nonce     string
+	// Nonce is the random data that must be presented when verifying a verification code attached to this user report
+	Nonce string
 
+	// CodeClaimed is set to true when the associated code is claimed. This is needed
+	// since the verification code itself will be cleaned up before this record.
 	CodeClaimed bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
+// NewUserReport creates a new UserReport by calculating the current HMAC of the
+// provided phone number and encoding the nonce. It does NOT save it to the database.
 func (db *Database) NewUserReport(phone string, nonce []byte) (*UserReport, error) {
 	hmac, err := db.GeneratePhoneNumberHMAC(phone)
 	if err != nil {
@@ -57,6 +64,7 @@ func (db *Database) NewUserReport(phone string, nonce []byte) (*UserReport, erro
 	}, nil
 }
 
+// BeforeSave validates the structure of the UserReport.
 func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
 	decoded, err := base64util.DecodeString(ur.Nonce)
 	if err != nil {
@@ -74,6 +82,8 @@ func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
+// FindUserReport finds a user report by phone number using any of the currently valid
+// HMAC keys.
 func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport, error) {
 	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
 	if err != nil {
@@ -103,8 +113,8 @@ func (db *Database) PurgeUnclaimedUserReports(maxAge time.Duration) (int64, erro
 	return rtn.RowsAffected, rtn.Error
 }
 
-// PurgeUserReports removes expired user reports.
-func (db *Database) PurgeUserReports(maxAge time.Duration) (int64, error) {
+// PurgeClaimedUserReports removes expired user reports.
+func (db *Database) PurgeClaimedUserReports(maxAge time.Duration) (int64, error) {
 	deleteBefore := time.Now().UTC()
 	rtn := db.db.Unscoped().
 		Where("created_at < ?", deleteBefore).

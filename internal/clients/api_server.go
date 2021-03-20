@@ -38,6 +38,8 @@ func NewAPIServerClient(base, apiKey string, opts ...Option) (*APIServerClient, 
 	}, nil
 }
 
+// UserReport calls the /user-report endpoint to request a verification code be created
+// with a self-report type, with the code only dispatched via SMS.
 func (c *APIServerClient) UserReport(ctx context.Context, in *api.UserReportRequest) (*api.UserReportResponse, error) {
 	req, err := c.newRequest(ctx, http.MethodPost, "/api/user-report", in)
 	if err != nil {

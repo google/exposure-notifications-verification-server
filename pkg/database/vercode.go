@@ -262,11 +262,10 @@ func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
 func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) error {
+	if err := vc.Validate(realm); err != nil {
+		return err
+	}
 	return db.db.Transaction(func(tx *gorm.DB) error {
-		if err := vc.Validate(realm); err != nil {
-			return err
-		}
-
 		// If there is a nonce present, this verification code requests that
 		// the phone number not exist in the de-duplicate table.
 		var userReport *UserReport
