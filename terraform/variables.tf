@@ -222,7 +222,7 @@ variable "enx_redirect_domain_map_add" {
 }
 
 variable "db_phone_number_hmac_count" {
-  type = number
+  type    = number
   default = 1
 
   description = "Number of HMAC keys to create for HMACing phone numbers in the database. Increase by 1 to force a rotation."
