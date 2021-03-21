@@ -4,7 +4,7 @@ This alert fires when background jobs have not made forward progress in an accep
 
 - `appsync-worker` - Syncs the published list of mobile apps to the server's database.
 
-- `backupdatabase-worker` - Generates a database backup every interval.
+- `backup-worker` - Generates a backups every interval.
 
 - `cleanup-worker` - Performs a variety of cleanup tasks including purging old data, secrets, and keys.
 
