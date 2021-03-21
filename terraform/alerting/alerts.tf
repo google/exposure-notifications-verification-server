@@ -189,7 +189,7 @@ resource "google_monitoring_alert_policy" "ForwardProgressFailed" {
   for_each = var.forward_progress_indicators
 
   project      = var.project
-  display_name = "ForwardProgressFailed"
+  display_name = "ForwardProgressFailed-${each.key}"
   combiner     = "OR"
 
   conditions {
