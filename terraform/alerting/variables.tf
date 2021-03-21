@@ -95,6 +95,9 @@ variable "forward_progress_indicators" {
     // appsync runs every 4h, alert after 2 failures
     "appsync" = { metric = "appsync/success", window = "485m" },
 
+    // backup runs every 4h, alert after 2 failures
+    "backup" = { metric = "backup/success", window = "485m" },
+
     // cleanup runs every 1h, alert after 4 failures
     "cleanup" = { metric = "cleanup/success", window = "245m" },
 

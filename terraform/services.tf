@@ -24,6 +24,12 @@ locals {
     BLOBSTORE      = "GOOGLE_CLOUD_STORAGE"
   }
 
+  backup_config = {
+    BACKUP_BUCKET                = google_storage_bucket.backups.name
+    BACKUP_DATABASE_INSTANCE_URL = google_sql_database_instance.db-inst.self_link
+    BACKUP_DATABASE_NAME         = google_sql_database.db.name
+  }
+
   csrf_config = {
     CSRF_AUTH_KEY = "secret://${google_secret_manager_secret_version.csrf-token-version.id}"
   }
