@@ -74,22 +74,29 @@ func TestFindUserReport(t *testing.T) {
 	})
 
 	cases := []struct {
-		name  string
-		phone string
-		nonce string
-		want  string
+		name        string
+		phone       string
+		nonce       string
+		want        string
+		fieldErrors []string
 	}{
 		{
 			name:  "poorly_encoded_nonce",
 			phone: "+12065551235",
 			nonce: ".foo",
-			want:  "nonce is not using a valid base64 encoding",
+			want:  "validation failed",
+			fieldErrors: []string{
+				"nonce is not using a valid base64 encoding",
+			},
 		},
 		{
 			name:  "poorly_encoded_nonce",
 			phone: "+12065551235",
 			nonce: base64.RawURLEncoding.EncodeToString([]byte{1, 2, 3}),
-			want:  "nonce is not the correct length",
+			want:  "validation failed",
+			fieldErrors: []string{
+				"nonce is not the correct length, want: 256 got: 3",
+			},
 		},
 	}
 
@@ -105,6 +112,9 @@ func TestFindUserReport(t *testing.T) {
 			}
 			err = db.db.Save(userReport).Error
 			errcmp.MustMatch(t, err, tc.want)
+			if diff := cmp.Diff(tc.fieldErrors, userReport.ErrorMessages()); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
+			}
 		})
 	}
 }

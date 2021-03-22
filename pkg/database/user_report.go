@@ -72,10 +72,10 @@ func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
 	decoded, err := base64util.DecodeString(ur.Nonce)
 	if err != nil {
 		ur.AddError("nonce", "is not using a valid base64 encoding")
-	}
-
-	if l := len(decoded); l != NonceLength {
-		ur.AddError("nonce", fmt.Sprintf("is not the correct length, want: %v got: %v", NonceLength, l))
+	} else {
+		if l := len(decoded); l != NonceLength {
+			ur.AddError("nonce", fmt.Sprintf("is not the correct length, want: %v got: %v", NonceLength, l))
+		}
 	}
 
 	return ur.ErrorOrNil()
