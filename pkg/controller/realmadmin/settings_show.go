@@ -123,7 +123,7 @@ func (c *Controller) renderSettings(
 		}
 	}
 
-	m := controller.TemplateMapFromContext(ctx)
+	m := c.config.Features.AddToTemplate(controller.TemplateMapFromContext(ctx))
 	m.Title("Realm settings")
 	m["realm"] = realm
 	m["smsConfig"] = smsConfig
@@ -132,6 +132,8 @@ func (c *Controller) renderSettings(
 	m["emailConfig"] = emailConfig
 	m["statsConfig"] = keyServerStats
 	m["countries"] = database.Countries
+	// User report is handled special and isn't part of the previous test type hierarchy.
+	m["currentTestTypes"] = realm.AllowedTestTypes &^ database.TestTypeUserReport
 	m["testTypes"] = map[string]database.TestType{
 		"confirmed": database.TestTypeConfirmed,
 		"likely":    database.TestTypeConfirmed | database.TestTypeLikely,
@@ -146,7 +148,7 @@ func (c *Controller) renderSettings(
 	m["shortCodeMinutes"] = shortCodeMinutes
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
-	m["enxRedirectDomain"] = c.config.GetENXRedirectDomain()
+	m["enxRedirectDomain"] = c.config.IssueConfig().ENExpressRedirectDomain
 
 	m["maxSMSTemplate"] = database.SMSTemplateMaxLength
 

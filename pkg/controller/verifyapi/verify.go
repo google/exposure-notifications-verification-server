@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/base64util"
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -105,9 +106,30 @@ func (c *Controller) HandleVerify() http.Handler {
 			return
 		}
 
+		nonce := []byte{}
+		if request.Nonce != "" {
+			nonce, err = base64util.DecodeString(request.Nonce)
+			if err != nil {
+				logger.Errorw("bad request", "error", err)
+				blame = enobs.BlameClient
+				result = enobs.ResultError("BAD_NONCE")
+
+				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
+				return
+			}
+		}
+
+		tokenRequest := &database.IssueTokenRequest{
+			Time:        now,
+			AuthApp:     authApp,
+			VerCode:     request.VerificationCode,
+			AcceptTypes: acceptTypes,
+			ExpireAfter: c.config.VerificationTokenDuration,
+			Nonce:       nonce,
+		}
 		// Exchange the short term verification code for a long term verification token.
 		// The token can be used to sign TEKs later.
-		verificationToken, err := c.db.VerifyCodeAndIssueToken(now, authApp, request.VerificationCode, acceptTypes, c.config.VerificationTokenDuration)
+		verificationToken, err := c.db.VerifyCodeAndIssueToken(tokenRequest)
 		if err != nil {
 			blame = enobs.BlameClient
 			switch {

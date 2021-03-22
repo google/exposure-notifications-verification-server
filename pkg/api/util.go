@@ -41,6 +41,8 @@ func (v *VerifyCodeRequest) GetAcceptedTestTypes() (AcceptTypes, error) {
 			accepted.AddAcceptTypes(TestTypeConfirmed, TestTypeLikely)
 		case TestTypeNegative:
 			accepted.AddAcceptTypes(TestTypeConfirmed, TestTypeLikely, TestTypeNegative)
+		case TestTypeUserReport:
+			accepted.AddAcceptTypes(TestTypeConfirmed, TestTypeUserReport)
 		default:
 			return nil, fmt.Errorf("invalid accepted test type: %v", testType)
 		}

@@ -45,7 +45,7 @@
     {{if not $realm.EnableENExpress}}
       <div class="form-check mb-3">
         <input type="radio" name="allowed_test_types" id="test-type-negative" class="form-check-input"
-          value="{{$testTypes.negative}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.negative)}} />
+          value="{{$testTypes.negative}}" {{checkedIf (eq .currentTestTypes $testTypes.negative)}} />
         <label for="test-type-negative" class="form-check-label">
           Positive + Likely + Negative
           <small class="form-text text-muted">
@@ -58,7 +58,7 @@
 
       <div class="form-check mb-3">
         <input type="radio" name="allowed_test_types" id="test-type-likely" class="form-check-input"
-          value="{{$testTypes.likely}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.likely)}} />
+          value="{{$testTypes.likely}}" {{checkedIf (eq .currentTestTypes $testTypes.likely)}} />
         <label for="test-type-likely" class="form-check-label">
           Positive + Likely
           <small class="form-text text-muted">
@@ -71,7 +71,7 @@
 
     <div class="form-check mb-3">
       <input type="radio" name="allowed_test_types" id="test-type-confirmed"
-        class="form-check-input" value="{{$testTypes.confirmed}}" {{checkedIf (eq $realm.AllowedTestTypes $testTypes.confirmed)}} />
+        class="form-check-input" value="{{$testTypes.confirmed}}" {{checkedIf (eq .currentTestTypes $testTypes.confirmed)}} />
       <label for="test-type-confirmed" class="form-check-label">
         Positive
         <small class="form-text text-muted">
@@ -85,6 +85,19 @@
         </small>
       </label>
     </div>
+
+    {{if .features.EnableUserReport}}
+    <div class="form-check mb-3">
+      <input type="checkbox" name="allow_user_report" id="allow-user-report" class="form-check-input" value="true" {{checkedIf ($realm.AllowsUserReport)}} />
+      <label for="allow-user-report" class="form-check-label">
+        Allow user initiated report
+        <small class="form-text text-muted mb-3">
+          Allow users to initiate a COVID-19 diagnosis from their mobile application before
+          receiving a verification code from this health authority.
+        </small>
+      </label>
+    </div>
+    {{end}}
   </div>
 
   <hr>

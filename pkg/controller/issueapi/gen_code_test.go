@@ -222,7 +222,7 @@ func TestIssueCode(t *testing.T) {
 
 			c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
 
-			harness.Config.EnforceRealmQuotas = tc.enforceRealmQuotas
+			harness.Config.Issue.EnforceRealmQuotas = tc.enforceRealmQuotas
 			result := c.IssueCode(ctx, tc.vCode, realm)
 
 			if tc.responseErr == "" {

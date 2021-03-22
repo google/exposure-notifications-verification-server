@@ -207,6 +207,32 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
+		// Unclaimed user reports
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "UNCLAIMED_USER_REPORTS")
+			if count, err := c.db.PurgeUnclaimedUserReports(c.config.UserReportUnclaimedMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge unclaimed user reports: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged unclaimed user reports", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// Claimed user reports
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "CLAIMED_USER_REPORTS")
+			if count, err := c.db.PurgeClaimedUserReports(c.config.UserReportMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge claimed user reports: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged user reports", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
 		// If there are any errors, return them
 		if merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {

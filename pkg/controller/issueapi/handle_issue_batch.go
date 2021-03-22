@@ -118,7 +118,15 @@ func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWrit
 		return
 	}
 
-	results := c.IssueMany(ctx, request.Codes)
+	internalRequests := make([]*IssueRequestInternal, 0, len(request.Codes))
+	for _, c := range request.Codes {
+		internalRequests = append(internalRequests,
+			&IssueRequestInternal{
+				IssueRequest: c,
+			})
+	}
+
+	results := c.IssueMany(ctx, internalRequests)
 
 	HTTPCode := http.StatusOK
 	batchResp := &api.BatchIssueCodeResponse{}
@@ -153,5 +161,4 @@ func (c *Controller) decodeAndBulkIssue(ctx context.Context, w http.ResponseWrit
 	}
 
 	c.h.RenderJSON(w, HTTPCode, batchResp)
-	return
 }

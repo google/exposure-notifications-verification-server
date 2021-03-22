@@ -114,7 +114,7 @@
     </small>
   </div>
 
-  <hr>
+  <hr/>
 
   <div>
     <div class="btn-group dropright pb-2">
@@ -132,6 +132,9 @@
         <div id="sms-template-dropdown-divider" class="dropdown-divider"></div>
         <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
       </div>
+      {{if $realm.AllowsUserReport}}
+        <small class="form-text text-muted">User initiated report is enabled, which always uses the <code>User Report</code> template.</small>
+      {{end}}
     </div>
     {{if $realm.ErrorsFor "smsTextTemplate"}}
     <div class="invalid-feedback d-block mt-n1 pb-2">
@@ -155,7 +158,9 @@
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
       {{end}}
+      {{if or (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
       <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>
+      {{end}}
     </div>
     {{end}}
     <span id="templates-end"></span>

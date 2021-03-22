@@ -16,7 +16,7 @@ package config
 
 import (
 	"context"
-	"strings"
+	"fmt"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -53,14 +53,7 @@ type AdminAPIServerConfig struct {
 	Port                string        `env:"PORT,default=8080"`
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 
-	CollisionRetryCount uint          `env:"COLLISION_RETRY_COUNT,default=6"`
-	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
-	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
-
-	// For EN Express, the link will be
-	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
-	// This repository contains a redirect service that can be used for this purpose.
-	ENExpressRedirectDomain string `env:"ENX_REDIRECT_DOMAIN"`
+	Issue IssueAPIVars
 }
 
 // NewAdminAPIServerConfig returns the environment config for the Admin API server.
@@ -79,7 +72,6 @@ func (c *AdminAPIServerConfig) Validate() error {
 		Name string
 	}{
 		{c.APIKeyCacheDuration, "API_KEY_CACHE_DURATION"},
-		{c.AllowedSymptomAge, "ALLOWED_PAST_SYMPTOM_DAYS"},
 	}
 
 	for _, f := range fields {
@@ -88,25 +80,15 @@ func (c *AdminAPIServerConfig) Validate() error {
 		}
 	}
 
-	c.ENExpressRedirectDomain = strings.ToLower(c.ENExpressRedirectDomain)
+	if err := c.Issue.Validate(); err != nil {
+		return fmt.Errorf("failed to validate issue API configuration: %w", err)
+	}
 
 	return nil
 }
 
-func (c *AdminAPIServerConfig) GetENXRedirectDomain() string {
-	return c.ENExpressRedirectDomain
-}
-
-func (c *AdminAPIServerConfig) GetCollisionRetryCount() uint {
-	return c.CollisionRetryCount
-}
-
-func (c *AdminAPIServerConfig) GetAllowedSymptomAge() time.Duration {
-	return c.AllowedSymptomAge
-}
-
-func (c *AdminAPIServerConfig) GetEnforceRealmQuotas() bool {
-	return c.EnforceRealmQuotas
+func (c *AdminAPIServerConfig) IssueConfig() *IssueAPIVars {
+	return &c.Issue
 }
 
 func (c *AdminAPIServerConfig) GetRateLimitConfig() *ratelimit.Config {

@@ -75,6 +75,11 @@ type Config struct {
 	// them in the database.
 	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY,required" json:"-"`
 
+	// PhoneNumberHMAC is the HMAC key to hash phone numbers before storing
+	// in the database. This is only used of user initiated reporting is enabled
+	// at the system and at the realm level.
+	PhoneNumberHMAC []envconfig.Base64Bytes `env:"DB_PHONE_HMAC_KEY,required" json:"-"`
+
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
 	// table implementation is the source of truth for which values are secrets
@@ -137,6 +142,9 @@ func (c *Config) clone() *Config {
 
 	cfg.VerificationCodeDatabaseHMAC = make([]envconfig.Base64Bytes, len(c.VerificationCodeDatabaseHMAC))
 	copy(cfg.VerificationCodeDatabaseHMAC, c.VerificationCodeDatabaseHMAC)
+
+	cfg.PhoneNumberHMAC = make([]envconfig.Base64Bytes, len(c.PhoneNumberHMAC))
+	copy(cfg.PhoneNumberHMAC, c.PhoneNumberHMAC)
 
 	return cfg
 }

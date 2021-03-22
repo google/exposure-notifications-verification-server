@@ -17,6 +17,8 @@ package database
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha512"
 	"database/sql"
 	"encoding/base64"
 	"errors"
@@ -38,6 +40,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/jinzhu/gorm"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
 	"go.uber.org/zap"
@@ -712,4 +715,34 @@ func uintPtr(v uint) *uint {
 
 func uintDiff(then, now uint) string {
 	return stringDiff(strconv.FormatUint(uint64(then), 10), strconv.FormatUint(uint64(now), 10))
+}
+
+// initialHMAC uses the currently active HMAC key to seed a new record
+// This depends on envconfig.Base64Bytes since the callers are all using items
+// directly from config struct and this avoids unnecessary casing.
+func initialHMAC(keys []envconfig.Base64Bytes, data string) (string, error) {
+	if len(keys) < 1 {
+		return "", fmt.Errorf("expected at least 1 hmac key")
+	}
+	sig := hmac.New(sha512.New, keys[0])
+	if _, err := sig.Write([]byte(data)); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
+}
+
+// allAllowedHMACs uses all passed in HMAC keys to return al valid
+// results for searching for a previously saved record.
+// This depends on envconfig.Base64Bytes since the callers are all using items
+// directly from config struct and this avoids unnecessary casing.
+func allAllowedHMACs(keys []envconfig.Base64Bytes, data string) ([]string, error) {
+	sigs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		sig := hmac.New(sha512.New, key)
+		if _, err := sig.Write([]byte(data)); err != nil {
+			return nil, err
+		}
+		sigs = append(sigs, base64.RawURLEncoding.EncodeToString(sig.Sum(nil)))
+	}
+	return sigs, nil
 }

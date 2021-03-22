@@ -62,6 +62,7 @@ locals {
     DB_SSLROOTCERT                    = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
     DB_USER                           = google_sql_user.user.name
     DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
+    DB_PHONE_HMAC_KEY                 = "secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
   }
 
   firebase_config = {

@@ -412,7 +412,14 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 					date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
 				}
 
-				token, err := db.VerifyCodeAndIssueToken(date, app, longCode, accept, 24*time.Hour)
+				request := &database.IssueTokenRequest{
+					Time:        date,
+					AuthApp:     app,
+					VerCode:     longCode,
+					AcceptTypes: accept,
+					ExpireAfter: 24 * time.Hour,
+				}
+				token, err := db.VerifyCodeAndIssueToken(request)
 				if err != nil {
 					continue
 				}

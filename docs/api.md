@@ -1,22 +1,23 @@
 <!-- TOC depthFrom:1 -->
 
-- [API access](#api-access)	
-- [API usage](#api-usage)	
-  - [Authenticating](#authenticating)	
-  - [Error reporting](#error-reporting)	
-- [API Methods](#api-methods)	
-  - [`/api/verify`](#apiverify)	
-  - [`/api/certificate`](#apicertificate)	
-- [Admin APIs](#admin-apis)	
-  - [`/api/issue`](#apiissue)	
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)	
-  - [`/api/batch-issue`](#apibatch-issue)	
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)	
-  - [`/api/checkcodestatus`](#apicheckcodestatus)	
-  - [`/api/expirecode`](#apiexpirecode)	
-  - [`/api/stats/*`](#apistats)	
-- [Chaffing requests](#chaffing-requests)	
-- [Response codes overview](#response-codes-overview)	
+- [API access](#api-access)
+- [API usage](#api-usage)
+    - [Authenticating](#authenticating)
+    - [Error reporting](#error-reporting)
+- [API Methods](#api-methods)
+    - [`/api/verify`](#apiverify)
+    - [`/api/certificate`](#apicertificate)
+    - [`/api/user-report`](#apiuser-report)
+- [Admin APIs](#admin-apis)
+    - [`/api/issue`](#apiissue)
+        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+    - [`/api/batch-issue`](#apibatch-issue)
+        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+    - [`/api/checkcodestatus`](#apicheckcodestatus)
+    - [`/api/expirecode`](#apiexpirecode)
+    - [`/api/stats/*`](#apistats)
+- [Chaffing requests](#chaffing-requests)
+- [Response codes overview](#response-codes-overview)
 
 <!-- /TOC -->
 
@@ -191,6 +192,79 @@ Possible error code responses. New error codes may be added in future releases.
 | `hmac_invalid`        | 400         | No    | The `ekeyhmac` field, when base64 decoded is not the right size (32 bytes) |
 | `maintenance_mode   ` | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.      |
 |                       | 500         | Yes   | Internal processing error, may be successful on retry.                     |
+
+## `/api/user-report`
+
+Request a verification code for a `user-report` verification code, which 
+corresponds to the export report type of `SELF_REPORT`.
+
+**UserReportRequest**
+
+```json
+{
+  "symptomDate": "YYYY-MM-DD",
+  "testDate": "YYYY-MM-DD",
+  "tzOffset": 0,
+  "phone": "+CC Phone number",
+  "platform": "ios|android",
+  "nonce": "256 random bytes, base64 encoded",
+  "padding": "<bytes>"
+}
+```
+
+* `sypmtomDate` and `testDate` are both optional.
+  * only one will be encoded into the eventually issued certificate
+  * symptom date is always preferred to test date
+* `tzOffset`
+  * Offset in minutes of the user's timezone. Positive, negative, 0, or omitted (using the default of 0) are all valid. 0 is considered to be UTC.
+* `phone`
+  * Phone number to send the SMS to.
+  * This field is __required__ on this API.
+* `nonce`
+  * Required, and must be _exactly_ `256` bytes of random data, base64 encoded.
+  * This same nonce must be passed later on the verify call.
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
+
+**UserReportResponse**
+
+```json
+http 200
+{
+  "expiresAt": "RFC1123 formatted string timestamp",
+  "expiresAtTimestamp": 0,
+  "padding": "<bytes>"
+}
+
+or
+
+{
+  "error": "",
+  "errorCode": "",
+}
+```
+
+* `padding` is a field that obfuscates the size of the response body to a
+  network observer. The server _may_ generate and insert a random number of
+  base64-encoded bytes into this field. The client should not process the
+  padding.
+
+Possible error code responses. New error codes may be added in future releases.
+
+| ErrorCode               | HTTP Status | Retry | Meaning                                                                                                         |
+| ----------------------- | ----------- | ----- | --------------------------------------------------------------------------------------------------------------- |
+| `unparsable_request`    | 400         | No    | Client sent an request the sever cannot parse                                                                   |
+| `invalid_test_type`     | 400         | No    | The realm does not support user-report requests                                                          |
+| `missing_date`          | 400         | No    | The realm requires either a test or symptom date, but none was provided.                                        |
+| `invalid_date`          | 400         | No    | The provided test or symptom date, was older or newer than the realm allows.                                    |
+| `missing_nonce`         | 400         | No    | The request is missing the required `nonce` field |
+| `missing_phone`         | 400         | No    | The request is missing the required `phone` field |
+| `user_report_try_later` | 409         | No    | The provided phone number is not allowed to make requests right now. It could be for as little as 30 minutes, or as much as 90 days. A cool down time is not provided. |
+| `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |
+| `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.                    |
+|                         | 500         | Yes   | Internal processing error, may be successful on retry.                           |
 
 # Admin APIs
 

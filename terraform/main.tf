@@ -191,6 +191,7 @@ export DB_PORT="5432"
 export DB_SSLMODE="disable"
 export DB_USER="${google_sql_user.user.name}"
 export DB_VERIFICATION_CODE_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
+export DB_PHONE_HMAC_KEY="secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
 
 export FIREBASE_API_KEY="${data.google_firebase_web_app_config.default.api_key}"
 export FIREBASE_APP_ID="${google_firebase_web_app.default.app_id}"

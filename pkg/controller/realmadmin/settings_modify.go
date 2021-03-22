@@ -65,6 +65,7 @@ type formData struct {
 
 	Codes                 bool              `form:"codes"`
 	AllowedTestTypes      database.TestType `form:"allowed_test_types"`
+	AllowUserReport       bool              `form:"allow_user_report"`
 	AllowBulkUpload       bool              `form:"allow_bulk"`
 	RequireDate           bool              `form:"require_date"`
 	CodeLength            uint              `form:"code_length"`
@@ -81,6 +82,7 @@ type formData struct {
 	TwilioFromNumber          string             `form:"twilio_from_number"`
 	SMSTextTemplate           string             `form:"-"`
 	SMSTextAlternateTemplates map[string]*string `form:"-"`
+	SMSTextUserReportAppend   string             `form:"sms_text_user_report_append"`
 
 	Email                      bool   `form:"email"`
 	UseSystemEmailConfig       bool   `form:"use_system_email_config"`
@@ -227,6 +229,9 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.AllowedTestTypes = form.AllowedTestTypes
 			currentRealm.RequireDate = form.RequireDate
 			currentRealm.AllowBulkUpload = form.AllowBulkUpload
+			if c.config.Features.EnableUserReport && form.AllowUserReport {
+				currentRealm.AddUserReportToAllowedTestTypes()
+			}
 
 			// These fields can only be set if ENX is disabled
 			if !currentRealm.EnableENExpress {

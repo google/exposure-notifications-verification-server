@@ -86,9 +86,11 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 			EnableAuthenticatedSMS: true,
 		},
 
-		APIKeyCacheDuration:     5 * time.Second,
-		ENExpressRedirectDomain: "enx-redirect.local",
-		DevMode:                 true,
+		APIKeyCacheDuration: 5 * time.Second,
+		Issue: config.IssueAPIVars{
+			ENExpressRedirectDomain: "enx-redirect.local",
+		},
+		DevMode: true,
 	}
 
 	// Process the config - this simulates production setups and also ensures we

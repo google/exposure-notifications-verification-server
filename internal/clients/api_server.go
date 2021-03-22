@@ -38,6 +38,21 @@ func NewAPIServerClient(base, apiKey string, opts ...Option) (*APIServerClient, 
 	}, nil
 }
 
+// UserReport calls the /user-report endpoint to request a verification code be created
+// with a self-report type, with the code only dispatched via SMS.
+func (c *APIServerClient) UserReport(ctx context.Context, in *api.UserReportRequest) (*api.UserReportResponse, error) {
+	req, err := c.newRequest(ctx, http.MethodPost, "/api/user-report", in)
+	if err != nil {
+		return nil, err
+	}
+
+	var out api.UserReportResponse
+	if err := c.doOK(req, &out); err != nil {
+		return &out, err
+	}
+	return &out, nil
+}
+
 // Verify calls the /verify endpoint to convert a code into a token.
 func (c *APIServerClient) Verify(ctx context.Context, in *api.VerifyCodeRequest) (*api.VerifyCodeResponse, error) {
 	req, err := c.newRequest(ctx, http.MethodPost, "/api/verify", in)

@@ -71,7 +71,7 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 	}
 	// Max date is today (UTC time) and min date is AllowedTestAge ago, truncated.
 	maxDate := timeutils.UTCMidnight(time.Now())
-	minDate := timeutils.UTCMidnight(maxDate.Add(-1 * c.config.GetAllowedSymptomAge()))
+	minDate := timeutils.UTCMidnight(maxDate.Add(-1 * c.config.IssueConfig().AllowedSymptomAge))
 
 	validatedDate, err := ValidateDate(parsed, minDate, maxDate, tzOffset)
 	if err != nil {

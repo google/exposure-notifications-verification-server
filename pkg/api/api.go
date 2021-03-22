@@ -31,6 +31,12 @@ const (
 	TestTypeLikely = "likely"
 	// TestTypeNegative is the string that represents a negative test.
 	TestTypeNegative = "negative"
+	// TestTypeUserReport is the string that represents a user initiated report.
+	TestTypeUserReport = "user-report"
+
+	// Platforms for User Report API
+	PlatformAndroid = "android"
+	PlatformIOS     = "ios"
 
 	// error_code definitions for the APIs.
 
@@ -74,6 +80,15 @@ const (
 	ErrSMSQueueFull = "sms_queue_full"
 	// ErrSMSFailure indicates that Twilio's responded with a failure.
 	ErrSMSFailure = "sms_failure"
+	// ErrMissingNonce indicates a UserReport request is missing the nonce value.
+	ErrMissingNonce = "missing_nonce"
+	// ErrMissingPhone indicates a UserReport request is missing the phone number.
+	ErrMissingPhone = "missing_phone"
+
+	// User report specific responses
+	// ErrUserReportTryLater indicates that user report is not allowed right now, which could be for several
+	// reasons: phone number already used, PHA hit self report quota, PHA disabled self report.
+	ErrUserReportTryLater = "user_report_try_later"
 
 	// Certificate API responses
 
@@ -322,6 +337,56 @@ type ExpireCodeResponse struct {
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
+// UserReportRequest defines the structure for a user initiated report.
+// This is a device API hosted on the apiserver.
+//
+// Support level: ALPHA
+// This API is not guaranteed to be backwards compatible until such time it is moved
+// to beta.
+//
+// Inclusion of the test date is required, inclusion of the symptom date is optional.
+//
+// A phone number is required. The verification code is only presented over SMS.
+//
+// The nonce field must be a 256 random bytes, base64 encoded.
+// This nonce field must be passed back on the VerifyCodeRequest request later.
+//
+// Requires API key in a HTTP header, X-API-Key: APIKEY
+type UserReportRequest struct {
+	Padding Padding `json:"padding"`
+
+	SymptomDate string `json:"symptomDate"` // ISO 8601 formatted date, YYYY-MM-DD
+	TestDate    string `json:"testDate"`
+	// TZOffset in minutes of the user's timezone. Positive, negative, 0, or omitted
+	// (using the default of 0) are all valid. 0 is considered to be UTC.
+	TZOffset float32 `json:"tzOffset"`
+	// Phone is required in this API. The verification code will be delivered over SMS.
+	Phone string `json:"phone"`
+
+	// Platform must be one of 'ios' or 'android'
+	Platform string `json:"platform"`
+
+	// Nonce must be 256 bytes of random data, base64 encoded.
+	Nonce string `json:"nonce"`
+}
+
+// UserReportResponse is the reply from a UserReportRequest.
+//
+type UserReportResponse struct {
+	Padding Padding `json:"padding"`
+
+	// ExpiresAt is a RFC1123 formatted string formatted timestamp, in UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAt string `json:"expiresAt"`
+
+	// ExpiresAtTimestamp represents Unix, seconds since the epoch. Still UTC.
+	// After this time the code will no longer be accepted and is eligible for deletion.
+	ExpiresAtTimestamp int64 `json:"expiresAtTimestamp"`
+
+	Error     string `json:"error,omitempty"`
+	ErrorCode string `json:"errorCode,omitempty"`
+}
+
 // VerifyCodeRequest is the request structure for exchanging a short term Verification Code
 // (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
 //
@@ -336,7 +401,9 @@ type ExpireCodeResponse struct {
 //   A client can pass in the complete list they accept or the "highest" value they can accept.
 //   If this value is omitted or is empty, the client agrees to accept ALL possible
 //   test types, including test types that may be introduced in the future.
+// The special type of test, '"user-report"' can be added safely to any of the other types.
 //
+// The nonce must be provided when validating a self report key.
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerifyCodeRequest struct {
@@ -344,6 +411,10 @@ type VerifyCodeRequest struct {
 
 	VerificationCode string   `json:"code"`
 	AcceptTestTypes  []string `json:"accept"`
+
+	// Optional: If present must be the same nonce that was used to request the verification code.
+	// base64 encoded.
+	Nonce string `json:"nonce,omitempty"`
 }
 
 // VerifyCodeResponse either contains an error, or contains the test parameters

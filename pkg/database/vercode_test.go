@@ -265,6 +265,47 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	}
 }
 
+func TestSaveUserReport(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm := NewRealmWithDefaults("The Grid")
+	realm.AddUserReportToAllowedTestTypes()
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	vc := &VerificationCode{
+		Code:          "123456",
+		LongCode:      "defghijk329024",
+		TestType:      "user-report",
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(2 * time.Hour),
+		Nonce:         generateNonce(t),
+		PhoneNumber:   "+12068675309",
+	}
+
+	if err := db.SaveVerificationCode(vc, realm); err != nil {
+		t.Fatal(err)
+	}
+
+	var userReport *UserReport
+	var err error
+	err = db.db.Transaction(func(tx *gorm.DB) error {
+		userReport, err = db.FindUserReport(tx, vc.PhoneNumber)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if vc.UserReportID == nil || *vc.UserReportID != userReport.ID {
+		t.Fatalf("userReportID not saved on verification code")
+	}
+	if userReport.CodeClaimed {
+		t.Fatalf("user report was created in a claimed state")
+	}
+}
+
 func TestVerCodeValidate(t *testing.T) {
 	t.Parallel()
 

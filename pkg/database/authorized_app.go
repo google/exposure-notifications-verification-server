@@ -361,35 +361,31 @@ func (db *Database) GenerateAPIKey(realmID uint) (string, error) {
 	}
 
 	// Put it all together.
-	key = key + "." + base64.RawURLEncoding.EncodeToString(sig)
+	key = key + "." + sig
 
 	return key, nil
 }
 
 // GenerateAPIKeySignature returns all possible signatures of the given key.
-func (db *Database) GenerateAPIKeySignature(apiKey string) ([]byte, error) {
-	keys := db.config.APIKeySignatureHMAC
-	if len(keys) < 1 {
-		return nil, fmt.Errorf("expected at least 1 hmac key")
-	}
-	sig := hmac.New(sha512.New, keys[0])
-	if _, err := sig.Write([]byte(apiKey)); err != nil {
-		return nil, err
-	}
-	return sig.Sum(nil), nil
+func (db *Database) GenerateAPIKeySignature(apiKey string) (string, error) {
+	return initialHMAC(db.config.APIKeySignatureHMAC, apiKey)
 }
 
 // generateAPIKeySignatures returns all possible signatures of the given key.
 func (db *Database) generateAPIKeySignatures(apiKey string) ([][]byte, error) {
-	sigs := make([][]byte, 0, len(db.config.APIKeySignatureHMAC))
-	for _, key := range db.config.APIKeySignatureHMAC {
-		sig := hmac.New(sha512.New, key)
-		if _, err := sig.Write([]byte(apiKey)); err != nil {
-			return nil, err
-		}
-		sigs = append(sigs, sig.Sum(nil))
+	allSigs, err := allAllowedHMACs(db.config.APIKeySignatureHMAC, apiKey)
+	if err != nil {
+		return nil, err
 	}
-	return sigs, nil
+	asBytes := make([][]byte, 0, len(allSigs))
+	for _, b64sig := range allSigs {
+		sig, err := base64util.DecodeString(b64sig)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding API key signature: %w", err)
+		}
+		asBytes = append(asBytes, sig)
+	}
+	return asBytes, nil
 }
 
 // VerifyAPIKeySignature verifies the signature matches the expected value for

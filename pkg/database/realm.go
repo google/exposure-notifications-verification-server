@@ -52,6 +52,7 @@ const (
 	TestTypeConfirmed
 	TestTypeLikely
 	TestTypeNegative
+	TestTypeUserReport
 )
 
 func (t TestType) Display() string {
@@ -67,6 +68,10 @@ func (t TestType) Display() string {
 
 	if t&TestTypeNegative != 0 {
 		types = append(types, "negative")
+	}
+
+	if t&TestTypeUserReport != 0 {
+		types = append(types, "user-report")
 	}
 
 	return strings.Join(types, ", ")
@@ -114,11 +119,14 @@ const (
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
 
-	SMSTemplateMaxLength    = 800
-	SMSTemplateExpansionMax = 918
+	SMSTemplateMaxLength      = 800
+	SMSTemplateExpansionMax   = 918
+	SMSUserReportExpansionMax = 140
 
-	DefaultTemplateLabel   = "Default SMS template"
-	DefaultSMSTextTemplate = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
+	DefaultTemplateLabel    = "Default SMS template"
+	DefaultSMSTextTemplate  = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
+	UserReportTemplateLabel = "User Report"
+	UserReportDefaultText   = "Your Exposure Notifications code expires in [expires] minutes, code #[code]"
 
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
@@ -288,10 +296,22 @@ func NewRealmWithDefaults(name string) *Realm {
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
 		SMSTextTemplate:     DefaultSMSTextTemplate,
-		AllowedTestTypes:    14,
+		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
 	}
+}
+
+// AllowsUserReport returns true if this realm has enabled user initiated
+// test reporting.
+func (r *Realm) AllowsUserReport() bool {
+	return r.AllowedTestTypes&TestTypeUserReport != 0
+}
+
+// AddUserReportToAllowedTestTypes adds the TestTypeUserReport to this realm.
+// This does not save the realm to the database.
+func (r *Realm) AddUserReportToAllowedTestTypes() {
+	r.AllowedTestTypes = r.AllowedTestTypes | TestTypeUserReport
 }
 
 // AfterFind runs after a realm is found.
@@ -357,6 +377,18 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	r.validateSMSTemplate(DefaultTemplateLabel, r.SMSTextTemplate)
+
+	// See if the user report template needs to be added into the mix.
+	if r.SMSTextAlternateTemplates == nil && r.AllowsUserReport() {
+		r.SMSTextAlternateTemplates = make(postgres.Hstore)
+	}
+	if r.AllowsUserReport() {
+		if _, ok := r.SMSTextAlternateTemplates[UserReportTemplateLabel]; !ok {
+			newText := UserReportDefaultText
+			r.SMSTextAlternateTemplates[UserReportTemplateLabel] = &newText
+		}
+	}
+
 	if r.SMSTextAlternateTemplates != nil {
 		for l, t := range r.SMSTextAlternateTemplates {
 			if t == nil || *t == "" {
@@ -422,7 +454,24 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(label, t string) {
-	if r.EnableENExpress {
+	userReport := UserReportTemplateLabel == label
+	// There is some special handling for the UserReport template.
+	if userReport || !r.EnableENExpress {
+		// Check that we have exactly one of [code] or [longcode] as template substitutions.
+		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
+			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+			r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+		}
+
+		if userReport {
+			smsEnd := fmt.Sprintf("#%s", SMSCode)
+			smsLongEnd := fmt.Sprintf("#%s", SMSLongCode)
+			if !(strings.HasSuffix(t, smsEnd) || strings.HasSuffix(t, smsLongEnd)) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("must must end with %q or %q", smsEnd, smsLongEnd))
+				r.AddError(label, fmt.Sprintf("must must end with %q or %q", smsEnd, smsLongEnd))
+			}
+		}
+	} else {
 		if !strings.Contains(t, SMSENExpressLink) {
 			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
@@ -433,12 +482,6 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		}
 		if strings.Contains(t, SMSLongCode) {
 			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-	} else {
-		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
 		}
 	}
@@ -458,7 +501,11 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		r.AddError("smsTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
 		r.AddError(label, fmt.Sprintf("SMS template expansion failed: %s", err))
 	}
-	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
+	max := SMSTemplateExpansionMax
+	if userReport {
+		max = SMSUserReportExpansionMax
+	}
+	if l := len(expandedSMSText); l > max {
 		r.AddError("smsTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
@@ -982,6 +1029,8 @@ func (r *Realm) ValidTestType(typ string) bool {
 		return r.AllowedTestTypes&TestTypeLikely != 0
 	case "negative":
 		return r.AllowedTestTypes&TestTypeNegative != 0
+	case "user-report":
+		return r.AllowedTestTypes&TestTypeUserReport != 0
 	default:
 		return false
 	}

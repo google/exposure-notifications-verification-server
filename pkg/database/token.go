@@ -203,6 +203,17 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 	return nil
 }
 
+// IssueTokenRequest is used to request the validation of a verification code
+// in order to issue a token
+type IssueTokenRequest struct {
+	Time        time.Time
+	AuthApp     *AuthorizedApp
+	VerCode     string
+	Nonce       []byte
+	AcceptTypes api.AcceptTypes
+	ExpireAfter time.Duration
+}
+
 // VerifyCodeAndIssueToken takes a previously issued verification code and exchanges
 // it for a long term token. The verification code must not have expired and must
 // not have been previously used. Both acctions are done in a single database
@@ -210,10 +221,10 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 // The verCode can be the "short code" or the "long code" which impacts expiry time.
 //
 // The long term token can be used later to sign keys when they are submitted.
-func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp, verCode string, acceptTypes api.AcceptTypes, expireAfter time.Duration) (*Token, error) {
-	t = t.UTC()
+func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token, error) {
+	t := request.Time.UTC()
 
-	hmacedCodes, err := db.generateVerificationCodeHMACs(verCode)
+	hmacedCodes, err := db.generateVerificationCodeHMACs(request.VerCode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
@@ -225,7 +236,7 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 		// Also lock the row for update.
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Where("realm_id = ?", authApp.RealmID).
+			Where("realm_id = ?", request.AuthApp.RealmID).
 			Where("(code IN (?) OR long_code IN (?))", hmacedCodes, hmacedCodes).
 			First(&vc).
 			Error; err != nil {
@@ -236,7 +247,7 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 		}
 
 		// Validation
-		expired, codeType, err := db.IsCodeExpired(&vc, verCode)
+		expired, codeType, err := db.IsCodeExpired(&vc, request.VerCode)
 		if err != nil {
 			db.logger.Errorw("failed to check code expiration", "ID", vc.ID, "error", err)
 			return ErrVerificationCodeExpired
@@ -250,15 +261,30 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 			return ErrVerificationCodeUsed
 		}
 
-		if _, ok := acceptTypes[vc.TestType]; !ok {
+		if _, ok := request.AcceptTypes[vc.TestType]; !ok {
 			db.logger.Debugw("checked not of accepted testType", "ID", vc.ID)
 			return ErrUnsupportedTestType
+		}
+
+		// Check associated UserReport record if necessary.
+		if vc.UserReportID != nil {
+			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
+
+			result := tx.Model(UserReport{}).
+				Where("id = ? AND code_claimed = ? and nonce = ?", *vc.UserReportID, false, providedNonce).
+				Updates(UserReport{CodeClaimed: true})
+			if err := result.Error; err != nil {
+				return fmt.Errorf("unable to look up associated user_report record: %w", err)
+			}
+			if result.RowsAffected != 1 {
+				return ErrVerificationCodeNotFound
+			}
 		}
 
 		// Mark as claimed
 		vc.Claimed = true
 		if err := tx.Save(&vc).Error; err != nil {
-			return fmt.Errorf("failed to claim token: %w", err)
+			return fmt.Errorf("failed to claim verification code: %w", err)
 		}
 
 		buffer := make([]byte, tokenBytes)
@@ -274,20 +300,20 @@ func (db *Database) VerifyCodeAndIssueToken(t time.Time, authApp *AuthorizedApp,
 			SymptomDate: vc.SymptomDate,
 			TestDate:    vc.TestDate,
 			Used:        false,
-			ExpiresAt:   time.Now().UTC().Add(expireAfter),
-			RealmID:     authApp.RealmID,
+			ExpiresAt:   time.Now().UTC().Add(request.ExpireAfter),
+			RealmID:     request.AuthApp.RealmID,
 		}
 
 		return tx.Create(tok).Error
 	}); err != nil {
 		if !errors.Is(err, ErrVerificationCodeUsed) {
-			go db.updateStatsCodeInvalid(t, authApp)
+			go db.updateStatsCodeInvalid(t, request.AuthApp)
 		}
 		return nil, err
 	}
 
-	go db.updateStatsCodeClaimed(t, authApp)
-	go db.updateStatsAgeDistrib(t, authApp, &vc)
+	go db.updateStatsCodeClaimed(t, request.AuthApp)
+	go db.updateStatsAgeDistrib(t, request.AuthApp, &vc)
 	return tok, nil
 }
 
