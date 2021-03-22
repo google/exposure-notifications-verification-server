@@ -17,7 +17,6 @@ package database
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -25,6 +24,10 @@ import (
 )
 
 const (
+	// NonceLength is the required length of an associated user-report request.
+	// Changing this could break outstanding codes in the system.
+	// If the value were to be lowered, uses should change to >= instead of exact match,
+	// including updating associated documentation.
 	NonceLength = 256
 )
 
@@ -75,11 +78,7 @@ func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
 		ur.AddError("nonce", fmt.Sprintf("is not the correct length, want: %v got: %v", NonceLength, l))
 	}
 
-	if m := ur.ErrorMessages(); len(m) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(m, ", "))
-	}
-
-	return nil
+	return ur.ErrorOrNil()
 }
 
 // FindUserReport finds a user report by phone number using any of the currently valid

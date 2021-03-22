@@ -43,7 +43,7 @@ func TestUserReport(t *testing.T) {
 	}
 	realm.AllowBulkUpload = true
 	realm.AllowedTestTypes = database.TestTypeConfirmed
-	realm.EnableUserReport()
+	realm.AddUserReportToAllowedTestTypes()
 	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatal(err)
 	}

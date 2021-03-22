@@ -268,29 +268,16 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 
 		// Check associated UserReport record if necessary.
 		if vc.UserReportID != nil {
-			var userReport UserReport
-			if err := tx.
-				Set("gorm:query_option", "FOR UPDATE").
-				Where("id = ?", *vc.UserReportID).
-				First(&userReport).
-				Error; err != nil {
-				if IsNotFound(err) {
-					return ErrVerificationCodeNotFound
-				}
+			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
+
+			result := tx.Model(UserReport{}).
+				Where("id = ? AND code_claimed = ? and nonce = ?", *vc.UserReportID, false, providedNonce).
+				Updates(UserReport{CodeClaimed: true})
+			if err := result.Error; err != nil {
 				return fmt.Errorf("unable to look up associated user_report record: %w", err)
 			}
-
-			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
-			if userReport.Nonce != providedNonce {
-				// If the code was found, but the nonce is required and doesn't match,
-				// treat this the same as not found.
+			if result.RowsAffected != 1 {
 				return ErrVerificationCodeNotFound
-			}
-
-			// Mark the user report claimed so that it is not garbage collected.
-			userReport.CodeClaimed = true
-			if err := tx.Save(&userReport).Error; err != nil {
-				return fmt.Errorf("failed to validate user report: %w", err)
 			}
 		}
 

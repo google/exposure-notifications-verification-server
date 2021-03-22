@@ -112,7 +112,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			if err != nil {
 				logger.Errorw("bad request", "error", err)
 				blame = enobs.BlameClient
-				result = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
+				result = enobs.ResultError("BAD_NONCE")
 
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 				return

@@ -296,7 +296,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
 		SMSTextTemplate:     DefaultSMSTextTemplate,
-		AllowedTestTypes:    14, // This doesn't include user initiated report by default.
+		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
 	}
@@ -308,9 +308,9 @@ func (r *Realm) AllowsUserReport() bool {
 	return r.AllowedTestTypes&TestTypeUserReport != 0
 }
 
-// EnableUserReport adds the TestTypeUserReport to this realm.
+// AddUserReportToAllowedTestTypes adds the TestTypeUserReport to this realm.
 // This does not save the realm to the database.
-func (r *Realm) EnableUserReport() {
+func (r *Realm) AddUserReportToAllowedTestTypes() {
 	r.AllowedTestTypes = r.AllowedTestTypes | TestTypeUserReport
 }
 

@@ -17,7 +17,6 @@ package database
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"testing"
 	"time"
@@ -271,7 +270,7 @@ func TestSaveUserReport(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("The Grid")
-	realm.EnableUserReport()
+	realm.AddUserReportToAllowedTestTypes()
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +298,6 @@ func TestSaveUserReport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("%+v", vc)
 	if vc.UserReportID == nil || *vc.UserReportID != userReport.ID {
 		t.Fatalf("userReportID not saved on verification code")
 	}

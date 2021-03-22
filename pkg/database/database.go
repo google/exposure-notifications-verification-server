@@ -717,6 +717,9 @@ func uintDiff(then, now uint) string {
 	return stringDiff(strconv.FormatUint(uint64(then), 10), strconv.FormatUint(uint64(now), 10))
 }
 
+// initialHMAC uses the currently active HMAC key to seed a new record
+// This depends on envconfig.Base64Bytes since the callers are all using items
+// directly from config struct and this avoids unnecessary casing.
 func initialHMAC(keys []envconfig.Base64Bytes, data string) (string, error) {
 	if len(keys) < 1 {
 		return "", fmt.Errorf("expected at least 1 hmac key")
@@ -728,6 +731,10 @@ func initialHMAC(keys []envconfig.Base64Bytes, data string) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
 }
 
+// allAllowedHMACs uses all passed in HMAC keys to return al valid
+// results for searching for a previously saved record.
+// This depends on envconfig.Base64Bytes since the callers are all using items
+// directly from config struct and this avoids unnecessary casing.
 func allAllowedHMACs(keys []envconfig.Base64Bytes, data string) ([]string, error) {
 	sigs := make([]string, 0, len(keys))
 	for _, key := range keys {
