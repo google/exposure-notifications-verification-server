@@ -17,11 +17,9 @@ package config
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -60,16 +58,9 @@ type RedirectConfig struct {
 
 // NewRedirectConfig initializes and validates a RedirectConfig struct.
 func NewRedirectConfig(ctx context.Context) (*RedirectConfig, error) {
-	logger := logging.FromContext(ctx).Named("RedirectConfig")
-
 	var config RedirectConfig
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
-	}
-
-	// TODO(sethvargo): remove in 0.24+
-	if v := os.Getenv("ASSETS_PATH"); v != "" {
-		logger.Warnw("ASSETS_PATH is no longer used")
 	}
 	return &config, nil
 }
