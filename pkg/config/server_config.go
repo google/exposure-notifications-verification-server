@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -28,7 +27,6 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	firebase "firebase.google.com/go"
@@ -110,19 +108,9 @@ type ServerConfig struct {
 
 // NewServerConfig initializes and validates a ServerConfig struct.
 func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
-	logger := logging.FromContext(ctx).Named("ServerConfig")
-
 	var config ServerConfig
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
-	}
-
-	// TODO(sethvargo): remove in 0.24+
-	if v := os.Getenv("ASSETS_PATH"); v != "" {
-		logger.Warnw("ASSETS_PATH is no longer used")
-	}
-	if v := os.Getenv("LOCALES_PATH"); v != "" {
-		logger.Warnw("LOCALES_PATH is no longer used")
 	}
 
 	// Parse system notice - do this once since it's displayed on every page.
