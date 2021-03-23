@@ -193,12 +193,14 @@ func TestSMS_sendSMS(t *testing.T) {
 		err := result.ErrorReturn
 		if err == nil {
 			t.Fatal("expected error")
-		}
-		if got, want := err.Error, "failed to sign sms"; !strings.Contains(got, want) {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-		if got, want := err.ErrorCode, "sms_failure"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+		} else {
+			// Static check SA5011 is not detecting the nil check correctly here.
+			if got, want := err.Error, "failed to sign sms"; !strings.Contains(got, want) {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+			if got, want := err.ErrorCode, "sms_failure"; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
 		}
 	}
 
