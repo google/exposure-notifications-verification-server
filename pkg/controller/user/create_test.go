@@ -144,7 +144,7 @@ func TestHandleCreate(t *testing.T) {
 			}
 		}
 		if record == nil {
-			t.Fatalf("failed to find record: %#v", records)
+			t.Fatal(records)
 		}
 		if got, want := record.Name, "Test User"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
@@ -152,5 +152,6 @@ func TestHandleCreate(t *testing.T) {
 		if got, want := record.Email, "you@example.com"; got != want {
 			t.Errorf("expected %q to be %q", got, want)
 		}
+
 	})
 }
