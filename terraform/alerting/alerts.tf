@@ -30,6 +30,29 @@ locals {
       "(val > ${replace(local.p99_latency_thresholds_default, "/(\\d+)(.*)/", "$1 '$2'")})"
     ]
   ))
+
+  forward_progress_indicators = merge({
+    // appsync runs every 4h, alert after 2 failures
+    "appsync" = { metric = "appsync/success", window = "485m" },
+
+    // backup runs every 4h, alert after 2 failures
+    "backup" = { metric = "backup/success", window = "485m" },
+
+    // cleanup runs every 1h, alert after 4 failures
+    "cleanup" = { metric = "cleanup/success", window = "245m" },
+
+    // modeler runs every 4h, alert after 2 failures
+    "modeler" = { metric = "modeler/success", window = "485m" },
+
+    // realm-key-rotation runs every 15m, alert after 2 failures
+    "realm-key-rotation" = { metric = "rotation/verification/success", window = "35m" }
+
+    // rotation runs every 30m, alert after 2 failures
+    "rotation" = { metric = "rotation/token/success", window = "65m" }
+
+    // stats-puller runs every 15m, alert after 2 failures
+    "stats-puller" = { metric = "statspuller/success", window = "35m" }
+  }, var.forward_progress_indicators)
 }
 
 resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
@@ -186,7 +209,7 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
 }
 
 resource "google_monitoring_alert_policy" "ForwardProgressFailed" {
-  for_each = var.forward_progress_indicators
+  for_each = local.forward_progress_indicators
 
   project      = var.project
   display_name = "ForwardProgressFailed-${each.key}"
@@ -200,7 +223,7 @@ resource "google_monitoring_alert_policy" "ForwardProgressFailed" {
       query    = <<-EOT
       fetch generic_task
       | metric '${local.custom_prefix}/${each.value.metric}'
-      | align delta_gauge(${each.value.window})
+      | align delta()
       | group_by [], [val: aggregate(value.success)]
       | absent_for ${each.value.window}
       EOT
