@@ -91,28 +91,9 @@ variable "forward_progress_indicators" {
     window = string
   }))
 
-  default = {
-    // appsync runs every 4h, alert after 2 failures
-    "appsync" = { metric = "appsync/success", window = "485m" },
+  description = "Map of overrides for forward progress indicators. These are merged with the default variables."
 
-    // backup runs every 4h, alert after 2 failures
-    "backup" = { metric = "backup/success", window = "485m" },
-
-    // cleanup runs every 1h, alert after 4 failures
-    "cleanup" = { metric = "cleanup/success", window = "245m" },
-
-    // modeler runs every 4h, alert after 2 failures
-    "modeler" = { metric = "modeler/success", window = "485m" },
-
-    // realm-key-rotation runs every 15m, alert after 2 failures
-    "realm-key-rotation" = { metric = "rotation/verification/success", window = "35m" }
-
-    // rotation runs every 30m, alert after 2 failures
-    "rotation" = { metric = "rotation/token/success", window = "65m" }
-
-    // stats-puller runs every 15m, alert after 2 failures
-    "stats-puller" = { metric = "statspuller/success", window = "35m" }
-  }
+  default = {}
 }
 
 terraform {
