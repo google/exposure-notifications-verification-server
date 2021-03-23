@@ -145,12 +145,14 @@ func TestHandleCreate(t *testing.T) {
 		}
 		if record == nil {
 			t.Fatalf("failed to find record: %#v", records)
-		}
-		if got, want := record.Name, "Test User"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
-		}
-		if got, want := record.Email, "you@example.com"; got != want {
-			t.Errorf("expected %q to be %q", got, want)
+		} else {
+			// The static check, SA5011, is not detecting the nil check correctly here.
+			if got, want := record.Name, "Test User"; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
+			if got, want := record.Email, "you@example.com"; got != want {
+				t.Errorf("expected %q to be %q", got, want)
+			}
 		}
 	})
 }
