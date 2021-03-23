@@ -28,6 +28,10 @@ type Controller struct {
 	config *config.BackupConfig
 	db     *database.Database
 	h      *render.Renderer
+
+	// overrideAuthToken is for testing to bypass API calls to get authentication
+	// information.
+	overrideAuthToken string
 }
 
 // New creates a new backup controller.

@@ -27,8 +27,8 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/hcl/v2 v2.9.1
 	github.com/jinzhu/gorm v1.9.16
+	github.com/kelseyhightower/run v0.0.17
 	github.com/leonelquinteros/gotext v1.4.0
 	github.com/lib/pq v1.10.0
 	github.com/mailru/easyjson v0.7.7 // indirect
