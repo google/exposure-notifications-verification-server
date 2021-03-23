@@ -47,6 +47,7 @@ func TestHandleBackup(t *testing.T) {
 			DatabaseInstanceURL: "https://example.com",
 		}
 		c := New(cfg, harness.BadDatabase, h)
+		c.overrideAuthToken = "token"
 		handler := c.HandleBackup()
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
@@ -66,6 +67,7 @@ func TestHandleBackup(t *testing.T) {
 			DatabaseInstanceURL: "\x7f",
 		}
 		c := New(cfg, harness.Database, h)
+		c.overrideAuthToken = "token"
 		handler := c.HandleBackup()
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
@@ -88,6 +90,7 @@ func TestHandleBackup(t *testing.T) {
 			DatabaseInstanceURL: "https://not-a-real.web.site.no",
 		}
 		c := New(cfg, harness.Database, h)
+		c.overrideAuthToken = "token"
 		handler := c.HandleBackup()
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
@@ -119,6 +122,7 @@ func TestHandleBackup(t *testing.T) {
 		}
 
 		c := New(cfg, harness.Database, h)
+		c.overrideAuthToken = "token"
 		handler := c.HandleBackup()
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
@@ -158,6 +162,7 @@ func TestHandleBackup(t *testing.T) {
 		}
 
 		c := New(cfg, harness.Database, h)
+		c.overrideAuthToken = "token"
 		handler := c.HandleBackup()
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
