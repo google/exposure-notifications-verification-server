@@ -14,13 +14,17 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Total TEKs Published
+    Total publish requests (by device operating system)
   </div>
-  <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
-    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+
+  <div id="keyserver_os_dashboard_div">
+    <div id="keyserver_os_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="keyserver_os_filter_div" class="text-right" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#keyserver-stats-modal">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#publish-by-os-modal">Learn more about this chart</a>
     <span>
       <span class="mr-1">Export as:</span>
       <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
@@ -32,13 +36,16 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Total publish requests (by device operating system)
+    Total TEKs Published
   </div>
-  <div id="keyserver_os_chart_div" class="h-100 w-100" style="min-height:325px;">
-    <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+  <div id="keyserver_dashboard_div">
+    <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="keyserver_filter_div" class="text-right" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#publish-by-os-modal">Learn more about this chart</a>
+    <a href="#" data-toggle="modal" data-target="#keyserver-stats-modal">Learn more about this chart</a>
     <span>
       <span class="mr-1">Export as:</span>
       <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
@@ -259,27 +266,70 @@
     });
     dateFormatter.format(dataTable, 0);
 
-    let options = {
-      colors: ['#28a745'],
-      chartArea: {
-        left: 60,
-        right: 40,
-        bottom: 40,
-        top: 40,
-        width: '100%',
-        height: '300',
-      },
-      hAxis: { format: 'M/d' },
-      legend: { position: 'top' },
-    };
+    let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_dashboard_div'));
 
-    let chart = new google.visualization.LineChart($div.get(0));
-    chart.draw(dataTable, options);
-    chartData.push({
-      chart: chart,
-      data: dataTable,
-      options: options,
-    });
+    let filter = new google.visualization.ControlWrapper({
+        controlType: 'ChartRangeFilter',
+        containerId: 'keyserver_filter_div',
+        state: {
+          range: {
+          },
+        },
+        options: {
+          filterColumnIndex: 0,
+          series: {
+            0: {
+              opacity: 0,
+            }
+          },
+          ui: {
+            chartType: 'LineChart',
+            chartOptions: {
+              colors: ['#dddddd'],
+              chartArea: {
+                width: '100%',
+                height: '100%',
+                top: 0,
+                right: 40,
+                bottom: 20,
+                left: 60,
+              },
+              isStacked: true,
+              hAxis: { format: 'M/d' },
+            },
+            chartView: {
+              columns: [0,1],
+            },
+            minRangeSize: 86400000, // ms for 1 day
+          },
+        },
+      });
+
+    let chart = new google.visualization.ChartWrapper({
+        chartType: 'LineChart',
+        containerId: 'keyserver_chart_div',
+        options: {
+          colors: ['#28a745'],
+          chartArea: {
+            left: 60,
+            right: 40,
+            bottom: 40,
+            top: 40,
+            width: '100%',
+            height: '300',
+          },
+          hAxis: { format: 'M/d' },
+          legend: { position: 'top' },
+          width: '100%',
+        },
+      });
+
+      dashboard.bind(filter, chart);
+      dashboard.draw(dataTable);
+      chartData.push({
+        chart: dashboard,
+        data: dataTable,
+      });
   }
 
 
@@ -350,43 +400,92 @@
     });
     dateFormatter.format(dataTable, 0);
 
+    let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_os_dashboard_div'));
+
+    let filter = new google.visualization.ControlWrapper({
+        controlType: 'ChartRangeFilter',
+        containerId: 'keyserver_os_filter_div',
+        state: {
+          range: {
+          },
+        },
+        options: {
+          filterColumnIndex: 0,
+          series: {
+            0: {
+              opacity: 0,
+            }
+          },
+          ui: {
+            chartType: 'LineChart',
+            chartOptions: {
+              colors: ['#dddddd'],
+              chartArea: {
+                width: '100%',
+                height: '100%',
+                top: 0,
+                right: 40,
+                bottom: 20,
+                left: 60,
+              },
+              isStacked: true,
+              hAxis: { format: 'M/d' },
+            },
+            chartView: {
+              columns: [0,1],
+            },
+            minRangeSize: 86400000, // ms for 1 day
+          },
+        },
+      });
+
     let colors = ['#ee8c00', '#ea4335'];
     if (allowsUserReport) {
       colors.push('#fcfc3d');
     }
     colors.push('#6c757d', '#28a745', '#007bff');
+    series = {
+      0: {type: 'line'},
+      1: {type: 'line'},   
+    }
+    if (allowsUserReport) {
+      series["2"] = {type: 'line'}
+    }
 
-    let options = {
-      colors: colors,
-      chartArea: {
-        left: 60,
-        right: 40,
-        bottom: 40,
-        top: 40,
-        width: '100%',
-        height: '300',
-      },
-      hAxis: {
-        format: 'M/d',
-        gridlines: { color: 'transparent' },
-      },
-      seriesType: 'bars',
-      series: {
-        0: {type: 'line'},
-        1: {type: 'line'},        
-        2: {type: 'line'},
-      },
-      legend: { position: 'top' },
-      isStacked: true,
-      tooltip: {isHtml: true},
-    };
+    let chart = new google.visualization.ChartWrapper({
+      chartType: 'ComboChart',
+      containerId: 'keyserver_os_chart_div',
+      options: {
+        colors: colors,
+        chartArea: {
+          left: 60,
+          right: 40,
+          bottom: 40,
+          top: 40,
+          width: '100%',
+          height: '300',
+        },
+        hAxis: {
+          format: 'M/d',
+          gridlines: { color: 'transparent' },
+        },
+        seriesType: 'bars',
+        series: {
+          0: {type: 'line'},
+          1: {type: 'line'},        
+          2: {type: 'line'},
+        },
+        legend: { position: 'top' },
+        isStacked: true,
+        tooltip: {isHtml: true},
+      }
+    });
 
-    let chart = new google.visualization.ComboChart($div.get(0));
-    chart.draw(dataTable, options);
+    dashboard.bind(filter, chart);
+    dashboard.draw(dataTable);
     chartData.push({
-      chart: chart,
+      chart: dashboard,
       data: dataTable,
-      options: options,
     });
   }
 
