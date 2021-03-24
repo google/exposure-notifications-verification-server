@@ -198,30 +198,31 @@ func TestDatabase_CreateFindAPIKey(t *testing.T) {
 	}
 	if got == nil {
 		t.Fatalf("expected result")
-	}
+	} else {
+		// The SA5011 static check is missing the nil check.
+		if _, err := got.Realm(db); err != nil {
+			t.Fatalf("expected realm: %v", err)
+		}
 
-	if _, err := got.Realm(db); err != nil {
-		t.Fatalf("expected realm: %v", err)
-	}
+		if strings.Contains(apiKey, authApp.APIKey) {
+			t.Errorf("database API key should be HMACed!")
+		}
 
-	if strings.Contains(apiKey, authApp.APIKey) {
-		t.Errorf("database API key should be HMACed!")
-	}
-
-	if got, want := got.RealmID, authApp.RealmID; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
-	if got, want := got.Name, authApp.Name; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
-	if got, want := got.APIKey, authApp.APIKey; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
-	if got, want := got.APIKeyPreview, authApp.APIKeyPreview; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
-	}
-	if got, want := got.APIKeyType, authApp.APIKeyType; got != want {
-		t.Errorf("expected %#v to be %#v", got, want)
+		if got, want := got.RealmID, authApp.RealmID; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.Name, authApp.Name; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.APIKey, authApp.APIKey; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.APIKeyPreview, authApp.APIKeyPreview; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
+		if got, want := got.APIKeyType, authApp.APIKeyType; got != want {
+			t.Errorf("expected %#v to be %#v", got, want)
+		}
 	}
 }
 
