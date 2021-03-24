@@ -284,6 +284,12 @@
 </form>
 
 <script type="text/javascript">
+  function removeTemplate(name) {
+    $('#sms-template-0').trigger("click");
+    $('#'+name).remove();
+    $('#'+name+'-div').remove();
+  }
+
   //
   // SMS preview builder
   //
@@ -437,12 +443,6 @@
         $(this).on('click', event => selectSMSTemplate($(this), event));
       }
     );
-
-    function removeTemplate(name) {
-      $('#sms-template-0').trigger("click");
-      $('#'+name).remove();
-      $('#'+name+'-div').remove();
-    }
 
     function selectSMSTemplate($elem, event) {
       event.preventDefault();
