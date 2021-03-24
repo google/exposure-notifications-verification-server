@@ -374,7 +374,7 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		// Count the number of user initiated reports
 		userReports := 0
 		for _, vc := range codes {
-			if verifyapi.ReportTypeSelfReport == vc.TestType {
+			if vc.TestType == verifyapi.ReportTypeSelfReport {
 				userReports++
 			}
 		}

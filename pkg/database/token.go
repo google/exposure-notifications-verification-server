@@ -143,9 +143,8 @@ func (t *Token) Subject() *Subject {
 func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID string, subject *Subject) error {
 	t = t.UTC()
 
-	isUserReport := false
+	var tok Token
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
-		var tok Token
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("token_id = ?", tokenID).
@@ -186,10 +185,6 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 			return ErrTokenMetadataMismatch
 		}
 
-		if api.TestTypeUserReport == tok.TestType {
-			isUserReport = true
-		}
-
 		// Save token.
 		tok.Used = true
 		if err := tx.Save(&tok).Error; err != nil {
@@ -204,7 +199,7 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 		return err
 	}
 
-	go db.updateStatsTokenClaimed(t, authApp, isUserReport)
+	go db.updateStatsTokenClaimed(t, authApp, &tok)
 	return nil
 }
 
@@ -480,7 +475,7 @@ func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp)
 
 // updateStatsTokenClaimed updates the statistics, increasing the number of
 // tokens claimed.
-func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp, isUserReport bool) {
+func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp, tok *Token) {
 	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
@@ -491,7 +486,7 @@ func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp,
 					    user_report_tokens_claimed = realm_stats.user_report_tokens_claimed + $3
 			`
 	userReport := 0
-	if isUserReport {
+	if tok != nil && tok.TestType == api.TestTypeUserReport {
 		userReport = 1
 	}
 	if err := db.db.Exec(realmSQL, t, authApp.RealmID, userReport).Error; err != nil {
