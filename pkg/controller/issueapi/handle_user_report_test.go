@@ -89,7 +89,6 @@ func TestUserReport(t *testing.T) {
 			request: &api.UserReportRequest{
 				SymptomDate: symptomDate,
 				Phone:       "+12068675309",
-				Platform:    "android",
 				Nonce:       nonce,
 			},
 			httpStatusCode: http.StatusOK,
@@ -99,7 +98,6 @@ func TestUserReport(t *testing.T) {
 			request: &api.UserReportRequest{
 				SymptomDate: symptomDate,
 				Phone:       "+12068675309",
-				Platform:    "android",
 				Nonce:       nonce,
 			},
 			httpStatusCode: http.StatusConflict,
@@ -109,7 +107,6 @@ func TestUserReport(t *testing.T) {
 			name: "missing_phone",
 			request: &api.UserReportRequest{
 				SymptomDate: symptomDate,
-				Platform:    "android",
 				Nonce:       nonce,
 			},
 			httpStatusCode: http.StatusBadRequest,
@@ -119,7 +116,6 @@ func TestUserReport(t *testing.T) {
 			name: "missing_nonce",
 			request: &api.UserReportRequest{
 				SymptomDate: symptomDate,
-				Platform:    "android",
 			},
 			httpStatusCode: http.StatusBadRequest,
 			responseErr:    "missing_nonce",

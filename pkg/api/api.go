@@ -34,10 +34,6 @@ const (
 	// TestTypeUserReport is the string that represents a user initiated report.
 	TestTypeUserReport = "user-report"
 
-	// Platforms for User Report API
-	PlatformAndroid = "android"
-	PlatformIOS     = "ios"
-
 	// error_code definitions for the APIs.
 
 	// General
@@ -362,9 +358,6 @@ type UserReportRequest struct {
 	TZOffset float32 `json:"tzOffset"`
 	// Phone is required in this API. The verification code will be delivered over SMS.
 	Phone string `json:"phone"`
-
-	// Platform must be one of 'ios' or 'android'
-	Platform string `json:"platform"`
 
 	// Nonce must be 256 bytes of random data, base64 encoded.
 	Nonce string `json:"nonce"`
