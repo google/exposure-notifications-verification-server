@@ -1,5 +1,7 @@
 {{define "realmadmin/_stats_keyserver"}}
 
+{{$realm := .currentMembership.Realm}}
+
 <h1>Key server stats</h1>
 <p>
   The data below shows realm statistics and visualizations gathered from the key server.
@@ -282,6 +284,8 @@
 
 
   function drawOSChart(data) {
+    let allowsUserReport = {{$realm.AllowsUserReport}};
+
     let $div = $('#keyserver_os_chart_div');
 
     if (!data.length) {
@@ -295,12 +299,15 @@
     dataTable.addColumn('number', 'Total');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'Missing Onset Date');
+    if (allowsUserReport) {
+      dataTable.addColumn('number', 'Key Revision Requests');
+    }
     dataTable.addColumn('number', 'Unknown OS');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'Android');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'IOS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});   
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});  
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
@@ -308,14 +315,18 @@
       let androidCount = parseInt(row.publish_requests.android);
       let iosCount = parseInt(row.publish_requests.ios);
 
-      dataTable.addRow([utcDate(row.day),
+      let data = [utcDate(row.day),
         total,        
          "<ul class='chart-tooltip'>"+
           "<li><strong>Total:</strong>" + total + "</li>"+
           "<li><strong>Android:</strong>" + androidCount + "</li>"+
           "<li><strong>iOS:</strong>" + iosCount + "</li>"+
           "<li><strong>Unknown:</strong>" + unknownCount + "</li></ul>",
-        row.requests_missing_onset_date,
+        row.requests_missing_onset_date];
+      if (allowsUserReport) {
+        data.push(row.requests_with_revisions);
+      }  
+      data.push(
         row.publish_requests.unknown,
         "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
           "<li>Count: " + unknownCount + "</li>" +
@@ -328,7 +339,10 @@
         "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
           "<li>Count: " + iosCount + "</li>" +
           "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",        
-      ]);
+      );
+
+
+      dataTable.addRow(data);
     });
 
     let dateFormatter = new google.visualization.DateFormat({
@@ -336,8 +350,14 @@
     });
     dateFormatter.format(dataTable, 0);
 
+    let colors = ['#ee8c00', '#ea4335'];
+    if (allowsUserReport) {
+      colors.push('#fcfc3d');
+    }
+    colors.push('#6c757d', '#28a745', '#007bff');
+
     let options = {
-      colors: ['#ee8c00', '#ea4335', '#6c757d', '#28a745', '#007bff'],
+      colors: colors,
       chartArea: {
         left: 60,
         right: 40,
@@ -353,7 +373,8 @@
       seriesType: 'bars',
       series: {
         0: {type: 'line'},
-        1: {type: 'line'},
+        1: {type: 'line'},        
+        2: {type: 'line'},
       },
       legend: { position: 'top' },
       isStacked: true,
