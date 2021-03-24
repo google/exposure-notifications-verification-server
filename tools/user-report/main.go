@@ -32,7 +32,6 @@ import (
 )
 
 var (
-	platform    = flag.String("platform", "android", "platform to emulate, may make a difference in SMS message")
 	nonceSize   = flag.Uint("nonce-size", 256, "size of the nonce to generate, in bytes")
 	phoneNumber = flag.String("phone-number", "", "Phone number to send verification code to")
 	testFlag    = flag.String("test-date", "", "Test date for code issue")
@@ -80,7 +79,6 @@ func realMain(ctx context.Context) error {
 		TestDate:    *testFlag,
 		SymptomDate: *onsetFlag,
 		Phone:       *phoneNumber,
-		Platform:    *platform,
 		Nonce:       base64.StdEncoding.EncodeToString(nonce),
 	})
 	if err != nil {
