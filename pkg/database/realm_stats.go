@@ -51,11 +51,21 @@ type RealmStat struct {
 	CodesClaimed uint `gorm:"column:codes_claimed; type:integer; not null; default:0;"`
 	CodesInvalid uint `gorm:"column:codes_invalid; type:integer; not null; default:0;"`
 
+	// UserReportsIssued is the specific number of codes that were issued
+	// because the user initiated a self-report request. These numbers are NOT
+	// included in the overall codes issued and codes claimed.
+	UserReportsIssued  uint `gorm:"column:user_reports_issued; type:integer; not null; default:0;"`
+	UserReportsClaimed uint `gorm:"column:user_reports_claimed; type:integer; not null; default:0;"`
+
 	// TokensClaimed is the number of tokens exchanged for a certificate.
 	// TokensInvalid is the number of tokens which failed to exchange due to
 	// a user error.
 	TokensClaimed uint `gorm:"column:tokens_claimed; type:integer; not null; default:0;"`
 	TokensInvalid uint `gorm:"column:tokens_invalid; type:integer; not null; default:0;"`
+
+	// UserReportTokensClaimed is the number of tokens claimed that represent a user
+	// initiated report. This is not included in tokens claimed.
+	UserReportTokensClaimed uint `gorm:"column:user_report_tokens_claimed; type:integer; not null; default:0;"`
 
 	// CodeClaimAgeDistribution shows a distribution of time from code issue to claim.
 	// Buckets are: 1m, 5m, 15m, 30m, 1h, 2h, 3h, 6h, 12h, 24h, >24h
@@ -89,6 +99,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 		"date",
 		"codes_issued", "codes_claimed", "codes_invalid",
 		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
+		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -103,6 +114,9 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.TokensInvalid), 10),
 			strconv.FormatUint(uint64(stat.CodeClaimMeanAge.Duration.Seconds()), 10),
 			join(stat.CodeClaimAgeDistribution, "|"),
+			strconv.FormatUint(uint64(stat.UserReportsIssued), 10),
+			strconv.FormatUint(uint64(stat.UserReportsClaimed), 10),
+			strconv.FormatUint(uint64(stat.UserReportTokensClaimed), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -138,13 +152,16 @@ type jsonRealmStatStats struct {
 }
 
 type JSONRealmStatStatsData struct {
-	CodesIssued           uint    `json:"codes_issued"`
-	CodesClaimed          uint    `json:"codes_claimed"`
-	CodesInvalid          uint    `json:"codes_invalid"`
-	TokensClaimed         uint    `json:"tokens_claimed"`
-	TokensInvalid         uint    `json:"tokens_invalid"`
-	CodeClaimMeanAge      uint    `json:"code_claim_mean_age_seconds"`
-	CodeClaimDistribution []int32 `json:"code_claim_age_distribution"`
+	CodesIssued             uint    `json:"codes_issued"`
+	CodesClaimed            uint    `json:"codes_claimed"`
+	CodesInvalid            uint    `json:"codes_invalid"`
+	UserReportsIssued       uint    `json:"user_reports_issued"`
+	UserReportsClaimed      uint    `json:"user_reports_claimed"`
+	TokensClaimed           uint    `json:"tokens_claimed"`
+	TokensInvalid           uint    `json:"tokens_invalid"`
+	UserReportTokensClaimed uint    `json:"user_report_tokens_claimed"`
+	CodeClaimMeanAge        uint    `json:"code_claim_mean_age_seconds"`
+	CodeClaimDistribution   []int32 `json:"code_claim_age_distribution"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -159,13 +176,16 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
 			Data: &JSONRealmStatStatsData{
-				CodesIssued:           stat.CodesIssued,
-				CodesClaimed:          stat.CodesClaimed,
-				CodesInvalid:          stat.CodesInvalid,
-				TokensClaimed:         stat.TokensClaimed,
-				TokensInvalid:         stat.TokensInvalid,
-				CodeClaimMeanAge:      uint(stat.CodeClaimMeanAge.Duration.Seconds()),
-				CodeClaimDistribution: stat.CodeClaimAgeDistribution,
+				CodesIssued:             stat.CodesIssued,
+				CodesClaimed:            stat.CodesClaimed,
+				CodesInvalid:            stat.CodesInvalid,
+				UserReportsIssued:       stat.UserReportsIssued,
+				UserReportsClaimed:      stat.UserReportsClaimed,
+				TokensClaimed:           stat.TokensClaimed,
+				TokensInvalid:           stat.TokensInvalid,
+				UserReportTokensClaimed: stat.UserReportTokensClaimed,
+				CodeClaimMeanAge:        uint(stat.CodeClaimMeanAge.Duration.Seconds()),
+				CodeClaimDistribution:   stat.CodeClaimAgeDistribution,
 			},
 		})
 	}
@@ -203,8 +223,11 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 			CodesIssued:              stat.Data.CodesIssued,
 			CodesClaimed:             stat.Data.CodesClaimed,
 			CodesInvalid:             stat.Data.CodesInvalid,
+			UserReportsIssued:        stat.Data.UserReportsIssued,
+			UserReportsClaimed:       stat.Data.UserReportsClaimed,
 			TokensClaimed:            stat.Data.TokensClaimed,
 			TokensInvalid:            stat.Data.TokensInvalid,
+			UserReportTokensClaimed:  stat.Data.UserReportTokensClaimed,
 			CodeClaimMeanAge:         FromDuration(time.Duration(stat.Data.CodeClaimMeanAge) * time.Second),
 			CodeClaimAgeDistribution: stat.Data.CodeClaimDistribution,
 		})

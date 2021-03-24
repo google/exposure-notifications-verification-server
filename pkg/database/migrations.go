@@ -2170,6 +2170,27 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DROP TABLE IF EXISTS user_reports`)
 			},
 		},
+		{
+			ID: "00098-AddUserReportStats",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats
+						ADD COLUMN IF NOT EXISTS user_reports_issued INTEGER DEFAULT 0,
+						ADD COLUMN IF NOT EXISTS user_reports_claimed INTEGER DEFAULT 0,
+						ADD COLUMN IF NOT EXISTS user_report_tokens_claimed INTEGER DEFAULT 0`,
+					`ALTER TABLE realm_stats
+						ALTER COLUMN user_reports_issued SET NOT NULL,
+						ALTER COLUMN user_reports_claimed SET NOT NULL,
+						ALTER COLUMN user_report_tokens_claimed SET NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats
+						DROP COLUMN user_reports_issued,
+						DROP COLUMN user_reports_claimed,
+						DROP COLUMN user_report_tokens_claimed`)
+			},
+		},
 	}
 }
 

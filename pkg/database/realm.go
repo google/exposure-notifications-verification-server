@@ -1601,8 +1601,11 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			COALESCE(s.codes_issued, 0) AS codes_issued,
 			COALESCE(s.codes_claimed, 0) AS codes_claimed,
 			COALESCE(s.codes_invalid, 0) AS codes_invalid,
+			COALESCE(s.user_reports_issued, 0) AS user_reports_issued,
+			COALESCE(s.user_reports_claimed, 0) AS user_reports_claimed,
 			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
 			COALESCE(s.tokens_invalid, 0) AS tokens_invalid,
+			COALESCE(s.user_report_tokens_claimed, 0) AS user_report_tokens_claimed,
 			COALESCE(s.code_claim_age_distribution, array[]::integer[]) AS code_claim_age_distribution,
 			COALESCE(s.code_claim_mean_age, 0) AS code_claim_mean_age
 		FROM (

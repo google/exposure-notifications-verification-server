@@ -17,7 +17,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.24.1-0.20210315191013-2fb67bd61dd7
+	github.com/google/exposure-notifications-server v0.24.1-0.20210322233555-ecf9dee504c1
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/csrf v1.7.0
