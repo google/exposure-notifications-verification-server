@@ -1,5 +1,7 @@
 {{define "realmadmin/_stats_keyserver"}}
 
+{{$realm := .currentMembership.Realm}}
+
 <h1>Key server stats</h1>
 <p>
   The data below shows realm statistics and visualizations gathered from the key server.
@@ -295,6 +297,9 @@
     dataTable.addColumn('number', 'Total');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'Missing Onset Date');
+    {{if $realm.AllowsUserReport}}
+    dataTable.addColumn('number', 'Key Revision Requests');
+    {{end}}
     dataTable.addColumn('number', 'Unknown OS');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'Android');
@@ -316,6 +321,9 @@
           "<li><strong>iOS:</strong>" + iosCount + "</li>"+
           "<li><strong>Unknown:</strong>" + unknownCount + "</li></ul>",
         row.requests_missing_onset_date,
+        {{if $realm.AllowsUserReport}}
+        row.requests_with_revisions,
+        {{end}}
         row.publish_requests.unknown,
         "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
           "<li>Count: " + unknownCount + "</li>" +
@@ -354,6 +362,9 @@
       series: {
         0: {type: 'line'},
         1: {type: 'line'},
+        {{if $realm.AllowsUserReport}}
+        2: {type: 'line'},
+        {{end}}
       },
       legend: { position: 'top' },
       isStacked: true,
