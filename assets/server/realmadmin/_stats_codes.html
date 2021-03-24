@@ -1,9 +1,11 @@
 {{define "realmadmin/_stats_codes"}}
 
+{{$realm := .currentMembership.Realm}}
+
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Codes Issued &amp; Usage
+    {{if $realm.AllowsUserReport}} Total {{end}} codes issued &amp; usage
   </div>
   <div id="dashboard_div">
     <div id="realm_chart_div" class="h-100 w-100" style="min-height:325px;">
@@ -25,6 +27,48 @@
     </span>
   </small>
 </div>
+
+{{if $realm.AllowsUserReport}}
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    User report codes &amp; usage
+  </div>
+  <div id="user_issued_dashboard_div">
+    <div id="user_issued_realm_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="user_issued_realm_filter_div" class="text-right" style="height: 75px;"></div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#realm-user-codes-modal">Learn more about this chart</a>
+    <span>
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a>       
+    </span>
+  </small>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Manual / automated code issue &amp; user report
+  </div>
+  <div id="comparison_dashboard_div">
+    <div id="comparison_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="comparison_filter_div" class="text-right" style="height: 75px;"></div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#comparison-codes-modal">Learn more about this chart</a>
+    <span>
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a>       
+    </span>
+  </small>
+</div>
+{{end}}
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
@@ -69,11 +113,70 @@
   </small>
 </div>
 
+<div class="modal fade" id="realm-user-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">User report codes &amp; usage</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the total number of codes issued and used
+          that are the result of a <strong>user initiated report</strong>
+          for this realm, grouped by UTC day.
+        </p>
+
+        <strong>User Report Codes Issued</strong>
+        <p>
+          This line tracks the total number of codes issued by user report.
+        </p>
+
+        <strong>User Report Codes Claimed</strong>
+        <p>
+          This line tracks the total number of user report codes claimed.
+          Codes can only be claimed by the end user using the API.
+          Typically the iOS or  Android application is responsible for claiming the code.
+        </p>
+
+        <strong>User Report Tokens Claimed</strong>
+        <p>
+          This line tracks the total number of users who initiated a user report
+          and then successfully
+          claimed a verification code and then consented to key release.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="comparison-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Manual / automated code issue &amp; user report</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph reflects the total number of tokens claimed using stacked area.
+          This can help you determine what the ratio between user reported uploads
+          and uploads where your public health authority initiated the code.
+        </p>
+      </div>
+    </div>
+  </div>
+</div> 
+
 <div class="modal fade" id="realm-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Codes Issued &amp; Usage</h5>
+        <h5 class="modal-title">Codes issued &amp; usage</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -82,6 +185,10 @@
         <p>
           This graph reflects the total number of codes issued and usage
           of those codes for this realm, grouped by UTC day.
+          {{if $realm.AllowsUserReport}}
+          This includes both PHA (manual or automated) codes issued and
+          user reported cases together in the same chart.
+          {{end}}
         </p>
 
         <strong>Codes Issued</strong>
@@ -233,44 +340,91 @@
   }
 
   function drawClaimChart(data) {
-    let $realmChartDiv = $('#realm_chart_div');
-
+    charts = [
+      {
+        chartType: 'LineChart',
+        chartDiv: 'realm_chart_div',
+        dashboardDiv: 'dashboard_div',
+        filterDiv: "filter_div",
+        headerFunc: function(dataTable, hasKeyServerStats) {
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'Codes Issued');
+          dataTable.addColumn('number', 'Codes Claimed');
+          dataTable.addColumn('number', 'Invalid Codes');
+          dataTable.addColumn('number', 'Tokens Claimed');
+          if (hasKeyServerStats) {
+            dataTable.addColumn('number', 'Publish Requests');
+          }
+        },
+        rowFunc: function(dataTable, row, hasKeyServerStats) {
+          if (hasKeyServerStats) {
+            dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.total_publish_requests]);
+          } else {
+            dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed]);
+          }
+        },
+      },
+      {
+        chartType: 'LineChart',
+        chartDiv: 'user_issued_realm_chart_div',
+        dashboardDiv: 'user_issued_dashboard_div',
+        filterDiv: "user_issued_realm_filter_div",
+        headerFunc: function(dataTable, hasKeyServerStats) {
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'User Report Codes Issued');
+          dataTable.addColumn('number', 'User Report Codes Claimed');
+          dataTable.addColumn('number', 'User Report Tokens Claimed');
+        },
+        rowFunc: function(dataTable, row, hasKeyServerStats) {
+          dataTable.addRow([utcDate(row.date), row.data.user_reports_issued, row.data.user_reports_claimed, row.data.user_report_tokens_claimed]);
+        },
+      },
+      {
+        chartType: 'AreaChart',
+        chartDiv: 'comparison_chart_div',
+        dashboardDiv: 'comparison_dashboard_div',
+        filterDiv: "comparison_filter_div",
+        headerFunc: function(dataTable, hasKeyServerStats) {
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'System Issued Tokens Claimed');
+          dataTable.addColumn('number', 'User Report Tokens Claimed');
+        },
+        rowFunc: function(dataTable, row, hasKeyServerStats) {
+          dataTable.addRow([utcDate(row.date), row.data.tokens_claimed-row.data.user_report_tokens_claimed, row.data.user_report_tokens_claimed]);
+        },
+      }
+    ]
+    
     if (!data.statistics) {
-      $realmChartDiv.find('p').text('No data yet.');
+      for (i = 0; i < charts.length; i++) {
+        $("#" + charts[i].chartDiv).find('p').text('No data yet.');
+      }
       return;
     }
 
-    let hasKeyServerStats = data.has_key_server_stats;
-    let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
+    for (i = 0; i < charts.length; i++) {
+      let $realmChartDiv = $("#" + charts[i].chartDiv);
 
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'Codes Issued');
-    dataTable.addColumn('number', 'Codes Claimed');
-    dataTable.addColumn('number', 'Invalid Codes');
-    dataTable.addColumn('number', 'Tokens Claimed');
-    if (hasKeyServerStats) {
-      dataTable.addColumn('number', 'Publish Requests');
-    }
+      let hasKeyServerStats = data.has_key_server_stats;
+      let tenDaysAgo = new Date(data.statistics[data.statistics.length-10].date);
 
-    data.statistics.reverse().forEach(function(row) {
-      if (hasKeyServerStats) {
-        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.total_publish_requests]);
-      } else {
-        dataTable.addRow([utcDate(row.date), row.data.codes_issued, row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed]);
-      }
-    });
+      let dataTable = new google.visualization.DataTable();
+      charts[i].headerFunc(dataTable, hasKeyServerStats);
 
-    let dateFormatter = new google.visualization.DateFormat({
-      pattern: 'MMM dd',
-    });
-    dateFormatter.format(dataTable, 0);
+      data.statistics.reverse().forEach(function(row) {
+        charts[i].rowFunc(dataTable, row, hasKeyServerStats)
+      });
 
-    let dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
 
-    let filter = new google.visualization.ControlWrapper({
+      let dashboard = new google.visualization.Dashboard(document.getElementById(charts[i].dashboardDiv));
+
+      let filter = new google.visualization.ControlWrapper({
         controlType: 'ChartRangeFilter',
-        containerId: 'filter_div',
+        containerId: charts[i].filterDiv,
         state: {
           range: {
             start: tenDaysAgo,
@@ -295,6 +449,7 @@
                 bottom: 20,
                 left: 60,
               },
+              isStacked: true,
               hAxis: { format: 'M/d' },
             },
             chartView: {
@@ -305,31 +460,32 @@
         },
       });
 
-    let realmChart = new google.visualization.ChartWrapper({
-      chartType: 'LineChart',
-      containerId: 'realm_chart_div',
-      options: {
-        colors: ['#007bff', '#28a745', '#dc3545', '#6c757d', '#ee8c00'],
-        chartArea: {
-          left: 60,
-          right: 40,
-          bottom: 5,
-          top: 40,
+      let realmChart = new google.visualization.ChartWrapper({
+        chartType: charts[i].chartType,
+        containerId: charts[i].chartDiv,
+        options: {
+          colors: ['#007bff', '#28a745', '#dc3545', '#6c757d', '#ee8c00'],
+          chartArea: {
+            left: 60,
+            right: 40,
+            bottom: 5,
+            top: 40,
+            width: '100%',
+            height: '300',
+          },
+          hAxis: { textPosition: 'none' },
+          legend: { position: 'top' },
           width: '100%',
-          height: '300',
         },
-        hAxis: { textPosition: 'none' },
-        legend: { position: 'top' },
-        width: '100%',
-      },
-    });
+      });
 
-    dashboard.bind(filter, realmChart);
-    dashboard.draw(dataTable);
-    chartData.push({
-      chart: dashboard,
-      data: dataTable,
-    });
+      dashboard.bind(filter, realmChart);
+      dashboard.draw(dataTable);
+      chartData.push({
+        chart: dashboard,
+        data: dataTable,
+      });
+    }
   }
 
   function drawMeanClaimAgeChart(data) {

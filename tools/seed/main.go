@@ -107,6 +107,7 @@ func realMain(ctx context.Context) error {
 			realm1 = database.NewRealmWithDefaults("Narnia")
 			realm1.RegionCode = "US-PA"
 			realm1.AbusePreventionEnabled = true
+			realm1.AddUserReportToAllowedTestTypes() // Enable user reporting on Narnia
 			if err := db.SaveRealm(realm1, database.System); err != nil {
 				return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
 			}
@@ -259,11 +260,12 @@ func realMain(ctx context.Context) error {
 	}
 
 	if *flagStats {
-		if err := generateCodesAndStats(db, realm1); err != nil {
+		maxPerDay, err := generateCodesAndStats(db, realm1)
+		if err != nil {
 			return fmt.Errorf("failed to generate stats: %w", err)
 		}
 
-		if err := generateKeyServerStats(db, realm1); err != nil {
+		if err := generateKeyServerStats(db, realm1, maxPerDay); err != nil {
 			return fmt.Errorf("failed to generate key-server stats: %w", err)
 		}
 	}
@@ -291,12 +293,12 @@ func realMain(ctx context.Context) error {
 // generateCodesAndStats exercises the system for the past 30 days with random
 // values to simulate data that might appear in the real world. This is
 // primarily used to test statistics and graphs.
-func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
+func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[string]int, error) {
 	now := time.Now().UTC()
 
 	users, _, err := db.ListUsers(pagination.UnlimitedResults)
 	if err != nil {
-		return fmt.Errorf("failed to list users: %w", err)
+		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 	randomUser := func() *database.User {
 		return users[rand.Intn(len(users))]
@@ -305,7 +307,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	adminAuthorizedApps, _, err := realm.ListAuthorizedApps(db, pagination.UnlimitedResults,
 		database.WithAuthorizedAppType(database.APIKeyTypeAdmin))
 	if err != nil {
-		return fmt.Errorf("failed to list admin authorized apps: %w", err)
+		return nil, fmt.Errorf("failed to list admin authorized apps: %w", err)
 	}
 	randomAdminAuthorizedApp := func() *database.AuthorizedApp {
 		return adminAuthorizedApps[rand.Intn(len(adminAuthorizedApps))]
@@ -314,7 +316,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	deviceAuthorizedApps, _, err := realm.ListAuthorizedApps(db, pagination.UnlimitedResults,
 		database.WithAuthorizedAppType(database.APIKeyTypeDevice))
 	if err != nil {
-		return fmt.Errorf("failed to list device authorized apps: %w", err)
+		return nil, fmt.Errorf("failed to list device authorized apps: %w", err)
 	}
 	randomDeviceAuthorizedApp := func() *database.AuthorizedApp {
 		return deviceAuthorizedApps[rand.Intn(len(deviceAuthorizedApps))]
@@ -324,7 +326,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	for i := range externalIDs {
 		b := make([]byte, 8)
 		if _, err := rand.Read(b); err != nil {
-			return fmt.Errorf("failed to read rand: %w", err)
+			return nil, fmt.Errorf("failed to read rand: %w", err)
 		}
 		externalIDs[i] = hex.EncodeToString(b)
 	}
@@ -337,27 +339,41 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 	db.RawDB().LogMode(false)
 	defer db.RawDB().LogMode(true)
 
+	phoneNumber := uint64(10000000000)
+	nonce := make([]byte, database.NonceLength)
+	allowsUserReport := realm.AllowsUserReport()
+	ctx := context.Background()
+
+	tokensClaimedPerDay := make(map[string]int)
+
 	for day := 1; day <= 30; day++ {
-		max := rand.Intn(150)
+		max := rand.Intn(250)
+		totalClaimed := 0
+		date := now.Add(time.Duration(day) * -24 * time.Hour)
 		for i := 0; i < max; i++ {
-			date := now.Add(time.Duration(day) * -24 * time.Hour)
+			// create local version for use for this sequence.
+			date := date
 
 			issuingUserID := uint(0)
 			issuingAppID := uint(0)
 			issuingExternalID := ""
+			isUserReport := false
 
 			// Random determine if this was issued by an app.
-			if percentChance(60) {
+			if percentChance(50) {
 				issuingAppID = randomAdminAuthorizedApp().ID
 
 				// Random determine if the code had an external audit.
 				if rand.Intn(2) == 0 {
 					b := make([]byte, 8)
 					if _, err := rand.Read(b); err != nil {
-						return fmt.Errorf("failed to read rand: %w", err)
+						return nil, fmt.Errorf("failed to read rand: %w", err)
 					}
 					issuingExternalID = randomExternalID()
 				}
+			} else if allowsUserReport && percentChance(30) {
+				// Random chance that this is a user report.
+				isUserReport = true
 			} else {
 				issuingUserID = randomUser().ID
 			}
@@ -384,17 +400,27 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 				IssuingAppID:      issuingAppID,
 				IssuingExternalID: issuingExternalID,
 			}
+			if isUserReport {
+				phoneNumber++
+				verificationCode.PhoneNumber = fmt.Sprintf("+%d", phoneNumber)
+				verificationCode.Nonce = nonce
+				verificationCode.TestType = api.TestTypeUserReport
+				testType = api.TestTypeUserReport
+			}
+
 			// If a verification code already exists, it will fail to save, and we retry.
 			if err := db.SaveVerificationCode(verificationCode, realm); err != nil {
-				return fmt.Errorf("failed to create verification code: %w", err)
+				return nil, fmt.Errorf("failed to create verification code: %w", err)
 			}
+			db.UpdateStats(ctx, verificationCode)
 
 			// Determine if a code is claimed.
 			if percentChance(90) {
 				accept := map[string]struct{}{
-					api.TestTypeConfirmed: {},
-					api.TestTypeLikely:    {},
-					api.TestTypeNegative:  {},
+					api.TestTypeConfirmed:  {},
+					api.TestTypeLikely:     {},
+					api.TestTypeNegative:   {},
+					api.TestTypeUserReport: {},
 				}
 
 				// Some percentage of codes will fail to claim - force this by changing
@@ -419,13 +445,16 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 					AcceptTypes: accept,
 					ExpireAfter: 24 * time.Hour,
 				}
+				if isUserReport {
+					request.Nonce = nonce
+				}
 				token, err := db.VerifyCodeAndIssueToken(request)
 				if err != nil {
 					continue
 				}
 
 				// Determine if token is exchanged.
-				if percentChance(90) {
+				if percentChance(75) {
 					testType := testType
 
 					// Determine if token claim should fail. Override the testType to
@@ -441,17 +470,19 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) error {
 					}); err != nil {
 						continue
 					}
+					totalClaimed++
 				}
 			}
 		}
+		tokensClaimedPerDay[date.Format("2006-01-02")] = totalClaimed
 	}
 
-	return nil
+	return tokensClaimedPerDay, nil
 }
 
 // generateKeyServerStats generates stats normally gathered from a key-server. This is
 // primarily used to test statistics and graphs.
-func generateKeyServerStats(db *database.Database, realm *database.Realm) error {
+func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPerDay map[string]int) error {
 	if err := db.SaveKeyServerStats(&database.KeyServerStats{RealmID: realm.ID}); err != nil {
 		return fmt.Errorf("failed create stats config: %w", err)
 	}
@@ -460,15 +491,22 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm) error 
 	for day := 0; day < 30; day++ {
 		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
+		max := 20 // lower default, otherwise generate realistic numbers.
+		if v, ok := maxPerDay[date.Format("2006-01-02")]; ok {
+			max = v
+		}
+		maxTEKs := int64(max * 14)
+		maxRevs := int64(max/10 + 1)
+
 		day := &database.KeyServerStatsDay{
 			RealmID:                   realm.ID,
 			Day:                       date,
-			PublishRequests:           randArr63n(3000, 3),
-			TotalTEKsPublished:        rand.Int63n(10000),
-			RevisionRequests:          rand.Int63n(1000),
-			TEKAgeDistribution:        randArr63n(1500, 16),
+			PublishRequests:           randArr63n(int64(max), 3),
+			TotalTEKsPublished:        rand.Int63n(maxTEKs),
+			RevisionRequests:          rand.Int63n(maxRevs),
+			TEKAgeDistribution:        randArr63n(int64(max), 16),
 			OnsetToUploadDistribution: randArr63n(15, 31),
-			RequestsMissingOnsetDate:  rand.Int63n(100),
+			RequestsMissingOnsetDate:  rand.Int63n(int64(max / 4)),
 		}
 		if err := db.SaveKeyServerStatsDay(day); err != nil {
 			return fmt.Errorf("failed create stats day: %w", err)

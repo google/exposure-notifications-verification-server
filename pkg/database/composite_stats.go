@@ -84,8 +84,11 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 			data.CodesIssued = stat.RealmStats.CodesIssued
 			data.CodesClaimed = stat.RealmStats.CodesClaimed
 			data.CodesInvalid = stat.RealmStats.CodesInvalid
+			data.UserReportsIssued = stat.RealmStats.UserReportsIssued
+			data.UserReportsClaimed = stat.RealmStats.UserReportsClaimed
 			data.TokensClaimed = stat.RealmStats.TokensClaimed
 			data.TokensInvalid = stat.RealmStats.TokensInvalid
+			data.UserReportTokensClaimed = stat.RealmStats.UserReportTokensClaimed
 			data.CodeClaimMeanAge = uint(stat.RealmStats.CodeClaimMeanAge.Duration.Seconds())
 			data.CodeClaimDistribution = stat.RealmStats.CodeClaimAgeDistribution
 		}
@@ -147,6 +150,7 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
 		"publish_requests_unknown", "publish_requests_android", "publish_requests_ios",
 		"total_teks_published", "requests_with_revisions", "requests_missing_onset_date", "tek_age_distribution", "onset_to_upload_distribution",
+		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -180,6 +184,10 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 			row = append(row, joinInt64s(stat.KeyServerStats.TEKAgeDistribution, "|"))
 			row = append(row, joinInt64s(stat.KeyServerStats.OnsetToUploadDistribution, "|"))
 		}
+		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsIssued), 10))
+		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsClaimed), 10))
+		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportTokensClaimed), 10))
+		// New stats should always be added to the end to preserve existing external user applications.
 
 		if err := w.Write(row); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)

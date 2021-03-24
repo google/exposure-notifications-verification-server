@@ -48,8 +48,11 @@ func TestCompositeStats_MarshalCSV(t *testing.T) {
 						CodesIssued:              10,
 						CodesClaimed:             9,
 						CodesInvalid:             1,
+						UserReportsIssued:        3,
+						UserReportsClaimed:       2,
 						TokensClaimed:            7,
 						TokensInvalid:            2,
+						UserReportTokensClaimed:  2,
 						CodeClaimMeanAge:         FromDuration(time.Minute),
 						CodeClaimAgeDistribution: []int32{1, 3, 4},
 					},
@@ -68,10 +71,10 @@ func TestCompositeStats_MarshalCSV(t *testing.T) {
 					},
 				},
 			},
-			expCSV: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,code_claim_mean_age_seconds,code_claim_age_distribution,publish_requests_unknown,publish_requests_android,publish_requests_ios,total_teks_published,requests_with_revisions,requests_missing_onset_date,tek_age_distribution,onset_to_upload_distribution
-2020-02-03,10,9,1,7,2,60,1|3|4,2,39,12,49,3,2,0|1|2|3|4|5|6|7|8|9|10|11|12|13|14,
+			expCSV: `date,codes_issued,codes_claimed,codes_invalid,tokens_claimed,tokens_invalid,code_claim_mean_age_seconds,code_claim_age_distribution,publish_requests_unknown,publish_requests_android,publish_requests_ios,total_teks_published,requests_with_revisions,requests_missing_onset_date,tek_age_distribution,onset_to_upload_distribution,user_reports_issued,user_reports_claimed,user_report_tokens_claimed
+2020-02-03,10,9,1,7,2,60,1|3|4,2,39,12,49,3,2,0|1|2|3|4|5|6|7|8|9|10|11|12|13|14,,3,2,2
 `,
-			expJSON: `{"realm_id":1,"has_key_server_stats":true,"statistics":[{"date":"2020-02-03T00:00:00Z","data":{"codes_issued":10,"codes_claimed":9,"codes_invalid":1,"tokens_claimed":7,"tokens_invalid":2,"code_claim_mean_age_seconds":60,"code_claim_age_distribution":[1,3,4],"day":"0001-01-01T00:00:00Z","publish_requests":{"unknown":2,"android":39,"ios":12},"total_teks_published":49,"requests_with_revisions":3,"tek_age_distribution":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],"onset_to_upload_distribution":null,"requests_missing_onset_date":2,"total_publish_requests":53}}]}`,
+			expJSON: `{"realm_id":1,"has_key_server_stats":true,"statistics":[{"date":"2020-02-03T00:00:00Z","data":{"codes_issued":10,"codes_claimed":9,"codes_invalid":1,"user_reports_issued":3,"user_reports_claimed":2,"tokens_claimed":7,"tokens_invalid":2,"user_report_tokens_claimed":2,"code_claim_mean_age_seconds":60,"code_claim_age_distribution":[1,3,4],"day":"0001-01-01T00:00:00Z","publish_requests":{"unknown":2,"android":39,"ios":12},"total_teks_published":49,"requests_with_revisions":3,"tek_age_distribution":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],"onset_to_upload_distribution":null,"requests_missing_onset_date":2,"total_publish_requests":53}}]}`,
 		},
 	}
 

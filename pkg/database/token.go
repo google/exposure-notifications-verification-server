@@ -143,8 +143,8 @@ func (t *Token) Subject() *Subject {
 func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID string, subject *Subject) error {
 	t = t.UTC()
 
+	var tok Token
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
-		var tok Token
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("token_id = ?", tokenID).
@@ -199,7 +199,7 @@ func (db *Database) ClaimToken(t time.Time, authApp *AuthorizedApp, tokenID stri
 		return err
 	}
 
-	go db.updateStatsTokenClaimed(t, authApp)
+	go db.updateStatsTokenClaimed(t, authApp, &tok)
 	return nil
 }
 
@@ -408,6 +408,9 @@ func (db *Database) updateStatsAgeDistrib(t time.Time, authApp *AuthorizedApp, v
 
 		// Update total codes claimed
 		existing.CodesClaimed++
+		if vc.UserReportID != nil {
+			existing.UserReportsClaimed++
+		}
 
 		sel := tx.Table("realm_stats").
 			Where("realm_id = ?", authApp.RealmID).
@@ -472,16 +475,21 @@ func (db *Database) updateStatsTokenInvalid(t time.Time, authApp *AuthorizedApp)
 
 // updateStatsTokenClaimed updates the statistics, increasing the number of
 // tokens claimed.
-func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp) {
+func (db *Database) updateStatsTokenClaimed(t time.Time, authApp *AuthorizedApp, tok *Token) {
 	t = timeutils.UTCMidnight(t)
 
 	realmSQL := `
-			INSERT INTO realm_stats(date, realm_id, tokens_claimed)
-					VALUES ($1, $2, 1)
+			INSERT INTO realm_stats(date, realm_id, tokens_claimed, user_report_tokens_claimed)
+					VALUES ($1, $2, 1, $3)
 				ON CONFLICT (date, realm_id) DO UPDATE
-					SET tokens_claimed = realm_stats.tokens_claimed + 1
+					SET tokens_claimed = realm_stats.tokens_claimed + 1,
+					    user_report_tokens_claimed = realm_stats.user_report_tokens_claimed + $3
 			`
-	if err := db.db.Exec(realmSQL, t, authApp.RealmID).Error; err != nil {
+	userReport := 0
+	if tok != nil && tok.TestType == api.TestTypeUserReport {
+		userReport = 1
+	}
+	if err := db.db.Exec(realmSQL, t, authApp.RealmID, userReport).Error; err != nil {
 		db.logger.Errorw("failed to update realm stats token claimed", "error", err)
 	}
 

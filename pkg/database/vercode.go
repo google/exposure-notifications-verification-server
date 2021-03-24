@@ -21,9 +21,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
+
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
+
 	"github.com/jinzhu/gorm"
 )
 
@@ -327,56 +330,63 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 
 	// If the issuer was a user, update the user stats for the day.
 	if v.IssuingUserID != 0 {
-		sql := fmt.Sprintf(`
+		sql := `
 			INSERT INTO user_stats (date, realm_id, user_id, codes_issued)
-				VALUES ($1, $2, $3, 1)
+				VALUES ($1, $2, $3, $4)
 			ON CONFLICT (date, realm_id, user_id) DO UPDATE
-				SET codes_issued = user_stats.codes_issued + %d
-		`, issued)
+				SET codes_issued = user_stats.codes_issued + $4`
 
-		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingUserID).Error; err != nil {
+		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingUserID, issued).Error; err != nil {
 			logger.Warnw("failed to update user stats", "error", err)
 		}
 	}
 
 	// If the request was an API request, we might have an external issuer ID.
 	if len(v.IssuingExternalID) != 0 {
-		sql := fmt.Sprintf(`
+		sql := `
 			INSERT INTO external_issuer_stats (date, realm_id, issuer_id, codes_issued)
-				VALUES ($1, $2, $3, 1)
+				VALUES ($1, $2, $3, $4)
 			ON CONFLICT (date, realm_id, issuer_id) DO UPDATE
-				SET codes_issued = external_issuer_stats.codes_issued + %d
-		`, issued)
+				SET codes_issued = external_issuer_stats.codes_issued + $4
+		`
 
-		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingExternalID).Error; err != nil {
+		if err := db.db.Exec(sql, date, v.RealmID, v.IssuingExternalID, issued).Error; err != nil {
 			logger.Warnw("failed to update external-issuer stats", "error", err)
 		}
 	}
 
 	// If the issuer was a app, update the app stats for the day.
 	if v.IssuingAppID != 0 {
-		sql := fmt.Sprintf(`
+		sql := `
 			INSERT INTO authorized_app_stats (date, authorized_app_id, codes_issued)
-				VALUES ($1, $2, 1)
+				VALUES ($1, $2, $3)
 			ON CONFLICT (date, authorized_app_id) DO UPDATE
-				SET codes_issued = authorized_app_stats.codes_issued + %d
-		`, issued)
+				SET codes_issued = authorized_app_stats.codes_issued + $3
+		`
 
-		if err := db.db.Exec(sql, date, v.IssuingAppID).Error; err != nil {
+		if err := db.db.Exec(sql, date, v.IssuingAppID, issued).Error; err != nil {
 			logger.Warnw("failed to update authorized app stats", "error", err)
 		}
 	}
 
 	// Update the per-realm stats.
 	if v.RealmID != 0 {
-		sql := fmt.Sprintf(`
-			INSERT INTO realm_stats(date, realm_id, codes_issued)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_issued = realm_stats.codes_issued + %d
-		`, issued)
+		// Count the number of user initiated reports
+		userReports := 0
+		for _, vc := range codes {
+			if vc.TestType == verifyapi.ReportTypeSelfReport {
+				userReports++
+			}
+		}
 
-		if err := db.db.Exec(sql, date, v.RealmID).Error; err != nil {
+		sql := `
+			INSERT INTO realm_stats(date, realm_id, codes_issued, user_reports_issued)
+				VALUES ($1, $2, $3, $4)
+			ON CONFLICT (date, realm_id) DO UPDATE
+				SET codes_issued = realm_stats.codes_issued + $3,
+				user_reports_issued = realm_stats.user_reports_issued + $4`
+
+		if err := db.db.Exec(sql, date, v.RealmID, issued, userReports).Error; err != nil {
 			logger.Warnw("failed to update realm stats", "error", err)
 		}
 	}
