@@ -5,7 +5,7 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <span class="oi oi-bar-chart mr-2 ml-n1"></span>
-    Codes Issued &amp; Usage
+    {{if $realm.AllowsUserReport}} Total {{end}} Codes Issued &amp; Usage
   </div>
   <div id="dashboard_div">
     <div id="realm_chart_div" class="h-100 w-100" style="min-height:325px;">
@@ -185,6 +185,10 @@
         <p>
           This graph reflects the total number of codes issued and usage
           of those codes for this realm, grouped by UTC day.
+          {{if $realm.AllowsUserReport}}
+          This includes both PHA (manual or automated) codes issued and
+          user reported cases together in the same chart.
+          {{end}}
         </p>
 
         <strong>Codes Issued</strong>
