@@ -119,14 +119,14 @@ const (
 	SMSLongExpires   = "[longexpires]"
 	SMSENExpressLink = "[enslink]"
 
-	SMSTemplateMaxLength      = 800
-	SMSTemplateExpansionMax   = 918
-	SMSUserReportExpansionMax = 140
+	SMSTemplateMaxLength    = 800
+	SMSTemplateExpansionMax = 918
 
-	DefaultTemplateLabel    = "Default SMS template"
-	DefaultSMSTextTemplate  = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
-	UserReportTemplateLabel = "User Report"
-	UserReportDefaultText   = "Your Exposure Notifications code expires in [expires] minutes, code #[code]"
+	DefaultTemplateLabel     = "Default SMS template"
+	DefaultSMSTextTemplate   = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
+	UserReportTemplateLabel  = "User Report"
+	UserReportDefaultText    = "Your requested Exposure Notifications code: [longcode] expires in [expires] minutes. If you did not request this code, please ignore this message."
+	UserReportDefaultENXText = "Your requested Exposure Notifications link: [enslink] expires in [expires] minutes. If you did not request this code, please ignore this message."
 
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
@@ -385,6 +385,9 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.AllowsUserReport() {
 		if _, ok := r.SMSTextAlternateTemplates[UserReportTemplateLabel]; !ok {
 			newText := UserReportDefaultText
+			if r.EnableENExpress {
+				newText = UserReportDefaultENXText
+			}
 			r.SMSTextAlternateTemplates[UserReportTemplateLabel] = &newText
 		}
 	}
@@ -454,22 +457,11 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(label, t string) {
-	userReport := UserReportTemplateLabel == label
-	// There is some special handling for the UserReport template.
-	if userReport || !r.EnableENExpress {
+	if !r.EnableENExpress {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
 			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
 			r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
-		}
-
-		if userReport {
-			smsEnd := fmt.Sprintf("#%s", SMSCode)
-			smsLongEnd := fmt.Sprintf("#%s", SMSLongCode)
-			if !(strings.HasSuffix(t, smsEnd) || strings.HasSuffix(t, smsLongEnd)) {
-				r.AddError("smsTextTemplate", fmt.Sprintf("must must end with %q or %q", smsEnd, smsLongEnd))
-				r.AddError(label, fmt.Sprintf("must must end with %q or %q", smsEnd, smsLongEnd))
-			}
 		}
 	} else {
 		if !strings.Contains(t, SMSENExpressLink) {
@@ -501,11 +493,7 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		r.AddError("smsTextTemplate", fmt.Sprintf("SMS template expansion failed: %s", err))
 		r.AddError(label, fmt.Sprintf("SMS template expansion failed: %s", err))
 	}
-	max := SMSTemplateExpansionMax
-	if userReport {
-		max = SMSUserReportExpansionMax
-	}
-	if l := len(expandedSMSText); l > max {
+	if l := len(expandedSMSText); l > SMSTemplateExpansionMax {
 		r.AddError("smsTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
