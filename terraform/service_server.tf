@@ -114,6 +114,7 @@ resource "google_cloud_run_service" "server" {
             local.observability_config,
 
             // This MUST come last to allow overrides!
+            lookup(var.service_environment, "_all", {}),
             lookup(var.service_environment, "server", {}),
           )
 
