@@ -155,4 +155,49 @@ func TestHandleCreate(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("retains_system_admin", func(t *testing.T) {
+		t.Parallel()
+
+		admin, _, realm := provisionUsers(t, harness.Database)
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			Realm:       realm,
+			User:        admin,
+			Permissions: rbac.LegacyRealmAdmin,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
+			"name":  []string{admin.Name},
+			"email": []string{admin.Email},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+		if got, want := w.Header().Get("Location"), "/realm/users/"; !strings.HasPrefix(got, want) {
+			t.Errorf("expected %q to start with %q", got, want)
+		}
+
+		records, _, err := realm.ListMemberships(harness.Database, pagination.UnlimitedResults)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		record, err := harness.Database.FindUser(admin.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if record == nil {
+			t.Fatalf("failed to find record: %#v", records)
+		} else {
+			if got, want := record.SystemAdmin, true; got != want {
+				t.Errorf("expected %t to be %t", got, want)
+			}
+		}
+	})
 }
