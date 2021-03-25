@@ -88,12 +88,11 @@ variable "alert_on_human_decrypted_value" {
 variable "forward_progress_indicators" {
   type = map(object({
     metric = string
-    window = string
+    window = number
   }))
 
-  description = "Map of overrides for forward progress indicators. These are merged with the default variables."
-
-  default = {}
+  description = "Map of overrides for forward progress indicators. These are merged with the default variables. The window must be in seconds."
+  default     = {}
 }
 
 terraform {
