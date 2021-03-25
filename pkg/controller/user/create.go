@@ -70,7 +70,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 		if existing != nil && existing.ID != 0 {
-			user.ID = existing.ID
+			user = existing
 		}
 
 		// Create or update user.
