@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -30,33 +29,24 @@ import (
 
 // HandleRotate handles key rotation.
 func (c *Controller) HandleRotate() http.Handler {
-	type Result struct {
-		OK     bool     `json:"ok"`
-		Errors []string `json:"errors,omitempty"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("rotation.HandleRotate")
+		logger.Debugw("starting")
+		defer logger.Debugw("finishing")
 
 		var merr *multierror.Error
 
 		ok, err := c.db.TryLock(ctx, tokenRotationLock, c.config.MinTTL)
 		if err != nil {
 			logger.Errorw("failed to acquire lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !ok {
 			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &Result{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
+			c.h.RenderJSON(w, http.StatusOK, fmt.Errorf("too early"))
 			return
 		}
 
@@ -90,20 +80,13 @@ func (c *Controller) HandleRotate() http.Handler {
 		}()
 
 		// If there are any errors, return them
-		if merr != nil {
-			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				logger.Errorw("failed to rotate", "errors", errs)
-				c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-					OK:     false,
-					Errors: project.ErrorsToStrings(errs),
-				})
-				return
-			}
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
+			logger.Errorw("failed to rotate", "errors", errs)
+			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+			return
 		}
 
 		stats.Record(ctx, mTokenSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, &Result{
-			OK: true,
-		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }

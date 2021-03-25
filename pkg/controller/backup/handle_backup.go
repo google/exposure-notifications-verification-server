@@ -29,58 +29,41 @@ import (
 	"go.opencensus.io/stats"
 )
 
-type Result struct {
-	OK     bool     `json:"ok"`
-	Errors []string `json:"errors,omitempty"`
-}
-
 func (c *Controller) HandleBackup() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("backup.HandleBackup")
+		logger.Debugw("starting")
+		defer logger.Debugw("finishing")
 
 		req, err := c.buildBackupRequest(ctx)
 		if err != nil {
 			logger.Errorw("failed to build request", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		ok, err := c.db.TryLock(ctx, lockName, c.config.MinTTL)
 		if err != nil {
 			logger.Errorw("failed to acquire lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !ok {
 			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &Result{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
+			c.h.RenderJSON(w, http.StatusOK, fmt.Errorf("too early"))
 			return
 		}
 
 		if err := c.executeBackup(req); err != nil {
 			logger.Errorw("failed to execute backup", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		stats.Record(ctx, mSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, &Result{
-			OK: true,
-		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
 

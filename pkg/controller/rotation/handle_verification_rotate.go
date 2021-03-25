@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"go.opencensus.io/stats"
@@ -32,32 +31,24 @@ import (
 
 // HandleVerificationRotate handles verification certificate key rotation.
 func (c *Controller) HandleVerificationRotate() http.Handler {
-	type Result struct {
-		OK     bool     `json:"ok"`
-		Errors []string `json:"errors,omitempty"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("rotation.HandleVerificationRotate")
+		logger.Debugw("starting")
+		defer logger.Debugw("finishing")
+
 		ctx = logging.WithLogger(ctx, logger)
 
 		ok, err := c.db.TryLock(ctx, verificationRotationLock, c.config.MinTTL)
 		if err != nil {
 			logger.Errorw("failed to acquire lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !ok {
 			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &Result{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
+			c.h.RenderJSON(w, http.StatusOK, fmt.Errorf("too early"))
 			return
 		}
 
@@ -79,21 +70,14 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 		}
 
 		// If there are any errors, return them
-		if merr != nil {
-			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				logger.Errorw("failed to rotate verification keys", "errors", errs)
-				c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-					OK:     false,
-					Errors: project.ErrorsToStrings(errs),
-				})
-				return
-			}
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
+			logger.Errorw("failed to rotate verification keys", "errors", errs)
+			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+			return
 		}
 
 		stats.Record(ctx, mVerificationSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, &Result{
-			OK: true,
-		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
 

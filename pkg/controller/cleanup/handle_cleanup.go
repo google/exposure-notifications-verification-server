@@ -21,40 +21,30 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
 )
 
 func (c *Controller) HandleCleanup() http.Handler {
-	type CleanupResult struct {
-		OK     bool     `json:"ok"`
-		Errors []string `json:"errors,omitempty"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("cleanup.HandleCleanup")
+		logger.Debugw("starting")
+		defer logger.Debugw("finishing")
 
 		var result, item tag.Mutator
 
 		ok, err := c.db.TryLock(ctx, cleanupName, c.config.CleanupMinPeriod)
 		if err != nil {
 			logger.Errorw("failed to acquire lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !ok {
 			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
+			c.h.RenderJSON(w, http.StatusOK, fmt.Errorf("too early"))
 			return
 		}
 
@@ -234,20 +224,13 @@ func (c *Controller) HandleCleanup() http.Handler {
 		}()
 
 		// If there are any errors, return them
-		if merr != nil {
-			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				logger.Errorw("failed to cleanup", "errors", errs)
-				c.h.RenderJSON(w, http.StatusInternalServerError, &CleanupResult{
-					OK:     false,
-					Errors: project.ErrorsToStrings(errs),
-				})
-				return
-			}
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
+			logger.Errorw("failed to cleanup", "errors", errs)
+			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+			return
 		}
 
 		stats.Record(ctx, mSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, &CleanupResult{
-			OK: true,
-		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }

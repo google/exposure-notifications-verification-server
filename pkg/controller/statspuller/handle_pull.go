@@ -26,7 +26,6 @@ import (
 	v1 "github.com/google/exposure-notifications-server/pkg/api/v1"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -43,31 +42,22 @@ const (
 
 // HandlePullStats pulls key-server statistics.
 func (c *Controller) HandlePullStats() http.Handler {
-	type Result struct {
-		OK     bool     `json:"ok"`
-		Errors []string `json:"errors,omitempty"`
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("statspuller.HandlePullStats")
+		logger.Debugw("starting")
+		defer logger.Debugw("finishing")
 
 		ok, err := c.db.TryLock(ctx, statsPullerLock, c.config.StatsPullerMinPeriod)
 		if err != nil {
 			logger.Errorw("failed to acquite lock", "error", err)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: []string{err.Error()},
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 		if !ok {
 			logger.Debugw("skipping (too early)")
-			c.h.RenderJSON(w, http.StatusOK, &Result{
-				OK:     false,
-				Errors: []string{"too early"},
-			})
+			c.h.RenderJSON(w, http.StatusOK, fmt.Errorf("too early"))
 			return
 		}
 
@@ -101,20 +91,14 @@ func (c *Controller) HandlePullStats() http.Handler {
 		}
 		wg.Wait()
 
-		if merr != nil {
-			errs := merr.WrappedErrors()
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
 			logger.Errorw("failed to pull stats", "errors", errs)
-			c.h.RenderJSON(w, http.StatusInternalServerError, &Result{
-				OK:     false,
-				Errors: project.ErrorsToStrings(errs),
-			})
+			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
 			return
 		}
 
 		stats.Record(ctx, mSuccess.M(1))
-		c.h.RenderJSON(w, http.StatusOK, &Result{
-			OK: true,
-		})
+		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
 }
 
