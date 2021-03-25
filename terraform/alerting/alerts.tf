@@ -45,6 +45,15 @@ locals {
     # cleanup runs every 1h, alert after 4 failures
     "cleanup" = { metric = "cleanup/success", window = 4 * local.hour + 10 * local.minute },
 
+    # e2e-default runs every 5 minutes, alert after 2 failures
+    "e2e-default" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
+
+    # e2e-revise runs every 5 minutes, alert after 2 failures
+    "e2e-revise" = { metric = "e2e/revise/success", window = 10 * local.minute + 1 * local.minute },
+
+    # e2e-redirect runs every 5 minutes, alert after 2 failures
+    "e2e-redirect" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
+
     # modeler runs every 4h, alert after 2 failures
     "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
@@ -57,43 +66,6 @@ locals {
     # stats-puller runs every 15m, alert after 2 failures
     "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
   }, var.forward_progress_indicators)
-}
-
-resource "google_monitoring_alert_policy" "E2ETestErrorRatioHigh" {
-  project      = var.project
-  combiner     = "OR"
-  display_name = "E2ETestErrorRatioHigh"
-  conditions {
-    display_name = "E2E test per-step per-test_type error ratio"
-    condition_monitoring_query_language {
-      duration = "600s"
-      query    = <<-EOT
-      fetch
-      generic_task :: ${local.custom_prefix}/e2e/request_count
-      | {
-        NOT_OK: filter metric.result == 'NOT_OK' | align
-        ;
-        ALL: ident | align
-      }
-      | group_by [metric.step, metric.test_type], [val: sum(value.request_count)]
-      | ratio
-      | window 1m
-      | condition ratio > 5 '%'
-      EOT
-      trigger {
-        count = 1
-      }
-    }
-  }
-  documentation {
-    content   = "${local.playbook_prefix}/E2ETestErrorRatioHigh.md"
-    mime_type = "text/markdown"
-  }
-  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
 }
 
 resource "google_monitoring_alert_policy" "probers" {
