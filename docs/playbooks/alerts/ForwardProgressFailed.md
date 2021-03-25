@@ -8,11 +8,11 @@ This alert fires when background jobs have not made forward progress in an accep
 
 - `cleanup-worker` - Performs a variety of cleanup tasks including purging old data, secrets, and keys.
 
-- `e2e-default-workflow` - Runs the [End to End test](../../../../cmd/e2e-runner/main.go).
+- `e2e-default` - Runs the [End to End test](../../../../cmd/e2e-runner/main.go).
 
-- `e2e-enx-redirect-workflow` - Runs the End to End workflow using the `enx-redirect` service.
+- `e2e-redirect` - Runs the End to End workflow using the `enx-redirect` service.
 
-- `e2e-revise-workflow` - Runs the same end to end test to the revise endpoint.
+- `e2e-revise` - Runs the same end to end test to the revise endpoint.
 
 - `modeler-worker` - Implements periodic statistical calculations.
 
