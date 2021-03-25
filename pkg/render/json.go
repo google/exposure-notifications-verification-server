@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // RenderJSON renders the interface as JSON. It attempts to gracefully handle
@@ -70,11 +72,21 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 		return
 	}
 
+	// Special-case handle multi-errors.
+	if typ, ok := data.(*multierror.Error); ok {
+		data = typ.WrappedErrors()
+	}
+	if typ, ok := data.([]error); ok {
+		msgs := make([]string, 0, len(typ))
+		for _, err := range typ {
+			msgs = append(msgs, err.Error())
+		}
+		data = &multiError{Errors: msgs}
+	}
+
 	// If the provided value was an error, marshall accordingly.
 	if typ, ok := data.(error); ok {
-		data = map[string]string{
-			"error": typ.Error(),
-		}
+		data = &singleError{Error: typ.Error()}
 	}
 
 	// Acquire a renderer
@@ -137,3 +149,11 @@ const jsonErrTmpl = `{"error":"%s"}`
 
 // jsonOKResp is the return value for empty data responses.
 const jsonOKResp = `{"ok":true}`
+
+type singleError struct {
+	Error string `json:"error,omitempty"`
+}
+
+type multiError struct {
+	Errors []string `json:"errors,omitempty"`
+}
