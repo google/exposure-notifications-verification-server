@@ -13,6 +13,10 @@
 # limitations under the License.
 
 locals {
+  second = 1
+  minute = 60 * local.second
+  hour   = 60 * local.minute
+
   playbook_prefix = "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts"
   custom_prefix   = "custom.googleapis.com/opencensus/en-verification-server"
 
@@ -32,26 +36,26 @@ locals {
   ))
 
   forward_progress_indicators = merge({
-    // appsync runs every 4h, alert after 2 failures
-    "appsync" = { metric = "appsync/success", window = "485m" },
+    # appsync runs every 4h, alert after 2 failures
+    "appsync" = { metric = "appsync/success", window = 8 * local.hour + 10 * local.minute },
 
-    // backup runs every 4h, alert after 2 failures
-    "backup" = { metric = "backup/success", window = "485m" },
+    # backup runs every 4h, alert after 2 failures
+    "backup" = { metric = "backup/success", window = 8 * local.hour + 10 * local.minute },
 
-    // cleanup runs every 1h, alert after 4 failures
-    "cleanup" = { metric = "cleanup/success", window = "245m" },
+    # cleanup runs every 1h, alert after 4 failures
+    "cleanup" = { metric = "cleanup/success", window = 4 * local.hour + 10 * local.minute },
 
-    // modeler runs every 4h, alert after 2 failures
-    "modeler" = { metric = "modeler/success", window = "485m" },
+    # modeler runs every 4h, alert after 2 failures
+    "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
-    // realm-key-rotation runs every 15m, alert after 2 failures
-    "realm-key-rotation" = { metric = "rotation/verification/success", window = "35m" }
+    # realm-key-rotation runs every 15m, alert after 2 failures
+    "realm-key-rotation" = { metric = "rotation/verification/success", window = 30 * local.minute + 5 * local.minute }
 
-    // rotation runs every 30m, alert after 2 failures
-    "rotation" = { metric = "rotation/token/success", window = "65m" }
+    # rotation runs every 30m, alert after 2 failures
+    "rotation" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
 
-    // stats-puller runs every 15m, alert after 2 failures
-    "stats-puller" = { metric = "statspuller/success", window = "35m" }
+    # stats-puller runs every 15m, alert after 2 failures
+    "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
   }, var.forward_progress_indicators)
 }
 
@@ -208,28 +212,52 @@ resource "google_monitoring_alert_policy" "StackdriverExportFailed" {
   ]
 }
 
-resource "google_monitoring_alert_policy" "ForwardProgressFailed" {
+# This resource creates two conditions for each metric: one if the metric's
+# threshold is <= 0 for the duration, and another of the metric is missing for
+# the duration. This handles both the case when a job has never run and when a
+# job previously ran but is now failing.
+resource "google_monitoring_alert_policy" "ForwardProgress" {
   for_each = local.forward_progress_indicators
 
   project      = var.project
-  display_name = "ForwardProgressFailed-${each.key}"
+  display_name = "ForwardProgress-${each.key}"
   combiner     = "OR"
 
   conditions {
-    display_name = each.key
+    display_name = "${each.key} failing"
 
-    condition_monitoring_query_language {
-      duration = "0s"
-      query    = <<-EOT
-      fetch generic_task
-      | metric '${local.custom_prefix}/${each.value.metric}'
-      | align delta(1m)
-      | group_by [], [val: aggregate(value.success)]
-      | absent_for ${each.value.window}
-      EOT
+    condition_threshold {
+      filter   = "metric.type = \"${local.custom_prefix}/${each.value.metric}\" AND resource.type = \"generic_task\""
+      duration = "${each.value.window}s"
+
+      comparison      = "COMPARISON_LT"
+      threshold_value = 1
+
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_DELTA"
+        group_by_fields      = ["resource.labels.job"]
+        cross_series_reducer = "REDUCE_SUM"
+      }
 
       trigger {
         count = 1
+      }
+    }
+  }
+
+  conditions {
+    display_name = "${each.key} missing"
+
+    condition_absent {
+      filter   = "metric.type = \"${local.custom_prefix}/${each.value.metric}\" AND resource.type = \"generic_task\""
+      duration = "${each.value.window}s"
+
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_DELTA"
+        group_by_fields      = ["resource.labels.job"]
+        cross_series_reducer = "REDUCE_SUM"
       }
     }
   }
