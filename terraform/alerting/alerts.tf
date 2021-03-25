@@ -48,11 +48,11 @@ locals {
     # e2e-default runs every 5 minutes, alert after 2 failures
     "e2e-default" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
 
-    # e2e-revise runs every 5 minutes, alert after 2 failures
-    "e2e-revise" = { metric = "e2e/revise/success", window = 10 * local.minute + 1 * local.minute },
+    # e2e-revision runs every 5 minutes, alert after 2 failures
+    "e2e-revision" = { metric = "e2e/revision/success", window = 10 * local.minute + 1 * local.minute },
 
     # e2e-redirect runs every 5 minutes, alert after 2 failures
-    "e2e-redirect" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
+    "e2e-redirect" = { metric = "e2e/redirect/success", window = 10 * local.minute + 1 * local.minute },
 
     # modeler runs every 4h, alert after 2 failures
     "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
