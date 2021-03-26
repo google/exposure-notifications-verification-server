@@ -109,7 +109,8 @@ func (c *Controller) HandleUserReport() http.Handler {
 				Phone:            request.Phone,
 				SMSTemplateLabel: database.UserReportTemplateLabel,
 			},
-			Nonce: nonce,
+			UserRequested: true,
+			Nonce:         nonce,
 		}
 
 		res := c.IssueOne(ctx, issueRequest)

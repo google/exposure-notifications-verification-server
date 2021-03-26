@@ -48,7 +48,7 @@ func TestFindUserReport(t *testing.T) {
 		t.Parallel()
 
 		phoneNumber := "+12065551234"
-		userReport, err := db.NewUserReport(phoneNumber, generateNonce(t))
+		userReport, err := db.NewUserReport(phoneNumber, generateNonce(t), true)
 		if err != nil {
 			t.Fatalf("error creating user report: %v", err)
 		}
@@ -105,7 +105,7 @@ func TestFindUserReport(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			userReport, err := db.NewUserReport(tc.phone, []byte{0})
+			userReport, err := db.NewUserReport(tc.phone, []byte{0}, true)
 			userReport.Nonce = tc.nonce // override the encoding from NewUserReport for testing errors.
 			if err != nil {
 				t.Fatalf("error creating user report: %v", err)
@@ -149,7 +149,7 @@ func TestPurgeUserReports(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// tests not parallel because one purge test could interfer with the other.
 			phoneNumber := tc.name
-			userReport, err := db.NewUserReport(phoneNumber, generateNonce(t))
+			userReport, err := db.NewUserReport(phoneNumber, generateNonce(t), true)
 			if err != nil {
 				t.Fatalf("error creating user report: %v", err)
 			}

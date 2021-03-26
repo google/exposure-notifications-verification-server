@@ -33,7 +33,8 @@ import (
 // optional nonce. If the nonce is provided and the the report type
 // is self_report (user initiated code), then extra safeguards are applied.
 type IssueRequestInternal struct {
-	IssueRequest *api.IssueCodeRequest
+	IssueRequest  *api.IssueCodeRequest
+	UserRequested bool
 	// These files are for user initiated report
 	Nonce []byte
 }
@@ -82,13 +83,14 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.BuildVerificationCode(ctx, req.IssueRequest, realm)
+		vCode, result := c.BuildVerificationCode(ctx, req, realm)
 		if result != nil {
 			results[i] = result
 			continue
 		}
 		vCode.Nonce = req.Nonce
 		vCode.PhoneNumber = req.IssueRequest.Phone
+		vCode.NonceRequired = req.UserRequested
 		results[i] = c.IssueCode(ctx, vCode, realm)
 	}
 

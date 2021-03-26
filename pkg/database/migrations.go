@@ -2191,6 +2191,25 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN user_report_tokens_claimed`)
 			},
 		},
+		{
+			ID: "00099-AdminSelfReportSettings",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE user_reports
+						ADD COLUMN IF NOT EXISTS nonce_required BOOLEAN DEFAULT TRUE`,
+					`ALTER TABLE user_reports
+						ALTER COLUMN nonce_required SET NOT NULL`,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS allow_admin_user_report BOOLEAN DEFAULT false`,
+					`ALTER TABLE realms
+						ALTER COLUMN allow_admin_user_report SET NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN allow_admin_user_report`)
+			},
+		},
 	}
 }
 

@@ -101,6 +101,19 @@
         </small>
       </label>
     </div>
+
+    <div class="form-check mb-3">
+      <input type="checkbox" name="allow_admin_user_report" id="allow-admin-user-report" class="form-check-input" value="true" {{checkedIf ($realm.AllowAdminUserReport)}} />
+      <label for="allow-admin-user-report" class="form-check-label">
+        Admin API can issue user-report codes
+        <small class="form-text text-muted mb-3">
+          If <code>Allow user initiated report</code> is enabled, this setting allows the admin code issue
+          API to utilize the <code>user-report</code> report type. Doing so, allows for user-report codes to
+          be claimed without the normally required <code>nonce</code>. This setting should only be
+          enabled after consultation with Apple and Google.
+        </small>
+      </label>
+    </div>
     {{end}}
   </div>
 

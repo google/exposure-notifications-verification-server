@@ -315,6 +315,7 @@ func TestIssueToken(t *testing.T) {
 					LongExpiresAt: time.Now().Add(time.Hour),
 					PhoneNumber:   "+15138675309",
 					Nonce:         validNonce,
+					NonceRequired: true,
 				}
 			},
 			Nonce:    validNonce,
@@ -334,6 +335,7 @@ func TestIssueToken(t *testing.T) {
 					LongExpiresAt: time.Now().Add(time.Hour),
 					PhoneNumber:   "+12068675309",
 					Nonce:         validNonce,
+					NonceRequired: true,
 				}
 			},
 			Nonce:    []byte{1, 2, 3, 4}, // This is not the right nonce ;)
@@ -345,16 +347,56 @@ func TestIssueToken(t *testing.T) {
 			Name: "user_report_no_nonce",
 			Verification: func() *VerificationCode {
 				return &VerificationCode{
+					Code:          "22112233",
+					LongCode:      "22112233ABC",
+					TestType:      "user-report",
+					SymptomDate:   &symptomDate,
+					ExpiresAt:     time.Now().Add(time.Hour),
+					LongExpiresAt: time.Now().Add(time.Hour),
+					PhoneNumber:   "+13608675309",
+					Nonce:         validNonce,
+					NonceRequired: true,
+				}
+			},
+			Accept:   acceptConfirmedAndSelfReport,
+			Error:    "verification code not found",
+			TokenAge: time.Hour,
+		},
+		{
+			Name: "admin_user_report_no_nonce",
+			Verification: func() *VerificationCode {
+				return &VerificationCode{
 					Code:          "22112211",
 					LongCode:      "22112211ABC",
 					TestType:      "user-report",
 					SymptomDate:   &symptomDate,
 					ExpiresAt:     time.Now().Add(time.Hour),
 					LongExpiresAt: time.Now().Add(time.Hour),
-					PhoneNumber:   "+15558675309",
-					Nonce:         validNonce,
+					PhoneNumber:   "+14258675309",
+					Nonce:         []byte{},
+					NonceRequired: false,
 				}
 			},
+			Accept:   acceptConfirmedAndSelfReport,
+			Error:    "",
+			TokenAge: time.Hour,
+		},
+		{
+			Name: "admin_user_report_with_nonce",
+			Verification: func() *VerificationCode {
+				return &VerificationCode{
+					Code:          "22112244",
+					LongCode:      "22112244ABC",
+					TestType:      "user-report",
+					SymptomDate:   &symptomDate,
+					ExpiresAt:     time.Now().Add(time.Hour),
+					LongExpiresAt: time.Now().Add(time.Hour),
+					PhoneNumber:   "+18128675309",
+					Nonce:         []byte{},
+					NonceRequired: false,
+				}
+			},
+			Nonce:    validNonce,
 			Accept:   acceptConfirmedAndSelfReport,
 			Error:    "verification code not found",
 			TokenAge: time.Hour,

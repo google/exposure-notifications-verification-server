@@ -174,7 +174,7 @@ func TestValidate(t *testing.T) {
 			ctx = controller.WithAuthorizedApp(ctx, authApp)
 			ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
-			verCode, result := c.BuildVerificationCode(ctx, &tc.request, realm)
+			verCode, result := c.BuildVerificationCode(ctx, &issueapi.IssueRequestInternal{IssueRequest: &tc.request}, realm)
 			if verCode != nil {
 				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
 					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)
