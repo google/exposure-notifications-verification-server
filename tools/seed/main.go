@@ -495,18 +495,28 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPer
 		if v, ok := maxPerDay[date.Format("2006-01-02")]; ok {
 			max = v
 		}
-		maxTEKs := int64(max * 14)
-		maxRevs := int64(max/10 + 1)
+		teksPublished := int64(max * 14)
+		if teksPublished > 0 {
+			teksPublished = rand.Int63n(teksPublished)
+		}
+		revisions := int64(max / 10)
+		if revisions > 0 {
+			revisions = rand.Int63n(revisions)
+		}
+		var missingOnset int64
+		if limit := max / 4; limit > 0 {
+			missingOnset = rand.Int63n(int64(limit))
+		}
 
 		day := &database.KeyServerStatsDay{
 			RealmID:                   realm.ID,
 			Day:                       date,
 			PublishRequests:           randArr63n(int64(max), 3),
-			TotalTEKsPublished:        rand.Int63n(maxTEKs),
-			RevisionRequests:          rand.Int63n(maxRevs),
+			TotalTEKsPublished:        teksPublished,
+			RevisionRequests:          revisions,
 			TEKAgeDistribution:        randArr63n(int64(max), 16),
 			OnsetToUploadDistribution: randArr63n(15, 31),
-			RequestsMissingOnsetDate:  rand.Int63n(int64(max / 4)),
+			RequestsMissingOnsetDate:  missingOnset,
 		}
 		if err := db.SaveKeyServerStatsDay(day); err != nil {
 			return fmt.Errorf("failed create stats day: %w", err)
@@ -519,7 +529,9 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPer
 func randArr63n(n, length int64) []int64 {
 	arr := make([]int64, length)
 	for i := int64(0); i < length; i++ {
-		arr[i] = rand.Int63n(n)
+		if n > 0 {
+			arr[i] = rand.Int63n(n)
+		}
 	}
 	return arr
 }

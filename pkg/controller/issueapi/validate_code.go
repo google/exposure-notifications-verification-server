@@ -22,20 +22,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
-	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
+
+	verifyapi "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 )
 
 // BuildVerificationCode populates and validates a code from an issue request.
-func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.IssueCodeRequest, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
+func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest *IssueRequestInternal, realm *database.Realm) (*database.VerificationCode, *IssueResult) {
 	logger := logging.FromContext(ctx).Named("issueapi.buildVerificationCode")
 
 	now := time.Now().UTC()
+	request := internalRequest.IssueRequest
 	vCode := &database.VerificationCode{
 		RealmID:           realm.ID,
 		IssuingExternalID: request.ExternalIssuerID,
@@ -115,6 +118,20 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, request *api.Iss
 				obsResult:   enobs.ResultError("UUID_CONFLICT"),
 				HTTPCode:    http.StatusConflict,
 				ErrorReturn: api.Errorf("code for %s already exists", vCode.UUID).WithCode(api.ErrUUIDAlreadyExists),
+			}
+		}
+	}
+
+	// Validation specific to PHA issued codes via API for user-report type.
+	// This is a special case that needs to be opted in to.
+	if request.TestType == verifyapi.ReportTypeSelfReport {
+		// Make sure this realm allows for admin issued self reports.
+		realm := controller.RealmFromContext(ctx)
+		if !internalRequest.UserRequested && !realm.AllowAdminUserReport {
+			return nil, &IssueResult{
+				obsResult:   enobs.ResultError("UNSUPPORTED_TEST_TYPE"),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Errorf("unsupported test type: %v", request.TestType).WithCode(api.ErrUnsupportedTestType),
 			}
 		}
 	}

@@ -20,10 +20,11 @@ import (
 	"net/http"
 	"time"
 
-	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 )
 
 // HandleIssueAPI responds to the /issue API for issuing verification codes

@@ -66,6 +66,7 @@ type formData struct {
 	Codes                 bool              `form:"codes"`
 	AllowedTestTypes      database.TestType `form:"allowed_test_types"`
 	AllowUserReport       bool              `form:"allow_user_report"`
+	AllowAdminUserReport  bool              `form:"allow_admin_user_report"`
 	AllowBulkUpload       bool              `form:"allow_bulk"`
 	RequireDate           bool              `form:"require_date"`
 	CodeLength            uint              `form:"code_length"`
@@ -231,6 +232,9 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.AllowBulkUpload = form.AllowBulkUpload
 			if c.config.Features.EnableUserReport && form.AllowUserReport {
 				currentRealm.AddUserReportToAllowedTestTypes()
+				currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
+			} else {
+				currentRealm.AllowAdminUserReport = false
 			}
 
 			// These fields can only be set if ENX is disabled

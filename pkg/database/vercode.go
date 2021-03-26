@@ -79,8 +79,9 @@ type VerificationCode struct {
 
 	UserReportID *uint
 	// These are used in building a user report
-	Nonce       []byte `gorm:"-"`
-	PhoneNumber string `gorm:"-"`
+	Nonce         []byte `gorm:"-"`
+	PhoneNumber   string `gorm:"-"`
+	NonceRequired bool   `gorm:"-"`
 
 	// IssuingUserID is the ID of the user in the database that created this
 	// verification code. This is only populated if the code was created via the
@@ -269,11 +270,11 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 		return err
 	}
 	return db.db.Transaction(func(tx *gorm.DB) error {
-		// If there is a nonce present, this verification code requests that
+		// If the report type is self-report, this verification code requests that
 		// the phone number not exist in the de-duplicate table.
 		var userReport *UserReport
 		var err error
-		if len(vc.Nonce) > 0 {
+		if vc.TestType == verifyapi.ReportTypeSelfReport {
 			if len(vc.PhoneNumber) == 0 {
 				return fmt.Errorf("request has nonce but no phone number for SMS, invalid combination")
 			}
@@ -285,7 +286,7 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 				return ErrAlreadyReported
 			}
 
-			userReport, err = db.NewUserReport(vc.PhoneNumber, vc.Nonce)
+			userReport, err = db.NewUserReport(vc.PhoneNumber, vc.Nonce, vc.NonceRequired)
 			if err != nil {
 				return fmt.Errorf("newUserReport: %w", err)
 			}

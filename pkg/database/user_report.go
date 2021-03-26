@@ -42,6 +42,8 @@ type UserReport struct {
 	PhoneHash string `json:"-"` // unique
 	// Nonce is the random data that must be presented when verifying a verification code attached to this user report
 	Nonce string
+	// NonceRequired indicates if this is request requires a nonce, some do not if issued by a PHA web site for example.
+	NonceRequired bool
 
 	// CodeClaimed is set to true when the associated code is claimed. This is needed
 	// since the verification code itself will be cleaned up before this record.
@@ -53,7 +55,7 @@ type UserReport struct {
 
 // NewUserReport creates a new UserReport by calculating the current HMAC of the
 // provided phone number and encoding the nonce. It does NOT save it to the database.
-func (db *Database) NewUserReport(phone string, nonce []byte) (*UserReport, error) {
+func (db *Database) NewUserReport(phone string, nonce []byte, nonceRequired bool) (*UserReport, error) {
 	hmac, err := db.GeneratePhoneNumberHMAC(phone)
 	if err != nil {
 		return nil, err
@@ -62,19 +64,26 @@ func (db *Database) NewUserReport(phone string, nonce []byte) (*UserReport, erro
 	nonceB64 := base64.StdEncoding.EncodeToString(nonce)
 
 	return &UserReport{
-		PhoneHash: hmac,
-		Nonce:     nonceB64,
+		PhoneHash:     hmac,
+		Nonce:         nonceB64,
+		NonceRequired: nonceRequired,
 	}, nil
 }
 
 // BeforeSave validates the structure of the UserReport.
 func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
-	decoded, err := base64util.DecodeString(ur.Nonce)
-	if err != nil {
-		ur.AddError("nonce", "is not using a valid base64 encoding")
+	if ur.NonceRequired {
+		decoded, err := base64util.DecodeString(ur.Nonce)
+		if err != nil {
+			ur.AddError("nonce", "is not using a valid base64 encoding")
+		} else {
+			if l := len(decoded); l != NonceLength {
+				ur.AddError("nonce", fmt.Sprintf("is not the correct length, want: %v got: %v", NonceLength, l))
+			}
+		}
 	} else {
-		if l := len(decoded); l != NonceLength {
-			ur.AddError("nonce", fmt.Sprintf("is not the correct length, want: %v got: %v", NonceLength, l))
+		if ur.Nonce != "" {
+			ur.AddError("nonce", "is not required for this request and should not be sent")
 		}
 	}
 

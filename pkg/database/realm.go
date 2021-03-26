@@ -247,6 +247,10 @@ type Realm struct {
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14;"`
 
+	// AllowAdminUserReport - is the adminapi:/api/issue allowed to use the user-report
+	// test type if enabled on the realm.
+	AllowAdminUserReport bool
+
 	// RequireDate requires that verifications on this realm require a test or
 	// symptom date (either). The default behavior is to not require a date.
 	RequireDate bool `gorm:"type:boolean; not null; default:false;"`

@@ -283,6 +283,7 @@ func TestSaveUserReport(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 		Nonce:         generateNonce(t),
 		PhoneNumber:   "+12068675309",
+		NonceRequired: true,
 	}
 
 	if err := db.SaveVerificationCode(vc, realm); err != nil {

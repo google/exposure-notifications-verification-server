@@ -269,9 +269,10 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		// Check associated UserReport record if necessary.
 		if vc.UserReportID != nil {
 			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
+			required := providedNonce != ""
 
 			result := tx.Model(UserReport{}).
-				Where("id = ? AND code_claimed = ? and nonce = ?", *vc.UserReportID, false, providedNonce).
+				Where("id = ? AND code_claimed = ? and nonce = ? and nonce_required = ?", *vc.UserReportID, false, providedNonce, required).
 				Updates(UserReport{CodeClaimed: true})
 			if err := result.Error; err != nil {
 				return fmt.Errorf("unable to look up associated user_report record: %w", err)
