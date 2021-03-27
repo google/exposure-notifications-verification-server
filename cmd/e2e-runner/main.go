@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -35,10 +36,17 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+)
+
+var (
+	mu            sync.Mutex
+	setupComplete bool = false
+	closeFunc     func() error
 )
 
 func main() {
@@ -102,28 +110,6 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to create renderer: %w", err)
 	}
 
-	// Bootstrap the environment
-	resp, err := envstest.Bootstrap(ctx, db)
-	if err != nil {
-		return fmt.Errorf("failed to bootstrap testsuite: %w", err)
-	}
-	defer func() {
-		if err := resp.Cleanup(); err != nil {
-			logger.Errorw("failed to cleanup", "error", err)
-		}
-	}()
-
-	// Verify that SMS is configured on the realm
-	if !project.SkipE2ESMS {
-		has, err := resp.Realm.HasSMSConfig(db)
-		if err != nil {
-			return fmt.Errorf("failed to check if realm has sms config: %w", err)
-		}
-		if !has {
-			return fmt.Errorf("realm does not have sms config, configure it or set E2E_SKIP_SMS to continue")
-		}
-	}
-
 	// Create the enx-redirect client if the URL was specified
 	var enxRedirectClient *clients.ENXRedirectClient
 	if u := cfg.ENXRedirectURL; u != "" {
@@ -135,8 +121,13 @@ func realMain(ctx context.Context) error {
 		}
 	}
 
-	cfg.VerificationAdminAPIKey = resp.AdminAPIKey
-	cfg.VerificationAPIServerKey = resp.DeviceAPIKey
+	defer func() {
+		if closeFunc != nil {
+			if err := closeFunc(); err != nil {
+				logger.Errorw("failed to cleanup", "error", err)
+			}
+		}
+	}()
 
 	// Create the router
 	r := mux.NewRouter()
@@ -156,6 +147,10 @@ func realMain(ctx context.Context) error {
 	recovery := middleware.Recovery(h)
 	r.Use(recovery)
 
+	// E2E setup / boostrap function.
+	bootstrapE2E := bootstrap(ctx, db, cfg)
+	r.Use(bootstrapE2E)
+
 	r.Handle("/default", handleDefault(cfg, h))
 	r.Handle("/revise", handleRevise(cfg, h))
 	r.Handle("/enx-redirect", handleENXRedirect(enxRedirectClient, h))
@@ -172,6 +167,54 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, mux)
+}
+
+func bootstrap(ctx context.Context, db *database.Database, cfg *config.E2ERunnerConfig) mux.MiddlewareFunc {
+	logger := logging.FromContext(ctx).Named("e2erunner.bootstrap")
+	bootstrapFn := func() error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if !setupComplete {
+			// Bootstrap the environment
+			resp, err := envstest.Bootstrap(ctx, db)
+			if err != nil {
+				return fmt.Errorf("failed to bootstrap testsuite: %w", err)
+			}
+			// set the outer close function for later
+			closeFunc = func() error { return resp.Cleanup() }
+
+			// Verify that SMS is configured on the realm
+			if !project.SkipE2ESMS {
+				has, err := resp.Realm.HasSMSConfig(db)
+				if err != nil {
+					return fmt.Errorf("failed to check if realm has sms config: %w", err)
+				}
+				if !has {
+					return fmt.Errorf("realm does not have sms config, configure it or set E2E_SKIP_SMS to continue")
+				}
+			}
+
+			cfg.VerificationAdminAPIKey = resp.AdminAPIKey
+			cfg.VerificationAPIServerKey = resp.DeviceAPIKey
+		}
+		// only mark setup complete if it successfully runs, otherwise try again on next execution.
+		setupComplete = true
+		return nil
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := bootstrapFn(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf("unable to boostrap runner: %v", err)))
+				logger.Errorw("unable to bootsrap e2e-runner", "error", err)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // handleDefault handles the default end-to-end scenario.
