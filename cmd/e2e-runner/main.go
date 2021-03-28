@@ -206,9 +206,11 @@ func bootstrap(ctx context.Context, db *database.Database, cfg *config.E2ERunner
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err := bootstrapFn(); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("unable to boostrap runner: %v", err)))
 				logger.Errorw("unable to bootsrap e2e-runner", "error", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				if _, e := w.Write([]byte(fmt.Sprintf("unable to boostrap runner: %v", err))); e != nil {
+					logger.Errorw("unable to write http response", "error", e)
+				}
 				return
 			}
 
