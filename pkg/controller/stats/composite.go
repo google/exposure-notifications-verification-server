@@ -70,7 +70,7 @@ func (c *Controller) HandleComposite(typ Type) http.Handler {
 				compDay, ok := statsMap[ksDay.Day]
 				if !ok {
 					// if key server has stats from a day the realm doesn't, add it in.
-					compDay := &database.CompositeDay{
+					compDay = &database.CompositeDay{
 						Day: ksDay.Day,
 					}
 					stats = append(stats, compDay)
