@@ -22,7 +22,7 @@ import (
 // SecureHeaders sets a bunch of default secure headers that our servers should have.
 func SecureHeaders(devMode bool, serverType string) mux.MiddlewareFunc {
 	options := secure.Options{
-		BrowserXssFilter:     serverType == "html",
+		BrowserXssFilter:     false,
 		ContentTypeNosniff:   true,
 		FrameDeny:            serverType == "html",
 		HostsProxyHeaders:    []string{"X-Forwarded-Host"},
