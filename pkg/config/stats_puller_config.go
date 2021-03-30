@@ -54,7 +54,7 @@ type StatsPullerConfig struct {
 	// stats-pull events. This is used to control whether the pull is actually
 	// attempted at the controller layer, independent of the data layer. In
 	// effect, it rate limits the number of rotation requests.
-	MinTTL time.Duration `env:"MIN_TTL, default=15m"`
+	MinTTL time.Duration `env:"MIN_TTL, default=5m"`
 
 	// StatsPullerMinPeriod defines the period for which the stats puller will hold a lock
 	// which prevents other calls from entering.

@@ -36,10 +36,9 @@ type BackupConfig struct {
 	Port string `env:"PORT, default=8080"`
 
 	// MinTTL is the minimum amount of time that must elapse between attempting
-	// backups. This is used to control whether the pull is actually attempted at
-	// the controller layer, independent of the data layer. In effect, it rate
-	// limits the number of requests.
-	MinTTL time.Duration `env:"BACKUP_MIN_PERIOD, default=4h"`
+	// backups. This is used to control whether the backup is actually executed
+	// and to prevent concurrent backups.
+	MinTTL time.Duration `env:"BACKUP_MIN_PERIOD, default=5m"`
 
 	// Timeout is the maximum amount of time to wait for a backup operation to
 	// complete.
