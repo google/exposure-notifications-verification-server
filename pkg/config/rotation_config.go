@@ -43,7 +43,7 @@ type RotationConfig struct {
 	// rotation events. This is used to control whether rotation is actually
 	// attempted at the controller layer, independent of the data layer. In
 	// effect, it rate limits the number of rotation requests.
-	MinTTL time.Duration `env:"MIN_TTL, default=15m"`
+	MinTTL time.Duration `env:"MIN_TTL, default=5m"`
 
 	// TokenSigning is the token signing configuration. This defines the parent
 	// key and common data like issuer, but the individual versions are controlled
