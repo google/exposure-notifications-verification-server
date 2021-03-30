@@ -34,7 +34,7 @@ $(function() {
       }
     }
 
-    let csrfToken = $("meta[name=csrf-token]").attr("content");
+    let csrfToken = getCSRFToken();
     let $csrfField = $("<input>")
       .attr("type", "hidden")
       .attr("name", "gorilla.csrf.Token")
@@ -237,6 +237,10 @@ $(function() {
 
   window.flash = flash;
 });
+
+function getCSRFToken() {
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
 
 function setCookie(cname, cvalue, exdays) {
   let d = new Date();

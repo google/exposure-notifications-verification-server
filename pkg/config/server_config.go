@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 
 	firebase "firebase.google.com/go"
@@ -85,10 +87,6 @@ type ServerConfig struct {
 	// CookieDomain is the domain for which cookie should be valid.
 	CookieDomain string `env:"COOKIE_DOMAIN"`
 
-	// CSRFAuthKey is the authentication key. It must be 32-bytes and can be
-	// generated with tools/gen-secret. The value's should be base64 encoded.
-	CSRFAuthKey envconfig.Base64Bytes `env:"CSRF_AUTH_KEY,required"`
-
 	// Application Config
 	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
 
@@ -111,6 +109,12 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 	var config ServerConfig
 	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
 		return nil, err
+	}
+
+	// Deprecations
+	logger := logging.FromContext(ctx).Named("config.ServerConfig")
+	if v := os.Getenv("CSRF_AUTH_KEY"); v != "" {
+		logger.Warnw("CSRF_AUTH_KEY is no longer used, please remove it from your configuration")
 	}
 
 	// Parse system notice - do this once since it's displayed on every page.

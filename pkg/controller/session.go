@@ -29,11 +29,41 @@ type sessionKey string
 const (
 	emailVerificationPrompted         = sessionKey("emailVerificationPrompted")
 	mfaPrompted                       = sessionKey("mfaPrompted")
+	passwordExpireWarned              = sessionKey("passwordExpireWarned")
+	sessionKeyCSRFToken               = sessionKey("csrfToken")
 	sessionKeyLastActivity            = sessionKey("lastActivity")
 	sessionKeyRealmID                 = sessionKey("realmID")
 	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
-	passwordExpireWarned              = sessionKey("passwordExpireWarned")
 )
+
+// StoreSessionCSRFToken stores the CSRF token on the session.
+func StoreSessionCSRFToken(session *sessions.Session, token []byte) {
+	if session == nil || len(token) == 0 {
+		return
+	}
+	session.Values[sessionKeyCSRFToken] = token
+}
+
+// ClearSessionCSRFToken clears the CSRF token from the session.
+func ClearSessionCSRFToken(session *sessions.Session) {
+	sessionClear(session, sessionKeyCSRFToken)
+}
+
+// CSRFTokenFromSession extracts the CSRF token from the session.
+func CSRFTokenFromSession(session *sessions.Session) []byte {
+	v := sessionGet(session, sessionKeyCSRFToken)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.([]byte)
+	if !ok {
+		delete(session.Values, sessionKeyCSRFToken)
+		return nil
+	}
+
+	return t
+}
 
 // StoreSessionRealm stores the realm's ID in the session.
 func StoreSessionRealm(session *sessions.Session, realm *database.Realm) {

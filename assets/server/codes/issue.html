@@ -391,7 +391,7 @@
         contentType: 'application/json',
         data: JSON.stringify(data),
         headers: {
-          'X-CSRF-Token': '{{.csrfToken}}',
+          'X-CSRF-Token': getCSRFToken(),
         },
         success: function(result) {
           if(result.error && result.error != "") {

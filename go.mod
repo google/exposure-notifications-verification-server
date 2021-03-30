@@ -20,7 +20,6 @@ require (
 	github.com/google/exposure-notifications-server v0.24.1-0.20210322233555-ecf9dee504c1
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.2.0
-	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0

@@ -207,7 +207,7 @@
           "users": data,
           "sendInvites": sendInvites,
        }),
-        headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+        headers: { 'X-CSRF-Token': getCSRFToken() },
         contentType: 'application/json',
         success: function(result) {
           totalUsersAdded += result.newUsers.length;

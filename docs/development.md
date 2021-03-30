@@ -75,12 +75,6 @@ represent best practices.
     # Disable local observability.
     export OBSERVABILITY_EXPORTER="NOOP"
 
-    # Configure CSRF for preventing request forgery. Create your own with:
-    #
-    #     openssl rand -base64 32
-    #
-    export CSRF_AUTH_KEY="RcCNhTkS9tSDMSGcl4UCa1FUg9GmctkJpdI+eqZ+3v4="
-
     # Configure cookie encryption, the first is 64 bytes, the second is 32.
     # Create your own values with:
     #

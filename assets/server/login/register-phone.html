@@ -319,7 +319,7 @@
               idToken: idToken,
               factorCount: factorCount,
             },
-            headers: { 'X-CSRF-Token': '{{.csrfToken}}' },
+            headers: { 'X-CSRF-Token': getCSRFToken() },
             contentType: 'application/x-www-form-urlencoded',
             success: function(returnData) {
               flash.clear();
