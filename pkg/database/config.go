@@ -78,7 +78,7 @@ type Config struct {
 	// PhoneNumberHMAC is the HMAC key to hash phone numbers before storing
 	// in the database. This is only used of user initiated reporting is enabled
 	// at the system and at the realm level.
-	PhoneNumberHMAC []envconfig.Base64Bytes `env:"DB_PHONE_HMAC_KEY,required" json:"-"`
+	PhoneNumberHMAC []envconfig.Base64Bytes `env:"DB_PHONE_HMAC_KEY" json:"-"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
