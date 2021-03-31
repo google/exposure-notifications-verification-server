@@ -2210,6 +2210,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN allow_admin_user_report`)
 			},
 		},
+		{
+			ID: "00100-DropPrivilege",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`REVOKE UPDATE ON TABLE audit_entries FROM CURRENT_USER`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`GRANT UPDATE ON TABLE audit_entries TO CURRENT_USER`)
+			},
+		},
 	}
 }
 
