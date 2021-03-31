@@ -232,8 +232,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			EnableAuthenticatedSMS: true,
 		},
 
-		CookieKeys:  config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
-		CSRFAuthKey: randomBytes(tb, 32),
+		CookieKeys: config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
 
 		CertificateSigning: config.CertificateSigningConfig{
 			Keys:                  *harness.KeyManagerConfig,

@@ -172,15 +172,6 @@ func (p *Padding) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// CSRFResponse is the return type when requesting an AJAX CSRF token.
-type CSRFResponse struct {
-	Padding Padding `json:"padding"`
-
-	CSRFToken string `json:"csrftoken"`
-	Error     string `json:"error"`
-	ErrorCode string `json:"errorCode"`
-}
-
 // UserBatchRequest is a request for bulk creation of users.
 // This is called by the Web frontend.
 // API is served at /users/import/userbatch

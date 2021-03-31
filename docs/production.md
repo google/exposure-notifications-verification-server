@@ -184,22 +184,6 @@ provide its _reference_ in the environment. If you are not using a secret
 manager, provide this value directly in the environment.
 
 
-### Cross-site request forgery (CSRF) keys
-
-**Recommended frequency:** 90 days, on breach
-
-To rotate the key, generate a new 32-byte key. You can use `openssl` or similar:
-
-```sh
-openssl rand -base64 32 | tr -d "\n"
-```
-
-Update the `CSRF_AUTH_KEY` environment variable and re-deploy. The system [only
-supports a single key for CSRF](https://github.com/gorilla/csrf/issues/65). When
-you deploy the new key, any existing open HTML forms will fail to submit as an
-invalid request.
-
-
 ### Database encryption keys
 
 **Recommend frequency:** 30 days, on breach

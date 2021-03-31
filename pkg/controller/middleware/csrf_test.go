@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
-	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -35,15 +34,7 @@ func TestConfigureCSRF(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	key, err := project.RandomBytes(32)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg := &config.ServerConfig{
-		CSRFAuthKey: key,
-	}
-
-	configureCSRF := middleware.ConfigureCSRF(cfg, h)
+	handleCSRF := middleware.HandleCSRF(h)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.Header.Set("Accept", "application/json")
@@ -51,10 +42,16 @@ func TestConfigureCSRF(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Verify the proper fields are added to the template map.
-	configureCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handleCSRF(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		m := controller.TemplateMapFromContext(ctx)
 
+		if _, ok := m["csrfHeaderField"]; !ok {
+			t.Errorf("expected csrfHeaderField to be populated in template map")
+		}
+		if _, ok := m["csrfMetaTagName"]; !ok {
+			t.Errorf("expected csrfMetaTagName to be populated in template map")
+		}
 		if _, ok := m["csrfField"]; !ok {
 			t.Errorf("expected csrfField to be populated in template map")
 		}

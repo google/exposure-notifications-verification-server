@@ -125,10 +125,6 @@ func Server(
 	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
-	// Install the CSRF protection middleware.
-	configureCSRF := middleware.ConfigureCSRF(cfg, h)
-	r.Use(configureCSRF)
-
 	// Sessions
 	requireSession := middleware.RequireSession(sessions, h)
 	r.Use(requireSession)
@@ -136,6 +132,10 @@ func Server(
 	// Include the current URI
 	currentPath := middleware.InjectCurrentPath()
 	r.Use(currentPath)
+
+	// Install the CSRF protection middleware.
+	handleCSRF := middleware.HandleCSRF(h)
+	r.Use(handleCSRF)
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
