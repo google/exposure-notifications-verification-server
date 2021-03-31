@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -28,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/digest"
+	"github.com/google/exposure-notifications-verification-server/pkg/realip"
 
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/httplimit"
@@ -160,7 +160,7 @@ func APIKeyFunc(ctx context.Context, db *database.Database, scope string, hmacKe
 		if v != "" {
 			realmID := realmIDFromAPIKey(db, v)
 			if realmID != 0 {
-				dig, err := digest.HMAC(fmt.Sprintf("%d:%s", realmID, remoteIP(r)), hmacKey)
+				dig, err := digest.HMAC(fmt.Sprintf("%d:%s", realmID, realip.FromGoogleCloud(r)), hmacKey)
 				if err != nil {
 					return "", fmt.Errorf("failed to digest api key: %w", err)
 				}
@@ -196,7 +196,7 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr
-		ip := remoteIP(r)
+		ip := realip.FromGoogleCloud(r)
 
 		dig, err := digest.HMAC(ip, hmacKey)
 		if err != nil {
@@ -204,21 +204,6 @@ func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplim
 		}
 		return fmt.Sprintf("%sip:%s", scope, dig), nil
 	}
-}
-
-// remoteIP returns the "real" remote IP.
-func remoteIP(r *http.Request) string {
-	// Get the remote addr
-	ip := r.RemoteAddr
-
-	// Check if x-forwarded-for exists, the load balancer sets this, and the
-	// first entry is the real client IP
-	xff := r.Header.Get("x-forwarded-for")
-	if xff != "" {
-		ip = strings.Split(xff, ",")[0]
-	}
-
-	return ip
 }
 
 // realmIDFromAPIKey extracts the realmID from the provided API key, handling v1
