@@ -182,7 +182,7 @@ resource "google_cloud_run_service_iam_member" "cleanup-invoker" {
 resource "google_cloud_scheduler_job" "cleanup-worker" {
   name             = "cleanup-worker"
   region           = var.cloudscheduler_location
-  schedule         = "0 * * * *"
+  schedule         = "*/15 * * * *"
   time_zone        = "America/Los_Angeles"
   attempt_deadline = "${google_cloud_run_service.cleanup.template[0].spec[0].timeout_seconds + 60}s"
 
