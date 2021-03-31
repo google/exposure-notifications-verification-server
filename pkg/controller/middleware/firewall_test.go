@@ -100,7 +100,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "9.8.7.6",
-			xff:        "1.2.3.4, 5.6.7.8",
+			xff:        "5.6.7.8, 1.2.3.4",
 			code:       http.StatusOK,
 		},
 		{
@@ -125,7 +125,7 @@ func TestProcessFirewall(t *testing.T) {
 				AllowedCIDRsServer: []string{"1.2.3.4/32"},
 			}),
 			remoteAddr: "1.2.3.4",          // xff is preferred over remote ip
-			xff:        "5.6.7.8, 1.2.3.4", // Only trusts the first value in xff
+			xff:        "9.8.7.6, 5.6.7.8", // Only trusts the last value in xff
 			code:       http.StatusUnauthorized,
 		},
 	}

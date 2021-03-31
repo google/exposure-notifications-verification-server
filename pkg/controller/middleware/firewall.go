@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/realip"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/mux"
@@ -68,14 +69,7 @@ func ProcessFirewall(h *render.Renderer, typ string) mux.MiddlewareFunc {
 			logger.Debugw("validating ip in cidr block", "type", typ)
 
 			// Get the remote address.
-			ipStr := r.RemoteAddr
-
-			// Check if x-forwarded-for exists, the load balancer sets this, and the
-			// first entry is the real client IP.
-			xff := r.Header.Get("x-forwarded-for")
-			if xff != "" {
-				ipStr = strings.Split(xff, ",")[0]
-			}
+			ipStr := realip.FromGoogleCloud(r)
 
 			// In some cases, the remote addr will include a port. However, Go doesn't
 			// make it easy to distinguish between an ip:port and an IPv6 address.
