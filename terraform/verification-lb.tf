@@ -46,6 +46,15 @@ resource "google_compute_url_map" "urlmap-http" {
   provider = google-beta
   project  = var.project
 
+  dynamic "host_rule" {
+    for_each = length(var.server_hosts) > 0 ? [1] : []
+
+    content {
+      hosts          = var.server_hosts
+      https_redirect = true
+    }
+  }
+
   default_url_redirect {
     strip_query    = false
     https_redirect = true

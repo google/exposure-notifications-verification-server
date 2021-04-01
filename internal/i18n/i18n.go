@@ -42,6 +42,14 @@ type LocaleMap struct {
 	reloadLock sync.Mutex
 }
 
+func TranslatorLanguage(l gotext.Translator) string {
+	typ, ok := l.(*gotext.Po)
+	if !ok {
+		return ""
+	}
+	return typ.Language
+}
+
 // Lookup finds the best locale for the given ids. If none exists, the default
 // locale is used.
 //
