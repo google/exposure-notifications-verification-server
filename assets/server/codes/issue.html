@@ -27,7 +27,7 @@
 <body id="codes-issue" class="tab-content">
   {{template "navbar" .}}
 
-  <main role="main" class="container">
+  <main role="main" class="container {{$.localeAlign}}">
     {{template "flash" .}}
 
     {{if .welcomeMessage}}

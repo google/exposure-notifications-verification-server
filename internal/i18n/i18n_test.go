@@ -84,14 +84,6 @@ func TestI18n_matching(t *testing.T) {
 func TestLocaleMap_Lookup(t *testing.T) {
 	t.Parallel()
 
-	langOf := func(l gotext.Translator) string {
-		typ, ok := l.(*gotext.Po)
-		if !ok {
-			t.Fatalf("%T is not *gotext.Po", l)
-		}
-		return typ.Language
-	}
-
 	localeMap, err := Load(WithReloading(true))
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +92,7 @@ func TestLocaleMap_Lookup(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		t.Parallel()
 
-		name := langOf(localeMap.Lookup("es"))
+		name := TranslatorLanguage(localeMap.Lookup("es"))
 		if got, want := name, "es"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
@@ -109,7 +101,7 @@ func TestLocaleMap_Lookup(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		t.Parallel()
 
-		name := langOf(localeMap.Lookup("totes_not_a_real_language"))
+		name := TranslatorLanguage(localeMap.Lookup("totes_not_a_real_language"))
 		if got, want := name, "en"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}

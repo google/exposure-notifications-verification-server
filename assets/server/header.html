@@ -69,21 +69,21 @@
         <div class="collapse navbar-collapse mt-2" id="navbar">
           <ul class="nav mr-auto flex-column flex-md-row">
             {{if $currentMembership.Can rbac.CodeIssue}}
-              <li class="nav-item">
+              <li class="nav-item {{$.localeAlign}}">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">
                   {{t $.locale "nav.issue-code"}}
                 </a>
               </li>
             {{end}}
             {{if and $currentMembership.Realm.AllowBulkUpload ($currentMembership.Can rbac.CodeBulkIssue)}}
-              <li class="nav-item">
+              <li class="nav-item {{$.localeAlign}}">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">
                   {{t $.locale "nav.bulk-issue-codes"}}
                 </a>
               </li>
             {{end}}
             {{if $currentMembership.Can rbac.CodeRead}}
-              <li class="nav-item">
+              <li class="nav-item {{$.localeAlign}}">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">
                   {{t $.locale "nav.check-code-status"}}
                 </a>
@@ -120,7 +120,7 @@ aria-expanded="false" aria-label="Toggle navigation">
         <span class="oi oi-person"></span>
       </a>
 
-      <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profile-menu">
+      <div class="dropdown-menu dropdown-menu-right {{$.localeAlign}}" aria-labelledby="profile-menu">
         {{if $currentMembership}}
           {{$showRealmMenu := false}}
           {{if $currentMembership.Can rbac.APIKeyRead}}

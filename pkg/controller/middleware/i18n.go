@@ -26,7 +26,13 @@ import (
 const (
 	HeaderAcceptLanguage = "Accept-Language"
 	QueryKeyLanguage     = "lang"
+
+	RightAlign = "text-right"
 )
+
+var rightAlignLanguages = map[string]struct{}{
+	"ar": {},
+}
 
 // ProcessLocale extracts the locale from the various possible locations and
 // sets the template translator to the correct language.
@@ -43,7 +49,15 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 			// Find the "best" language from the given parameters. They are in
 			// priority order.
 			m := controller.TemplateMapFromContext(ctx)
-			m["locale"] = locales.Lookup(param, header)
+			locale := locales.Lookup(param, header)
+			m["locale"] = locale
+
+			// by default, no CSS is needed for left aligned languages.
+			textAlign := ""
+			if _, ok := rightAlignLanguages[i18n.TranslatorLanguage(locale)]; ok {
+				textAlign = RightAlign
+			}
+			m["localeAlign"] = textAlign
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)
