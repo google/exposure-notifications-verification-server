@@ -84,6 +84,11 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 			data.CodesIssued = stat.RealmStats.CodesIssued
 			data.CodesClaimed = stat.RealmStats.CodesClaimed
 			data.CodesInvalid = stat.RealmStats.CodesInvalid
+			data.CodesInvalidByOS = CodesInvalidByOSData{
+				UnknownOS: stat.RealmStats.CodesInvalidByOS[OSTypeUnknown],
+				IOS:       stat.RealmStats.CodesInvalidByOS[OSTypeIOS],
+				Android:   stat.RealmStats.CodesInvalidByOS[OSTypeAndroid],
+			}
 			data.UserReportsIssued = stat.RealmStats.UserReportsIssued
 			data.UserReportsClaimed = stat.RealmStats.UserReportsClaimed
 			data.TokensClaimed = stat.RealmStats.TokensClaimed
@@ -151,6 +156,7 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 		"publish_requests_unknown", "publish_requests_android", "publish_requests_ios",
 		"total_teks_published", "requests_with_revisions", "requests_missing_onset_date", "tek_age_distribution", "onset_to_upload_distribution",
 		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
+		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -187,6 +193,20 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsIssued), 10))
 		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsClaimed), 10))
 		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportTokensClaimed), 10))
+		// Invalid codes by OS
+		if stat.RealmStats == nil {
+			row = append(row, "", "", "")
+		} else {
+			// stats day exists, but the array is nil.
+			if len(stat.RealmStats.CodesInvalidByOS) == 0 {
+				row = append(row, "", "", "")
+			} else {
+				row = append(row, strconv.FormatUint(uint64(stat.RealmStats.CodesInvalidByOS[OSTypeUnknown]), 10))
+				row = append(row, strconv.FormatUint(uint64(stat.RealmStats.CodesInvalidByOS[OSTypeIOS]), 10))
+				row = append(row, strconv.FormatUint(uint64(stat.RealmStats.CodesInvalidByOS[OSTypeAndroid]), 10))
+			}
+		}
+
 		// New stats should always be added to the end to preserve existing external user applications.
 
 		if err := w.Write(row); err != nil {

@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/icsv"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
 
@@ -78,6 +79,13 @@ type RealmStat struct {
 	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
+func (s *RealmStat) AfterFind(tx *gorm.DB) (err error) {
+	if len(s.CodesInvalidByOS) == 0 {
+		s.CodesInvalidByOS = make([]int64, OSTypeUnknown.Len())
+	}
+	return nil
+}
+
 // CodeClaimAgeDistributionAsStrings returns CodeClaimAgeDistribution as
 // []string instead of []int32. Useful for serialization.
 func (s *RealmStat) CodeClaimAgeDistributionAsStrings() []string {
@@ -103,6 +111,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 		"codes_issued", "codes_claimed", "codes_invalid",
 		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
 		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
+		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -120,6 +129,9 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.UserReportsIssued), 10),
 			strconv.FormatUint(uint64(stat.UserReportsClaimed), 10),
 			strconv.FormatUint(uint64(stat.UserReportTokensClaimed), 10),
+			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeUnknown]), 10),
+			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeIOS]), 10),
+			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeAndroid]), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -154,17 +166,24 @@ type jsonRealmStatStats struct {
 	Data *JSONRealmStatStatsData `json:"data"`
 }
 
+type CodesInvalidByOSData struct {
+	UnknownOS int64 `json:"unknown_os"`
+	IOS       int64 `json:"ios"`
+	Android   int64 `json:"android"`
+}
+
 type JSONRealmStatStatsData struct {
-	CodesIssued             uint    `json:"codes_issued"`
-	CodesClaimed            uint    `json:"codes_claimed"`
-	CodesInvalid            uint    `json:"codes_invalid"`
-	UserReportsIssued       uint    `json:"user_reports_issued"`
-	UserReportsClaimed      uint    `json:"user_reports_claimed"`
-	TokensClaimed           uint    `json:"tokens_claimed"`
-	TokensInvalid           uint    `json:"tokens_invalid"`
-	UserReportTokensClaimed uint    `json:"user_report_tokens_claimed"`
-	CodeClaimMeanAge        uint    `json:"code_claim_mean_age_seconds"`
-	CodeClaimDistribution   []int32 `json:"code_claim_age_distribution"`
+	CodesIssued             uint                 `json:"codes_issued"`
+	CodesClaimed            uint                 `json:"codes_claimed"`
+	CodesInvalid            uint                 `json:"codes_invalid"`
+	CodesInvalidByOS        CodesInvalidByOSData `json:"codes_invalid_by_os"`
+	UserReportsIssued       uint                 `json:"user_reports_issued"`
+	UserReportsClaimed      uint                 `json:"user_reports_claimed"`
+	TokensClaimed           uint                 `json:"tokens_claimed"`
+	TokensInvalid           uint                 `json:"tokens_invalid"`
+	UserReportTokensClaimed uint                 `json:"user_report_tokens_claimed"`
+	CodeClaimMeanAge        uint                 `json:"code_claim_mean_age_seconds"`
+	CodeClaimDistribution   []int32              `json:"code_claim_age_distribution"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -179,9 +198,14 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 		stats = append(stats, &jsonRealmStatStats{
 			Date: stat.Date,
 			Data: &JSONRealmStatStatsData{
-				CodesIssued:             stat.CodesIssued,
-				CodesClaimed:            stat.CodesClaimed,
-				CodesInvalid:            stat.CodesInvalid,
+				CodesIssued:  stat.CodesIssued,
+				CodesClaimed: stat.CodesClaimed,
+				CodesInvalid: stat.CodesInvalid,
+				CodesInvalidByOS: CodesInvalidByOSData{
+					UnknownOS: stat.CodesInvalidByOS[OSTypeUnknown],
+					IOS:       stat.CodesInvalidByOS[OSTypeIOS],
+					Android:   stat.CodesInvalidByOS[OSTypeAndroid],
+				},
 				UserReportsIssued:       stat.UserReportsIssued,
 				UserReportsClaimed:      stat.UserReportsClaimed,
 				TokensClaimed:           stat.TokensClaimed,
@@ -221,11 +245,16 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 
 	for _, stat := range result.Stats {
 		*s = append(*s, &RealmStat{
-			Date:                     stat.Date,
-			RealmID:                  result.RealmID,
-			CodesIssued:              stat.Data.CodesIssued,
-			CodesClaimed:             stat.Data.CodesClaimed,
-			CodesInvalid:             stat.Data.CodesInvalid,
+			Date:         stat.Date,
+			RealmID:      result.RealmID,
+			CodesIssued:  stat.Data.CodesIssued,
+			CodesClaimed: stat.Data.CodesClaimed,
+			CodesInvalid: stat.Data.CodesInvalid,
+			CodesInvalidByOS: []int64{
+				stat.Data.CodesInvalidByOS.UnknownOS,
+				stat.Data.CodesInvalidByOS.IOS,
+				stat.Data.CodesInvalidByOS.Android,
+			},
 			UserReportsIssued:        stat.Data.UserReportsIssued,
 			UserReportsClaimed:       stat.Data.UserReportsClaimed,
 			TokensClaimed:            stat.Data.TokensClaimed,
