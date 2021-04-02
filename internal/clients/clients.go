@@ -59,6 +59,14 @@ func WithHostOverride(host string) Option {
 	}
 }
 
+// WithUserAgent sets a custom User-Agent header
+func WithUserAgent(userAgent string) Option {
+	return func(c *client) *client {
+		c.userAgent = userAgent
+		return c
+	}
+}
+
 type hostOverrideRoundTripper struct {
 	host string
 	def  http.RoundTripper
@@ -83,6 +91,7 @@ type client struct {
 	baseURL     *url.URL
 	apiKey      string
 	maxBodySize int64
+	userAgent   string
 }
 
 // newClient creates a new client.
@@ -129,6 +138,10 @@ func (c *client) newRequest(ctx context.Context, method, pth string, body interf
 
 	if c.apiKey != "" {
 		req.Header.Set("X-API-Key", c.apiKey)
+	}
+
+	if c.userAgent != "" {
+		req.Header.Set("User-Agent", c.userAgent)
 	}
 
 	return req, nil

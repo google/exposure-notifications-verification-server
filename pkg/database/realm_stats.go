@@ -51,6 +51,9 @@ type RealmStat struct {
 	CodesClaimed uint `gorm:"column:codes_claimed; type:integer; not null; default:0;"`
 	CodesInvalid uint `gorm:"column:codes_invalid; type:integer; not null; default:0;"`
 
+	// CodesInvalidByOS is an array where the index is the controller.OperatingSystem enums.
+	CodesInvalidByOS pq.Int64Array `gorm:"column:codes_invalid_by_os; type:bigint[];"`
+
 	// UserReportsIssued is the specific number of codes that were issued
 	// because the user initiated a self-report request. These numbers are NOT
 	// included in the overall codes issued and codes claimed.

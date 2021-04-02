@@ -30,6 +30,7 @@ import (
 )
 
 var (
+	userAgent   = flag.String("user-agent", "", "if present, will set as the user agent on the HTTP request")
 	codeFlag    = flag.String("code", "", "verification code to exchange")
 	apikeyFlag  = flag.String("apikey", "", "API Key to use")
 	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
@@ -59,8 +60,13 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	client, err := clients.NewAPIServerClient(*addrFlag, *apikeyFlag,
-		clients.WithTimeout(*timeoutFlag))
+	opts := make([]clients.Option, 0, 2)
+	opts = append(opts, clients.WithTimeout(*timeoutFlag))
+	if ua := *userAgent; ua != "" {
+		opts = append(opts, clients.WithUserAgent(ua))
+	}
+
+	client, err := clients.NewAPIServerClient(*addrFlag, *apikeyFlag, opts...)
 	if err != nil {
 		return err
 	}
