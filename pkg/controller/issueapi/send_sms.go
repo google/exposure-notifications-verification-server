@@ -96,7 +96,11 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 	// SMS signing.
 	if signer != nil {
 		var err error
-		message, err = signatures.SignSMS(signer, keyID, smsStart, signatures.SMSPurposeENReport, request.Phone, message)
+		purpose := signatures.SMSPurposeENReport
+		if request.TestType == api.TestTypeUserReport {
+			purpose = signatures.SMSPurposeUserReport
+		}
+		message, err = signatures.SignSMS(signer, keyID, smsStart, purpose, request.Phone, message)
 		if err != nil {
 			defer func() {
 				if err := stats.RecordWithOptions(ctx,
