@@ -38,7 +38,36 @@ const (
 	contextKeySession       = contextKey("session")
 	contextKeyTemplate      = contextKey("template")
 	contextKeyUser          = contextKey("user")
+	contextKeyOS            = contextKey("os")
 )
+
+type OperatingSystem int
+
+const (
+	UnknownOS OperatingSystem = iota
+	Android
+	IOS
+)
+
+// WithOperatingSystem stores the operating system enum in the context.
+func WithOperatingSystem(ctx context.Context, os OperatingSystem) context.Context {
+	return context.WithValue(ctx, contextKeyOS, os)
+}
+
+// OperatingSystemFromContext retrieves the operating system enum from the context. If
+// no value exists, UnknownOS is returned.
+func OperatingSystemFromContext(ctx context.Context) OperatingSystem {
+	v := ctx.Value(contextKeyOS)
+	if v == nil {
+		return UnknownOS
+	}
+
+	t, ok := v.(OperatingSystem)
+	if !ok {
+		return UnknownOS
+	}
+	return t
+}
 
 // WithAuthorizedApp stores the authorized app on the context.
 func WithAuthorizedApp(ctx context.Context, app *database.AuthorizedApp) context.Context {

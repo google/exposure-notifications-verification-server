@@ -139,6 +139,7 @@ func APIServer(
 		sub.Use(processFirewall)
 		sub.Use(middleware.ProcessChaff(db, verifyChaffTracker, middleware.ChaffHeaderDetector()))
 		sub.Use(rateLimit)
+		sub.Use(middleware.AddOperatingSystemFromUserAgent())
 
 		// POST /api/verify
 		verifyapiController := verifyapi.New(cfg, db, cacher, tokenSigner, h)
