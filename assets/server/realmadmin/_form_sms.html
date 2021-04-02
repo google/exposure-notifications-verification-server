@@ -133,7 +133,7 @@
         <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
       </div>
       {{if $realm.AllowsUserReport}}
-        <small class="form-text text-muted">User initiated report is enabled, which always uses the <code>User Report</code> template.</small>
+        <small class="form-text text-muted">&nbsp;User initiated report is enabled, which always uses the <code>User Report</code> template.</small>
       {{end}}
     </div>
     {{if $realm.ErrorsFor "smsTextTemplate"}}
@@ -157,6 +157,12 @@
       <div class="invalid-feedback d-block mt-n2 mb-3">
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
+      {{end}}
+      {{if (eq "User Report" $v.Label)}}
+        <div class="alert alert-warning" role="alert">
+          For the <strong>User Report</strong> template it is strongly recommended that you
+          indicate that the user should not use the code if they did not request it.
+        </div>
       {{end}}
       {{if or (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
       <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>

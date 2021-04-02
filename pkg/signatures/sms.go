@@ -40,7 +40,8 @@ type SMSPurpose string
 
 const (
 	// SMSPurposeENReport is an SMS purpose for EN reporting.
-	SMSPurposeENReport SMSPurpose = "EN Report"
+	SMSPurposeENReport   SMSPurpose = "EN Report"
+	SMSPurposeUserReport SMSPurpose = "User Report"
 )
 
 // SignSMS returns a new SMS message with the embedded signature using the
