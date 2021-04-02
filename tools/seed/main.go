@@ -404,6 +404,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 				phoneNumber++
 				verificationCode.PhoneNumber = fmt.Sprintf("+%d", phoneNumber)
 				verificationCode.Nonce = nonce
+				verificationCode.NonceRequired = true
 				verificationCode.TestType = api.TestTypeUserReport
 				testType = api.TestTypeUserReport
 			}
@@ -438,12 +439,22 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 					date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
 				}
 
+				os := database.OSTypeUnknown
+				if percentChance(99) {
+					if percentChance(50) {
+						os = database.OSTypeAndroid
+					} else {
+						os = database.OSTypeIOS
+					}
+				}
+
 				request := &database.IssueTokenRequest{
 					Time:        date,
 					AuthApp:     app,
 					VerCode:     longCode,
 					AcceptTypes: accept,
 					ExpireAfter: 24 * time.Hour,
+					OS:          os,
 				}
 				if isUserReport {
 					request.Nonce = nonce

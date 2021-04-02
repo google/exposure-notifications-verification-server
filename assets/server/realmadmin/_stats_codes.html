@@ -28,6 +28,32 @@
   </small>
 </div>
 
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    Invalid codes by OS
+  </div>
+  <div id="invalid_dashboard_div">
+    <div id="invalid_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="invalid_filter_div" class="text-right" style="height: 75px;"></div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-toggle="modal" data-target="#invalid-modal">Learn more about this chart</a>
+    <span>
+      <span class="mr-1">Export as:</span>
+      {{if .hasKeyServerStats}}
+      <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm/composite.json" target="_blank">JSON</a>  
+      {{else}}
+      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a> 
+      {{end}}
+    </span>
+  </small>
+</div>
+
 {{if $realm.AllowsUserReport}}
 <div class="card shadow-sm mb-3">
   <div class="card-header">
@@ -151,6 +177,25 @@
     </div>
   </div>
 </div>  
+
+<div class="modal fade" id="invalid-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Invalid codes by OS</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mb-n3">
+        <p>
+          This graph breaks down the number of invalid code claim attempts
+          by operating system.
+        </p>
+      </div>
+    </div>
+  </div>
+</div> 
 
 <div class="modal fade" id="comparison-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -392,6 +437,21 @@
         rowFunc: function(dataTable, row, hasKeyServerStats) {
           dataTable.addRow([utcDate(row.date), row.data.tokens_claimed-row.data.user_report_tokens_claimed, row.data.user_report_tokens_claimed]);
         },
+      },
+      {
+        chartType: 'AreaChart',
+        chartDiv: 'invalid_chart_div',
+        dashboardDiv: 'invalid_dashboard_div',
+        filterDiv: "invalid_filter_div",
+        headerFunc: function(dataTable, hasKeyServerStats) {
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'Unknown');
+          dataTable.addColumn('number', 'iOS');
+          dataTable.addColumn('number', 'Android');
+        },
+        rowFunc: function(dataTable, row, hasKeyServerStats) {
+          dataTable.addRow([utcDate(row.date), row.data.codes_invalid_by_os.unknown_os, row.data.codes_invalid_by_os.ios, row.data.codes_invalid_by_os.android]);
+        },
       }
     ]
     
@@ -473,6 +533,7 @@
             width: '100%',
             height: '300',
           },
+          isStacked: true,
           hAxis: { textPosition: 'none' },
           legend: { position: 'top' },
           width: '100%',
