@@ -22,10 +22,11 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
 type CaptureOSHandler struct {
-	OS controller.OperatingSystem
+	OS database.OSType
 }
 
 func (c *CaptureOSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,27 +43,27 @@ func TestAddOperatingSystemFromUserAgent(t *testing.T) {
 	cases := []struct {
 		name      string
 		userAgent string
-		want      controller.OperatingSystem
+		want      database.OSType
 	}{
 		{
 			name:      "android",
 			userAgent: "Dalvik/2.1.0 (Linux; U; Android S Build/SP1A.210322.002)",
-			want:      controller.Android,
+			want:      database.OSTypeAndroid,
 		},
 		{
 			name:      "iOS_enx",
 			userAgent: "bluetoothd (unknown version) CFNetwork/1237 Darwin/20.5.0",
-			want:      controller.IOS,
+			want:      database.OSTypeIOS,
 		},
 		{
 			name:      "iphone",
 			userAgent: "generic something that contains iPhone in it",
-			want:      controller.IOS,
+			want:      database.OSTypeIOS,
 		},
 		{
 			name:      "unknown",
 			userAgent: "being clever and using a customer user agent causes issues",
-			want:      controller.UnknownOS,
+			want:      database.OSTypeUnknown,
 		},
 	}
 

@@ -19,14 +19,15 @@ import (
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 )
 
 func AddOperatingSystemFromUserAgent() mux.MiddlewareFunc {
-	userAgents := map[string]controller.OperatingSystem{
-		"darwin": controller.IOS,
-		"iphone": controller.IOS,
-		"dalvik": controller.Android,
+	userAgents := map[string]database.OSType{
+		"darwin": database.OSTypeIOS,
+		"iphone": database.OSTypeIOS,
+		"dalvik": database.OSTypeAndroid,
 	}
 
 	return func(next http.Handler) http.Handler {
@@ -34,7 +35,7 @@ func AddOperatingSystemFromUserAgent() mux.MiddlewareFunc {
 			ctx := r.Context()
 			agent := strings.ToLower(r.UserAgent())
 
-			osToSet := controller.UnknownOS
+			osToSet := database.OSTypeUnknown
 			for k, os := range userAgents {
 				if strings.Contains(agent, k) {
 					osToSet = os

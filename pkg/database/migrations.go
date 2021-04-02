@@ -2221,6 +2221,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`GRANT UPDATE ON TABLE audit_entries TO CURRENT_USER`)
 			},
 		},
+		{
+			ID: "00101-AddCodesInvalidByOS",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS codes_invalid_by_os BIGINT[]`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS codes_invalid_by_os`)
+			},
+		},
 	}
 }
 

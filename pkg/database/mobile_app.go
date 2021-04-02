@@ -43,6 +43,10 @@ func (o OSType) Display() string {
 	}
 }
 
+func (o OSType) Len() int {
+	return 3
+}
+
 const (
 	OSTypeUnknown OSType = iota
 	OSTypeIOS

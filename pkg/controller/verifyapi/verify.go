@@ -126,6 +126,7 @@ func (c *Controller) HandleVerify() http.Handler {
 			AcceptTypes: acceptTypes,
 			ExpireAfter: c.config.VerificationTokenDuration,
 			Nonce:       nonce,
+			OS:          controller.OperatingSystemFromContext(ctx),
 		}
 		// Exchange the short term verification code for a long term verification token.
 		// The token can be used to sign TEKs later.

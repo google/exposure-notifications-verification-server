@@ -212,6 +212,7 @@ type IssueTokenRequest struct {
 	Nonce       []byte
 	AcceptTypes api.AcceptTypes
 	ExpireAfter time.Duration
+	OS          OSType
 }
 
 // VerifyCodeAndIssueToken takes a previously issued verification code and exchanges
@@ -308,7 +309,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		return tx.Create(tok).Error
 	}); err != nil {
 		if !errors.Is(err, ErrVerificationCodeUsed) {
-			go db.updateStatsCodeInvalid(t, request.AuthApp)
+			go db.updateStatsCodeInvalid(t, request.AuthApp, request.OS)
 		}
 		return nil, err
 	}
@@ -344,17 +345,52 @@ func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
 
 // updateStatsCodeInvalid updates the statistics, increasing the number of codes
 // that were invalid.
-func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp) {
+func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, os OSType) {
 	t = timeutils.UTCMidnight(t)
 
-	realmSQL := `
-			INSERT INTO realm_stats(date, realm_id, codes_invalid)
-				VALUES ($1, $2, 1)
-			ON CONFLICT (date, realm_id) DO UPDATE
-				SET codes_invalid = realm_stats.codes_invalid + 1
-		`
-	if err := db.db.Exec(realmSQL, t, authApp.RealmID).Error; err != nil {
-		db.logger.Errorw("failed to update realm stats code invalid", "error", err)
+	if err := db.db.Transaction(func(tx *gorm.DB) error {
+		var existing RealmStat
+		isNewRecord := false
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Table("realm_stats").
+			Where("realm_id = ?", authApp.RealmID).
+			Where("date = ?", t).
+			Take(&existing).
+			Error; err != nil {
+			if IsNotFound(err) {
+				isNewRecord = true
+			} else {
+				return err
+			}
+		}
+
+		if len(existing.CodesInvalidByOS) == 0 {
+			existing.CodesInvalidByOS = make([]int64, os.Len())
+		}
+
+		// Update the OS field in the array
+		existing.CodesInvalidByOS[os]++
+		// update general codes invalid
+		existing.CodesInvalid++
+
+		sel := tx.Table("realm_stats").
+			Where("realm_id = ?", authApp.RealmID).
+			Where("date = ?", t)
+		if isNewRecord {
+			existing.RealmID = authApp.RealmID
+			existing.Date = t
+			if err := sel.Create(&existing).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := sel.Update(&existing).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		db.logger.Errorw("failed to save realm stats invalid code", "error", err)
 	}
 
 	authAppSQL := `
