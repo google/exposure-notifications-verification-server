@@ -33,7 +33,7 @@ func TestHandleRegisterPhone_ShowRegisterPhone(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleRegisterPhone()
+	handler := harness.WithCommonMiddlewares(c.HandleRegisterPhone())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()

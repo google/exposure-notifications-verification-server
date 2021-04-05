@@ -38,7 +38,7 @@ msgstr "％s では、アカウントのセキュリティを向上させるた�
 msgid "mfa.notice-prompt"
 msgstr "％s は、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にすることをお勧めします。将来必要になる可能性があります。"
 
-msgid "mfa.notice-オプション"
+msgid "mfa.notice-optional"
 msgstr "％s は、アカウントのセキュリティを向上させるために、多要素認証（MFA）を有効にすることをお勧めします。"
 
 msgid "mfa.phone-display-name"

@@ -35,7 +35,7 @@ func TestHandleVerifyEmailSend_ShowVerifyEmail(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleShowVerifyEmail()
+	handler := harness.WithCommonMiddlewares(c.HandleShowVerifyEmail())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
@@ -62,7 +62,7 @@ func TestHandleVerifyEmailSend_SubmitVerifyEmail(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleSubmitVerifyEmail()
+	handler := harness.WithCommonMiddlewares(c.HandleSubmitVerifyEmail())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

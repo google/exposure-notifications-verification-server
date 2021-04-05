@@ -33,7 +33,7 @@ func TestHandleSession_HandleSubmit(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleCreateSession()
+	handler := harness.WithCommonMiddlewares(c.HandleCreateSession())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

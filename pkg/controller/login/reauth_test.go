@@ -33,7 +33,7 @@ func TestHandleReauth_ShowLogin(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleReauth()
+	handler := harness.WithCommonMiddlewares(c.HandleReauth())
 
 	cases := []struct {
 		name   string
