@@ -16,11 +16,15 @@ package login_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
+	"github.com/gorilla/sessions"
 )
 
 func TestHandleAccount_ShowAccount(t *testing.T) {
@@ -33,16 +37,41 @@ func TestHandleAccount_ShowAccount(t *testing.T) {
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
 	handler := harness.WithCommonMiddlewares(c.HandleAccountSettings())
 
+	t.Run("middleware", func(t *testing.T) {
+		t.Parallel()
+
+		envstest.ExerciseSessionMissing(t, handler)
+	})
+
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
 
+		session := &sessions.Session{}
+		if err := harness.AuthProvider.StoreSession(ctx, session, &auth.SessionInfo{
+			Data: map[string]interface{}{
+				"email":          "you@example.com",
+				"email_verified": true,
+				"mfa_enabled":    false,
+				"revoked":        false,
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+
 		ctx := ctx
+		ctx = controller.WithSession(ctx, session)
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodGet, "/", nil)
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
+		}
+		if got, want := w.Body.String(), "Email address is verified"; !strings.Contains(got, want) {
+			t.Errorf("Expected %s to contain %s", got, want)
+		}
+		if got, want := w.Body.String(), "(MFA) is disabled"; !strings.Contains(got, want) {
+			t.Errorf("Expected %s to contain %s", got, want)
 		}
 	})
 }

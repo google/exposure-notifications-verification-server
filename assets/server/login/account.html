@@ -51,7 +51,7 @@
           {{end}}
         </li>
         <li class="list-group-item">
-          {{if .mfa_enabled}}
+          {{if .mfaEnabled}}
             <span class="oi oi-circle-check mr-1 ml-n1 text-success small" aria-hidden="true"></span>
             {{t $.locale "account.mfa-enabled"}}
             <a href="/login/register-phone" class="float-right">{{t $.locale "account.manage-mfa"}}</a>

@@ -45,8 +45,8 @@ func (c *Controller) HandleAccountSettings() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("My account")
-		m["email_verified"] = emailVerified
-		m["mfa_enabled"] = mfaEnabled
+		m["emailVerified"] = emailVerified
+		m["mfaEnabled"] = mfaEnabled
 
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "account", m)
