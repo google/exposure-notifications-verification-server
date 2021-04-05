@@ -1,5 +1,6 @@
 {{define "login/register-phone"}}
 
+{{$currentRealm := .currentRealm}}
 {{$mfaMode := .mfaMode}}
 {{$currentMembership := .currentMembership}}
 
@@ -22,44 +23,40 @@
           {{template "login/factorsdiv" .}}
 
           <div class="card shadow-sm" id="register-div">
-            <div class="card-header">Multi-factor authentication</div>
+            <div class="card-header">{{t $.locale "mfa.mfa"}}</div>
             <div class="card-body">
               {{if $mfaMode}}
                 {{if eq $mfaMode.String "required"}}
                   <div class="alert alert-danger" role="alert">
-                    This realm requires all users enable two-factor authentication.
+                    {{t $.locale "mfa.notice-required" $currentRealm.Name}}
                   </div>
                 {{else if eq $mfaMode.String "prompt"}}
                   <div class="alert alert-warning" role="alert">
-                    This realm recommends all users enable two-factor
-                    authentication. It may be required in the future.
+                    {{t $.locale "mfa.notice-prompt" $currentRealm.Name}}
                   </div>
                 {{else}}
                   <div class="alert alert-info" role="alert">
-                    This realm recommends all users enable two-factor
-                    authentication.
+                    {{t $.locale "mfa.notice-optional" $currentRealm.Name}}
                   </div>
                 {{end}}
               {{end}}
 
               <form id="register-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
-                  <input type="text" id="display" name="display" class="form-control" placeholder="Display name" />
-                  <label for="display">Display name</label>
-                  <small class="form-text text-muted">
-                    Display name for this phone.
-                  </small>
+                  <input type="text" id="display" name="display" class="form-control"
+                    placeholder="{{t $.locale "mfa.phone-display-name"}}" required autofocus />
+                  <label for="display">{{t $.locale "mfa.phone-display-name"}}</label>
+                  <small class="form-text text-muted">{{t $.locale "mfa.phone-display-name-help-text"}}</small>
                 </div>
 
                 <div class="form-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" required autofocus />
-                  <small class="form-text text-muted">
-                    You will be asked to confirm a code using this phone number at login.
-                    Standard SMS rates may apply.
-                  </small>
+                  <input type="tel" id="phone" name="phone" class="form-control" required />
+                  <small class="form-text text-muted">{{t $.locale "mfa.phone-number-help-text"}}</small>
                </div>
 
-                <button type="submit" id="submit-register" class="btn btn-primary btn-block">Register</button>
+                <button type="submit" id="submit-register" class="btn btn-primary btn-block">
+                  {{t $.locale "mfa.enable-mfa"}}
+                </button>
               </form>
             </div>
             {{if $mfaMode}}
@@ -67,7 +64,7 @@
                 <div class="card-footer text-right">
                   <small>
                     <a id="skip" href="/login/post-authenticate" class="text-secondary">
-                      Skip for now &rarr;
+                      {{t $.locale "mfa.continue-without-mfa"}} &rarr;
                     </a>
                   </small>
                 </div>

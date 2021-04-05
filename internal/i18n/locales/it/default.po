@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Indirizzo e-mail"
+
+msgid "login.password"
+msgstr "Password"
+
+msgid "login.authenticate"
+msgstr "Autentica"
+
+msgid "login.refresh-authentication"
+msgstr "Aggiorna autenticazione"
+
+msgid "login.forgot-password"
+msgstr "Password dimenticata"
+
+msgid "login.about-exposure-notifications"
+msgstr "Informazioni sulle Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Autenticazione a più fattori"
+
+msgid "mfa.notice-required"
+msgstr "%s richiede che abiliti Multi-Factor Authentication (MFA) per migliorare la sicurezza del tuo account."
+
+msgid "mfa.notice-prompt"
+msgstr "%s consiglia di abilitare Multi-Factor Authentication (MFA) per migliorare la sicurezza del tuo account. Potrebbe essere richiesto in futuro."
+
+msgid "mfa.notice-optional"
+msgstr "%s consiglia di abilitare Multi-Factor Authentication (MFA) per migliorare la sicurezza del tuo account."
+
+msgid "mfa.phone-display-name"
+msgstr "Nome visualizzato"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Questo è il nome del dispositivo come apparirà nella pagina delle impostazioni dell'account."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Il sistema invierà un codice tramite SMS a questo numero di telefono ogni volta che esegui l'autenticazione. Verranno applicate le tariffe standard per gli SMS."
+
+msgid "mfa.enable-mfa"
+msgstr "Abilita autenticazione a più fattori"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continua senza autenticazione a più fattori"
+
+msgid "password.reset-password"
+msgstr "Reimposta password"
+
+msgid "password.send-reset-password"
+msgstr "Invia email per reimpostare la password"
+
+
 #
 # navigation menus
 # ----------------

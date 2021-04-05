@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Email address"
+
+msgid "login.password"
+msgstr "Password"
+
+msgid "login.authenticate"
+msgstr "Patunayan"
+
+msgid "login.refresh-authentication"
+msgstr "I-refresh ang pagpapatotoo"
+
+msgid "login.forgot-password"
+msgstr "Nakalimutan ang password"
+
+msgid "login.about-exposure-notifications"
+msgstr "Tungkol sa Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Multi-Factor Authentication"
+
+msgid "mfa.notice-required"
+msgstr "%s kinakailangan mong paganahin ang Multi-Factor Authentication (MFA) upang mapabuti ang seguridad ng iyong account."
+
+msgid "mfa.notice-prompt"
+msgstr "%s inirekomenda mong paganahin ang Multi-Factor Authentication (MFA) upang mapabuti ang seguridad ng iyong account. Maaaring kailanganin ito sa hinaharap."
+
+msgid "mfa.notice-optional"
+msgstr "%s inirekomenda mong paganahin ang Multi-Factor Authentication (MFA) upang mapabuti ang seguridad ng iyong account."
+
+msgid "mfa.phone-display-name"
+msgstr "Pangalan sa pagpapakita"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Ito ang pangalan ng aparato dahil lilitaw ito sa pahina ng mga setting ng iyong account."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Magpapadala ang system ng isang code sa pamamagitan ng SMS sa numero ng teleponong ito sa tuwing nagpapatotoo ka. Malalapat ang mga karaniwang rate ng SMS."
+
+msgid "mfa.enable-mfa"
+msgstr "Paganahin ang Pagpapatotoo ng Multi-Factor"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Magpatuloy nang walang Multi-Factor Authentication"
+
+msgid "password.reset-password"
+msgstr "I-reset ang password"
+
+msgid "password.send-reset-password"
+msgstr "Magpadala ng email sa pag-reset ng password"
+
+
 #
 # navigation menus
 # ----------------

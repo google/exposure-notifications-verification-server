@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "E-posta adresi"
+
+msgid "login.password"
+msgstr "Şifre"
+
+msgid "login.authenticate"
+msgstr "Kimlik Doğrulama"
+
+msgid "login.refresh-authentication"
+msgstr "Kimlik doğrulamasını yenile"
+
+msgid "login.forgot-password"
+msgstr "Şifremi unuttum"
+
+msgid "login.about-exposure-notifications"
+msgstr "About Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Çok Faktörlü Kimlik Doğrulama"
+
+msgid "mfa.notice-required"
+msgstr "%s hesabınızın güvenliğini iyileştirmek için Çok Faktörlü Kimlik Doğrulamayı (MFA) etkinleştirmenizi gerektirir."
+
+msgid "mfa.notice-prompt"
+msgstr "%s hesabınızın güvenliğini artırmak için Çok Faktörlü Kimlik Doğrulamayı (MFA) etkinleştirmenizi önerir. Gelecekte gerekli olabilir."
+
+msgid "mfa.notice-optional"
+msgstr "%s hesabınızın güvenliğini artırmak için Çok Faktörlü Kimlik Doğrulamayı (MFA) etkinleştirmenizi önerir."
+
+msgid "mfa.phone-display-name"
+msgstr "Görünen ad"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Bu, hesap ayarları sayfanızda görüneceği şekliyle cihazın adıdır."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Sistem, her kimlik doğrulamanızda bu telefon numarasına SMS yoluyla bir kod gönderecektir. Standart SMS ücretleri uygulanacaktır."
+
+msgid "mfa.enable-mfa"
+msgstr "Çok Faktörlü Kimlik Doğrulamayı Etkinleştir"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Çok Faktörlü Kimlik Doğrulaması Olmadan Devam Et"
+
+msgid "password.reset-password"
+msgstr "Parolayı sıfırla"
+
+msgid "password.send-reset-password"
+msgstr "Parola sıfırlama e-postası gönder"
+
+
 #
 # navigation menus
 # ----------------

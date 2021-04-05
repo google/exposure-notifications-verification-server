@@ -16,6 +16,24 @@ main.container[role="main"] {
   position: relative;
 }
 
+.login-container {
+  width: 100%;
+  min-width: 236px;
+  max-width: 466px;
+}
+
+#alerts-container {
+  position: absolute;
+  right: 1rem;
+  top: 0;
+  z-index: 2000;
+}
+
+body#login #alerts-container,
+body#reset-password #alerts-container {
+  top: 1rem;
+}
+
 .floating-form {
   width: 100%;
   height: 100%;

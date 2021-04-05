@@ -7,6 +7,62 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "E-Mail-Addresse"
+
+msgid "login.password"
+msgstr "Passwort"
+
+msgid "login.authenticate"
+msgstr "Authentifizieren"
+
+msgid "login.refresh-authentication"
+msgstr "Authentifizierung aktualisieren"
+
+msgid "login.forgot-password"
+msgstr "Passwort vergessen"
+
+msgid "login.about-exposure-notifications"
+msgstr "Informationen zu Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Multi-Faktor-Authentifizierung"
+
+msgid "mfa.notice-required"
+msgstr "%s erfordert, dass Sie die Multi-Factor-Authentifizierung (MFA) aktivieren, um Ihre Kontosicherheit zu verbessern."
+
+msgid "mfa.notice-prompt"
+msgstr "%s empfiehlt, die Multi-Factor-Authentifizierung (MFA) zu aktivieren, um die Sicherheit Ihres Kontos zu verbessern. Es kann in Zukunft erforderlich sein."
+
+msgid "mfa.notice-optional"
+msgstr "%s empfiehlt, die Multi-Factor-Authentifizierung (MFA) zu aktivieren, um die Sicherheit Ihres Kontos zu verbessern."
+
+msgid "mfa.phone-display-name"
+msgstr "Anzeigename"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Dies ist der Name des Geräts, wie er auf der Seite mit den Kontoeinstellungen angezeigt wird."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Das System sendet bei jeder Authentifizierung einen Code per SMS an diese Telefonnummer. Es gelten die Standard-SMS-Preise."
+
+msgid "mfa.enable-mfa"
+msgstr "Aktivieren Sie die Multi-Faktor-Authentifizierung"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Fahren Sie ohne Multi-Faktor-Authentifizierung fort"
+
+msgid "password.reset-password"
+msgstr "Passwort zurücksetzen"
+
+msgid "password.send-reset-password"
+msgstr "E-Mail zum Zurücksetzen des Passworts senden"
+
+
+#
 # navigation menus
 # ----------------
 

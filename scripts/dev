@@ -42,7 +42,7 @@ DB_SHA="$(echo -n "${DB_NAME}|${DB_PORT}" | ${MD5CMD} | cut -d' ' -f1)"
 CERTS_DIR="${ROOT}/local/db-tls/${DB_SHA}"
 
 # Other configuration parameters
-SERVER_NAME="DEVELOPMENT verification server"
+SERVER_NAME="[DEV] Exposure Notifications Verification Server"
 
 # error prints a message on stderr and exits immediately.
 function error() {

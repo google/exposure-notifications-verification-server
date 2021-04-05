@@ -1,5 +1,5 @@
 {{define "flash"}}
-<div id="alerts-container" style="position:absolute; top:0; right:1rem; z-index:2000;">
+<div id="alerts-container">
   {{- if .flash}}
   {{range $msg := .flash.Errors}}
     <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">

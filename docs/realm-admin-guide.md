@@ -1,33 +1,33 @@
 <!-- TOC depthFrom:2 -->
 
 - [Access protection recommendations](#access-protection-recommendations)
-    - [Account protection](#account-protection)
-    - [API key protection](#api-key-protection)
+  - [Account protection](#account-protection)
+  - [API key protection](#api-key-protection)
 - [Settings, enabling EN Express](#settings-enabling-en-express)
 - [Settings, code settings](#settings-code-settings)
-    - [Bulk Issue Codes](#bulk-issue-codes)
-    - [Allowed Test Types](#allowed-test-types)
-    - [Date Configuration](#date-configuration)
-    - [Code Length & Expiration](#code-length--expiration)
+  - [Bulk Issue Codes](#bulk-issue-codes)
+  - [Allowed Test Types](#allowed-test-types)
+  - [Date Configuration](#date-configuration)
+  - [Code Length & Expiration](#code-length--expiration)
 - [Settings, SMS](#settings-sms)
-    - [SMS Text Template](#sms-text-template)
+  - [SMS Text Template](#sms-text-template)
 - [Authenticated SMS](#authenticated-sms)
 - [Adding users](#adding-users)
 - [API keys](#api-keys)
 - [ENX redirector service](#enx-redirector-service)
 - [Mobile apps](#mobile-apps)
 - [Statistics](#statistics)
-    - [Key server statistics](#key-server-statistics)
-    - [All charts available](#all-charts-available)
-        - [Codes issued and used](#codes-issued-and-used)
-        - [Code usage latency](#code-usage-latency)
-        - [Total TEKs published](#total-teks-published)
-        - [Total publish requests](#total-publish-requests)
-        - [EN days active before upload](#en-days-active-before-upload)
-        - [Onset to upload](#onset-to-upload)
+  - [Key server statistics](#key-server-statistics)
+  - [All charts available](#all-charts-available)
+    - [Codes issued and used](#codes-issued-and-used)
+    - [Code usage latency](#code-usage-latency)
+    - [Total TEKs published](#total-teks-published)
+    - [Total publish requests](#total-publish-requests)
+    - [EN days active before upload](#en-days-active-before-upload)
+    - [Onset to upload](#onset-to-upload)
 - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
-    - [Automatic Rotation](#automatic-rotation)
-    - [Manual Rotation](#manual-rotation)
+  - [Automatic Rotation](#automatic-rotation)
+  - [Manual Rotation](#manual-rotation)
 
 <!-- /TOC -->
 
@@ -44,7 +44,7 @@ If you are not a realm administrator, you will not have access to these screens.
 We provide a base level of account protection measures that we urge you to share with your caseworkers that are issuing verification codes.
 
 * All user accounts must verify ownership of their email address before using the system.
-* Two-factor authentication (2FA) is available, we strongly suggest you require your users to enroll in 2FA
+* Multi-factor authentication (MFA) is available, we strongly suggest you require your users to enroll in MFA
   using a mobile device under their sole control.
 * Users should not share logins to the verification system.
 * Users should only issue codes to people who have a verified COVID-19 diagnosis.

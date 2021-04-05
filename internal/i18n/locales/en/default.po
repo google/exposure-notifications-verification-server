@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Email address"
+
+msgid "login.password"
+msgstr "Password"
+
+msgid "login.authenticate"
+msgstr "Authenticate"
+
+msgid "login.refresh-authentication"
+msgstr "Refresh authentication"
+
+msgid "login.forgot-password"
+msgstr "Forgot password"
+
+msgid "login.about-exposure-notifications"
+msgstr "About Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Multi-Factor Authentication"
+
+msgid "mfa.notice-required"
+msgstr "%s requires you enable Multi-Factor Authentication (MFA) to improve your account security."
+
+msgid "mfa.notice-prompt"
+msgstr "%s recommends you enable Multi-Factor Authentication (MFA) to improve your account security. It may be required in the future."
+
+msgid "mfa.notice-optional"
+msgstr "%s recommends you enable Multi-Factor Authentication (MFA) to improve your account security."
+
+msgid "mfa.phone-display-name"
+msgstr "Display name"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "This is the name of the device as it will appear on your account settings page."
+
+msgid "mfa.phone-number-help-text"
+msgstr "The system will send a code via SMS to this phone number each time you authenticate. Standard SMS rates will apply."
+
+msgid "mfa.enable-mfa"
+msgstr "Enable Multi-Factor Authentication"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continue without Multi-Factor Authentication"
+
+msgid "password.reset-password"
+msgstr "Reset password"
+
+msgid "password.send-reset-password"
+msgstr "Send password reset email"
+
+
 #
 # navigation menus
 # ----------------

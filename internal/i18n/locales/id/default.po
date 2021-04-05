@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Alamat email"
+
+msgid "login.password"
+msgstr "Sandi"
+
+msgid "login.authenticate"
+msgstr "Otentikasi"
+
+msgid "login.refresh-authentication"
+msgstr "Segarkan otentikasi"
+
+msgid "login.forgot-password"
+msgstr "Lupa sandi"
+
+msgid "login.about-exposure-notifications"
+msgstr "Tentang Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Otentikasi Multi-Faktor"
+
+msgid "mfa.notice-required"
+msgstr "%s mengharuskan Anda mengaktifkan Multi-Factor Authentication (MFA) untuk meningkatkan keamanan akun Anda."
+
+msgid "mfa.notice-prompt"
+msgstr "%s menyarankan Anda mengaktifkan Multi-Factor Authentication (MFA) untuk meningkatkan keamanan akun Anda. Ini mungkin diperlukan di masa mendatang."
+
+msgid "mfa.notice-optional"
+msgstr "%s menyarankan Anda mengaktifkan Multi-Factor Authentication (MFA) untuk meningkatkan keamanan akun Anda."
+
+msgid "mfa.phone-display-name"
+msgstr "Nama tampilan"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Ini adalah nama perangkat yang akan muncul di halaman pengaturan akun Anda."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Sistem akan mengirimkan kode melalui SMS ke nomor telepon ini setiap kali Anda melakukan otentikasi. Tarif SMS standar akan berlaku."
+
+msgid "mfa.enable-mfa"
+msgstr "Aktifkan Autentikasi Multi-Faktor"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Lanjutkan tanpa Autentikasi Multi-Faktor"
+
+msgid "password.reset-password"
+msgstr "Setel ulang sandi"
+
+msgid "password.send-reset-password"
+msgstr "Kirim email pengaturan ulang kata sandi"
+
+
 #
 # navigation menus
 # ----------------
