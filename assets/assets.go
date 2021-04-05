@@ -40,6 +40,10 @@ var serverStaticFS, _ = fs.Sub(serverFS, "server/static")
 // ServerStaticFS returns the file system for the server static assets, rooted
 // at static/.
 func ServerStaticFS() fs.FS {
+	if project.DevMode() {
+		return os.DirFS(project.Root("assets", "server", "static"))
+	}
+
 	return serverStaticFS
 }
 

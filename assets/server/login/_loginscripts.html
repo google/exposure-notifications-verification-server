@@ -80,41 +80,44 @@
 {{end}}
 
 {{define "login/pwd-validate"}}
-<p class="card-text ml-4">
-  <small class="form-text text-muted">
-    {{if .requirements.HasRequirements}}
-    <span class="row">Password should be:</span>
+<div class="text-secondary mb-3">
+  {{if .requirements.HasRequirements}}
     {{if gt .requirements.Length 0}}
-    <span class="row ml-1" id="length-req">
-      <span id="icon" aria-hidden="true"></span>At least {{.requirements.Length}} characters long
-    </span>
+      <div id="length-req">
+        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        At least {{.requirements.Length}} characters long
+      </div>
     {{end}}
     {{if gt .requirements.Uppercase 0}}
-    <span class="row ml-1" id="upper-req">
-      <span id="icon" aria-hidden="true"></span>Contain {{.requirements.Uppercase}} uppercase letter
-    </span>
+      <div id="upper-req">
+        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        Contain {{.requirements.Uppercase}} uppercase letter
+      </div>
     {{end}}
     {{if gt .requirements.Lowercase 0}}
-    <span class="row ml-1" id="lower-req">
-      <span id="icon" aria-hidden="true"></span>Contain {{.requirements.Lowercase}} lowercase letter
-    </span>
+      <div id="lower-req">
+        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        Contain {{.requirements.Lowercase}} lowercase letter
+      </div>
     {{end}}
     {{if gt .requirements.Number 0}}
-    <span class="row ml-1" id="num-req">
-      <span id="icon" aria-hidden="true"></span>Contain {{.requirements.Number}} number
-    </span>
+      <div id="num-req">
+        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        Contain {{.requirements.Number}} number
+      </div>
     {{end}}
     {{if gt .requirements.Special 0}}
-    <span class="row ml-1" id="special-req">
-      <span id="icon" aria-hidden="true"></span>Contain {{.requirements.Special}} special character
-    </span>
+      <div id="special-req">
+        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        Contain {{.requirements.Special}} special character
+      </div>
     {{end}}
-    {{end}}
-    <span class="row ml-1" id="retyped">
-      <span id="icon" aria-hidden="true"></span>Retyped password must match password
-    </span>
-  </small>
-</p>
+  {{end}}
+  <div id="retyped">
+    <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+    Retyped password must match password
+  </div>
+</div>
 {{end}}
 
 {{define "login/requirements"}}

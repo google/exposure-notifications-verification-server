@@ -314,11 +314,11 @@ async function uploadWithRetries(uploadFn) {
 function checkPasswordValid(pwd, retype, requirements) {
   let valid = true;
 
-  if (pwd != retype) {
+  if (pwd && pwd.length > 0 && pwd == retype) {
     decorateValid($('#retyped'));
-    valid = false;
   } else {
     decorateInvalid($('#retyped'));
+    valid = false;
   }
 
   if (requirements) {
@@ -341,57 +341,53 @@ function checkPasswordValid(pwd, retype, requirements) {
     }
 
     if (pwd.length < requirements.Length) {
-      decorateValid($('#length-req'));
+      decorateInvalid($('#length-req'));
       valid = false;
     } else {
-      decorateInvalid($('#length-req'));
+      decorateValid($('#length-req'));
     }
 
     if (upper < requirements.Uppercase) {
-      decorateValid($('#upper-req'));
+      decorateInvalid($('#upper-req'));
       valid = false;
     } else {
-      decorateInvalid($('#upper-req'));
+      decorateValid($('#upper-req'));
     }
 
     if (lower < requirements.Lowercase) {
-      decorateValid($('#lower-req'));
+      decorateInvalid($('#lower-req'));
       valid = false;
     } else {
-      decorateInvalid($('#lower-req'));
+      decorateValid($('#lower-req'));
     }
 
     if (digit < requirements.Number) {
-      decorateValid($('#num-req'));
+      decorateInvalid($('#num-req'));
       valid = false;
     } else {
-      decorateInvalid($('#num-req'));
+      decorateValid($('#num-req'));
     }
 
     if (special < requirements.Special) {
-      decorateValid($('#special-req'));
+      decorateInvalid($('#special-req'));
       valid = false;
     } else {
-      decorateInvalid($('#special-req'));
+      decorateValid($('#special-req'));
     }
   }
 
   return valid;
 }
 
-const errClass = "oi oi-circle-x pr-1";
-const checkClass = "oi oi-circle-check pr-1";
-
-function decorateValid($element) {
-  $element.find("#icon").attr("class", errClass);
-  $element.addClass("text-danger");
-  $element.removeClass("text-muted");
-}
+const errClass = "oi-circle-x text-danger";
+const checkClass = "oi-circle-check text-success";
 
 function decorateInvalid($element) {
-  $element.find("#icon").attr("class", checkClass);
-  $element.addClass("text-muted");
-  $element.removeClass("text-danger");
+  $element.find(".oi").removeClass(checkClass).addClass(errClass);
+}
+
+function decorateValid($element) {
+  $element.find(".oi").removeClass(errClass).addClass(checkClass);
 }
 
 function loginScripts(hasCurrentUser, onLoginSuccess) {
