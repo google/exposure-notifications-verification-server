@@ -25,8 +25,29 @@ func (c *Controller) HandleAccountSettings() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+
+		emailVerified, err := c.authProvider.EmailVerified(ctx, session)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
+		mfaEnabled, err := c.authProvider.MFAEnabled(ctx, session)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m.Title("My account")
+		m["email_verified"] = emailVerified
+		m["mfa_enabled"] = mfaEnabled
+
 		m["firebase"] = c.config.Firebase
 		c.h.RenderHTML(w, "account", m)
 	})

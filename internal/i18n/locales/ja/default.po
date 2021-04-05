@@ -29,6 +29,45 @@ msgstr "パスワードを忘れた"
 msgid "login.about-exposure-notifications"
 msgstr "について学ぶ Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "フルネーム"
+
+msgid "account.header-details"
+msgstr "アカウントの詳細"
+
+msgid "account.header-authentication"
+msgstr "認証"
+
+msgid "account.header-realm-memberships"
+msgstr "レルムメンバーシップ"
+
+msgid "account.email-verified"
+msgstr "メールアドレスが確認されました"
+
+msgid "account.email-not-verified"
+msgstr "メールアドレスが確認されていません"
+
+msgid "account.verify-email-address"
+msgstr "メールアドレスを確認する"
+
+msgid "account.mfa-enabled"
+msgstr "多要素認証（MFA）が有効になっています"
+
+msgid "account.mfa-disabled"
+msgstr "多要素認証（MFA）が無効になっています"
+
+msgid "account.manage-mfa"
+msgstr "MFAの管理"
+
+msgid "account.enable-mfa"
+msgstr "MFAを有効にする"
+
+msgid "account.password-last-changed"
+msgstr "パスワードは %s 前に最後に変更されました"
+
+msgid "account.change-password"
+msgstr "パスワードの変更"
+
 msgid "mfa.mfa"
 msgstr "多要素認証"
 

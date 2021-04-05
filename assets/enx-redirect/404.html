@@ -1,6 +1,6 @@
 {{define "404"}}
 <!doctype html>
-<html lang="en">
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
 </head>
@@ -12,7 +12,7 @@
       <code>{{.requestURI}}</code> was not found on this server.
     </p>
     <p>
-      If you are trying to submit your anonymous data for exposure notifications,
+      If you are trying to submit your anonymous data for Exposure Notifications,
       please contact the public health authority that issued your verification code.
     </p>
   </main>

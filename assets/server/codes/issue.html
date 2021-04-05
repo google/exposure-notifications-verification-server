@@ -5,7 +5,7 @@
 {{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>
-<html lang="en">
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
 
@@ -27,7 +27,7 @@
 <body id="codes-issue" class="tab-content">
   {{template "navbar" .}}
 
-  <main role="main" class="container {{$.localeAlign}}">
+  <main role="main" class="container">
     {{template "flash" .}}
 
     {{if .welcomeMessage}}

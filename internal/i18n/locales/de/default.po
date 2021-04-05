@@ -28,6 +28,45 @@ msgstr "Passwort vergessen"
 msgid "login.about-exposure-notifications"
 msgstr "Informationen zu Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Vollständiger Name"
+
+msgid "account.header-details"
+msgstr "Kontodaten"
+
+msgid "account.header-authentication"
+msgstr "Authentifizierung"
+
+msgid "account.header-realm-memberships"
+msgstr "Realm Mitgliedschaften"
+
+msgid "account.email-verified"
+msgstr "E-Mail-Adresse wird überprüft"
+
+msgid "account.email-not-verified"
+msgstr "E-Mail-Adresse wird nicht überprüft"
+
+msgid "account.verify-email-address"
+msgstr "E-Mail-Adresse überprüfen"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor-Authentifizierung (MFA) ist aktiviert"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor-Authentifizierung (MFA) ist deaktiviert"
+
+msgid "account.manage-mfa"
+msgstr "MFA verwalten"
+
+msgid "account.enable-mfa"
+msgstr "MFA aktivieren"
+
+msgid "account.password-last-changed"
+msgstr "Passwort wurde zuletzt vor %s geändert"
+
+msgid "account.change-password"
+msgstr "Passwort ändern"
+
 msgid "mfa.mfa"
 msgstr "Multi-Faktor-Authentifizierung"
 

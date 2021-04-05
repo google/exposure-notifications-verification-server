@@ -29,6 +29,45 @@ msgstr "Password dimenticata"
 msgid "login.about-exposure-notifications"
 msgstr "Informazioni sulle Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Nome completo"
+
+msgid "account.header-details"
+msgstr "Dettagli account"
+
+msgid "account.header-authentication"
+msgstr "Autenticazione"
+
+msgid "account.header-realm-memberships"
+msgstr "Iscrizioni al reame"
+
+msgid "account.email-verified"
+msgstr "L'indirizzo email è verificato"
+
+msgid "account.email-not-verified"
+msgstr "L'indirizzo email non è verificato"
+
+msgid "account.verify-email-address"
+msgstr "Verifica indirizzo email"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor Authentication (MFA) è abilitato"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor Authentication (MFA) è disabilitato"
+
+msgid "account.manage-mfa"
+msgstr "Gestisci MFA"
+
+msgid "account.enable-mfa"
+msgstr "Abilita MFA"
+
+msgid "account.password-last-changed"
+msgstr "La password è stata cambiata l'ultima volta %s fa"
+
+msgid "account.change-password"
+msgstr "Cambia password"
+
 msgid "mfa.mfa"
 msgstr "Autenticazione a più fattori"
 
