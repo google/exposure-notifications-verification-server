@@ -38,7 +38,7 @@ func TestHandleChangePassword_ShowChangePassword(t *testing.T) {
 	}
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleShowChangePassword()
+	handler := harness.WithCommonMiddlewares(c.HandleShowChangePassword())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
@@ -67,7 +67,7 @@ func TestHandleChangePassword_SubmitChangePassword(t *testing.T) {
 	}
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleSubmitChangePassword()
+	handler := harness.WithCommonMiddlewares(c.HandleSubmitChangePassword())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

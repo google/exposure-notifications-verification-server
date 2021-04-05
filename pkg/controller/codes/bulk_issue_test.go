@@ -19,11 +19,9 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
@@ -37,13 +35,8 @@ func TestRenderBulkIssue(t *testing.T) {
 
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := codes.NewServer(harness.Config, harness.Database, harness.Renderer)
-	handler := middleware.ProcessLocale(locales)(c.HandleBulkIssue())
+	handler := harness.WithCommonMiddlewares(c.HandleBulkIssue())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -57,7 +50,7 @@ func TestRenderBulkIssue(t *testing.T) {
 		t.Parallel()
 
 		c := codes.NewServer(harness.Config, harness.BadDatabase, harness.Renderer)
-		handler := middleware.ProcessLocale(locales)(c.HandleBulkIssue())
+		handler := harness.WithCommonMiddlewares(c.HandleBulkIssue())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})

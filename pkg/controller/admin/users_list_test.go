@@ -19,11 +19,9 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -35,13 +33,8 @@ func TestAdminUsersIndex(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUsersIndex()))
+	handler := harness.WithCommonMiddlewares(c.HandleUsersIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -54,7 +47,7 @@ func TestAdminUsersIndex(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUsersIndex()))
+		handler := harness.WithCommonMiddlewares(c.HandleUsersIndex())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -105,13 +98,8 @@ func TestAdminUserShow(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUserShow()))
+	handler := harness.WithCommonMiddlewares(c.HandleUserShow())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -124,7 +112,7 @@ func TestAdminUserShow(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleUserShow()))
+		handler := harness.WithCommonMiddlewares(c.HandleUserShow())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})

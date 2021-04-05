@@ -33,7 +33,7 @@ func TestHandleSignout_ShowLogin(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleSignOut()
+	handler := harness.WithCommonMiddlewares(c.HandleSignOut())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()

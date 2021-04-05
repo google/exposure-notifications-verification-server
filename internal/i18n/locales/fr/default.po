@@ -6,6 +6,63 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Adresse e-mail"
+
+msgid "login.password"
+msgstr "Mot de passe"
+
+msgid "login.authenticate"
+msgstr "Authentifier"
+
+msgid "login.refresh-authentication"
+msgstr "Actualiser l'authentification"
+
+msgid "login.forgot-password"
+msgstr "Mot de passe oublié"
+
+msgid "login.about-exposure-notifications"
+msgstr "À propos des Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Authentification multifacteur"
+
+msgid "mfa.notice-required"
+msgstr "%s nécessite que vous activiez l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte."
+
+msgid "mfa.notice-prompt"
+msgstr "%s vous recommande d'activer l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte. Cela pourrait être nécessaire à l'avenir."
+
+msgid "mfa.notice-optional"
+msgstr "%s vous recommande d'activer l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte."
+
+msgid "mfa.phone-display-name"
+msgstr "Afficher le nom"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Il s'agit du nom de l'appareil tel qu'il apparaîtra sur la page des paramètres de votre compte.""
+
+msgid "mfa.phone-number-help-text"
+msgstr "Le système enverra un code par SMS à ce numéro de téléphone chaque fois que vous vous authentifiez. Les tarifs SMS standard s'appliqueront."
+
+msgid "mfa.enable-mfa"
+msgstr "Activer l'authentification multifacteur"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continuer sans authentification multifacteur"
+
+msgid "password.reset-password"
+msgstr "Réinitialiser le mot de passe"
+
+msgid "password.send-reset-password"
+msgstr "Envoyer un e-mail de réinitialisation du mot de passe"
+
+
 #
 # navigation menus
 # ----------------

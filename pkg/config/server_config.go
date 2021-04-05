@@ -88,7 +88,7 @@ type ServerConfig struct {
 	CookieDomain string `env:"COOKIE_DOMAIN"`
 
 	// Application Config
-	ServerName string `env:"SERVER_NAME,default=Diagnosis Verification Server"`
+	ServerName string `env:"SERVER_NAME,default=Exposure Notifications Verification Server"`
 
 	// Issue is configuration specific to the code issue APIs.
 	Issue IssueAPIVars

@@ -92,7 +92,7 @@
         }
 
         if (user.multiFactor.enrolledFactors.length > 0) {
-          $phoneReg.html('Two-factor auth is <span class="text-success">enabled</span>');
+          $phoneReg.html('Multi-factor auth is <span class="text-success">enabled</span>');
           $('#register-link').text('Manage auth factors');
         } else {
           $phoneReg.addClass("text-danger");

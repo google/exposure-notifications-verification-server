@@ -6,6 +6,64 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Имэйл хаяг"
+
+msgid "login.password"
+msgstr "Нууц үг"
+
+msgid "login.authenticate"
+msgstr "Баталгаажуулах"
+
+msgid "login.refresh-authentication"
+msgstr "Баталгаажуулалтыг шинэчлэх"
+
+msgid "login.forgot-password"
+msgstr "Нууц үгээ мартсан"
+
+msgid "login.about-exposure-notifications"
+msgstr "Тухай Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Олон хүчин зүйлт нэвтрэлт танилт"
+
+msgid "mfa.notice-required"
+msgstr "%s нь дансныхаа аюулгүй байдлыг сайжруулахын тулд Олон Факторын Баталгаажуулалт (MFA) -г идэвхжүүлэхийг шаарддаг."
+
+msgid "mfa.notice-prompt"
+msgstr "%s нь дансныхаа аюулгүй байдлыг сайжруулахын тулд Олон Факторын Баталгаажуулалтыг (MFA) идэвхжүүлэхийг зөвлөж байна. Ирээдүйд шаардлагатай байж магадгүй юм."
+
+msgid "mfa.notice-optional"
+msgstr "%s нь дансныхаа аюулгүй байдлыг сайжруулахын тулд Олон Факторын Баталгаажуулалтыг (MFA) идэвхжүүлэхийг зөвлөж байна."
+
+msgid "mfa.phone-display-name"
+msgstr "Нэрийг харуулах"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Энэ бол таны дансны тохиргооны хуудсанд гарч ирэх тул төхөөрөмжийн нэр юм."
+
+msgid "mfa.phone-number-help-text"
+msgstr "Систем таныг баталгаажуулах бүртээ энэ утасны дугаар руу мессежээр код илгээх болно. SMS-ийн стандарт тарифыг дагаж мөрдөх болно."
+
+msgid "mfa.enable-mfa"
+msgstr "Олон хүчин зүйлийн баталгаажуулалтыг идэвхжүүлэх"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Олон хүчин зүйлийн баталгаажуулалтгүйгээр үргэлжлүүлэх"
+
+msgid "password.reset-password"
+msgstr "Нууц үгээ шинэчлэх"
+
+msgid "password.send-reset-password"
+msgstr "Нууц үг шинэчлэх имэйлийг илгээх"
+
+
+
 #
 # navigation menus
 # ----------------

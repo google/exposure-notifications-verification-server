@@ -36,7 +36,7 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-		handler := c.HandleSelectRealm()
+		handler := harness.WithCommonMiddlewares(c.HandleSelectRealm())
 
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -60,7 +60,7 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-		handler := c.HandleSelectRealm()
+		handler := harness.WithCommonMiddlewares(c.HandleSelectRealm())
 
 		ctx := project.TestContext(t)
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -86,7 +86,7 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-		handler := c.HandleSelectRealm()
+		handler := harness.WithCommonMiddlewares(c.HandleSelectRealm())
 
 		session := &sessions.Session{
 			Values: make(map[interface{}]interface{}),
@@ -123,7 +123,7 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 		c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-		handler := c.HandleSelectRealm()
+		handler := harness.WithCommonMiddlewares(c.HandleSelectRealm())
 
 		session := &sessions.Session{
 			Values: make(map[interface{}]interface{}),

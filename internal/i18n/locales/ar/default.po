@@ -7,6 +7,62 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "عنوان بريد الكتروني"
+
+msgid "login.password"
+msgstr "كلمة المرور"
+
+msgid "login.authenticate"
+msgstr "المصادقة"
+
+msgid "login.refresh-authentication"
+msgstr "تحديث المصادقة"
+
+msgid "login.forgot-password"
+msgstr "هل نسيت كلمة السر"
+
+msgid "login.about-exposure-notifications"
+msgstr "Exposure Notifications حول"
+
+msgid "mfa.mfa"
+msgstr "مصادقة متعددة العوامل"
+
+msgid "mfa.notice-required"
+msgstr "يتطلب %s تمكين المصادقة متعددة العوامل (MFA) لتحسين أمان حسابك."
+
+msgid "mfa.notice-prompt"
+msgstr "توصي %s بتمكين المصادقة متعددة العوامل (MFA) لتحسين أمان حسابك. قد يكون مطلوبًا في المستقبل."
+
+msgid "mfa.notice-optional"
+msgstr "توصي %s بتمكين المصادقة متعددة العوامل (MFA) لتحسين أمان حسابك."
+
+msgid "mfa.phone-display-name"
+msgstr "اسم العرض"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "هذا هو اسم الجهاز كما سيظهر في صفحة إعدادات حسابك."
+
+msgid "mfa.phone-number-help-text"
+msgstr "سيرسل النظام رمزًا عبر رسالة نصية قصيرة إلى رقم الهاتف هذا في كل مرة تقوم فيها بالمصادقة. سيتم تطبيق الأسعار القياسية للرسائل النصية القصيرة."
+
+msgid "mfa.enable-mfa"
+msgstr "تمكين المصادقة متعددة العوامل"
+
+msgid "mfa.continue-without-mfa"
+msgstr "استمر بدون المصادقة متعددة العوامل"
+
+msgid "password.reset-password"
+msgstr "إعادة تعيين كلمة المرور"
+
+msgid "password.send-reset-password"
+msgstr "إرسال بريد إلكتروني لإعادة تعيين كلمة المرور"
+
+
+#
 # navigation menus
 # ----------------
 

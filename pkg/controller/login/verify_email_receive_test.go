@@ -34,7 +34,7 @@ func TestHandleVerifyEmailReceive_ShowVerifyEmail(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleReceiveVerifyEmail()
+	handler := harness.WithCommonMiddlewares(c.HandleReceiveVerifyEmail())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()

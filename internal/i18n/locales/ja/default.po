@@ -6,6 +6,64 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "メールアドレス"
+
+msgid "login.password"
+msgstr "パスワード"
+
+msgid "login.authenticate"
+msgstr "認証"
+
+msgid "login.refresh-authentication"
+msgstr "認証の更新"
+
+msgid "login.forgot-password"
+msgstr "パスワードを忘れた"
+
+msgid "login.about-exposure-notifications"
+msgstr "について学ぶ Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "多要素認証"
+
+msgid "mfa.notice-required"
+msgstr "％s では、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にする必要があります。"
+
+msgid "mfa.notice-prompt"
+msgstr "％s は、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にすることをお勧めします。将来必要になる可能性があります。"
+
+msgid "mfa.notice-optional"
+msgstr "％s は、アカウントのセキュリティを向上させるために、多要素認証（MFA）を有効にすることをお勧めします。"
+
+msgid "mfa.phone-display-name"
+msgstr "表示名"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "これは、アカウント設定ページに表示されるデバイスの名前です。"
+
+msgid "mfa.phone-number-help-text"
+msgstr "システムは、認証するたびにSMS経由でこの電話番号にコードを送信します。標準のSMS料金が適用されます。"
+
+msgid "mfa.enable-mfa"
+msgstr "多要素認証を有効にする"
+
+msgid "mfa.continue-without-mfa"
+msgstr "多要素認証なしで続行"
+
+msgid "password.reset-password"
+msgstr "パスワードのリセット"
+
+msgid "password.send-reset-password"
+msgstr "パスワードリセットメールを送信する"
+
+
+
 #
 # navigation menus
 # ----------------

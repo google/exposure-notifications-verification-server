@@ -28,15 +28,18 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/internal/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/internal/routes"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/sethvargo/go-envconfig"
@@ -58,6 +61,7 @@ type TestServerResponse struct {
 	Database     *database.Database
 	BadDatabase  *database.Database
 	KeyManager   keys.KeyManager
+	Locales      *i18n.LocaleMap
 	RateLimiter  limiter.Store
 	Renderer     *render.Renderer
 	Server       *server.Server
@@ -167,6 +171,7 @@ type ServerConfigResponse struct {
 	Database     *database.Database
 	BadDatabase  *database.Database
 	Cacher       cache.Cacher
+	Locales      *i18n.LocaleMap
 	KeyManager   keys.KeyManager
 	RateLimiter  limiter.Store
 	Renderer     *render.Renderer
@@ -259,6 +264,11 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		tb.Fatal(err)
 	}
 
+	locales, err := i18n.Load()
+	if err != nil {
+		tb.Fatal(err)
+	}
+
 	return &ServerConfigResponse{
 		AuthProvider: authProvider,
 		Config:       cfg,
@@ -266,9 +276,27 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		BadDatabase:  harness.BadDatabase,
 		Cacher:       harness.Cacher,
 		KeyManager:   harness.KeyManager,
+		Locales:      locales,
 		RateLimiter:  harness.RateLimiter,
 		Renderer:     renderer,
 	}
+}
+
+// WithCommonMiddlewares returns a helper that injects common middleware onto a
+// handler.
+func (r *ServerConfigResponse) WithCommonMiddlewares(next http.Handler) http.Handler {
+	middlewares := []mux.MiddlewareFunc{
+		middleware.PopulateTemplateVariables(r.Config),
+		middleware.ProcessLocale(r.Locales),
+		middleware.PopulateRequestID(r.Renderer),
+		middleware.InjectCurrentPath(),
+	}
+
+	handler := next
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i](handler)
+	}
+	return handler
 }
 
 func (r *ServerConfigResponse) NewServer(tb testing.TB) *TestServerResponse {
@@ -289,6 +317,7 @@ func (r *ServerConfigResponse) NewServer(tb testing.TB) *TestServerResponse {
 		BadDatabase:  r.BadDatabase,
 		Cacher:       r.Cacher,
 		KeyManager:   r.KeyManager,
+		Locales:      r.Locales,
 		RateLimiter:  r.RateLimiter,
 		Renderer:     r.Renderer,
 		Server:       srv,

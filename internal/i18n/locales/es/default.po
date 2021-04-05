@@ -7,6 +7,62 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Dirección de correo electrónico"
+
+msgid "login.password"
+msgstr "Contraseña"
+
+msgid "login.authenticate"
+msgstr "Autenticar"
+
+msgid "login.refresh-authentication"
+msgstr "Actualizar autenticación"
+
+msgid "login.forgot-password"
+msgstr "Contraseña olvidada"
+
+msgid "login.about-exposure-notifications"
+msgstr "Acerca de las Exposure Notifications"
+
+msgid "mfa.mfa"
+msgstr "Autenticación multifactor"
+
+msgid "mfa.notice-required"
+msgstr "%s requiere que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta."
+
+msgid "mfa.notice-prompt"
+msgstr "%s recomienda que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta. Es posible que sea necesaria en el futuro."
+
+msgid "mfa.notice-optional"
+msgstr "%s recomienda que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta."
+
+msgid "mfa.phone-display-name"
+msgstr "Nombre para mostrar"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Este es el nombre del dispositivo tal como aparecerá en la página de configuración de su cuenta."
+
+msgid "mfa.phone-number-help-text"
+msgstr "El sistema enviará un código por SMS a este número de teléfono cada vez que se autentique. Se aplicarán las tarifas estándar de SMS."
+
+msgid "mfa.enable-mfa"
+msgstr "Habilitar la autenticación multifactor"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continuar sin autenticación multifactor"
+
+msgid "password.reset-password"
+msgstr "Restablecer contraseña"
+
+msgid "password.send-reset-password"
+msgstr "Enviar correo electrónico para restablecer la contraseña"
+
+
+#
 # navigation menus
 # ----------------
 

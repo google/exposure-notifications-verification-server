@@ -21,11 +21,9 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
-	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
@@ -38,13 +36,8 @@ func TestHandleRealmsIndex(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsIndex()))
+	handler := harness.WithCommonMiddlewares(c.HandleRealmsIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -59,7 +52,7 @@ func TestHandleRealmsIndex(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsIndex()))
+		handler := harness.WithCommonMiddlewares(c.HandleRealmsIndex())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -95,13 +88,8 @@ func TestHandleRealmsCreate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsCreate()))
+	handler := harness.WithCommonMiddlewares(c.HandleRealmsCreate())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -114,7 +102,7 @@ func TestHandleRealmsCreate(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsCreate()))
+		handler := harness.WithCommonMiddlewares(c.HandleRealmsCreate())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -201,13 +189,8 @@ func TestHandleRealmsUpdate(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsUpdate()))
+	handler := harness.WithCommonMiddlewares(c.HandleRealmsUpdate())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -220,7 +203,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsUpdate()))
+		handler := harness.WithCommonMiddlewares(c.HandleRealmsUpdate())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -280,13 +263,8 @@ func TestHandleRealmsAdd(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsAdd()))
+	handler := harness.WithCommonMiddlewares(c.HandleRealmsAdd())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -337,7 +315,7 @@ func TestHandleRealmsAdd(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsAdd()))
+		handler := harness.WithCommonMiddlewares(c.HandleRealmsAdd())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
@@ -401,13 +379,8 @@ func TestHandleRealmsRemove(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	locales, err := i18n.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	c := admin.New(harness.Config, harness.Cacher, harness.Database, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsRemove()))
+	handler := harness.WithCommonMiddlewares(c.HandleRealmsRemove())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
@@ -458,7 +431,7 @@ func TestHandleRealmsRemove(t *testing.T) {
 		t.Parallel()
 
 		c := admin.New(harness.Config, harness.Cacher, harness.BadDatabase, harness.AuthProvider, harness.RateLimiter, harness.Renderer)
-		handler := middleware.InjectCurrentPath()(middleware.ProcessLocale(locales)(c.HandleRealmsRemove()))
+		handler := harness.WithCommonMiddlewares(c.HandleRealmsRemove())
 
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})

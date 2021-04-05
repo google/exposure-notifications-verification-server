@@ -34,7 +34,7 @@ func TestHandleSelectPassword_ShowSelectPassword(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleShowSelectNewPassword()
+	handler := harness.WithCommonMiddlewares(c.HandleShowSelectNewPassword())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
@@ -58,7 +58,7 @@ func TestHandleSelectPassword_SubmitNewPassword(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := login.New(harness.AuthProvider, harness.Cacher, harness.Config, harness.Database, harness.Renderer)
-	handler := c.HandleSubmitNewPassword()
+	handler := harness.WithCommonMiddlewares(c.HandleSubmitNewPassword())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
