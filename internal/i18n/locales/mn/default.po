@@ -101,6 +101,32 @@ msgstr "Нууц үгээ шинэчлэх"
 msgid "password.send-reset-password"
 msgstr "Нууц үг шинэчлэх имэйлийг илгээх"
 
+msgid "password.old-password"
+msgstr "Хуучин нууц үг"
+
+msgid "password.new-password"
+msgstr "Шинэ нууц үг"
+
+msgid "password.confirm-new-password"
+msgstr "Шинэ нууц үг баталгаажуулах"
+
+msgid "password.requirements-length"
+msgstr "%d ба түүнээс дээш тэмдэгттэй байна"
+
+msgid "password.requirements-uppercase"
+msgstr "%d ба түүнээс дээш том үсгийг агуулна"
+
+msgid "password.requirements-lowercase"
+msgstr "%d ба түүнээс дээш жижиг үсэг агуулна"
+
+msgid "password.requirements-number"
+msgstr "%d ба түүнээс дээш тоог агуулна"
+
+msgid "password.requirements-special"
+msgstr "%d ба түүнээс дээш тусгай тэмдэгт агуулна"
+
+msgid "password.requirements-match"
+msgstr "Тохирох нууц үг"
 
 
 #

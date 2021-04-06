@@ -101,6 +101,33 @@ msgstr "I-reset ang password"
 msgid "password.send-reset-password"
 msgstr "Magpadala ng email sa pag-reset ng password"
 
+msgid "password.old-password"
+msgstr "Lumang password"
+
+msgid "password.new-password"
+msgstr "Bagong password"
+
+msgid "password.confirm-new-password"
+msgstr "Kumpirmahin ang bagong password"
+
+msgid "password.requirements-length"
+msgstr "Magkaroon ng haba ng %d o higit pang mga character"
+
+msgid "password.requirements-uppercase"
+msgstr "Naglalaman ng %d o higit pang mga malalaking titik"
+
+msgid "password.requirements-lowercase"
+msgstr "Naglalaman ng %d o higit pang mga maliliit na titik"
+
+msgid "password.requirements-number"
+msgstr "Naglalaman ng %d o higit pang mga numero"
+
+msgid "password.requirements-special"
+msgstr "Naglalaman ng %d o higit pang mga espesyal na character"
+
+msgid "password.requirements-match"
+msgstr "Itugma ang nakumpirmang password"
+
 
 #
 # navigation menus

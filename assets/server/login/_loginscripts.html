@@ -87,37 +87,37 @@
     {{if gt .requirements.Length 0}}
       <div id="length-req">
         <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-        At least {{.requirements.Length}} characters long
+        {{t $.locale "password.requirements-length" .requirements.Length}}
       </div>
     {{end}}
     {{if gt .requirements.Uppercase 0}}
       <div id="upper-req">
         <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-        Contain {{.requirements.Uppercase}} uppercase letter
+        {{t $.locale "password.requirements-uppercase" .requirements.Uppercase}}
       </div>
     {{end}}
     {{if gt .requirements.Lowercase 0}}
       <div id="lower-req">
         <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-        Contain {{.requirements.Lowercase}} lowercase letter
+        {{t $.locale "password.requirements-lowercase" .requirements.Lowercase}}
       </div>
     {{end}}
     {{if gt .requirements.Number 0}}
       <div id="num-req">
         <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-        Contain {{.requirements.Number}} number
+        {{t $.locale "password.requirements-number" .requirements.Number}}
       </div>
     {{end}}
     {{if gt .requirements.Special 0}}
       <div id="special-req">
         <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-        Contain {{.requirements.Special}} special character
+        {{t $.locale "password.requirements-special" .requirements.Special}}
       </div>
     {{end}}
   {{end}}
   <div id="retyped">
     <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
-    Retyped password must match password
+    {{t $.locale "password.requirements-match"}}
   </div>
 </div>
 {{end}}

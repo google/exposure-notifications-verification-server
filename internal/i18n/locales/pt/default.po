@@ -101,6 +101,33 @@ msgstr "Redefinir senha"
 msgid "password.send-reset-password"
 msgstr "Enviar e-mail de redefinição de senha"
 
+msgid "password.old-password"
+msgstr "Senha antiga"
+
+msgid "password.new-password"
+msgstr "Nova senha"
+
+msgid "password.confirm-new-password"
+msgstr "Confirme a nova senha"
+
+msgid "password.requirements-length"
+msgstr "Têm um comprimento de %d ou mais caracteres"
+
+msgid "password.requirements-uppercase"
+msgstr "Contém %d ou mais letras maiúsculas"
+
+msgid "password.requirements-lowercase"
+msgstr "Contém %d ou mais letras minúsculas"
+
+msgid "password.requirements-number"
+msgstr "Contém %d ou mais números"
+
+msgid "password.requirements-special"
+msgstr "Contém %d ou mais caracteres especiais"
+
+msgid "password.requirements-match"
+msgstr "Senha confirmada de correspondência"
+
 
 #
 # navigation menus

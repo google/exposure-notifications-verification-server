@@ -100,6 +100,33 @@ msgstr "Restablecer contraseña"
 msgid "password.send-reset-password"
 msgstr "Enviar correo electrónico para restablecer la contraseña"
 
+msgid "password.old-password"
+msgstr "Contraseña anterior"
+
+msgid "password.new-password"
+msgstr "Nueva contraseña"
+
+msgid "password.confirm-new-password"
+msgstr "Confirmar nueva contraseña"
+
+msgid "password.requirements-length"
+msgstr "Tener una longitud de %d o más caracteres"
+
+msgid "password.requirements-uppercase"
+msgstr "Contienen %d o más letras mayúsculas"
+
+msgid "password.requirements-lowercase"
+msgstr "Contienen %d o más letras minúsculas"
+
+msgid "password.requirements-number"
+msgstr "Contener %d o más números"
+
+msgid "password.requirements-special"
+msgstr "Contener %d o más caracteres especiales"
+
+msgid "password.requirements-match"
+msgstr "Coincidir con la contraseña confirmada"
+
 
 #
 # navigation menus

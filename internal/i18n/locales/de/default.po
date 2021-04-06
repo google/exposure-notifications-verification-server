@@ -100,6 +100,33 @@ msgstr "Passwort zurücksetzen"
 msgid "password.send-reset-password"
 msgstr "E-Mail zum Zurücksetzen des Passworts senden"
 
+msgid "password.old-password"
+msgstr "Altes Kennwort"
+
+msgid "password.new-password"
+msgstr "Neues Kennwort"
+
+msgid "password.confirm-new-password"
+msgstr "Bestätige neues Passwort"
+
+msgid "password.requirements-length"
+msgstr "Haben Sie eine Länge von %d oder mehr Zeichen"
+
+msgid "password.requirements-uppercase"
+msgstr "Enthält %d oder mehr Großbuchstaben"
+
+msgid "password.requirements-lowercase"
+msgstr "Enthält %d oder mehr Kleinbuchstaben"
+
+msgid "password.requirements-number"
+msgstr "Enthält %d oder mehr Zahlen"
+
+msgid "password.requirements-special"
+msgstr "Enthält %d oder mehr Sonderzeichen"
+
+msgid "password.requirements-match"
+msgstr "Übereinstimmendes bestätigtes Passwort"
+
 
 #
 # navigation menus
