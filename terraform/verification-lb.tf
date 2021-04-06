@@ -46,9 +46,81 @@ resource "google_compute_url_map" "urlmap-http" {
   provider = google-beta
   project  = var.project
 
+  // server redirect
+  dynamic "host_rule" {
+    for_each = length(var.server_hosts) > 0 ? [1] : []
+
+    content {
+      path_matcher = "server"
+      hosts        = var.server_hosts
+    }
+  }
+
+  dynamic "path_matcher" {
+    for_each = length(var.server_hosts) > 0 ? [1] : []
+
+    content {
+      name            = "server"
+      default_url_redirect {
+        host_redirect  = var.server_hosts[0]
+        https_redirect = true
+        strip_query    = true
+      }
+    }
+  }
+
+  // apiserver redirect
+  dynamic "host_rule" {
+    for_each = length(var.apiserver_hosts) > 0 ? [1] : []
+
+    content {
+      path_matcher = "apiserver"
+      hosts        = var.apiserver_hosts
+    }
+  }
+
+  dynamic "path_matcher" {
+    for_each = length(var.apiserver_hosts) > 0 ? [1] : []
+
+    content {
+      name            = "apiserver"
+      default_url_redirect {
+        host_redirect  = var.apiserver_hosts[0]
+        https_redirect = true
+        strip_query    = true
+      }
+    }
+  }
+
+  // adminapi redirect
+  dynamic "host_rule" {
+    for_each = length(var.adminapi_hosts) > 0 ? [1] : []
+
+    content {
+      path_matcher = "adminapi"
+      hosts        = var.adminapi_hosts
+    }
+  }
+
+  dynamic "path_matcher" {
+    for_each = length(var.adminapi_hosts) > 0 ? [1] : []
+
+    content {
+      name            = "adminapi"
+      default_url_redirect {
+        host_redirect  = var.adminapi_hosts[0]
+        https_redirect = true
+        strip_query    = true
+      }
+    }
+  }
+
+  // any other hosts, just get redirected to the UI server
   default_url_redirect {
-    strip_query    = false
+    host_redirect  = var.server_hosts[0]
     https_redirect = true
+    path_redirect  = "/"
+    strip_query    = true
   }
 
   depends_on = [
