@@ -74,6 +74,8 @@ func Server(
 	// Create the router
 	r := mux.NewRouter()
 
+	r.Use(middleware.GzipResponse())
+
 	// Mount and register static assets before any middleware.
 	{
 		sub := r.PathPrefix("").Subrouter()
