@@ -74,14 +74,30 @@ func Server(
 	// Create the router
 	r := mux.NewRouter()
 
+	// Mount and register static assets before any middleware.
+	{
+		sub := r.PathPrefix("").Subrouter()
+		sub.Use(middleware.ConfigureStaticAssets(cfg.DevMode))
+
+		staticFS := assets.ServerStaticFS()
+		fileServer := http.FileServer(http.FS(staticFS))
+		sub.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileServer))
+
+		// Browers and devices seem to always hit this - serve it to keep our logs
+		// cleaner.
+		sub.Path("/favicon.ico").Handler(fileServer)
+	}
+
+	sub := r.PathPrefix("").Subrouter()
+
 	// Common observability context
 	ctx, obs := middleware.WithObservability(ctx)
-	r.Use(obs)
+	sub.Use(obs)
 
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
-	r.Use(populateTemplateVariables)
+	sub.Use(populateTemplateVariables)
 
 	// Load localization
 	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
@@ -91,7 +107,7 @@ func Server(
 
 	// Process localization parameters.
 	processLocale := middleware.ProcessLocale(locales)
-	r.Use(processLocale)
+	sub.Use(processLocale)
 
 	// Create the renderer
 	h, err := render.New(ctx, assets.ServerFS(), cfg.DevMode)
@@ -101,15 +117,15 @@ func Server(
 
 	// Request ID injection
 	populateRequestID := middleware.PopulateRequestID(h)
-	r.Use(populateRequestID)
+	sub.Use(populateRequestID)
 
 	// Logger injection
 	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
-	r.Use(populateLogger)
+	sub.Use(populateLogger)
 
 	// Recovery injection
 	recovery := middleware.Recovery(h)
-	r.Use(recovery)
+	sub.Use(recovery)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),
@@ -119,23 +135,23 @@ func Server(
 	}
 
 	// Install common security headers
-	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
+	sub.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug()
-	r.Use(processDebug)
+	sub.Use(processDebug)
 
 	// Sessions
 	requireSession := middleware.RequireSession(sessions, h)
-	r.Use(requireSession)
+	sub.Use(requireSession)
 
 	// Include the current URI
 	currentPath := middleware.InjectCurrentPath()
-	r.Use(currentPath)
+	sub.Use(currentPath)
 
 	// Install the CSRF protection middleware.
 	handleCSRF := middleware.HandleCSRF(h)
-	r.Use(handleCSRF)
+	sub.Use(handleCSRF)
 
 	// Create common middleware
 	requireAuth := middleware.RequireAuth(cacher, authProvider, db, h, cfg.SessionIdleTimeout, cfg.SessionDuration)
@@ -149,28 +165,19 @@ func Server(
 	rateLimit := httplimiter.Handle
 
 	{
-		staticFS := assets.ServerStaticFS()
-		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
-
-		// Browers and devices seem to always hit this - serve it to keep our logs
-		// cleaner.
-		r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
-	}
-
-	{
-		sub := r.PathPrefix("").Subrouter()
+		sub := sub.PathPrefix("").Subrouter()
 		sub.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 	}
 
 	{
 		loginController := login.New(authProvider, cacher, cfg, db, h)
 		{
-			sub := r.PathPrefix("").Subrouter()
+			sub := sub.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
 			sub.Handle("/session", loginController.HandleCreateSession()).Methods(http.MethodPost)
 			sub.Handle("/signout", loginController.HandleSignOut()).Methods(http.MethodGet)
 
-			sub = r.PathPrefix("").Subrouter()
+			sub = sub.PathPrefix("").Subrouter()
 			sub.Use(rateLimit)
 			sub.Use(checkIdleNoAuth)
 
@@ -185,7 +192,7 @@ func Server(
 				Queries("oobCode", "{oobCode:.+}", "mode", "{mode:(?:verifyEmail|recoverEmail)}").Methods(http.MethodGet)
 
 			// Realm selection & account settings
-			sub = r.PathPrefix("").Subrouter()
+			sub = sub.PathPrefix("").Subrouter()
 			sub.Use(requireAuth)
 			sub.Use(rateLimit)
 			sub.Use(loadCurrentMembership)
@@ -206,7 +213,7 @@ func Server(
 
 	// codes
 	{
-		sub := r.PathPrefix("/codes").Subrouter()
+		sub := sub.PathPrefix("/codes").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -229,7 +236,7 @@ func Server(
 
 	// mobileapp
 	{
-		sub := r.PathPrefix("/realm/mobile-apps").Subrouter()
+		sub := sub.PathPrefix("/realm/mobile-apps").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -244,7 +251,7 @@ func Server(
 
 	// apikeys
 	{
-		sub := r.PathPrefix("/realm/apikeys").Subrouter()
+		sub := sub.PathPrefix("/realm/apikeys").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -259,7 +266,7 @@ func Server(
 
 	// users
 	{
-		sub := r.PathPrefix("/realm/users").Subrouter()
+		sub := sub.PathPrefix("/realm/users").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -274,7 +281,7 @@ func Server(
 
 	// stats
 	{
-		sub := r.PathPrefix("/stats").Subrouter()
+		sub := sub.PathPrefix("/stats").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -289,7 +296,7 @@ func Server(
 
 	// realms
 	{
-		sub := r.PathPrefix("/realm").Subrouter()
+		sub := sub.PathPrefix("/realm").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -317,7 +324,7 @@ func Server(
 
 	// JWKs
 	{
-		sub := r.PathPrefix("/jwks").Subrouter()
+		sub := sub.PathPrefix("/jwks").Subrouter()
 		sub.Use(rateLimit)
 
 		jwksController, err := jwks.New(ctx, db, cacher, h)
@@ -329,7 +336,7 @@ func Server(
 
 	// System admin
 	{
-		sub := r.PathPrefix("/admin").Subrouter()
+		sub := sub.PathPrefix("/admin").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireSystemAdmin)
