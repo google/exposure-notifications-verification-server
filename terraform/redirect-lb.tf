@@ -18,6 +18,8 @@ locals {
   redirect_root_domains = distinct(compact([
     var.enx_redirect_domain,
   ]))
+
+  enx_domains = [for o in concat(var.enx_redirect_domain_map, var.enx_redirect_domain_map_add) : o.host]
 }
 
 resource "google_compute_global_address" "verification-enx-redirect" {
@@ -36,7 +38,32 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
   provider = google-beta
   project  = var.project
 
+  // path rule for each known redirect domain
+  dynamic "host_rule" {
+    for_each = local.enx_domains
+
+    content {
+      path_matcher = host_rule.value
+      hosts        = toset([host_rule.value])
+    }
+  }
+
+  dynamic "path_matcher" {
+    for_each = local.enx_domains
+
+    content {
+      name = path_matcher.value
+      default_url_redirect {
+        host_redirect  = path_matcher.value
+        https_redirect = true
+        strip_query    = false
+      }
+    }
+  }
+
   default_url_redirect {
+    host_redirect  = "g.co"
+    path_redirect  = "/ens"
     strip_query    = false
     https_redirect = true
   }
