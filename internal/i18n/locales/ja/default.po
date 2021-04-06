@@ -72,13 +72,13 @@ msgid "mfa.mfa"
 msgstr "多要素認証"
 
 msgid "mfa.notice-required"
-msgstr "％s では、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にする必要があります。"
+msgstr "%s では、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にする必要があります。"
 
 msgid "mfa.notice-prompt"
-msgstr "％s は、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にすることをお勧めします。将来必要になる可能性があります。"
+msgstr "%s は、アカウントのセキュリティを向上させるために多要素認証（MFA）を有効にすることをお勧めします。将来必要になる可能性があります。"
 
 msgid "mfa.notice-optional"
-msgstr "％s は、アカウントのセキュリティを向上させるために、多要素認証（MFA）を有効にすることをお勧めします。"
+msgstr "%s は、アカウントのセキュリティを向上させるために、多要素認証（MFA）を有効にすることをお勧めします。"
 
 msgid "mfa.phone-display-name"
 msgstr "表示名"
@@ -101,6 +101,32 @@ msgstr "パスワードのリセット"
 msgid "password.send-reset-password"
 msgstr "パスワードリセットメールを送信する"
 
+msgid "password.old-password"
+msgstr "以前のパスワード"
+
+msgid "password.new-password"
+msgstr "新しいパスワード"
+
+msgid "password.confirm-new-password"
+msgstr "新しいパスワードを確認"
+
+msgid "password.requirements-length"
+msgstr "%d 以上の文字の長さを持っている"
+
+msgid "password.requirements-uppercase"
+msgstr "%d 以上の大文字を含む"
+
+msgid "password.requirements-lowercase"
+msgstr "%d 以上の小文字を含む"
+
+msgid "password.requirements-number"
+msgstr "%d 以上の数値を含む"
+
+msgid "password.requirements-special"
+msgstr "%d 以上の特殊文字を含む"
+
+msgid "password.requirements-match"
+msgstr "確認済みのパスワードと一致する"
 
 
 #

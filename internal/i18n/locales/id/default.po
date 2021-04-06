@@ -101,6 +101,33 @@ msgstr "Setel ulang sandi"
 msgid "password.send-reset-password"
 msgstr "Kirim email pengaturan ulang kata sandi"
 
+msgid "password.old-password"
+msgstr "Password lama"
+
+msgid "password.new-password"
+msgstr "Kata sandi baru"
+
+msgid "password.confirm-new-password"
+msgstr "Konfirmasi password baru"
+
+msgid "password.requirements-length"
+msgstr "Memiliki panjang %d atau lebih karakter"
+
+msgid "password.requirements-uppercase"
+msgstr "Berisi %d atau lebih huruf besar"
+
+msgid "password.requirements-lowercase"
+msgstr "Berisi %d atau lebih huruf kecil"
+
+msgid "password.requirements-number"
+msgstr "Berisi %d atau lebih angka"
+
+msgid "password.requirements-special"
+msgstr "Berisi %d atau lebih karakter khusus"
+
+msgid "password.requirements-match"
+msgstr "Cocokkan kata sandi yang telah dikonfirmasi"
+
 
 #
 # navigation menus

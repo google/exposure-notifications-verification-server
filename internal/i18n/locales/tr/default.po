@@ -101,6 +101,33 @@ msgstr "Parolayı sıfırla"
 msgid "password.send-reset-password"
 msgstr "Parola sıfırlama e-postası gönder"
 
+msgid "password.old-password"
+msgstr "Eski şifre"
+
+msgid "password.new-password"
+msgstr "Yeni şifre"
+
+msgid "password.confirm-new-password"
+msgstr "Yeni şifreyi onayla"
+
+msgid "password.requirements-length"
+msgstr "%d veya daha fazla karakter uzunluğunda"
+
+msgid "password.requirements-uppercase"
+msgstr "%d veya daha fazla büyük harf içerir"
+
+msgid "password.requirements-lowercase"
+msgstr "%d veya daha fazla küçük harf içerir"
+
+msgid "password.requirements-number"
+msgstr "%d veya daha fazla sayı içerir"
+
+msgid "password.requirements-special"
+msgstr "%d veya daha fazla özel karakter içerir"
+
+msgid "password.requirements-match"
+msgstr "Eşleşen onaylanmış şifre"
+
 
 #
 # navigation menus

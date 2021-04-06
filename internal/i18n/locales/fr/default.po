@@ -101,6 +101,33 @@ msgstr "Réinitialiser le mot de passe"
 msgid "password.send-reset-password"
 msgstr "Envoyer un e-mail de réinitialisation du mot de passe"
 
+msgid "password.old-password"
+msgstr "Ancien mot de passe"
+
+msgid "password.new-password"
+msgstr "Nouveau mot de passe"
+
+msgid "password.confirm-new-password"
+msgstr "Confirmer le nouveau mot de passe"
+
+msgid "password.requirements-length"
+msgstr "Avoir une longueur de %d caractères ou plus"
+
+msgid "password.requirements-uppercase"
+msgstr "Contiennent au moins %d lettres majuscules"
+
+msgid "password.requirements-lowercase"
+msgstr "Contiennent au moins %d lettres minuscules"
+
+msgid "password.requirements-number"
+msgstr "Contiennent au moins %d nombres"
+
+msgid "password.requirements-special"
+msgstr "Contient %d ou plus de caractères spéciaux"
+
+msgid "password.requirements-match"
+msgstr "Faire correspondre le mot de passe confirmé"
+
 
 #
 # navigation menus

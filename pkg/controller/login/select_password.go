@@ -44,7 +44,7 @@ func (c *Controller) HandleShowSelectNewPassword() http.Handler {
 		email, err := c.authProvider.VerifyPasswordResetCode(ctx, code)
 		if err != nil {
 			flash.Error("Failed to verify password reset token: %v", err)
-			c.renderShowSelectPassword(ctx, w, "", code, false)
+			c.renderShowSelectPassword(ctx, w, "", code, true)
 			return
 		}
 

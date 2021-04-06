@@ -100,6 +100,33 @@ msgstr "إعادة تعيين كلمة المرور"
 msgid "password.send-reset-password"
 msgstr "إرسال بريد إلكتروني لإعادة تعيين كلمة المرور"
 
+msgid "password.old-password"
+msgstr "كلمة المرور القديمة"
+
+msgid "password.new-password"
+msgstr "كلمة مرور جديدة"
+
+msgid "password.confirm-new-password"
+msgstr "تأكيد كلمة المرور الجديدة"
+
+msgid "password.requirements-length"
+msgstr "بطول %d أو أكثر من الأحرف"
+
+msgid "password.requirements-uppercase"
+msgstr "تحتوي على %d أو أكثر من الأحرف الكبيرة"
+
+msgid "password.requirements-lowercase"
+msgstr "تحتوي على %d أو أكثر من الأحرف الصغيرة"
+
+msgid "password.requirements-number"
+msgstr "تحتوي على %d أو أكثر من الأرقام"
+
+msgid "password.requirements-special"
+msgstr "تحتوي على %d أو أكثر من الأحرف الخاصة"
+
+msgid "password.requirements-match"
+msgstr "مطابقة كلمة المرور المؤكدة"
+
 
 #
 # navigation menus

@@ -101,6 +101,33 @@ msgstr "Reset password"
 msgid "password.send-reset-password"
 msgstr "Send password reset email"
 
+msgid "password.old-password"
+msgstr "Old password"
+
+msgid "password.new-password"
+msgstr "New password"
+
+msgid "password.confirm-new-password"
+msgstr "Confirm new password"
+
+msgid "password.requirements-length"
+msgstr "Have a length of %d or more characters"
+
+msgid "password.requirements-uppercase"
+msgstr "Contain %d or more uppercase letters"
+
+msgid "password.requirements-lowercase"
+msgstr "Contain %d or more lowercase letters"
+
+msgid "password.requirements-number"
+msgstr "Contain %d or more numbers"
+
+msgid "password.requirements-special"
+msgstr "Contain %d or more special characters"
+
+msgid "password.requirements-match"
+msgstr "Match confirmed password"
+
 
 #
 # navigation menus

@@ -101,6 +101,33 @@ msgstr "Reimposta password"
 msgid "password.send-reset-password"
 msgstr "Invia email per reimpostare la password"
 
+msgid "password.old-password"
+msgstr "Vecchia password"
+
+msgid "password.new-password"
+msgstr "Nuova password"
+
+msgid "password.confirm-new-password"
+msgstr "Conferma la nuova password"
+
+msgid "password.requirements-length"
+msgstr "Avere una lunghezza di %d o più caratteri"
+
+msgid "password.requirements-uppercase"
+msgstr "Contenere %d o più lettere maiuscole"
+
+msgid "password.requirements-lowercase"
+msgstr "Contenere %d o più lettere minuscole"
+
+msgid "password.requirements-number"
+msgstr "Contiene %d o più numeri"
+
+msgid "password.requirements-special"
+msgstr "Contiene %d o più caratteri speciali"
+
+msgid "password.requirements-match"
+msgstr "Corrispondenza con la password confermata"
+
 
 #
 # navigation menus
