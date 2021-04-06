@@ -26,7 +26,7 @@ steps:
 # adminapi
 #
 - id: 'promote-adminapi'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -46,7 +46,7 @@ steps:
 # apiserver
 #
 - id: 'promote-apiserver'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -66,7 +66,7 @@ steps:
 # appsync
 #
 - id: 'promote-appsync'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -86,7 +86,7 @@ steps:
 # backup
 #
 - id: 'promote-backup'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -106,7 +106,7 @@ steps:
 # cleanup
 #
 - id: 'promote-cleanup'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -126,7 +126,7 @@ steps:
 # e2e-runner
 #
 - id: 'promote-e2e-runner'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -146,7 +146,7 @@ steps:
 # enx-redirect
 #
 - id: 'promote-enx-redirect'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -166,7 +166,7 @@ steps:
 # modeler
 #
 - id: 'promote-modeler'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -186,7 +186,7 @@ steps:
 # rotation
 #
 - id: 'promote-rotation'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -206,7 +206,7 @@ steps:
 # server
 #
 - id: 'promote-server'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -227,7 +227,7 @@ steps:
 # stats-puller
 #
 - id: 'promote-stats-puller'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:324.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
