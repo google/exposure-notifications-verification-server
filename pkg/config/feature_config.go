@@ -22,7 +22,7 @@ type FeatureConfig struct {
 	// EnableAuthenticatedSMS allows for realms to managed SMS specific signing keys,
 	// and enable/disable this feature. There is no launch timeline for GA.
 	// This should not be used without prior coordination with Apple/Google.
-	EnableAuthenticatedSMS bool `env:"ENABLE_AUTHENTICATED_SMS, default=false"`
+	EnableAuthenticatedSMS bool `env:"ENABLE_AUTHENTICATED_SMS, default=true"`
 
 	// EnableUserReport allows for realms to enable user initiated diagnosis reporting,
 	// via API + SMS.
