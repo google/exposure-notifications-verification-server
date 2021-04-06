@@ -142,8 +142,9 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 			exp: "en",
 		},
 		{
+			// https://github.com/golang/go/issues/43834
 			in:  "en-zz",
-			err: true,
+			exp: "en",
 		},
 	}
 
