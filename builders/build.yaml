@@ -47,6 +47,8 @@ steps:
   - 'go'
   - 'clean'
   - '-modcache'
+  waitFor:
+  - '-'
 
 - id: 'restore-cache'
   name: 'us-docker.pkg.dev/vargolabs/gcs-cacher/gcs-cacher:0.1'
@@ -59,18 +61,19 @@ steps:
   waitFor:
   - 'clear-cache'
 
+
 #
 # Minify static assets
 #
 - id: 'minify'
   name: 'tdewolff/minify:latest'
   dir: 'assets/server'
+  entrypoint: '/bin/sh'
   args:
-  - 'minify'
-  - '--recursive'
-  - '--output ./static'
-  - './static/css/*.css'
-  - './static/js/*.js'
+  - '-c'
+  - 'minify --recursive --output=./static ./static/css/*.css ./static/js/*.js'
+  waitFor:
+  - '-'
 
 
 #
