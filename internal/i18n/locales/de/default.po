@@ -28,6 +28,18 @@ msgstr "Passwort vergessen"
 msgid "login.about-exposure-notifications"
 msgstr "Informationen zu Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Abmelden..."
+
+msgid "login.signing-out-error"
+msgstr "Abmeldung fehlgeschlagen. Schließen Sie Ihren Browser oder löschen Sie Cookies."
+
+msgid "login.realm-selection"
+msgstr "Reichsauswahl"
+
+msgid "login.realm-no-memberships"
+msgstr "Sie sind kein Mitglied eines Bereichs."
+
 msgid "account.full-name"
 msgstr "Vollständiger Name"
 

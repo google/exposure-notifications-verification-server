@@ -29,6 +29,18 @@ msgstr "Şifremi unuttum"
 msgid "login.about-exposure-notifications"
 msgstr "About Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Çıkış yapılıyor..."
+
+msgid "login.signing-out-error"
+msgstr "Çıkış yapılamadı. Tarayıcınızı kapatın veya çerezleri temizleyin."
+
+msgid "login.realm-selection"
+msgstr "Bölge seçimi"
+
+msgid "login.realm-no-memberships"
+msgstr "Hiçbir âlemin üyesi değilsiniz."
+
 msgid "account.full-name"
 msgstr "Tam ad"
 

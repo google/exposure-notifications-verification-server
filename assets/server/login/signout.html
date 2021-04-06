@@ -4,26 +4,33 @@
 
 <head>
   {{template "head" .}}
-
   {{template "firebase" .}}
 </head>
 
-<body>
+<body id="login-signout">
   {{template "navbar" .}}
 
-  <main role="main" class="container">
-    <div id="auth-container">
-      <p id="signout">Signing out...</p>
-    </div>
+  <main id="signout" role="main" class="container">
+    <p id="signout-pending">
+      {{t $.locale "login.signing-out"}}
+    </p>
+    <p id="signout-error" class="d-none text-danger">
+      <span id="icon" class="oi oi-circle-x small pr-1" aria-hidden="true"></span>
+      {{t $.locale "login.signing-out-error"}}
+    </p>
   </main>
 
   <script defer type="text/javascript">
-    window.addEventListener('load', function() {
+    window.addEventListener('load', () => {
+      let signoutPending = document.querySelector('p#signout-pending');
+      let signoutError = document.querySelector('p#signout-error');
+
       firebase.auth().signOut().then(function() {
-        $('#signout').text("Redirecting to login...")
-        window.location.assign("/");
-      }).catch(function(error) {
-        flash.error('Error signing out, close browser window.');
+        window.location.assign('/');
+      }).catch(function(err) {
+        console.error(err);
+        signoutPending.classList.add('d-none');
+        signoutError.classList.remove('d-none');
       });
     });
   </script>

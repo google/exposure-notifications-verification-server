@@ -17,24 +17,13 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Select your realm</h1>
-    <p>
-      Use the form below to select a realm.
-    </p>
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        Realm selector
+        <span id="icon" class="oi oi-globe mr-2 ml-n1" aria-hidden="true"></span>
+        {{t $.locale "login.realm-selection"}}
       </div>
 
       {{if $memberships}}
-        <div class="card-body">
-          <p class="mb-0">
-            You are a member of multiple realms - please select one to continue. You
-            can switch to another realm at any time.
-          </p>
-        </div>
-
         <div class="list-group list-group-flush">
           {{range $membership := $memberships}}
             {{$currentRealm := $membership.Realm}}
@@ -56,8 +45,7 @@
       {{else}}
         <div class="card-body">
           <p class="mb-0">
-            You are not a member of any realms. Contact your realm administrator for
-            assistance.
+            {{t $.locale "login.realm-no-memberships"}}
           </p>
         </div>
       {{end}}
@@ -66,6 +54,7 @@
     {{if $currentUser.SystemAdmin}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header text-bold text-white admin-header">
+          <span id="icon" class="oi oi-cog mr-2 ml-n1" aria-hidden="true"></span>
           System admin
         </div>
         <div class="list-group-item p-0">

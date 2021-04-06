@@ -28,6 +28,18 @@ msgstr "Contraseña olvidada"
 msgid "login.about-exposure-notifications"
 msgstr "Acerca de las Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Cerrando sesión..."
+
+msgid "login.signing-out-error"
+msgstr "No se pudo cerrar la sesión. Cierre su navegador o borre las cookies."
+
+msgid "login.realm-selection"
+msgstr "Selección de reino"
+
+msgid "login.realm-no-memberships"
+msgstr "No eres miembro de ningún reino."
+
 msgid "account.full-name"
 msgstr "Nombre completo"
 
