@@ -60,7 +60,7 @@ resource "google_compute_url_map" "urlmap-http" {
     for_each = length(var.server_hosts) > 0 ? [1] : []
 
     content {
-      name            = "server"
+      name = "server"
       default_url_redirect {
         host_redirect  = var.server_hosts[0]
         https_redirect = true
@@ -83,7 +83,7 @@ resource "google_compute_url_map" "urlmap-http" {
     for_each = length(var.apiserver_hosts) > 0 ? [1] : []
 
     content {
-      name            = "apiserver"
+      name = "apiserver"
       default_url_redirect {
         host_redirect  = var.apiserver_hosts[0]
         https_redirect = true
@@ -106,7 +106,7 @@ resource "google_compute_url_map" "urlmap-http" {
     for_each = length(var.adminapi_hosts) > 0 ? [1] : []
 
     content {
-      name            = "adminapi"
+      name = "adminapi"
       default_url_redirect {
         host_redirect  = var.adminapi_hosts[0]
         https_redirect = true
