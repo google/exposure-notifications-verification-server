@@ -43,7 +43,7 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
     for_each = local.enx_domains
 
     content {
-      path_matcher = host_rule.value
+      path_matcher = split(".", host_rule.value)[0]
       hosts        = toset([host_rule.value])
     }
   }
@@ -52,7 +52,8 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
     for_each = local.enx_domains
 
     content {
-      name = path_matcher.value
+      name = split(".", path_matcher.value)[0]
+
       default_url_redirect {
         host_redirect  = path_matcher.value
         https_redirect = true
