@@ -60,6 +60,20 @@ steps:
   - 'clear-cache'
 
 #
+# Minify static assets
+#
+- id: 'minify'
+  name: 'tdewolff/minify:latest'
+  dir: 'assets/server'
+  args:
+  - 'minify'
+  - '--recursive'
+  - '--output ./static'
+  - './static/css/*.css'
+  - './static/js/*.js'
+
+
+#
 # build all binaries at once
 #
 - id: 'mkdir-bin'
@@ -81,6 +95,7 @@ steps:
   waitFor:
   - 'restore-cache'
   - 'mkdir-bin'
+  - 'minify'
 
 - id: 'save-cache'
   name: 'us-docker.pkg.dev/vargolabs/gcs-cacher/gcs-cacher:0.1'
