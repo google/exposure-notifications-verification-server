@@ -17,7 +17,7 @@
     </div>
   </main>
 
-  <script type="text/javascript">
+  <script defer type="text/javascript">
     window.addEventListener('load', function() {
       firebase.auth().signOut().then(function() {
         $('#signout').text("Redirecting to login...")

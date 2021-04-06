@@ -105,8 +105,8 @@
     {{end}}
   </main>
 
-  <script type="text/javascript">
-    $(function(){
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
       {{if not $canWrite}}
         {{/*
 

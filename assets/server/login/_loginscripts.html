@@ -1,40 +1,42 @@
 {{define "loginscripts"}}
-<script type="text/javascript">
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (!user) {
-      return
-    }
-    setSession(user)
-  });
-
-  function setSession(user) {
-    user.getIdToken().then(idToken => {
-      $.ajax({
-        type: 'POST',
-        url: '/session',
-        data: {
-          idToken: idToken,
-        },
-        headers: { 'X-CSRF-Token': getCSRFToken() },
-        contentType: 'application/x-www-form-urlencoded',
-        {{if not .currentUser}}
-        success: function(returnData) {
-          // The user successfully signed in, redirect to realm selection.
-          window.location.assign('/login/select-realm');
-        },
-        {{end}}
-        error: function(xhr, status, e) {
-          // There was an error finding the user. Redirect to the
-          // sign-out page to clear the firebase cookie and any session
-          // data.
-          //
-          // The flash data may have more detailed error messages, which
-          // will be displayed on the signout page.
-          window.location.assign("/signout");
-        }
-      })
+<script defer type="text/javascript">
+  window.addEventListener('load', (event) => {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        return
+      }
+      setSession(user)
     });
-  }
+
+    function setSession(user) {
+      user.getIdToken().then(idToken => {
+        $.ajax({
+          type: 'POST',
+          url: '/session',
+          data: {
+            idToken: idToken,
+          },
+          headers: { 'X-CSRF-Token': getCSRFToken() },
+          contentType: 'application/x-www-form-urlencoded',
+          {{if not .currentUser}}
+          success: function(returnData) {
+            // The user successfully signed in, redirect to realm selection.
+            window.location.assign('/login/select-realm');
+          },
+          {{end}}
+          error: function(xhr, status, e) {
+            // There was an error finding the user. Redirect to the
+            // sign-out page to clear the firebase cookie and any session
+            // data.
+            //
+            // The flash data may have more detailed error messages, which
+            // will be displayed on the signout page.
+            window.location.assign("/signout");
+          }
+        })
+      });
+    }
+  });
 </script>
 {{end}}
 

@@ -19,10 +19,10 @@
       <span class="mr-1">Export as:</span>
       {{if .hasKeyServerStats}}
       <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm/composite.json" target="_blank">JSON</a>  
+      <a href="/stats/realm/composite.json" target="_blank">JSON</a>
       {{else}}
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm.json" target="_blank">JSON</a> 
+      <a href="/stats/realm.json" target="_blank">JSON</a>
       {{end}}
     </span>
   </small>
@@ -45,10 +45,10 @@
       <span class="mr-1">Export as:</span>
       {{if .hasKeyServerStats}}
       <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm/composite.json" target="_blank">JSON</a>  
+      <a href="/stats/realm/composite.json" target="_blank">JSON</a>
       {{else}}
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm.json" target="_blank">JSON</a> 
+      <a href="/stats/realm.json" target="_blank">JSON</a>
       {{end}}
     </span>
   </small>
@@ -70,7 +70,7 @@
     <a href="#" data-toggle="modal" data-target="#realm-user-codes-modal">Learn more about this chart</a>
     <span>
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm.json" target="_blank">JSON</a>       
+      <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
 </div>
@@ -90,7 +90,7 @@
     <a href="#" data-toggle="modal" data-target="#comparison-codes-modal">Learn more about this chart</a>
     <span>
       <a href="/stats/realm.csv" class="mr-1">CSV</a>
-      <a href="/stats/realm.json" target="_blank">JSON</a>       
+      <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
 </div>
@@ -176,7 +176,7 @@
       </div>
     </div>
   </div>
-</div>  
+</div>
 
 <div class="modal fade" id="invalid-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -195,7 +195,7 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
 
 <div class="modal fade" id="comparison-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -215,7 +215,7 @@
       </div>
     </div>
   </div>
-</div> 
+</div>
 
 <div class="modal fade" id="realm-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -257,7 +257,7 @@
           (typographical error) and codes that have expired.
         </p>
 
-       
+
         <strong>Tokens Claimed</strong>
         <p>
           This line tracks the total number of users that successfully
@@ -268,7 +268,7 @@
         <strong>Publish Requests</strong>
         <p>
           The number of users that followed the flow all the way through
-          and successfully completed uploading of temporary exposure keys.          
+          and successfully completed uploading of temporary exposure keys.
         </p>
         {{end}}
 
@@ -347,7 +347,7 @@
   </div>
 </div>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
   let claimStats;
 
   google.charts.load('current', {
@@ -454,7 +454,7 @@
         },
       }
     ]
-    
+
     if (!data.statistics) {
       for (i = 0; i < charts.length; i++) {
         $("#" + charts[i].chartDiv).find('p').text('No data yet.');
@@ -743,7 +743,7 @@
     return dataTable;
   }
 
-  $(function() {
+  window.addEventListener('load', (event) => {
     $issueAgeSlider.on("input", function(event) {
       if (!claimStats) {
         return

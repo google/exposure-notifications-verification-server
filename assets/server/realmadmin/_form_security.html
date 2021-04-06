@@ -140,8 +140,8 @@
   </div>
 </form>
 
-<script type="text/javascript">
-  $(function(){
+<script defer type="text/javascript">
+  window.addEventListener('load', (event) => {
     let $grace = $('#mfa-grace-period');
     let $graceDiv = $('#grace-div');
     let $mfaMode = $('#mfa-mode');
@@ -156,6 +156,6 @@
       }
     });
   });
-  </script>
+</script>
 
 {{end}}

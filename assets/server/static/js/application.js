@@ -1,4 +1,4 @@
-$(function() {
+window.addEventListener('load', (event) => {
   // Add data-toogle="tooltop" to toggle tooltips!
   $('[data-toggle="tooltip"]').tooltip();
 

@@ -73,12 +73,12 @@
   </main>
 
   {{if not .code.Claimed}}
-  <script type="text/javascript">
+  <script defer type="text/javascript">
     let $buttonInvalidate = $('button#invalidate');
     let expires = {{ .code.Expires }};
     let longExpires = {{ .code.LongExpires }};
 
-    $(function() {
+    window.addEventListener('load', (event) => {
       let $codeExpiresAt = $('#code-expires-at');
       countdown($codeExpiresAt, expires);
 

@@ -289,7 +289,7 @@
   </div>
 </form>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
   function removeTemplate(name) {
     $('#sms-template-0').trigger("click");
     $('#'+name).remove();
@@ -299,7 +299,7 @@
   //
   // SMS preview builder
   //
-  $(function() {
+  window.addEventListener('load', (event) => {
     function randShortCode(length) {
       const chars = '0123456789';
 

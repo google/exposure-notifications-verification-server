@@ -244,8 +244,8 @@
     {{template "shared/pagination" .}}
   </main>
 
-  <script type="text/javascript">
-    $(function() {
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
       let $selectUserAll = $('#select-user-all');
       let $addPermissionsButton = $('#add-permissions-button');
       let $addPermissionsSubmit = $('#add-permissions-submit');
