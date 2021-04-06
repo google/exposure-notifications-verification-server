@@ -230,11 +230,13 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.AllowedTestTypes = form.AllowedTestTypes
 			currentRealm.RequireDate = form.RequireDate
 			currentRealm.AllowBulkUpload = form.AllowBulkUpload
-			if c.config.Features.EnableUserReport && form.AllowUserReport {
-				currentRealm.AddUserReportToAllowedTestTypes()
-				currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
-			} else {
-				currentRealm.AllowAdminUserReport = false
+			if c.config.Features.EnableUserReport {
+				if form.AllowUserReport {
+					currentRealm.AddUserReportToAllowedTestTypes()
+					currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
+				} else {
+					currentRealm.AllowAdminUserReport = false
+				}
 			}
 
 			// These fields can only be set if ENX is disabled
