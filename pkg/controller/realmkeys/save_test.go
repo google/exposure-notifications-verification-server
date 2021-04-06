@@ -76,4 +76,52 @@ func TestRealmKeys_SubmitSave(t *testing.T) {
 			t.Errorf("expected %s to be %s", got, want)
 		}
 	})
+
+	t.Run("change_post_upgrade", func(t *testing.T) {
+		t.Parallel()
+
+		realm := database.NewRealmWithDefaults("change-post-upgrade")
+
+		wantISS := "com.domain.iss"
+		wantAUD := "com.domain.aud"
+		realm.CertificateIssuer = wantISS
+		realm.CertificateAudience = wantAUD
+		realm.UseRealmCertificateKey = true
+		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := ctx
+		ctx = controller.WithSession(ctx, &sessions.Session{})
+		ctx = controller.WithMembership(ctx, &database.Membership{
+			User:        &database.User{},
+			Realm:       realm,
+			Permissions: rbac.SettingsWrite,
+		})
+
+		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPut, "", &url.Values{
+			"certificateIssuer":   []string{"foo"},
+			"certificateAudience": []string{"bar"},
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusSeeOther; got != want {
+			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+		}
+		if got, want := w.Header().Get("Location"), "/realm/keys"; got != want {
+			t.Errorf("expected %s to be %s", got, want)
+		}
+
+		if got, err := harness.Database.FindRealm(realm.ID); err != nil {
+			t.Fatal(err)
+		} else {
+			if got.CertificateIssuer != wantISS {
+				t.Fatalf("certificaeIssuer was changed when shouldn't be, got: %q want: %q", got.CertificateIssuer, wantISS)
+			}
+			if got.CertificateAudience != wantAUD {
+				t.Fatalf("certificateAudience was changed when shouldn't be, got: %q want: %q", got.CertificateAudience, wantAUD)
+			}
+		}
+	})
+
 }

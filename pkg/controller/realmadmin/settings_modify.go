@@ -233,7 +233,8 @@ func (c *Controller) HandleSettings() http.Handler {
 			if c.config.Features.EnableUserReport && form.AllowUserReport {
 				currentRealm.AddUserReportToAllowedTestTypes()
 				currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
-			} else {
+			}
+			if !c.config.Features.EnableUserReport {
 				currentRealm.AllowAdminUserReport = false
 			}
 

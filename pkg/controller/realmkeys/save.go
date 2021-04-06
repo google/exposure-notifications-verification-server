@@ -61,8 +61,11 @@ func (c *Controller) HandleSave() http.Handler {
 		}
 
 		// Update settings.
-		currentRealm.CertificateIssuer = form.Issuer
-		currentRealm.CertificateAudience = form.Audience
+		if !currentRealm.UseRealmCertificateKey {
+			// Once upgraded to realm specific, these values cannot change.
+			currentRealm.CertificateIssuer = form.Issuer
+			currentRealm.CertificateAudience = form.Audience
+		}
 		// AsString delgates the duration parsing and validation to the model.
 		currentRealm.CertificateDuration.AsString = form.DurationString
 
