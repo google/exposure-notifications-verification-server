@@ -28,6 +28,45 @@ msgstr "Contraseña olvidada"
 msgid "login.about-exposure-notifications"
 msgstr "Acerca de las Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Nombre completo"
+
+msgid "account.header-details"
+msgstr "Detalles de la cuenta"
+
+msgid "account.header-authentication"
+msgstr "Autenticación"
+
+msgid "account.header-realm-memberships"
+msgstr "Membresías de reino"
+
+msgid "account.email-verified"
+msgstr "Dirección de correo electrónico está verificada"
+
+msgid "account.email-not-verified"
+msgstr "Dirección de correo electrónico no está verificada"
+
+msgid "account.verify-email-address"
+msgstr "Verificar"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor de autenticación (AMF) está activado"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor de autenticación (AMF) está desactivada"
+
+msgid "account.manage-mfa"
+msgstr "Administrar MFA"
+
+msgid "account.enable-mfa"
+msgstr "Habilitar MFA"
+
+msgid "account.password-last-changed"
+msgstr "La contraseña se cambió por última vez hace %s"
+
+msgid "account.change-password"
+msgstr "Cambiar contraseña"
+
 msgid "mfa.mfa"
 msgstr "Autenticación multifactor"
 

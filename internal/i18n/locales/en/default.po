@@ -29,6 +29,45 @@ msgstr "Forgot password"
 msgid "login.about-exposure-notifications"
 msgstr "About Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Full name"
+
+msgid "account.header-details"
+msgstr "Account details"
+
+msgid "account.header-authentication"
+msgstr "Authentication"
+
+msgid "account.header-realm-memberships"
+msgstr "Realm memberships"
+
+msgid "account.email-verified"
+msgstr "Email address is verified"
+
+msgid "account.email-not-verified"
+msgstr "Email address is not verified"
+
+msgid "account.verify-email-address"
+msgstr "Verify email address"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor Authentication (MFA) is enabled"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor Authentication (MFA) is disabled"
+
+msgid "account.manage-mfa"
+msgstr "Manage MFA"
+
+msgid "account.enable-mfa"
+msgstr "Enable MFA"
+
+msgid "account.password-last-changed"
+msgstr "Password was last changed %s ago"
+
+msgid "account.change-password"
+msgstr "Change password"
+
 msgid "mfa.mfa"
 msgstr "Multi-Factor Authentication"
 

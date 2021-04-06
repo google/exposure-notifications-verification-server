@@ -75,7 +75,7 @@
 {{$canWrite := $currentMembership.Can rbac.SettingsWrite}}
 
 <!doctype html>
-<html lang="en">
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
 </head>

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Language: ph\n"
+"Language: fil\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -28,6 +28,45 @@ msgstr "Nakalimutan ang password"
 
 msgid "login.about-exposure-notifications"
 msgstr "Tungkol sa Exposure Notifications"
+
+msgid "account.full-name"
+msgstr "Buong pangalan"
+
+msgid "account.header-details"
+msgstr "Mga detalye ng account"
+
+msgid "account.header-authentication"
+msgstr "Pagpapatotoo"
+
+msgid "account.header-realm-memberships"
+msgstr "Mga membership sa realm"
+
+msgid "account.email-verified"
+msgstr "Na-verify ang email address"
+
+msgid "account.email-not-verified"
+msgstr "Hindi na-verify ang email address"
+
+msgid "account.verify-email-address"
+msgstr "Patunayan ang email address"
+
+msgid "account.mfa-enabled"
+msgstr "Pinagana ang Multi-Factor Authentication (MFA)"
+
+msgid "account.mfa-disabled"
+msgstr "Ang Multi-Factor Authentication (MFA) ay hindi pinagana"
+
+msgid "account.manage-mfa"
+msgstr "Pamahalaan ang MFA"
+
+msgid "account.enable-mfa"
+msgstr "Paganahin ang MFA"
+
+msgid "account.password-last-changed"
+msgstr "Ang password ay huling nabago %s ago"
+
+msgid "account.change-password"
+msgstr "Palitan ang password"
 
 msgid "mfa.mfa"
 msgstr "Multi-Factor Authentication"

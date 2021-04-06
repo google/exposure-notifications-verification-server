@@ -18,9 +18,12 @@ package i18n
 import (
 	"embed"
 	"fmt"
+	"io/fs"
+	"os"
 	"path"
 	"sync"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/leonelquinteros/gotext"
 	"golang.org/x/text/language"
 )
@@ -32,6 +35,14 @@ const (
 
 //go:embed locales/**/*
 var localesFS embed.FS
+
+// LocalesFS returns the file system for the server assets.
+func LocalesFS() fs.FS {
+	if project.DevMode() {
+		return os.DirFS(project.Root("internal", "i18n"))
+	}
+	return localesFS
+}
 
 // LocaleMap is a map of locale names to their data structure.
 type LocaleMap struct {
@@ -111,7 +122,9 @@ func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
 // load loads the locales into the LocaleMap. Callers must take out a mutex
 // before calling.
 func (l *LocaleMap) load() error {
-	entries, err := localesFS.ReadDir("locales")
+	fsys := LocalesFS()
+
+	entries, err := fs.ReadDir(fsys, "locales")
 	if err != nil {
 		return fmt.Errorf("failed to load locales: %w", err)
 	}
@@ -122,7 +135,7 @@ func (l *LocaleMap) load() error {
 		name := entry.Name()
 		names = append(names, language.Make(name))
 
-		b, err := localesFS.ReadFile(path.Join("locales", name, "default.po"))
+		b, err := fs.ReadFile(fsys, path.Join("locales", name, "default.po"))
 		if err != nil {
 			return fmt.Errorf("failed to read %q: %w", name, err)
 		}

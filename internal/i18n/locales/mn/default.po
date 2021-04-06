@@ -29,6 +29,45 @@ msgstr "Нууц үгээ мартсан"
 msgid "login.about-exposure-notifications"
 msgstr "Тухай Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Овог нэр"
+
+msgid "account.header-details"
+msgstr "Дансны дэлгэрэнгүй мэдээлэл"
+
+msgid "account.header-authentication"
+msgstr "Баталгаажуулалт"
+
+msgid "account.header-realm-memberships"
+msgstr "Хүрээний гишүүнчлэл"
+
+msgid "account.email-verified"
+msgstr "Имэйл хаягийг баталгаажуулсан"
+
+msgid "account.email-not-verified"
+msgstr "Имэйл хаягийг баталгаажуулаагүй байна"
+
+msgid "account.verify-email-address"
+msgstr "Баталгаажуулах"
+
+msgid "account.mfa-enabled"
+msgstr "Олон хүчин зүйлийн баталгаажуулалт (MFA) идэвхжсэн"
+
+msgid "account.mfa-disabled"
+msgstr "Олон хүчин зүйлийн баталгаажуулалт (MFA) идэвхгүйжсэн"
+
+msgid "account.manage-mfa"
+msgstr "Удирдах"
+
+msgid "account.enable-mfa"
+msgstr "Идэвхжүүлэх"
+
+msgid "account.password-last-changed"
+msgstr "Нууц үгийг хамгийн сүүлд %s өмнө өөрчилсөн"
+
+msgid "account.change-password"
+msgstr "Нууц үгээ өөрчлөх"
+
 msgid "mfa.mfa"
 msgstr "Олон хүчин зүйлт нэвтрэлт танилт"
 

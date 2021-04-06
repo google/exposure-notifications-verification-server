@@ -29,6 +29,45 @@ msgstr "Şifremi unuttum"
 msgid "login.about-exposure-notifications"
 msgstr "About Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Tam ad"
+
+msgid "account.header-details"
+msgstr "Hesap ayrıntıları"
+
+msgid "account.header-authentication"
+msgstr "Kimlik Doğrulama"
+
+msgid "account.header-realm-memberships"
+msgstr "Bölge üyelikleri"
+
+msgid "account.email-verified"
+msgstr "E-posta adresi doğrulandı"
+
+msgid "account.email-not-verified"
+msgstr "E-posta adresi doğrulanmadı"
+
+msgid "account.verify-email-address"
+msgstr "E-posta adresini doğrula"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor Authentication (MFA) etkinleştirildi"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor Authentication (MFA) devre dışı bırakıldı"
+
+msgid "account.manage-mfa"
+msgstr "MFA'yı Yönet"
+
+msgid "account.enable-mfa"
+msgstr "MFA'yı Etkinleştir"
+
+msgid "account.password-last-changed"
+msgstr "Parola en son %s önce değiştirildi"
+
+msgid "account.change-password"
+msgstr "Parolayı değiştir"
+
 msgid "mfa.mfa"
 msgstr "Çok Faktörlü Kimlik Doğrulama"
 

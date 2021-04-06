@@ -29,6 +29,45 @@ msgstr "Mot de passe oublié"
 msgid "login.about-exposure-notifications"
 msgstr "À propos des Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Nom complet"
+
+msgid "account.header-details"
+msgstr "Détails du compte"
+
+msgid "account.header-authentication"
+msgstr "Authentification"
+
+msgid "account.header-realm-memberships"
+msgstr "Adhésions au royaume"
+
+msgid "account.email-verified"
+msgstr "L'adresse e-mail est vérifiée"
+
+msgid "account.email-not-verified"
+msgstr "L'adresse e-mail n'est pas vérifiée"
+
+msgid "account.verify-email-address"
+msgstr "Vérifier l'adresse e-mail"
+
+msgid "account.mfa-enabled"
+msgstr "L'authentification multifacteur (MFA) est activée"
+
+msgid "account.mfa-disabled"
+msgstr "L'authentification multifacteur (MFA) est désactivée"
+
+msgid "account.manage-mfa"
+msgstr "Gérer MFA"
+
+msgid "account.enable-mfa"
+msgstr "Activer MFA"
+
+msgid "account.password-last-changed"
+msgstr "Le mot de passe a été modifié pour la dernière fois il y a %s"
+
+msgid "account.change-password"
+msgstr "Changer"
+
 msgid "mfa.mfa"
 msgstr "Authentification multifacteur"
 

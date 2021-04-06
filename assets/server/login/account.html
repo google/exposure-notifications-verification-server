@@ -4,11 +4,10 @@
 {{$currentMemberships := .currentMemberships}}
 
 <!doctype html>
-<html lang="en">
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 
 <head>
   {{template "head" .}}
-  {{template "firebase" .}}
 </head>
 
 <body id="account">
@@ -17,103 +16,75 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>My Account</h1>
-    <p>Information and settings for your account.</p>
-
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">
+        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        {{t $.locale "account.header-details"}}
+      </div>
       <div class="card-body">
-        <h6 class="card-title">Name</h6>
+        <h6 class="card-title">{{t $.locale "account.full-name" }}</h6>
         <div class="card-text mb-3 mt-n2">
           {{$user.Name}}
         </div>
 
-        <h6 class="card-title">Email</h6>
+        <h6 class="card-title">{{t $.locale "login.email-address"}}</h6>
         <div class="card-text mt-n2">
           {{$user.Email}}
         </div>
-
-        {{if $user.SystemAdmin}}
-        <h6 class="card-title  mt-3">System admin</h6>
-        <div class="card-text text-success mt-n2">Enabled</div>
-        {{end}}
       </div>
     </div>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Authentication</div>
+      <div class="card-header">
+        <span class="oi oi-lock-locked mr-2 ml-n1" aria-hidden="true"></span>
+        {{t $.locale "account.header-authentication"}}
+      </div>
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
-          <div class="card-text" id="email-verified">loading</div>
-        </li>
-        <li class="list-group-item">
-          <div class="card-text" id="phone-registered">loading</div>
-          <a href="/login/register-phone" id='register-link' class="card-link">Register phone</a>
-        </li>
-        <li class="list-group-item">
-          <div class="card-text">Password was last changed <span class="text-info">{{$user.PasswordAgeString}}</span>
-            ago.</div>
-          <a href="/login/change-password" class="card-link">Change password</a>
-        </li>
-      </ul>
-    </div>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Member of realms</div>
-      <ul class="list-group list-group-flush">
-        {{range $membership := $currentMemberships}}
-        <li class="list-group-item">
-          {{$membership.Realm.Name}}
-
-          {{- /* system admins can remove themselves from realms */ -}}
-          {{if $user.SystemAdmin}}
-            <a href="/realm/users/{{$membership.Realm.ID}}" class="d-block text-danger float-right" data-method="DELETE"
-              data-confirm="Are you sure you want to leave {{$membership.Realm.Name}}?">
-              <span class="oi oi-account-logout" aria-hidden="true"></span>
-              Leave realm
-            </a>
+          {{if .emailVerified}}
+            <span class="oi oi-circle-check mr-1 ml-n1 text-success small" aria-hidden="true"></span>
+            {{t $.locale "account.email-verified"}}
+          {{else}}
+            <span class="oi oi-circle-x mr-1 ml-n1 text-danger small" aria-hidden="true"></span>
+            {{t $.locale "account.email-not-verified"}}
+            <a href="/login/manage-account?mode=verifyEmail" class="float-right">{{t $.locale "account.verify-email-address"}}</a>
           {{end}}
         </li>
-        {{end}}
+        <li class="list-group-item">
+          {{if .mfaEnabled}}
+            <span class="oi oi-circle-check mr-1 ml-n1 text-success small" aria-hidden="true"></span>
+            {{t $.locale "account.mfa-enabled"}}
+            <a href="/login/register-phone" class="float-right">{{t $.locale "account.manage-mfa"}}</a>
+          {{else}}
+            <span class="oi oi-circle-x mr-1 ml-n1 text-danger small" aria-hidden="true"></span>
+            {{t $.locale "account.mfa-disabled"}}
+            <a href="/login/register-phone" class="float-right">{{t $.locale "account.enable-mfa"}}</a>
+          {{end}}
+        </li>
+        <li class="list-group-item">
+          <span class="oi oi-clock mr-1 ml-n1 text-secondary small" aria-hidden="true"></span>
+          {{t $.locale "account.password-last-changed" $user.PasswordAgeString}}
+          <a href="/login/change-password" class="float-right">{{t $.locale "account.change-password"}}</a>
+        </li>
       </ul>
     </div>
+
+    {{if $currentMemberships}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <span class="oi oi-home mr-2 ml-n1" aria-hidden="true"></span>
+          {{t $.locale "account.header-realm-memberships"}}
+        </div>
+        <ul class="list-group list-group-flush">
+          {{range $membership := $currentMemberships}}
+          <li class="list-group-item">
+            {{$membership.Realm.Name}}
+          </li>
+          {{end}}
+        </ul>
+      </div>
+    {{end}}
   </main>
-
-  <script type="text/javascript">
-    $(function() {
-      let $emailVer = $('#email-verified');
-      let $emailVerLink = $('#email-verified-link');
-      let $phoneReg = $('#phone-registered');
-      let $phoneRegLink = $('#register-phone-link');
-
-      firebase.auth().onAuthStateChanged(function(user) {
-        if (!user) {
-          return
-        }
-
-        if (user.multiFactor.enrolledFactors.length > 0) {
-          $phoneReg.html('Multi-factor auth is <span class="text-success">enabled</span>');
-          $('#register-link').text('Manage auth factors');
-        } else {
-          $phoneReg.addClass("text-danger");
-          $phoneReg.html('No second auth factor registered');
-        }
-
-        if (user.emailVerified) {
-          $emailVer.html('Email address is <span class="text-success">verified</span>');
-        } else {
-          $emailVer.addClass("text-danger");
-          $emailVer.html('Email address is <strong>not</strong> verified');
-
-          let $link = $('<a/>');
-          $link.addClass('card-link');
-          $link.attr('href','/login/manage-account?mode=verifyEmail');
-          $link.text('Verify email');
-          $emailVer.after($link);
-        }
-      });
-    });
-  </script>
 </body>
 
 </html>

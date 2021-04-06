@@ -29,6 +29,45 @@ msgstr "Esqueci a senha"
 msgid "login.about-exposure-notifications"
 msgstr "Sobre Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Nome completo"
+
+msgid "account.header-details"
+msgstr "Detalhes da conta"
+
+msgid "account.header-authentication"
+msgstr "Autenticação"
+
+msgid "account.header-realm-memberships"
+msgstr "Membros do reino"
+
+msgid "account.email-verified"
+msgstr "O endereço de e-mail foi verificado"
+
+msgid "account.email-not-verified"
+msgstr "O endereço de e-mail não foi verificado"
+
+msgid "account.verify-email-address"
+msgstr "Verificar endereço de e-mail"
+
+msgid "account.mfa-enabled"
+msgstr "A autenticação multifator (MFA) está ativada"
+
+msgid "account.mfa-disabled"
+msgstr "A autenticação multifator (MFA) está desativada"
+
+msgid "account.manage-mfa"
+msgstr "Gerenciar MFA"
+
+msgid "account.enable-mfa"
+msgstr "Habilitar MFA"
+
+msgid "account.password-last-changed"
+msgstr "A última senha foi alterada %s atrás"
+
+msgid "account.change-password"
+msgstr "Alterar senha"
+
 msgid "mfa.mfa"
 msgstr "Autenticação multifator"
 

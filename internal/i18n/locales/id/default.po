@@ -29,6 +29,45 @@ msgstr "Lupa sandi"
 msgid "login.about-exposure-notifications"
 msgstr "Tentang Exposure Notifications"
 
+msgid "account.full-name"
+msgstr "Nama lengkap"
+
+msgid "account.header-details"
+msgstr "Detail akun"
+
+msgid "account.header-authentication"
+msgstr "Otentikasi"
+
+msgid "account.header-realm-memberships"
+msgstr "Keanggotaan Realm"
+
+msgid "account.email-verified"
+msgstr "Alamat email diverifikasi"
+
+msgid "account.email-not-verified"
+msgstr "Alamat email tidak diverifikasi"
+
+msgid "account.verify-email-address"
+msgstr "Verifikasi alamat email"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor Authentication (MFA) diaktifkan"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor Authentication (MFA) dinonaktifkan"
+
+msgid "account.manage-mfa"
+msgstr "Kelola MFA"
+
+msgid "account.enable-mfa"
+msgstr "Aktifkan MFA"
+
+msgid "account.password-last-changed"
+msgstr "Kata sandi terakhir diubah %s lalu"
+
+msgid "account.change-password"
+msgstr "Ubah sandi"
+
 msgid "mfa.mfa"
 msgstr "Otentikasi Multi-Faktor"
 

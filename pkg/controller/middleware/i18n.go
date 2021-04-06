@@ -27,7 +27,8 @@ const (
 	HeaderAcceptLanguage = "Accept-Language"
 	QueryKeyLanguage     = "lang"
 
-	RightAlign = "text-right"
+	LeftAlign  = "ltr"
+	RightAlign = "rtl"
 )
 
 var rightAlignLanguages = map[string]struct{}{
@@ -53,11 +54,13 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 			m["locale"] = locale
 
 			// by default, no CSS is needed for left aligned languages.
-			textAlign := ""
-			if _, ok := rightAlignLanguages[i18n.TranslatorLanguage(locale)]; ok {
-				textAlign = RightAlign
+			textLanguage := i18n.TranslatorLanguage(locale)
+			textDirection := LeftAlign
+			if _, ok := rightAlignLanguages[textLanguage]; ok {
+				textDirection = RightAlign
 			}
-			m["localeAlign"] = textAlign
+			m["textDirection"] = textDirection
+			m["textLanguage"] = textLanguage
 
 			// Save the template map on the context.
 			ctx = controller.WithTemplateMap(ctx, m)

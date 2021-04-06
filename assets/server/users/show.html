@@ -9,7 +9,7 @@
 {{$canWrite := $currentMembership.Can rbac.UserWrite}}
 
 <!doctype html>
-<html lang="en">
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
   <script src="https://www.gstatic.com/charts/loader.js"></script>

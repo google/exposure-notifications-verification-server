@@ -28,6 +28,45 @@ msgstr "هل نسيت كلمة السر"
 msgid "login.about-exposure-notifications"
 msgstr "Exposure Notifications حول"
 
+msgid "account.full-name"
+msgstr "الاسم الكامل"
+
+msgid "account.header-details"
+msgstr "تفاصيل الحساب"
+
+msgid "account.header-authentication"
+msgstr "المصادقة"
+
+msgid "account.header-realm-memberships"
+msgstr "عضويات العالم"
+
+msgid "account.email-verified"
+msgstr "تم التحقق من عنوان البريد الإلكتروني"
+
+msgid "account.email-not-verified"
+msgstr "لم يتم التحقق من عنوان البريد الإلكتروني"
+
+msgid "account.verify-email-address"
+msgstr "تحقق من عنوان البريد الإلكتروني"
+
+msgid "account.mfa-enabled"
+msgstr "تم تمكين المصادقة متعددة العوامل (MFA)"
+
+msgid "account.mfa-disabled"
+msgstr "تم تعطيل المصادقة متعددة العوامل (MFA)"
+
+msgid "account.manage-mfa"
+msgstr "إدارة MFA"
+
+msgid "account.enable-mfa"
+msgstr "تمكين MFA"
+
+msgid "account.password-last-changed"
+msgstr "تم تغيير كلمة المرور آخر مرة منذ %s"
+
+msgid "account.change-password"
+msgstr "تغيير كلمة المرور"
+
 msgid "mfa.mfa"
 msgstr "مصادقة متعددة العوامل"
 
