@@ -111,9 +111,6 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		if existing != nil && existing.ID != 0 {
-			flash.Alert("A user with this email address already exists, so the exiting name has been used.")
-		}
 		flash.Alert("Successfully created user %q", user.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/users/%d", user.ID), http.StatusSeeOther)
 	})
