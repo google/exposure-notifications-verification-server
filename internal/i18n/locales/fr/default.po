@@ -29,6 +29,18 @@ msgstr "Mot de passe oublié"
 msgid "login.about-exposure-notifications"
 msgstr "À propos des Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Déconnecter..."
+
+msgid "login.signing-out-error"
+msgstr "Échec de la déconnexion. Fermez votre navigateur ou effacez les cookies."
+
+msgid "login.realm-selection"
+msgstr "Sélection de royaume"
+
+msgid "login.realm-no-memberships"
+msgstr "Vous n'êtes membre d'aucun royaume."
+
 msgid "account.full-name"
 msgstr "Nom complet"
 

@@ -29,6 +29,18 @@ msgstr "Forgot password"
 msgid "login.about-exposure-notifications"
 msgstr "About Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Signing out..."
+
+msgid "login.signing-out-error"
+msgstr "Failed to sign out. Close your browser or clear cookies."
+
+msgid "login.realm-selection"
+msgstr "Realm selection"
+
+msgid "login.realm-no-memberships"
+msgstr "You are not a member of any realms."
+
 msgid "account.full-name"
 msgstr "Full name"
 

@@ -29,6 +29,18 @@ msgstr "Nakalimutan ang password"
 msgid "login.about-exposure-notifications"
 msgstr "Tungkol sa Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Pag-sign out..."
+
+msgid "login.signing-out-error"
+msgstr "Nabigong mag-sign out. Isara ang iyong browser o i-clear ang cookies."
+
+msgid "login.realm-selection"
+msgstr "Pagpili ng realm"
+
+msgid "login.realm-no-memberships"
+msgstr "Hindi ka miyembro ng anumang mga mundo."
+
 msgid "account.full-name"
 msgstr "Buong pangalan"
 

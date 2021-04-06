@@ -157,7 +157,7 @@ func TestHandleSelectRealm_ShowSelectRealm(t *testing.T) {
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 		}
-		if got, want := w.Body.String(), "select a realm"; !strings.Contains(got, want) {
+		if got, want := w.Body.String(), "Realm selection"; !strings.Contains(got, want) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})

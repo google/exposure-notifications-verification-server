@@ -29,6 +29,18 @@ msgstr "Lupa sandi"
 msgid "login.about-exposure-notifications"
 msgstr "Tentang Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Keluar..."
+
+msgid "login.signing-out-error"
+msgstr "Gagal keluar. Tutup browser Anda atau hapus cookie."
+
+msgid "login.realm-selection"
+msgstr "Pemilihan alam"
+
+msgid "login.realm-no-memberships"
+msgstr "Anda bukan anggota dari alam manapun."
+
 msgid "account.full-name"
 msgstr "Nama lengkap"
 

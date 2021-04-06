@@ -29,6 +29,18 @@ msgstr "Нууц үгээ мартсан"
 msgid "login.about-exposure-notifications"
 msgstr "Тухай Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Гарч байна..."
+
+msgid "login.signing-out-error"
+msgstr "Гарч чадсангүй. Хөтөчөө хааж эсвэл күүкийг цэвэрлэ."
+
+msgid "login.realm-selection"
+msgstr "Хүрээний сонголт"
+
+msgid "login.realm-no-memberships"
+msgstr "Та ямар ч хүрээний гишүүн биш."
+
 msgid "account.full-name"
 msgstr "Овог нэр"
 

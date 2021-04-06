@@ -29,6 +29,18 @@ msgstr "パスワードを忘れた"
 msgid "login.about-exposure-notifications"
 msgstr "について学ぶ Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "サインアウト..."
+
+msgid "login.signing-out-error"
+msgstr "サインアウトに失敗しました。 ブラウザを閉じるか、Cookieをクリアしてください。"
+
+msgid "login.realm-selection"
+msgstr "レルムの選択"
+
+msgid "login.realm-no-memberships"
+msgstr "あなたはどのレルムのメンバーでもありません。"
+
 msgid "account.full-name"
 msgstr "フルネーム"
 

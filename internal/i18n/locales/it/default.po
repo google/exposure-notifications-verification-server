@@ -29,6 +29,18 @@ msgstr "Password dimenticata"
 msgid "login.about-exposure-notifications"
 msgstr "Informazioni sulle Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Disconnessione in corso..."
+
+msgid "login.signing-out-error"
+msgstr "Impossibile disconnettersi. Chiudi il browser o cancella i cookie."
+
+msgid "login.realm-selection"
+msgstr "Selezione dei reami"
+
+msgid "login.realm-no-memberships"
+msgstr "Non sei un membro di nessun reame."
+
 msgid "account.full-name"
 msgstr "Nome completo"
 

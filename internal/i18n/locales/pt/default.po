@@ -29,6 +29,18 @@ msgstr "Esqueci a senha"
 msgid "login.about-exposure-notifications"
 msgstr "Sobre Exposure Notifications"
 
+msgid "login.signing-out"
+msgstr "Saindo..."
+
+msgid "login.signing-out-error"
+msgstr "Falha ao sair. Feche seu navegador ou limpe os cookies."
+
+msgid "login.realm-selection"
+msgstr "Seleção de reino"
+
+msgid "login.realm-no-memberships"
+msgstr "Você não é membro de nenhum reino."
+
 msgid "account.full-name"
 msgstr "Nome completo"
 

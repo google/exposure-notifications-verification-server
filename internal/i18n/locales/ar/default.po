@@ -28,6 +28,18 @@ msgstr "هل نسيت كلمة السر"
 msgid "login.about-exposure-notifications"
 msgstr "Exposure Notifications حول"
 
+msgid "login.signing-out"
+msgstr "تسجيل خروج..."
+
+msgid "login.signing-out-error"
+msgstr "فشل تسجيل الخروج. أغلق المتصفح أو امسح ملفات تعريف الارتباط."
+
+msgid "login.realm-selection"
+msgstr "اختيار المجال"
+
+msgid "login.realm-no-memberships"
+msgstr "أنت لست عضوا في أي عالم."
+
 msgid "account.full-name"
 msgstr "الاسم الكامل"
 
