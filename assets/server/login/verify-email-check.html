@@ -29,35 +29,35 @@
     </div>
   </main>
 
-  <script type="text/javascript">
-  $(function() {
-    let urlVars = getUrlVars();
-    let code = urlVars["oobCode"];
-    if (!code) {
-      code = "";
-    }
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
+      let urlVars = getUrlVars();
+      let code = urlVars["oobCode"];
+      if (!code) {
+        code = "";
+      }
 
-    firebase.auth().applyActionCode(code)
-      .then(function(resp) {
-        window.location.assign("/");
-      }).catch(function(error) {
-        flash.clear();
-        flash.error("Invalid email verification code. "
-          + "The code may be malformed, expired, or has already been used.");
-      });
-  });
+      firebase.auth().applyActionCode(code)
+        .then(function(resp) {
+          window.location.assign("/");
+        }).catch(function(error) {
+          flash.clear();
+          flash.error("Invalid email verification code. "
+            + "The code may be malformed, expired, or has already been used.");
+        });
+    });
 
-  function getUrlVars() {
-    let vars = [], hash;
-    let queryParams = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for (let i = 0; i < queryParams.length; i++) {
-      v = queryParams[i].split('=');
-      vars.push(v[0]);
-      vars[v[0]] = v[1];
+    function getUrlVars() {
+      let vars = [], hash;
+      let queryParams = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+      for (let i = 0; i < queryParams.length; i++) {
+        v = queryParams[i].split('=');
+        vars.push(v[0]);
+        vars[v[0]] = v[1];
+      }
+      return vars;
     }
-    return vars;
-  }
-</script>
+  </script>
 </body>
 </html>
 {{end}}

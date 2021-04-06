@@ -88,8 +88,8 @@
     <a class=" card-link" href="/realm/users">&larr; All users</a>
   </main>
 
-  <script type="text/javascript">
-    $(function() {
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
       let $form = $('#form');
       let $csv = $('#csv');
       let $fileLabel = $('#fileLabel');

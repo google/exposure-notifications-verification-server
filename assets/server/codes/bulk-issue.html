@@ -168,7 +168,7 @@
     </div>
   </main>
 
-  <script type="text/javascript">
+  <script defer type="text/javascript">
     let total = 0;
     let totalErrs = 0;
 
@@ -205,7 +205,7 @@
     let tzOffset = new Date().getTimezoneOffset();
     let csrfToken = {{.csrfToken}};
 
-    $(function() {
+    window.addEventListener('load', (event) => {
       initBulkUploadUI();
 
       let randomString = getCookie("retryCode");

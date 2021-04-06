@@ -190,7 +190,7 @@
 </div>
 
 
-<script type="text/javascript">
+<script defer type="text/javascript">
   let stats;
 
   google.charts.load('current', {
@@ -357,7 +357,7 @@
     dataTable.addColumn('number', 'Android');
     dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
     dataTable.addColumn('number', 'IOS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});  
+    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
 
     stats.reverse().forEach(function(row) {
       let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
@@ -366,7 +366,7 @@
       let iosCount = parseInt(row.publish_requests.ios);
 
       let data = [utcDate(row.day),
-        total,        
+        total,
          "<ul class='chart-tooltip'>"+
           "<li><strong>Total:</strong>" + total + "</li>"+
           "<li><strong>Android:</strong>" + androidCount + "</li>"+
@@ -375,7 +375,7 @@
         row.requests_missing_onset_date];
       if (allowsUserReport) {
         data.push(row.requests_with_revisions);
-      }  
+      }
       data.push(
         row.publish_requests.unknown,
         "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
@@ -388,7 +388,7 @@
         row.publish_requests.ios,
         "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
           "<li>Count: " + iosCount + "</li>" +
-          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",        
+          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
       );
 
 
@@ -446,7 +446,7 @@
     colors.push('#6c757d', '#28a745', '#007bff');
     series = {
       0: {type: 'line'},
-      1: {type: 'line'},   
+      1: {type: 'line'},
     }
     if (allowsUserReport) {
       series["2"] = {type: 'line'}
@@ -711,7 +711,7 @@
     return dataTable;
   }
 
-  $(function() {
+  window.addEventListener('load', (event) => {
     $slider.on("input", function(event) {
       if (!stats) {
         return

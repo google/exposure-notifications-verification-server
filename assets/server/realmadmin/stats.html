@@ -51,7 +51,7 @@
     {{end}}
   </main>
 
-  <script type="text/javascript">
+  <script defer type="text/javascript">
     var chartData = [];
     let smoothing = 7;
 
@@ -61,29 +61,29 @@
 
     $(() => redrawCharts(chartData, 300));
 
-    $(function() {
-    let $smoothDrop = $('#smooth-drop');
+    window.addEventListener('load', (event) => {
+      let $smoothDrop = $('#smooth-drop');
 
-    $smoothDrop.on("change", function(event) {
-      event.preventDefault();
-      smoothing = $smoothDrop.val();
-      $('.sum-title').text(`(${smoothing} day sum)`)
+      $smoothDrop.on("change", function(event) {
+        event.preventDefault();
+        smoothing = $smoothDrop.val();
+        $('.sum-title').text(`(${smoothing} day sum)`)
 
-      let max = $slider.attr('max');
-      $slider.attr('min', Math.min(smoothing, max));
-      $slider.val(max);
-      $slider.trigger("input");
+        let max = $slider.attr('max');
+        $slider.attr('min', Math.min(smoothing, max));
+        $slider.val(max);
+        $slider.trigger("input");
 
-      $onsetSlider.attr('min', Math.min(smoothing, max));
-      $onsetSlider.val(max);
-      $onsetSlider.trigger("input");
+        $onsetSlider.attr('min', Math.min(smoothing, max));
+        $onsetSlider.val(max);
+        $onsetSlider.trigger("input");
 
-      max = $issueAgeSlider.attr('max');
-      $issueAgeSlider.attr('min', Math.min(smoothing, max));
-      $issueAgeSlider.val(max);
-      $issueAgeSlider.trigger("input");
+        max = $issueAgeSlider.attr('max');
+        $issueAgeSlider.attr('min', Math.min(smoothing, max));
+        $issueAgeSlider.val(max);
+        $issueAgeSlider.trigger("input");
+      });
     });
-  });
   </script>
 </body>
 </html>

@@ -122,8 +122,8 @@
     </button>
   </form>
 
-  <script type="text/javascript">
-    $(function() {
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
       let $permissionImpliedWarning = $('#permission-implied-warning');
 
       $('input[name=permissions]')

@@ -95,8 +95,8 @@
     </div>
   </main>
 
-  <script type="text/javascript">
-    $(function() {
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
       let $container = $('#twilio-from-numbers-container');
       let $template = $('#twilio-from-number-template');
       let counter = 0;
