@@ -3,14 +3,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta data-build-id="{{.buildID}}" data-build-tag="{{.buildTag}}">
 
-<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-<link rel="manifest" href="/static/site.webmanifest">
-<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
-<link rel="shortcut icon" href="/static/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?{{.buildID}}">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png?{{.buildID}}">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png?{{.buildID}}">
+<link rel="manifest" href="/static/site.webmanifest?{{.buildID}}">
+<link rel="mask-icon" href="/static/safari-pinned-tab.svg?{{.buildID}}" color="#5bbad5">
+<link rel="shortcut icon" href="/static/favicon.ico?{{.buildID}}">
 <meta name="msapplication-TileColor" content="#ff0554">
-<meta name="msapplication-config" content="/static/browserconfig.xml">
+<meta name="msapplication-config" content="/static/browserconfig.xml?{{.buildID}}">
 <meta name="theme-color" content="#ffffff">
 {{.csrfMeta}}
 
@@ -23,7 +23,7 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/css/intlTelInput.css"
   integrity="sha384-TXDx4BvGGuJDYIKlcgXfDntJ100A809RRLB4W72MhjXJzakfj3ptxy4zER5qsxZH" crossorigin="anonymous">
 <link rel="stylesheet"
-  href="/static/css/application.css" crossorigin="anonymous" />
+  href="/static/css/application.css?{{.buildID}}" crossorigin="anonymous" />
 
 <script defer src="https://code.jquery.com/jquery-3.5.1.min.js"
   integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
