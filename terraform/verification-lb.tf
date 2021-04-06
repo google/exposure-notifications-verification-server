@@ -64,7 +64,7 @@ resource "google_compute_url_map" "urlmap-http" {
       default_url_redirect {
         host_redirect  = var.server_hosts[0]
         https_redirect = true
-        strip_query    = true
+        strip_query    = false
       }
     }
   }
@@ -87,7 +87,7 @@ resource "google_compute_url_map" "urlmap-http" {
       default_url_redirect {
         host_redirect  = var.apiserver_hosts[0]
         https_redirect = true
-        strip_query    = true
+        strip_query    = false
       }
     }
   }
@@ -110,7 +110,7 @@ resource "google_compute_url_map" "urlmap-http" {
       default_url_redirect {
         host_redirect  = var.adminapi_hosts[0]
         https_redirect = true
-        strip_query    = true
+        strip_query    = false
       }
     }
   }
