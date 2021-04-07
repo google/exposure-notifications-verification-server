@@ -373,3 +373,17 @@ msgstr "Too many code errors to display results"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "見つかりません"
+
+msgid "static.resource-does-not-exist"
+msgstr "そのリソースは存在しません。"
+
+msgid "static.redirect-not-found"
+msgstr "Exposure Notifications コードを利用するには、モバイルデバイスのリンクにアクセスしてください。"

@@ -7,13 +7,13 @@
 
 <body id="not-found">
   <main role="main" class="container mt-5">
-    <h1>Not found</h1>
+    <h1>{{t $.locale "static.not-found"}}</h1>
     <p>
-      The resource you attempted to access does not exist.
+      {{t $.locale "static.resource-does-not-exist"}}
     </p>
-    <p>
-      <a href="#" onclick="history.go(-1); return false;">&larr; Go back</a>
-    </p>
+    <div class="d-flex justify-content-center">
+      <a href="https://g.co/ens" class="small text-muted">{{t $.locale "login.about-exposure-notifications"}}</a>
+    </div>
   </main>
 </body>
 </html>

@@ -172,7 +172,7 @@ func (m TemplateMap) Title(f string, args ...interface{}) {
 		s = fmt.Sprintf(f, args...)
 	}
 
-	if current := m["title"]; current != "" {
+	if current := m["title"]; current != nil && current != "" {
 		m["title"] = fmt.Sprintf("%s | %s", s, current)
 		return
 	}

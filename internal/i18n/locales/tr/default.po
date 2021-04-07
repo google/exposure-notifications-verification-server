@@ -373,3 +373,17 @@ msgstr "Too many code errors to display results"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Bulunamadı"
+
+msgid "static.resource-does-not-exist"
+msgstr "Bu kaynak mevcut değil."
+
+msgid "static.redirect-not-found"
+msgstr "Exposure Notifications kodunu kullanmak için mobil cihazınızdaki bağlantıyı ziyaret edin."

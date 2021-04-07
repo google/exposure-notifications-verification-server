@@ -372,3 +372,17 @@ msgstr "Zu viele Codefehler, um Ergebnisse anzuzeigen"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Es wurden zu viele Codes ausgegeben, um die Ergebnisse anzuzeigen"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Nicht gefunden"
+
+msgid "static.resource-does-not-exist"
+msgstr "Diese ressource existiert nicht."
+
+msgid "static.redirect-not-found"
+msgstr "Besuchen Sie den Link auf Ihrem Mobilgerät, um einen Exposure Notifications Code einzulösen."

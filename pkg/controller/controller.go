@@ -96,7 +96,9 @@ func NotFound(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.RenderHTMLStatus(w, http.StatusNotFound, "404", nil)
+		m := TemplateMapFromContext(r.Context())
+		m.Title(http.StatusText(http.StatusNotFound))
+		h.RenderHTMLStatus(w, http.StatusNotFound, "404", m)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 	default:
@@ -127,7 +129,9 @@ func Unauthorized(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 
 	switch {
 	case prefixInList(accept, ContentTypeHTML):
-		h.RenderHTMLStatus(w, http.StatusUnauthorized, "401", nil)
+		m := TemplateMapFromContext(r.Context())
+		m.Title(http.StatusText(http.StatusUnauthorized))
+		h.RenderHTMLStatus(w, http.StatusUnauthorized, "401", m)
 	case prefixInList(accept, ContentTypeJSON):
 		h.RenderJSON(w, http.StatusUnauthorized, apiErrorUnauthorized)
 	default:

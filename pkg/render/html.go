@@ -98,12 +98,14 @@ func (r *Renderer) RenderHTML500(w http.ResponseWriter, err error) {
 
 	if r.debug {
 		r.RenderHTMLStatus(w, code, "500", map[string]string{
+			"title": http.StatusText(http.StatusInternalServerError),
 			"error": err.Error(),
 		})
 		return
 	}
 
 	r.RenderHTMLStatus(w, code, "500", map[string]string{
+		"title": http.StatusText(http.StatusInternalServerError),
 		"error": http.StatusText(code),
 	})
 }

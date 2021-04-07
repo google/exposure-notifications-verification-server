@@ -373,3 +373,17 @@ msgstr "Terlalu banyak kesalahan kode untuk menampilkan hasil"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Terlalu banyak kode yang diterbitkan untuk menampilkan hasil"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Tidak ditemukan"
+
+msgid "static.resource-does-not-exist"
+msgstr "Sumber daya itu tidak ada."
+
+msgid "static.redirect-not-found"
+msgstr "Untuk menukarkan kode Exposure Notifications, kunjungi tautan di perangkat seluler Anda."

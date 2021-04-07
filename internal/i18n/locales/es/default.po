@@ -372,3 +372,17 @@ msgstr "Demasiados errores de código para mostrar resultados"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Se emitieron demasiados códigos para mostrar los resultados"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Extraviado"
+
+msgid "static.resource-does-not-exist"
+msgstr "Ese recurso no existe."
+
+msgid "static.redirect-not-found"
+msgstr "Para canjear un código Exposure Notifications, visite el vínculo en su dispositivo móvil."

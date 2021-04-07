@@ -7,14 +7,13 @@
 
 <body>
   <main role="main" class="container mt-5">
-    <h1>Not found.</h1>
+    <h1>{{t $.locale "static.not-found"}}</h1>
     <p>
-      <code>{{.requestURI}}</code> was not found on this server.
+      {{t $.locale "static.redirect-not-found"}}
     </p>
-    <p>
-      If you are trying to submit your anonymous data for Exposure Notifications,
-      please contact the public health authority that issued your verification code.
-    </p>
+    <div class="d-flex justify-content-center">
+      <a href="https://g.co/ens" class="small text-muted">{{t $.locale "login.about-exposure-notifications"}}</a>
+    </div>
   </main>
 </body>
 </html>

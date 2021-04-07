@@ -373,3 +373,17 @@ msgstr "Үр дүнг харуулахын тулд кодын алдаа хэт
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Үр дүнг харуулахын тулд хэтэрхий олон код гаргасан байна"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Олдсонгүй"
+
+msgid "static.resource-does-not-exist"
+msgstr "Тэр нөөц байхгүй."
+
+msgid "static.redirect-not-found"
+msgstr "Exposure Notifications кодыг зарцуулахын тулд мобайл төхөөрөмж дээрх холбоосоор зочилно уу."
