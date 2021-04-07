@@ -62,13 +62,13 @@ func AllDigits(val string) bool {
 }
 
 // TestTimeout controls the individual test timeout, primarily used on a context
-// for chromedp tests. By default, it's 2min, but it can be controlled with the
+// for chromedp tests. By default, it's 1min, but it can be controlled with the
 // TEST_TIMEOUT environment variable.
 func TestTimeout() time.Duration {
 	if v, _ := time.ParseDuration(os.Getenv("TEST_TIMEOUT")); v != 0 {
 		return v
 	}
-	return 120 * time.Second
+	return 60 * time.Second
 }
 
 // DevMode indicates whether the project is running in development mode.
