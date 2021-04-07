@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/firestore v1.5.0 // indirect
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/chromedp/cdproto v0.0.0-20210323015217-0942afbea50e
 	github.com/chromedp/chromedp v0.6.10
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
