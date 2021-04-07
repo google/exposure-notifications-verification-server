@@ -58,31 +58,46 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	browserCtx := browser.New(t)
-	taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-	defer done()
-
-	yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
-
 	var code string
 	var html string
-	if err := chromedp.Run(taskCtx,
-		browser.SetCookie(cookie),
-		chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
-		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-		chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
-		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+	var lastErr error
 
-		chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
-		chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
-		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-		chromedp.Click(`#submit`, chromedp.ByQuery),
+	// This test has a tendency to be flakey because we rely on downloading
+	// upstream javascript and styles. Sometimes the upstream CDN blocks the
+	// download, which causes the test to fail. We retry 3 times to try and
+	// mitigate this.
+	for i := 0; i < 3; i++ {
+		browserCtx := browser.New(t)
+		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
+		defer done()
 
-		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-		chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
-		chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
-		chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-	); err != nil {
+		yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
+
+		if err := chromedp.Run(taskCtx,
+			browser.SetCookie(cookie),
+			chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
+			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+			chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
+			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+
+			chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
+			chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
+			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+			chromedp.Click(`#submit`, chromedp.ByQuery),
+
+			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+			chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
+			chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
+			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+		); err != nil {
+			lastErr = err
+		} else {
+			lastErr = nil
+			break
+		}
+	}
+
+	if lastErr != nil {
 		t.Fatalf("failed to issue code: %s\nlast html:\n\n%s", err, html)
 	}
 
