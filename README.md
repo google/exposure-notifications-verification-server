@@ -1,3 +1,5 @@
+What does this change do to CI?
+
 # Exposure Notifications Verification Server
 
 This is a reference implementation for an Exposure Notifications [verification server](https://developers.google.com/android/exposure-notifications/verification-system), part of the broader [Google Exposure Notifications system](https://github.com/google/exposure-notifications-server).
