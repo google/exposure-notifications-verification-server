@@ -62,6 +62,18 @@ msgstr "Alamat email tidak diverifikasi"
 msgid "account.verify-email-address"
 msgstr "Verifikasi alamat email"
 
+msgid "account.verify-email-address-required"
+msgstr "%s mengharuskan Anda memverifikasi alamat email Anda."
+
+msgid "account.verifying-email-address"
+msgstr "Memverifikasi alamat email..."
+
+msgid "account.verify-email-address-error"
+msgstr "Gagal memverifikasi alamat email"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Lanjutkan tanpa memverifikasi alamat email"
+
 msgid "account.mfa-enabled"
 msgstr "Multi-Factor Authentication (MFA) diaktifkan"
 

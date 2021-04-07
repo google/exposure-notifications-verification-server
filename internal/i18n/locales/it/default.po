@@ -62,6 +62,18 @@ msgstr "L'indirizzo email non è verificato"
 msgid "account.verify-email-address"
 msgstr "Verifica indirizzo email"
 
+msgid "account.verify-email-address-required"
+msgstr "%s richiede la verifica del tuo indirizzo email."
+
+msgid "account.verifying-email-address"
+msgstr "Verifica dell'indirizzo e-mail..."
+
+msgid "account.verify-email-address-error"
+msgstr "Impossibile verificare l'indirizzo e-mail"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Continua senza verificare l'indirizzo email"
+
 msgid "account.mfa-enabled"
 msgstr "Multi-Factor Authentication (MFA) è abilitato"
 

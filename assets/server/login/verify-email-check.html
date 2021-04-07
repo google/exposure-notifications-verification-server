@@ -15,13 +15,20 @@
 
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-6">
-
-          <div class="card mb-3 shadow-sm">
-            <div class="card-header">Email verification</div>
+        <div class="col-sm-9">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <span id="icon" class="oi oi-envelope-closed mr-2 ml-n1" aria-hidden="true"></span>
+              {{t $.locale "account.verify-email-address"}}
+            </div>
             <div class="card-body">
-              <p>Verifying email address ownership.</p>
-              <a class="card-link" href="/">&larr; Login</a>
+              <span id="verify-pending">
+                {{t $.locale "account.verifying-email-address"}}
+              </span>
+              <span id="verify-error" class="d-none text-danger">
+                <span id="icon" class="oi oi-circle-x small pr-1" aria-hidden="true"></span>
+                {{t $.locale "account.verify-email-address-error"}}
+              </span>
             </div>
           </div>
         </div>
@@ -31,32 +38,28 @@
 
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
+      let verifyPending = document.querySelector('span#verify-pending');
+      let verifyError = document.querySelector('span#verify-error');
+      let showError = () => {
+        verifyPending.classList.add('d-none');
+        verifyError.classList.remove('d-none');
+      }
+
       let urlVars = getUrlVars();
-      let code = urlVars["oobCode"];
+      let code = urlVars['oobCode'];
       if (!code) {
-        code = "";
+        showError();
+        return;
       }
 
       firebase.auth().applyActionCode(code)
         .then(function(resp) {
-          window.location.assign("/");
-        }).catch(function(error) {
-          flash.clear();
-          flash.error("Invalid email verification code. "
-            + "The code may be malformed, expired, or has already been used.");
+          window.location.assign('/');
+        }).catch(function(err) {
+          console.error(err);
+          showError();
         });
     });
-
-    function getUrlVars() {
-      let vars = [], hash;
-      let queryParams = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-      for (let i = 0; i < queryParams.length; i++) {
-        v = queryParams[i].split('=');
-        vars.push(v[0]);
-        vars[v[0]] = v[1];
-      }
-      return vars;
-    }
   </script>
 </body>
 </html>

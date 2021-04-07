@@ -62,6 +62,18 @@ msgstr "E-posta adresi doğrulanmadı"
 msgid "account.verify-email-address"
 msgstr "E-posta adresini doğrula"
 
+msgid "account.verify-email-address-required"
+msgstr "%s, e-posta adresinizi doğrulamanızı gerektirir."
+
+msgid "account.verifying-email-address"
+msgstr "E-posta adresi doğrulanıyor..."
+
+msgid "account.verify-email-address-error"
+msgstr "E-posta adresi doğrulanamadı"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "E-posta adresini doğrulamadan devam edin"
+
 msgid "account.mfa-enabled"
 msgstr "Multi-Factor Authentication (MFA) etkinleştirildi"
 
