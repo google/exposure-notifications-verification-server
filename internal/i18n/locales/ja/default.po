@@ -62,6 +62,18 @@ msgstr "メールアドレスが確認されていません"
 msgid "account.verify-email-address"
 msgstr "メールアドレスを確認する"
 
+msgid "account.verify-email-address-required"
+msgstr "%s では、メールアドレスを確認する必要があります。"
+
+msgid "account.verifying-email-address"
+msgstr "メールアドレスを確認しています..."
+
+msgid "account.verify-email-address-error"
+msgstr "メールアドレスの確認に失敗しました"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "メールアドレスを確認せずに続行"
+
 msgid "account.mfa-enabled"
 msgstr "多要素認証（MFA）が有効になっています"
 

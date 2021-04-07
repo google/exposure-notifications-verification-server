@@ -62,6 +62,18 @@ msgstr "Имэйл хаягийг баталгаажуулаагүй байна"
 msgid "account.verify-email-address"
 msgstr "Баталгаажуулах"
 
+msgid "account.verify-email-address-required"
+msgstr "%s нь таны имэйл хаягийг баталгаажуулахыг шаарддаг."
+
+msgid "account.verifying-email-address"
+msgstr "Имэйл хаягийг баталгаажуулж байна..."
+
+msgid "account.verify-email-address-error"
+msgstr "Имэйл хаягийг баталгаажуулж чадсангүй"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Имэйл хаягаа баталгаажуулахгүйгээр үргэлжлүүлээрэй"
+
 msgid "account.mfa-enabled"
 msgstr "Олон хүчин зүйлийн баталгаажуулалт (MFA) идэвхжсэн"
 

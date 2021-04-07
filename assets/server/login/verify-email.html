@@ -1,4 +1,7 @@
 {{define "login/verify-email"}}
+
+{{$currentRealm := .currentRealm}}
+
 <!doctype html>
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 
@@ -15,42 +18,42 @@
 
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-6">
+        <div class="col-sm-9">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <span id="icon" class="oi oi-envelope-closed mr-2 ml-n1" aria-hidden="true"></span>
+              {{t $.locale "account.verify-email-address"}}
+            </div>
 
-          <div class="card mb-3 shadow-sm">
-            <div class="card-header">Email verification</div>
             <div class="card-body">
-              {{if not .currentRealm}}
-              <div class="alert alert-warning">
-                <span class="oi oi-warning"></span>
-                Email address verification is required to administer with no realm selected.
-              </div>
-              {{else if eq .currentRealm.EmailVerifiedMode.String "required"}}
-              <div class="alert alert-warning">
-                <span class="oi oi-warning"></span>
-                This realm <strong>requires</strong> email address verification.
-              </div>
+              {{if not $currentRealm}}
+                <div class="alert alert-warning">
+                  <!-- This is only for system admins, skip i18n. -->
+                  Email address verification is required.
+                </div>
+              {{else if eq $currentRealm.EmailVerifiedMode.String "required"}}
+                <div class="alert alert-warning">
+                  {{t $.locale "account.verify-email-address-required" $currentRealm.Name}}
+                </div>
               {{end}}
-
-              <p>Email address ownership for <em>{{.currentUser.Email}}</em> is <strong id="not">not</strong> confirmed.</p>
 
               <form method="POST" id="verify-email">
                 {{ .csrfField }}
                 <input type="submit" id="verify-button" class="btn btn-primary btn-block"
-                  value="Send verification email" disabled>
-
-                <small class="form-text text-muted">
-                  Click to send an email containing a verification link.
-                </small>
+                  value="{{t $.locale "account.verify-email-address"}}" disabled>
               </form>
-
-              {{if .currentRealm}}
-              {{if ne .currentRealm.EmailVerifiedMode.String "required"}}
-              <a id="skip" class="card-link float-right mt-3" href="/login/post-authenticate">Skip for now</a>
-              {{end}}
-              {{end}}
             </div>
           </div>
+
+          {{if $currentRealm}}
+            {{if ne $currentRealm.EmailVerifiedMode.String "required"}}
+              <div class="d-flex justify-content-center pt-2">
+                <a id="skip" class="text-muted small" href="/login/post-authenticate">
+                  {{t $.locale "account.continue-without-verifying-email-address"}}
+                </a>
+              </div>
+            {{end}}
+          {{end}}
         </div>
       </div>
     </div>
@@ -60,8 +63,6 @@
   <script>
     let $form = $("#verify-email");
     let $verifyButton = $("#verify-button");
-    let $skip = $("#skip");
-    let $not = $("#not");
 
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {

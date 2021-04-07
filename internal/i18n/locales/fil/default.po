@@ -62,6 +62,18 @@ msgstr "Hindi na-verify ang email address"
 msgid "account.verify-email-address"
 msgstr "Patunayan ang email address"
 
+msgid "account.verify-email-address-required"
+msgstr "Hinihiling sa iyo ng %s na i-verify ang iyong email address."
+
+msgid "account.verifying-email-address"
+msgstr "Pinapatunayan ang email address..."
+
+msgid "account.verify-email-address-error"
+msgstr "Nabigong ma-verify ang email address"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Magpatuloy nang hindi napatunayan ang email address"
+
 msgid "account.mfa-enabled"
 msgstr "Pinagana ang Multi-Factor Authentication (MFA)"
 

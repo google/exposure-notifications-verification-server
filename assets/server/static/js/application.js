@@ -619,6 +619,18 @@ function genRandomString(len) {
   return s;
 }
 
+// getUrlVars gets the URL params.
+function getUrlVars() {
+  let vars = [];
+  let queryParams = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  for (let i = 0; i < queryParams.length; i++) {
+    v = queryParams[i].split('=');
+    vars.push(v[0]);
+    vars[v[0]] = v[1];
+  }
+  return vars;
+}
+
 // element is expected to be a jquery element or dom query selector, ts is
 // the number of seconds since epoch, UTC.
 function countdown(element, ts, expiredCallback) {
