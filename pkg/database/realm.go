@@ -1564,7 +1564,7 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 		}
 
 		// Generate an audit
-		audit := BuildAuditEntry(actor, "destrited signing key", signingKey, r.ID)
+		audit := BuildAuditEntry(actor, "destroyed signing key", signingKey, r.ID)
 		if err := tx.Save(audit).Error; err != nil {
 			return fmt.Errorf("failed to save audits: %w", err)
 		}
