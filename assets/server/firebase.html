@@ -1,10 +1,10 @@
 {{define "firebase"}}
 {{- if .firebase}}
-<script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
 
 <script defer type="text/javascript">
-  var firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "{{.firebase.APIKey}}",
     projectId: "{{.firebase.ProjectID}}",
     authDomain: "{{.firebase.AuthDomain}}",
@@ -14,7 +14,10 @@
     messagingSenderId: "{{.firebase.MessageSenderID}}",
     appId: "{{.firebase.AppID}}"
   };
-  firebase.initializeApp(firebaseConfig);
+
+  window.addEventListener('load', () => {
+    firebase.initializeApp(firebaseConfig);
+  })
 </script>
 {{end}}
 {{end}}

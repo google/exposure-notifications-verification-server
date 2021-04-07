@@ -197,20 +197,22 @@
   </main>
 
   <script defer type="text/javascript">
-    {{if not $canWrite}}
-      {{/*
+    window.addEventListener('load', (event) => {
+      {{if not $canWrite}}
+        {{/*
 
-        This is a little bit hacky, since technically the user could disable
-        javascript, but we do server-side validation to prevent actual data
-        mutation without permission.
+          This is a little bit hacky, since technically the user could disable
+          javascript, but we do server-side validation to prevent actual data
+          mutation without permission.
 
-      */}}
-      $('body').find('input, button, select, textarea, a.btn')
-        .addClass('disabled')
-        .addClass('readonly')
-        .prop('disabled', true)
-        .prop('readonly', true);
-    {{end}}
+        */}}
+        $('body').find('input, button, select, textarea, a.btn')
+          .addClass('disabled')
+          .addClass('readonly')
+          .prop('disabled', true)
+          .prop('readonly', true);
+      {{end}}
+    });
   </script>
 </body>
 </html>

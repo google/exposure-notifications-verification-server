@@ -59,14 +59,9 @@
 </div>
 
 <script defer type="text/javascript">
-  let $perExternalIssuerTable = $('#per_external_issuer_table');
+  window.addEventListener('load', (event) => {
+    let $div = $('#per_external_issuer_table');
 
-  google.charts.load('current', {
-    packages: ['corechart'],
-    callback: drawExternalIssuersTable,
-  });
-
-  function drawExternalIssuersTable() {
     $.ajax({
       url: '/stats/realm/external-issuers.json',
       data: { scope: 'external' },
@@ -74,16 +69,16 @@
     })
     .done(function(data, status, xhr) {
       if (!data.statistics) {
-        $perExternalIssuerTable.find('p').text('There is no external issuing data yet.')
+        $div.find('p').text('There is no external issuing data yet.')
         return;
       }
 
-      $perExternalIssuerTable.empty();
+      $div.empty();
 
       let $listGroup = $('<div>');
         $listGroup.addClass('list-group');
         $listGroup.addClass('list-group-flush');
-      $perExternalIssuerTable.append($listGroup);
+      $div.append($listGroup);
 
       data.statistics.forEach(function(row) {
         let date = utcDate(row.date);
@@ -142,7 +137,7 @@
     .fail(function(xhr, status, err) {
       flash.error('Failed to render external issuer stats: ' + err);
     });
-  }
+  });
 </script>
 
 {{end}}

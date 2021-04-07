@@ -53,31 +53,26 @@
 </div>
 
 <script defer type="text/javascript">
-  google.charts.load('current', {
-    packages: ['corechart'],
-    callback: drawUsersTable,
-  });
+  window.addEventListener('load', (event) => {
+    let $div = $('#per_user_table');
 
-  function drawUsersTable() {
     $.ajax({
       url: '/stats/realm/users.json',
       data: { scope: 'user' },
       dataType: 'json',
     })
     .done(function(data, status, xhr) {
-      let $perUserTable = $('#per_user_table');
-
       if (!data.statistics) {
-        $perUserTable.find('p').text('There is no per-user data yet.')
+        $div.find('p').text('There is no per-user data yet.')
         return;
       }
 
-      $perUserTable.empty();
+      $div.empty();
 
       let $listGroup = $('<div>');
         $listGroup.addClass('list-group');
         $listGroup.addClass('list-group-flush');
-      $perUserTable.append($listGroup);
+      $div.append($listGroup);
 
       data.statistics.forEach(function(row) {
         let date = utcDate(row.date);
@@ -138,7 +133,7 @@
     .fail(function(xhr, status, err) {
       flash.error('Failed to render user stats: ' + err);
     });
-  }
+  });
 </script>
 
 {{end}}

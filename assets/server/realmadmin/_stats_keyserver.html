@@ -191,125 +191,295 @@
 
 
 <script defer type="text/javascript">
-  let stats;
+  window.addEventListener('load', (event) => {
+    let stats;
+    let smoothing = 7;
 
-  google.charts.load('current', {
-    packages: ['corechart'],
-    callback: drawRealmCharts,
-  });
+    let $slider = $('#tek_slider');
+    let $onsetSlider = $('#onset_slider');
 
-  function drawRealmCharts() {
-    $.ajax({
-      url: '/stats/realm/key-server.json',
-      dataType: 'json',
-    })
-    .done(function(data, status, xhr) {
-      $slider.attr('min', Math.min(smoothing, data.length));
-      $slider.attr('max', data.length);
-      $slider.attr('value',data.length);
-      $slider.attr('step', 1);
-      $slider.val(data.length);
-      $onsetSlider.attr('min', Math.min(smoothing, data.length));
-      $onsetSlider.attr('max', data.length);
-      $onsetSlider.attr('value',data.length);
-      $onsetSlider.attr('step', 1);
-      $onsetSlider.val(data.length);
+    let chartData = [];
+    $(() => redrawCharts(chartData, 300));
 
-      let $tekTicks = $("#tek_slide_ticks");
-      $tekTicks.empty();
-      for (i = Math.min(smoothing, data.length); i < data.length; i++) {
-        let $opt = $('<option/>');
-        $opt.val(i);
-        $opt.attr('label', data[i].day.substring(0,10));
-        $tekTicks.append($opt);
-      }
+    let $smoothDrop = $('#smooth-drop');
+    $smoothDrop.on('change', (event) => {
+      smoothing = $smoothDrop.val();
+      let max = $slider.attr('max');
+      let min = Math.min(smoothing, max);
 
-      let $onsetTicks = $("#onset_slide_ticks");
-      $onsetTicks.empty();
-      for (i = 0; i < data.length; i++) {
-        let $opt = $('<option/>');
-        $opt.val(i);
-        $onsetTicks.append($opt);
-      }
+      $slider.attr('min', Math.min(smoothing, max));
+      $slider.val(max);
+      $slider.trigger("input");
 
-      drawStatsChart(data);
-      drawOSChart(data);
-      drawTEKAgeChart(data);
-      drawOnsetToUploadChart(data);
-    })
-    .fail(function(xhr, status, err) {
-      flash.error('Failed to render key-server stats: ' + err);
+      $onsetSlider.attr('min', min);
+      $onsetSlider.val(max);
+      $onsetSlider.trigger('input');
     });
-  }
 
-  function drawStatsChart(data) {
-    let $div = $('#keyserver_chart_div');
+    google.charts.load('current', {
+      packages: ['corechart', 'controls'],
+      callback: drawRealmCharts,
+    });
 
-    if (!data.length) {
-      $div.find('p').text('No data yet.');
-      return;
+    function drawRealmCharts() {
+      $.ajax({
+        url: '/stats/realm/key-server.json',
+        dataType: 'json',
+      })
+      .done(function(data, status, xhr) {
+        $slider.attr('min', Math.min(smoothing, data.length));
+        $slider.attr('max', data.length);
+        $slider.attr('value',data.length);
+        $slider.attr('step', 1);
+        $slider.val(data.length);
+        $onsetSlider.attr('min', Math.min(smoothing, data.length));
+        $onsetSlider.attr('max', data.length);
+        $onsetSlider.attr('value',data.length);
+        $onsetSlider.attr('step', 1);
+        $onsetSlider.val(data.length);
+
+        let $tekTicks = $("#tek_slide_ticks");
+        $tekTicks.empty();
+        for (i = Math.min(smoothing, data.length); i < data.length; i++) {
+          let $opt = $('<option/>');
+          $opt.val(i);
+          $opt.attr('label', data[i].day.substring(0,10));
+          $tekTicks.append($opt);
+        }
+
+        let $onsetTicks = $("#onset_slide_ticks");
+        $onsetTicks.empty();
+        for (i = 0; i < data.length; i++) {
+          let $opt = $('<option/>');
+          $opt.val(i);
+          $onsetTicks.append($opt);
+        }
+
+        drawStatsChart(data);
+        drawOSChart(data);
+        drawTEKAgeChart(data);
+        drawOnsetToUploadChart(data);
+      })
+      .fail(function(xhr, status, err) {
+        flash.error('Failed to render key-server stats: ' + err);
+      });
     }
-    stats = data;
 
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'Total # TEKs published');
+    function drawStatsChart(data) {
+      let $div = $('#keyserver_chart_div');
 
-    stats.reverse().forEach(function(row) {
-      dataTable.addRow([utcDate(row.day),
-        row.total_teks_published
-      ]);
-    });
+      if (!data.length) {
+        $div.find('p').text('No data yet.');
+        return;
+      }
+      stats = data;
 
-    let dateFormatter = new google.visualization.DateFormat({
-      pattern: 'MMM dd',
-    });
-    dateFormatter.format(dataTable, 0);
+      let dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'Total # TEKs published');
 
-    let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_dashboard_div'));
-
-    let filter = new google.visualization.ControlWrapper({
-        controlType: 'ChartRangeFilter',
-        containerId: 'keyserver_filter_div',
-        state: {
-          range: {
-          },
-        },
-        options: {
-          filterColumnIndex: 0,
-          series: {
-            0: {
-              opacity: 0,
-            }
-          },
-          ui: {
-            chartType: 'LineChart',
-            chartOptions: {
-              colors: ['#dddddd'],
-              chartArea: {
-                width: '100%',
-                height: '100%',
-                top: 0,
-                right: 40,
-                bottom: 20,
-                left: 60,
-              },
-              isStacked: true,
-              hAxis: { format: 'M/d' },
-            },
-            chartView: {
-              columns: [0,1],
-            },
-            minRangeSize: 86400000, // ms for 1 day
-          },
-        },
+      stats.reverse().forEach(function(row) {
+        dataTable.addRow([utcDate(row.day),
+          row.total_teks_published
+        ]);
       });
 
-    let chart = new google.visualization.ChartWrapper({
-        chartType: 'LineChart',
-        containerId: 'keyserver_chart_div',
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
+
+      let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_dashboard_div'));
+
+      let filter = new google.visualization.ControlWrapper({
+          controlType: 'ChartRangeFilter',
+          containerId: 'keyserver_filter_div',
+          state: {
+            range: {
+            },
+          },
+          options: {
+            filterColumnIndex: 0,
+            series: {
+              0: {
+                opacity: 0,
+              }
+            },
+            ui: {
+              chartType: 'LineChart',
+              chartOptions: {
+                colors: ['#dddddd'],
+                chartArea: {
+                  width: '100%',
+                  height: '100%',
+                  top: 0,
+                  right: 40,
+                  bottom: 20,
+                  left: 60,
+                },
+                isStacked: true,
+                hAxis: { format: 'M/d' },
+              },
+              chartView: {
+                columns: [0,1],
+              },
+              minRangeSize: 86400000, // ms for 1 day
+            },
+          },
+        });
+
+      let chart = new google.visualization.ChartWrapper({
+          chartType: 'LineChart',
+          containerId: 'keyserver_chart_div',
+          options: {
+            colors: ['#28a745'],
+            chartArea: {
+              left: 60,
+              right: 40,
+              bottom: 40,
+              top: 40,
+              width: '100%',
+              height: '300',
+            },
+            hAxis: { format: 'M/d' },
+            legend: { position: 'top' },
+            width: '100%',
+          },
+        });
+
+        dashboard.bind(filter, chart);
+        dashboard.draw(dataTable);
+        chartData.push({
+          chart: dashboard,
+          data: dataTable,
+        });
+    }
+
+
+    function drawOSChart(data) {
+      let allowsUserReport = {{$realm.AllowsUserReport}};
+
+      let $div = $('#keyserver_os_chart_div');
+
+      if (!data.length) {
+        $div.find('p').text('No data yet.');
+        return;
+      }
+      stats = data;
+
+      let dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('date', 'Date');
+      dataTable.addColumn('number', 'Total');
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+      dataTable.addColumn('number', 'Missing Onset Date');
+      if (allowsUserReport) {
+        dataTable.addColumn('number', 'Key Revision Requests');
+      }
+      dataTable.addColumn('number', 'Unknown OS');
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+      dataTable.addColumn('number', 'Android');
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+      dataTable.addColumn('number', 'IOS');
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+
+      stats.reverse().forEach(function(row) {
+        let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
+        let unknownCount = parseInt(row.publish_requests.unknown);
+        let androidCount = parseInt(row.publish_requests.android);
+        let iosCount = parseInt(row.publish_requests.ios);
+
+        let data = [utcDate(row.day),
+          total,
+          "<ul class='chart-tooltip'>"+
+            "<li><strong>Total:</strong>" + total + "</li>"+
+            "<li><strong>Android:</strong>" + androidCount + "</li>"+
+            "<li><strong>iOS:</strong>" + iosCount + "</li>"+
+            "<li><strong>Unknown:</strong>" + unknownCount + "</li></ul>",
+          row.requests_missing_onset_date];
+        if (allowsUserReport) {
+          data.push(row.requests_with_revisions);
+        }
+        data.push(
+          row.publish_requests.unknown,
+          "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
+            "<li>Count: " + unknownCount + "</li>" +
+            "<li>Percent: " + (unknownCount / total * 100).toPrecision(3) + "%</li></ul>",
+          row.publish_requests.android,
+          "<ul class='chart-tooltip'><li><strong>Android:</strong></li>"+
+            "<li>Count: " + androidCount  + "</li>" +
+            "<li>Percent: " + (androidCount  / total * 100).toPrecision(3)  + "%</li></ul>",
+          row.publish_requests.ios,
+          "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
+            "<li>Count: " + iosCount + "</li>" +
+            "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
+        );
+
+
+        dataTable.addRow(data);
+      });
+
+      let dateFormatter = new google.visualization.DateFormat({
+        pattern: 'MMM dd',
+      });
+      dateFormatter.format(dataTable, 0);
+
+      let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_os_dashboard_div'));
+
+      let filter = new google.visualization.ControlWrapper({
+          controlType: 'ChartRangeFilter',
+          containerId: 'keyserver_os_filter_div',
+          state: {
+            range: {
+            },
+          },
+          options: {
+            filterColumnIndex: 0,
+            series: {
+              0: {
+                opacity: 0,
+              }
+            },
+            ui: {
+              chartType: 'LineChart',
+              chartOptions: {
+                colors: ['#dddddd'],
+                chartArea: {
+                  width: '100%',
+                  height: '100%',
+                  top: 0,
+                  right: 40,
+                  bottom: 20,
+                  left: 60,
+                },
+                isStacked: true,
+                hAxis: { format: 'M/d' },
+              },
+              chartView: {
+                columns: [0,1],
+              },
+              minRangeSize: 86400000, // ms for 1 day
+            },
+          },
+        });
+
+      let colors = ['#ee8c00', '#ea4335'];
+      if (allowsUserReport) {
+        colors.push('#fcfc3d');
+      }
+      colors.push('#6c757d', '#28a745', '#007bff');
+      series = {
+        0: {type: 'line'},
+        1: {type: 'line'},
+      }
+      if (allowsUserReport) {
+        series["2"] = {type: 'line'}
+      }
+
+      let chart = new google.visualization.ChartWrapper({
+        chartType: 'ComboChart',
+        containerId: 'keyserver_os_chart_div',
         options: {
-          colors: ['#28a745'],
+          colors: colors,
           chartArea: {
             left: 60,
             right: 40,
@@ -318,10 +488,16 @@
             width: '100%',
             height: '300',
           },
-          hAxis: { format: 'M/d' },
+          hAxis: {
+            format: 'M/d',
+            gridlines: { color: 'transparent' },
+          },
+          seriesType: 'bars',
+          series: series,
           legend: { position: 'top' },
-          width: '100%',
-        },
+          isStacked: true,
+          tooltip: {isHtml: true},
+        }
       });
 
       dashboard.bind(filter, chart);
@@ -330,133 +506,28 @@
         chart: dashboard,
         data: dataTable,
       });
-  }
-
-
-  function drawOSChart(data) {
-    let allowsUserReport = {{$realm.AllowsUserReport}};
-
-    let $div = $('#keyserver_os_chart_div');
-
-    if (!data.length) {
-      $div.find('p').text('No data yet.');
-      return;
     }
-    stats = data;
 
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('date', 'Date');
-    dataTable.addColumn('number', 'Total');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
-    dataTable.addColumn('number', 'Missing Onset Date');
-    if (allowsUserReport) {
-      dataTable.addColumn('number', 'Key Revision Requests');
-    }
-    dataTable.addColumn('number', 'Unknown OS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
-    dataTable.addColumn('number', 'Android');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
-    dataTable.addColumn('number', 'IOS');
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+    let tekChart;
+    let tekOptions;
+    let tekData;
+    let maxVAxisTEKAge;
+    function drawTEKAgeChart(data) {
+      let $div = $('#keyserver_tek_chart_div');
+      maxVAxisTEKAge = 1;
 
-    stats.reverse().forEach(function(row) {
-      let total = row.publish_requests.unknown + row.publish_requests.android + row.publish_requests.ios;
-      let unknownCount = parseInt(row.publish_requests.unknown);
-      let androidCount = parseInt(row.publish_requests.android);
-      let iosCount = parseInt(row.publish_requests.ios);
-
-      let data = [utcDate(row.day),
-        total,
-         "<ul class='chart-tooltip'>"+
-          "<li><strong>Total:</strong>" + total + "</li>"+
-          "<li><strong>Android:</strong>" + androidCount + "</li>"+
-          "<li><strong>iOS:</strong>" + iosCount + "</li>"+
-          "<li><strong>Unknown:</strong>" + unknownCount + "</li></ul>",
-        row.requests_missing_onset_date];
-      if (allowsUserReport) {
-        data.push(row.requests_with_revisions);
+      if (!data.length) {
+        $div.find('p').text('No data yet.');
+        return;
       }
-      data.push(
-        row.publish_requests.unknown,
-        "<ul class='chart-tooltip'><li><strong>Unknown:</strong></li>"+
-          "<li>Count: " + unknownCount + "</li>" +
-          "<li>Percent: " + (unknownCount / total * 100).toPrecision(3) + "%</li></ul>",
-        row.publish_requests.android,
-        "<ul class='chart-tooltip'><li><strong>Android:</strong></li>"+
-          "<li>Count: " + androidCount  + "</li>" +
-          "<li>Percent: " + (androidCount  / total * 100).toPrecision(3)  + "%</li></ul>",
-        row.publish_requests.ios,
-        "<ul class='chart-tooltip'><li><strong>IOS:</strong></li>"+
-          "<li>Count: " + iosCount + "</li>" +
-          "<li>Percent: " + (iosCount / total * 100).toPrecision(3)  + "%</li></ul>",
-      );
+      stats = data;
 
+      for (i = 0; i < stats.length - smoothing; i++) {
+        getTEKDataTable(i);
+      }
 
-      dataTable.addRow(data);
-    });
-
-    let dateFormatter = new google.visualization.DateFormat({
-      pattern: 'MMM dd',
-    });
-    dateFormatter.format(dataTable, 0);
-
-    let dashboard = new google.visualization.Dashboard(document.getElementById('keyserver_os_dashboard_div'));
-
-    let filter = new google.visualization.ControlWrapper({
-        controlType: 'ChartRangeFilter',
-        containerId: 'keyserver_os_filter_div',
-        state: {
-          range: {
-          },
-        },
-        options: {
-          filterColumnIndex: 0,
-          series: {
-            0: {
-              opacity: 0,
-            }
-          },
-          ui: {
-            chartType: 'LineChart',
-            chartOptions: {
-              colors: ['#dddddd'],
-              chartArea: {
-                width: '100%',
-                height: '100%',
-                top: 0,
-                right: 40,
-                bottom: 20,
-                left: 60,
-              },
-              isStacked: true,
-              hAxis: { format: 'M/d' },
-            },
-            chartView: {
-              columns: [0,1],
-            },
-            minRangeSize: 86400000, // ms for 1 day
-          },
-        },
-      });
-
-    let colors = ['#ee8c00', '#ea4335'];
-    if (allowsUserReport) {
-      colors.push('#fcfc3d');
-    }
-    colors.push('#6c757d', '#28a745', '#007bff');
-    series = {
-      0: {type: 'line'},
-      1: {type: 'line'},
-    }
-    if (allowsUserReport) {
-      series["2"] = {type: 'line'}
-    }
-
-    let chart = new google.visualization.ChartWrapper({
-      chartType: 'ComboChart',
-      containerId: 'keyserver_os_chart_div',
-      options: {
-        colors: colors,
+      tekOptions = {
+        colors: ['#329262'],
         chartArea: {
           left: 60,
           right: 40,
@@ -465,253 +536,204 @@
           width: '100%',
           height: '300',
         },
-        hAxis: {
-          format: 'M/d',
-          gridlines: { color: 'transparent' },
+        animation:{
+          startup: false,
+          duration: 500,
+          easing: 'inAndOut',
         },
-        seriesType: 'bars',
-        series: series,
-        legend: { position: 'top' },
-        isStacked: true,
+        legend: { position: 'none' },
+        hAxis: {
+          title: 'TEK days old',
+          gridlines: { color: 'transparent' },
+          baseline: { color: 'transparent' },
+          ticks: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],
+          showTextEvery: 1,
+        },
+        vAxis: {
+          minValue: 0,
+          maxValue: maxVAxisTEKAge,
+        },
+        titlePosition: "out",
+        title: `${smoothing} days from ` + stats[0].day.split("T")[0],
         tooltip: {isHtml: true},
-      }
-    });
+      };
 
-    dashboard.bind(filter, chart);
-    dashboard.draw(dataTable);
-    chartData.push({
-      chart: dashboard,
-      data: dataTable,
-    });
-  }
-
-  let tekChart;
-  let tekOptions;
-  let tekData;
-  let maxVAxisTEKAge;
-  function drawTEKAgeChart(data) {
-    let $div = $('#keyserver_tek_chart_div');
-    maxVAxisTEKAge = 1;
-
-    if (!data.length) {
-      $div.find('p').text('No data yet.');
-      return;
-    }
-    stats = data;
-
-    for (i = 0; i < stats.length - smoothing; i++) {
-      getTEKDataTable(i);
+      tekChart = new google.visualization.ColumnChart($div.get(0));
+      tekData = getTEKDataTable(0);
+      tekChart.draw(tekData, tekOptions);
+      chartData.push({
+        chart: tekChart,
+        data: tekData,
+        options: tekOptions,
+      });
     }
 
-    tekOptions = {
-      colors: ['#329262'],
-      chartArea: {
-        left: 60,
-        right: 40,
-        bottom: 40,
-        top: 40,
-        width: '100%',
-        height: '300',
-      },
-      animation:{
-        startup: false,
-        duration: 500,
-        easing: 'inAndOut',
-      },
-      legend: { position: 'none' },
-      hAxis: {
-        title: 'TEK days old',
-        gridlines: { color: 'transparent' },
-        baseline: { color: 'transparent' },
-        ticks: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14],
-        showTextEvery: 1,
-      },
-      vAxis: {
-        minValue: 0,
-        maxValue: maxVAxisTEKAge,
-      },
-      titlePosition: "out",
-      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
-      tooltip: {isHtml: true},
-    };
-
-    tekChart = new google.visualization.ColumnChart($div.get(0));
-    tekData = getTEKDataTable(0);
-    tekChart.draw(tekData, tekOptions);
-    chartData.push({
-      chart: tekChart,
-      data: tekData,
-      options: tekOptions,
-    });
-  }
-
-  let dataTableCache = new Map()
-  function getTEKDataTable(dateIndex) {
-    let key = "s" + smoothing + "i" + dateIndex;
-    if (dataTableCache.has(key)) {
-      return dataTableCache.get(key);
-    }
-
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('number', 'days');
-    dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'});
-    dataTable.addColumn({type:'string', role:'annotation'});
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
-
-    // sum over last ${smoothing} days
-    let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
-    let i;
-    let total = 0;
-    for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
-      let row = stats[i];
-      let j;
-      for (j = 0; j < row.tek_age_distribution.length; j++) {
-        let count = parseInt(row.tek_age_distribution[j]);
-        table[j] += count;
-        total += count;
-      }
-    }
-
-    for (i = 0; i < table.length; i++) {
-      if (table[i] > maxVAxisTEKAge) {
-        maxVAxisTEKAge = table[i];
+    let dataTableCache = new Map()
+    function getTEKDataTable(dateIndex) {
+      let key = "s" + smoothing + "i" + dateIndex;
+      if (dataTableCache.has(key)) {
+        return dataTableCache.get(key);
       }
 
-      let r = [i, table[i],"","",""]
-      if (i == 15) {
-        r[2] = "#6c757d";
-        r[3] = "15 days+";
-        r[4] =
-          "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] + " days and greater</li>"+
-            "<li>Count: " + r[1] + "</li>" +
-            "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
-      } else {
-        r[4] =
-          "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] +"-"+ (r[0]+1) +" days</li>"+
-            "<li>Count: " + r[1] + "</li>" +
-            "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+      let dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('number', 'days');
+      dataTable.addColumn('number', 'count');
+      dataTable.addColumn({type:'string', role:'style'});
+      dataTable.addColumn({type:'string', role:'annotation'});
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+
+      // sum over last ${smoothing} days
+      let table = new Array(stats[dateIndex].tek_age_distribution.length).fill(0);
+      let i;
+      let total = 0;
+      for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
+        let row = stats[i];
+        let j;
+        for (j = 0; j < row.tek_age_distribution.length; j++) {
+          let count = parseInt(row.tek_age_distribution[j]);
+          table[j] += count;
+          total += count;
+        }
       }
 
+      for (i = 0; i < table.length; i++) {
+        if (table[i] > maxVAxisTEKAge) {
+          maxVAxisTEKAge = table[i];
+        }
 
-      dataTable.addRow(r);
-    }
-    dataTableCache.set(key, dataTable);
-    return dataTable;
-  }
-
-
-  let onsetChart;
-  let onsetOptions;
-  let onsetData;
-  let onsetVAxisMax;
-  function drawOnsetToUploadChart(data) {
-    let $div = $('#keyserver_onset_chart_div');
-    onsetVAxisMax = 1;
-
-    if (!data.length) {
-      $div.find('p').text('No data yet.');
-      return;
-    }
-    stats = data;
-
-    // calculate the vaxis max.
-    for (i = 0; i < stats.length - smoothing; i++) {
-      getOnsetDataTable(i);
-    }
-
-    onsetOptions = {
-      colors: ['#316395'],
-      chartArea: {
-        left: 60,
-        right: 40,
-        bottom: 40,
-        top: 40,
-        width: '100%',
-        height: '300',
-      },
-      legend: { position: 'none' },
-      hAxis: {
-        title: 'Days from onset to upload',
-        gridlines: { color: 'transparent' },
-        baseline: { color: 'transparent' },
-        ticks: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
-        showTextEvery: 1,
-      },
-      vAxis: {
-        minValue: 0,
-        maxValue: onsetVAxisMax,
-      },
-      titlePosition: "out",
-      title: `${smoothing} days from ` + stats[0].day.split("T")[0],
-      tooltip: {isHtml: true},
-    };
-
-    onsetChart = new google.visualization.ColumnChart($div.get(0));
-    onsetData = getOnsetDataTable(0);
-    onsetChart.draw(onsetData, onsetOptions);
-    chartData.push({
-      chart: onsetChart,
-      data: onsetData,
-      options: onsetOptions,
-    });
-  }
-
-  let onsetCache = new Map();
-  function getOnsetDataTable(dateIndex) {
-    let key = "s" + smoothing + "i" + dateIndex;
-    if (onsetCache.has(key)) {
-      return onsetCache.get(key);
-    }
-
-    let dataTable = new google.visualization.DataTable();
-    dataTable.addColumn('number', 'days');
-    dataTable.addColumn('number', 'count');
-    dataTable.addColumn({type:'string', role:'style'});
-    dataTable.addColumn({type:'string', role:'annotation'});
-    dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
-
-    // sum over last ${smoothing} days
-    let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
-    let i;
-    let total = 0;
-    for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
-      let row = stats[i];
-      let j;
-      for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
-        let count = parseInt(row.onset_to_upload_distribution[j]);
-        table[j] += count;
-        total += count;
-      }
-    }
-
-    for (i = 0; i < table.length; i++) {
-      let r = [i, table[i],"","", ""]
-      if (i == 30) {
-        r[2] = "#6c757d";
-        r[3] = "30 days+";
-        r[4] =
-          "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] +" days and greater</li>"+
-            "<li>Count: " + r[1] + "</li>" +
-            "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
-      } else {
-        r[4] =
-          "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] + "-" + (r[0]+1) +" days</li>"+
-            "<li>Count: " + r[1] + "</li>" +
-            "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+        let r = [i, table[i],"","",""]
+        if (i == 15) {
+          r[2] = "#6c757d";
+          r[3] = "15 days+";
+          r[4] =
+            "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] + " days and greater</li>"+
+              "<li>Count: " + r[1] + "</li>" +
+              "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+        } else {
+          r[4] =
+            "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] +"-"+ (r[0]+1) +" days</li>"+
+              "<li>Count: " + r[1] + "</li>" +
+              "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
         }
 
 
-      dataTable.addRow(r);
-      if (table[i] > onsetVAxisMax) {
-        onsetVAxisMax = table[i];
+        dataTable.addRow(r);
       }
+      dataTableCache.set(key, dataTable);
+      return dataTable;
     }
-    onsetCache.set(key, dataTable);
-    return dataTable;
-  }
 
-  window.addEventListener('load', (event) => {
+
+    let onsetChart;
+    let onsetOptions;
+    let onsetData;
+    let onsetVAxisMax;
+    function drawOnsetToUploadChart(data) {
+      let $div = $('#keyserver_onset_chart_div');
+      onsetVAxisMax = 1;
+
+      if (!data.length) {
+        $div.find('p').text('No data yet.');
+        return;
+      }
+      stats = data;
+
+      // calculate the vaxis max.
+      for (i = 0; i < stats.length - smoothing; i++) {
+        getOnsetDataTable(i);
+      }
+
+      onsetOptions = {
+        colors: ['#316395'],
+        chartArea: {
+          left: 60,
+          right: 40,
+          bottom: 40,
+          top: 40,
+          width: '100%',
+          height: '300',
+        },
+        legend: { position: 'none' },
+        hAxis: {
+          title: 'Days from onset to upload',
+          gridlines: { color: 'transparent' },
+          baseline: { color: 'transparent' },
+          ticks: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
+          showTextEvery: 1,
+        },
+        vAxis: {
+          minValue: 0,
+          maxValue: onsetVAxisMax,
+        },
+        titlePosition: "out",
+        title: `${smoothing} days from ` + stats[0].day.split("T")[0],
+        tooltip: {isHtml: true},
+      };
+
+      onsetChart = new google.visualization.ColumnChart($div.get(0));
+      onsetData = getOnsetDataTable(0);
+      onsetChart.draw(onsetData, onsetOptions);
+      chartData.push({
+        chart: onsetChart,
+        data: onsetData,
+        options: onsetOptions,
+      });
+    }
+
+    let onsetCache = new Map();
+    function getOnsetDataTable(dateIndex) {
+      let key = "s" + smoothing + "i" + dateIndex;
+      if (onsetCache.has(key)) {
+        return onsetCache.get(key);
+      }
+
+      let dataTable = new google.visualization.DataTable();
+      dataTable.addColumn('number', 'days');
+      dataTable.addColumn('number', 'count');
+      dataTable.addColumn({type:'string', role:'style'});
+      dataTable.addColumn({type:'string', role:'annotation'});
+      dataTable.addColumn({type:'string', role:'tooltip', p: {html: true}});
+
+      // sum over last ${smoothing} days
+      let table = new Array(stats[dateIndex].onset_to_upload_distribution.length).fill(0);
+      let i;
+      let total = 0;
+      for (i = dateIndex; i < dateIndex + smoothing && i < stats.length; i++) {
+        let row = stats[i];
+        let j;
+        for (j = 0; j < row.onset_to_upload_distribution.length; j++) {
+          let count = parseInt(row.onset_to_upload_distribution[j]);
+          table[j] += count;
+          total += count;
+        }
+      }
+
+      for (i = 0; i < table.length; i++) {
+        let r = [i, table[i],"","", ""]
+        if (i == 30) {
+          r[2] = "#6c757d";
+          r[3] = "30 days+";
+          r[4] =
+            "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] +" days and greater</li>"+
+              "<li>Count: " + r[1] + "</li>" +
+              "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+        } else {
+          r[4] =
+            "<ul class='chart-tooltip'><li><strong>Age:</strong> "+ r[0] + "-" + (r[0]+1) +" days</li>"+
+              "<li>Count: " + r[1] + "</li>" +
+              "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+          }
+
+
+        dataTable.addRow(r);
+        if (table[i] > onsetVAxisMax) {
+          onsetVAxisMax = table[i];
+        }
+      }
+      onsetCache.set(key, dataTable);
+      return dataTable;
+    }
+
     $slider.on("input", function(event) {
       if (!stats) {
         return
