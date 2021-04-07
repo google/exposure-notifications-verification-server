@@ -373,3 +373,17 @@ msgstr "Too many code errors to display results"
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Hindi mahanap"
+
+msgid "static.resource-does-not-exist"
+msgstr "Wala ang mapagkukunang iyon."
+
+msgid "static.redirect-not-found"
+msgstr "Upang makuha ang isang Exposure Notifications code, bisitahin ang link sa iyong mobile device."

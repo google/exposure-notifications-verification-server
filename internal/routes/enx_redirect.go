@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/assets"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -47,6 +48,16 @@ func ENXRedirect(
 	// Common observability context
 	ctx, obs := middleware.WithObservability(ctx)
 	r.Use(obs)
+
+	// Load localization
+	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup i18n: %w", err)
+	}
+
+	// Process localization parameters.
+	processLocale := middleware.ProcessLocale(locales)
+	r.Use(processLocale)
 
 	// Create the renderer
 	h, err := render.New(ctx, assets.ENXRedirectFS(), cfg.DevMode)
@@ -107,6 +118,11 @@ func ENXRedirect(
 		return nil, fmt.Errorf("failed to create redirect controller: %w", err)
 	}
 	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods(http.MethodGet)
+
+	// Blanket handle any missing routes.
+	r.NotFoundHandler = processLocale(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		controller.NotFound(w, r, h)
+	}))
 
 	// Wrap the main router in the mutating middleware method. This cannot be
 	// inserted as middleware because gorilla processes the method before

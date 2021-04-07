@@ -372,3 +372,17 @@ msgstr "يوجد عدد كبير جدًا من أخطاء التعليمات ا�
 
 msgid "codes.bulk-issue.too-many-success"
 msgstr "تم إصدار عدد كبير جدًا من الرموز لعرض النتائج"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "غير موجود"
+
+msgid "static.resource-does-not-exist"
+msgstr "هذا المورد غير موجود."
+
+msgid "static.redirect-not-found"
+msgstr "لاسترداد رمز Exposure Notifications ، قم بزيارة الرابط الموجود على جهازك المحمول."
