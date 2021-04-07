@@ -7,7 +7,7 @@
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script defer src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="realmadmin-stats" class="tab-content">
@@ -52,36 +52,11 @@
   </main>
 
   <script defer type="text/javascript">
-    var chartData = [];
-    let smoothing = 7;
-
-    let $slider = $('#tek_slider');
-    let $onsetSlider = $('#onset_slider');
-    let $issueAgeSlider = $('#issue_age_slider');
-
-    $(() => redrawCharts(chartData, 300));
-
     window.addEventListener('load', (event) => {
       let $smoothDrop = $('#smooth-drop');
-
       $smoothDrop.on("change", function(event) {
-        event.preventDefault();
         smoothing = $smoothDrop.val();
         $('.sum-title').text(`(${smoothing} day sum)`)
-
-        let max = $slider.attr('max');
-        $slider.attr('min', Math.min(smoothing, max));
-        $slider.val(max);
-        $slider.trigger("input");
-
-        $onsetSlider.attr('min', Math.min(smoothing, max));
-        $onsetSlider.val(max);
-        $onsetSlider.trigger("input");
-
-        max = $issueAgeSlider.attr('max');
-        $issueAgeSlider.attr('min', Math.min(smoothing, max));
-        $issueAgeSlider.val(max);
-        $issueAgeSlider.trigger("input");
       });
     });
   </script>

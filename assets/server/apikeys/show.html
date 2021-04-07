@@ -12,7 +12,7 @@
 
 <head>
   {{template "head" .}}
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script defer src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="apikeys-show" class="tab-content">
@@ -76,7 +76,8 @@
         <span class="oi oi-bar-chart mr-2 ml-n1"></span>
         Statistics
       </div>
-      <div id="apikey_stats_chart" class="h-100 w-100" style="min-height:325px;">
+      <div id="apikey_stats_chart" class="h-100 w-100" style="min-height:325px;"
+        data-apikey-id="{{$authApp.ID}}">
         <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
       </div>
       <small class="card-footer d-flex justify-content-between text-muted">
@@ -126,118 +127,121 @@
   </main>
 
   <script defer type="text/javascript">
-    var chartData = [];
-    $(() => redrawCharts(chartData, 300));
+    window.addEventListener('load', () => {
+      var chartData = [];
+      $(() => redrawCharts(chartData, 300));
 
-    let $div = $('#apikey_stats_chart');
+      let $div = $('#apikey_stats_chart');
+      let apiKeyID = $div.data('apikeyId');
 
-    google.charts.load('current', {
-      packages: ['corechart'],
-      callback: drawAPIKeyChart,
+      google.charts.load('current', {
+        packages: ['corechart'],
+        callback: drawAPIKeyChart,
+      });
+
+      function drawAPIKeyChart() {
+        $.ajax({
+          url: `/stats/realm/api-keys/${apiKeyID}.json`,
+          dataType: 'json',
+        })
+        .done(function(data, status, xhr) {
+          if (!data.statistics) {
+            $div.find('p').text('No data yet.');
+            return;
+          }
+
+          switch (data.authorized_app_type) {
+            case 'admin':
+              drawAdminStats(data);
+              break;
+            case 'device':
+              drawDeviceStats(data);
+              break;
+            case 'stats':
+              $div.find('p').text('Statistics API keys do not produce statistics.');
+              break;
+            default:
+              $div.find('p').text('Unknown API key type');
+              break;
+          }
+        })
+        .fail(function(xhr, status, err) {
+          flash.error('Failed to render realm stats: ' + err);
+        });
+      }
+
+      function drawAdminStats(data) {
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('date', 'Date');
+        dataTable.addColumn('number', 'Issued');
+
+        data.statistics.reverse().forEach(function(row) {
+          dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
+        });
+
+        let dateFormatter = new google.visualization.DateFormat({
+          pattern: 'MMM dd',
+        });
+        dateFormatter.format(dataTable, 0);
+
+        let options = {
+          colors: ['#28a745', '#dc3545'],
+          chartArea: {
+            left: 60,
+            right: 40,
+            bottom: 40,
+            top: 40,
+            width: '100%',
+            height: '300',
+          },
+          hAxis: { format: 'M/d' },
+          legend: { position: 'top' },
+        };
+
+        let chart = new google.visualization.LineChart($div.get(0));
+        chart.draw(dataTable, options);
+        chartData.push({
+          chart: chart,
+          data: dataTable,
+          options: options,
+        });
+      }
+
+      function drawDeviceStats(data) {
+        var dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('date', 'Date');
+        dataTable.addColumn('number', 'Codes claimed');
+        dataTable.addColumn('number', 'Codes invalid');
+        dataTable.addColumn('number', 'Tokens claimed');
+        dataTable.addColumn('number', 'Tokens invalid');
+
+        data.statistics.reverse().forEach(function(row) {
+          dataTable.addRow([utcDate(row.date), row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.tokens_invalid]);
+        });
+
+        let dateFormatter = new google.visualization.DateFormat({
+          pattern: 'MMM dd',
+        });
+        dateFormatter.format(dataTable, 0);
+
+        let options = {
+          colors: ['#28a745', '#dc3545', '#17a2b8', '#ffc107'],
+          chartArea: {
+            left: 60,
+            right: 40,
+            bottom: 40,
+            top: 40,
+            width: '100%',
+            height: '300',
+          },
+          hAxis: { format: 'M/d' },
+          legend: { position: 'top' },
+        };
+
+        let chart = new google.visualization.LineChart($div.get(0));
+        chart.draw(dataTable, options);
+      }
     });
-
-    function drawAPIKeyChart() {
-      $.ajax({
-        url: '/stats/realm/api-keys/{{$authApp.ID}}.json',
-        dataType: 'json',
-      })
-      .done(function(data, status, xhr) {
-        if (!data.statistics) {
-          $div.find('p').text('No data yet.');
-          return;
-        }
-
-        switch (data.authorized_app_type) {
-          case 'admin':
-            drawAdminStats(data);
-            break;
-          case 'device':
-            drawDeviceStats(data);
-            break;
-          case 'stats':
-            $div.find('p').text('Statistics API keys do not produce statistics.');
-            break;
-          default:
-            $div.find('p').text('Unknown API key type');
-            break;
-        }
-      })
-      .fail(function(xhr, status, err) {
-        flash.error('Failed to render realm stats: ' + err);
-      });
-    }
-
-    function drawAdminStats(data) {
-      var dataTable = new google.visualization.DataTable();
-      dataTable.addColumn('date', 'Date');
-      dataTable.addColumn('number', 'Issued');
-
-      data.statistics.reverse().forEach(function(row) {
-        dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
-      });
-
-      let dateFormatter = new google.visualization.DateFormat({
-        pattern: 'MMM dd',
-      });
-      dateFormatter.format(dataTable, 0);
-
-      let options = {
-        colors: ['#28a745', '#dc3545'],
-        chartArea: {
-          left: 60,
-          right: 40,
-          bottom: 40,
-          top: 40,
-          width: '100%',
-          height: '300',
-        },
-        hAxis: { format: 'M/d' },
-        legend: { position: 'top' },
-      };
-
-      let chart = new google.visualization.LineChart($div.get(0));
-      chart.draw(dataTable, options);
-      chartData.push({
-        chart: chart,
-        data: dataTable,
-        options: options,
-      });
-    }
-
-    function drawDeviceStats(data) {
-      var dataTable = new google.visualization.DataTable();
-      dataTable.addColumn('date', 'Date');
-      dataTable.addColumn('number', 'Codes claimed');
-      dataTable.addColumn('number', 'Codes invalid');
-      dataTable.addColumn('number', 'Tokens claimed');
-      dataTable.addColumn('number', 'Tokens invalid');
-
-      data.statistics.reverse().forEach(function(row) {
-        dataTable.addRow([utcDate(row.date), row.data.codes_claimed, row.data.codes_invalid, row.data.tokens_claimed, row.data.tokens_invalid]);
-      });
-
-      let dateFormatter = new google.visualization.DateFormat({
-        pattern: 'MMM dd',
-      });
-      dateFormatter.format(dataTable, 0);
-
-      let options = {
-        colors: ['#28a745', '#dc3545', '#17a2b8', '#ffc107'],
-        chartArea: {
-          left: 60,
-          right: 40,
-          bottom: 40,
-          top: 40,
-          width: '100%',
-          height: '300',
-        },
-        hAxis: { format: 'M/d' },
-        legend: { position: 'top' },
-      };
-
-      let chart = new google.visualization.LineChart($div.get(0));
-      chart.draw(dataTable, options);
-    }
   </script>
 </body>
 

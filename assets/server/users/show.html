@@ -12,7 +12,7 @@
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
-  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <script defer src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="users-show" class="tab-content">
@@ -85,7 +85,8 @@
         <span class="oi oi-bar-chart mr-2 ml-n1"></span>
         Statistics
       </div>
-      <div id="user_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;">
+      <div id="user_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;"
+        data-user-id="{{$user.ID}}">
         <p class="justify-content-center align-self-center text-center font-italic w-100">Loading chart...</p>
       </div>
       <small class="card-footer d-flex justify-content-between text-muted">
@@ -127,64 +128,67 @@
   </main>
 
   <script defer type="text/javascript">
-    var chartData = [];
-    $(() => redrawCharts(chartData, 300));
+    window.addEventListener('load', (event) => {
+      var chartData = [];
+      $(() => redrawCharts(chartData, 300));
 
-    google.charts.load('current', {
-      packages: ['corechart'],
-      callback: drawRealmCharts,
-    });
+      let $div = $('#user_stats_chart');
+      let userID = $div.data('userId');
 
-    function drawRealmCharts() {
-      $.ajax({
-        url: '/stats/realm/users/{{$user.ID}}.json',
-        dataType: 'json',
-      })
-      .done(function(data, status, xhr) {
-        let $userStatsChart = $('#user_stats_chart');
-
-        if (!data.statistics) {
-          $userStatsChart.find('p').text('No data yet.');
-          return;
-        }
-
-        var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Issued');
-
-        data.statistics.reverse().forEach(function(row) {
-          dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
-        });
-
-        let dateFormatter = new google.visualization.DateFormat({
-          pattern: 'MMM dd',
-        });
-        dateFormatter.format(dataTable, 0);
-
-        let options = {
-          colors: ['#007bff', '#ff7b00'],
-          chartArea: {
-            left: 40, // leave room for y-axis labels
-            right: 20,
-            width: '100%'
-          },
-          hAxis: { format: 'M/d' },
-          legend: 'none',
-          width: '100%'
-        };
-
-        let chart = new google.visualization.LineChart($userStatsChart.get(0));
-        chart.draw(dataTable, options);
-        chartData.push({
-          chart: chart,
-          data: dataTable,
-          options: options,
-        });
-      })
-      .fail(function(xhr, status, err) {
-        flash.error('Failed to render realm stats: ' + err);
+      google.charts.load('current', {
+        packages: ['corechart'],
+        callback: drawRealmCharts,
       });
-    }
+
+      function drawRealmCharts() {
+        $.ajax({
+          url: `/stats/realm/users/${userID}.json`,
+          dataType: 'json',
+        })
+        .done(function(data, status, xhr) {
+          if (!data.statistics) {
+            $div.find('p').text('No data yet.');
+            return;
+          }
+
+          var dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('date', 'Date');
+          dataTable.addColumn('number', 'Issued');
+
+          data.statistics.reverse().forEach(function(row) {
+            dataTable.addRow([utcDate(row.date), row.data.codes_issued]);
+          });
+
+          let dateFormatter = new google.visualization.DateFormat({
+            pattern: 'MMM dd',
+          });
+          dateFormatter.format(dataTable, 0);
+
+          let options = {
+            colors: ['#007bff', '#ff7b00'],
+            chartArea: {
+              left: 40, // leave room for y-axis labels
+              right: 20,
+              width: '100%'
+            },
+            hAxis: { format: 'M/d' },
+            legend: 'none',
+            width: '100%'
+          };
+
+          let chart = new google.visualization.LineChart($div.get(0));
+          chart.draw(dataTable, options);
+          chartData.push({
+            chart: chart,
+            data: dataTable,
+            options: options,
+          });
+        })
+        .fail(function(xhr, status, err) {
+          flash.error('Failed to render realm stats: ' + err);
+        });
+      }
+    });
   </script>
 </body>
 </html>

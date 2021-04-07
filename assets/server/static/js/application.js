@@ -943,7 +943,7 @@ function uploadBatchIssue(data, lines) {
     dataType: 'json',
     cache: false,
     contentType: 'application/json',
-    headers: { 'X-CSRF-Token': csrfToken },
+    headers: { 'X-CSRF-Token': getCSRFToken() },
     data: JSON.stringify(req),
     success: function(result) {
       if (!result.responseJSON || !result.responseJSON.codes) {
