@@ -351,6 +351,7 @@ func Server(
 	// Blanket handle any missing routes.
 	sub.NotFoundHandler = populateTemplateVariables(processLocale(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		controller.NotFound(w, r, h)
+		return
 	})))
 
 	// Wrap the main router in the mutating middleware method. This cannot be
