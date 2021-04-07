@@ -124,7 +124,7 @@
         {{- if .currentRealm}}{{if .currentRealm.SMSCountry}}
         initialCountry: '{{.currentRealm.SMSCountry}}',
         {{end}}{{end}}
-        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
+        utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.2/js/utils.js',
       });
 
       firebase.auth().onAuthStateChanged(function(user) {
