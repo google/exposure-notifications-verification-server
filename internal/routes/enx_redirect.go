@@ -20,18 +20,25 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/assets"
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/associated"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/userreport"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
+	"github.com/sethvargo/go-limiter"
+
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 )
 
 // ENXRedirect defines routes for the redirector service for ENX.
@@ -40,6 +47,8 @@ func ENXRedirect(
 	cfg *config.RedirectConfig,
 	db *database.Database,
 	cacher cache.Cacher,
+	smsSigner keys.KeyManager,
+	limiterStore limiter.Store,
 ) (http.Handler, error) {
 	// Create the router
 	r := mux.NewRouter()
@@ -75,6 +84,88 @@ func ENXRedirect(
 
 	// Handle health.
 	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
+
+	if cfg.Features.EnableUserReportWeb {
+		// Share static assets with server.
+		{
+			staticFS := assets.ServerStaticFS()
+			r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+
+			// Browers and devices seem to always hit this - serve it to keep our logs
+			// cleaner.
+			r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
+		}
+
+		// Session config
+		sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
+		sessions.Options.Path = "/"
+		sessions.Options.Domain = cfg.Issue.ENExpressRedirectDomain
+		sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
+		sessions.Options.Secure = !cfg.DevMode
+		sessions.Options.SameSite = http.SameSiteStrictMode
+		sessions.Options.HttpOnly = true
+
+		// Limiter
+		httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
+			limitware.IPAddressKeyFunc(ctx, "redirect:ratelimit:", cfg.RateLimit.HMACKey),
+			limitware.AllowOnError(false))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create limiter middleware: %w", err)
+		}
+
+		userReportController, err := userreport.New(cacher, cfg, db, limiterStore, smsSigner, h)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create code request controller: %w", err)
+		}
+		// Only allow this on the top level redirect domain
+		allowedHostHeaders := []string{cfg.Issue.ENExpressRedirectDomain}
+		hostHeaderCheck := middleware.RequireHostHeader(allowedHostHeaders, h, cfg.DevMode)
+		requireSession := middleware.RequireSession(sessions, h)
+		// Load localization
+		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup i18n: %w", err)
+		}
+		// Process localization parameters.
+		processLocale := middleware.ProcessLocale(locales)
+
+		{ // handler for /report/issue, required values must be in the established session.
+			sub := r.Path("/report/issue").Subrouter()
+			sub.Use(hostHeaderCheck)
+			sub.Use(requireSession)
+			sub.Use(httplimiter.Handle)
+			sub.Use(processLocale)
+
+			sub.Handle("", userReportController.HandleSend()).Methods(http.MethodPost)
+		}
+
+		{ // handler for the /report path - requires API KEY and NONCE headers.
+			sub := r.Path("/report").Subrouter()
+			sub.Use(hostHeaderCheck)
+			sub.Use(requireSession)
+			sub.Use(httplimiter.Handle)
+			sub.Use(processLocale)
+
+			// This allows developers to send GET requests in a browser with query params
+			// to test the UI. Normally this is required to be initiated via POST and headers.
+			if cfg.DevMode {
+				sub.Use(middleware.QueryHeaderInjection(middleware.APIKeyHeader, "apikey"))
+				sub.Use(middleware.QueryHeaderInjection(middleware.NonceHeader, "nonce"))
+			}
+
+			requireAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
+				database.APIKeyTypeDevice,
+			})
+			sub.Use(requireAPIKey)
+			sub.Use(middleware.RequireNonce(h))
+
+			indexMethods := []string{http.MethodPost}
+			if cfg.DevMode {
+				indexMethods = append(indexMethods, http.MethodGet)
+			}
+			sub.Handle("", userReportController.HandleIndex()).Methods(indexMethods...)
+		}
+	}
 
 	// iOS and Android include functionality to associate data between web-apps
 	// and device apps. Things like handoff between websites and apps, or

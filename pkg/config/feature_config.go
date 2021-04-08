@@ -27,6 +27,10 @@ type FeatureConfig struct {
 	// EnableUserReport allows for realms to enable user initiated diagnosis reporting,
 	// via API + SMS.
 	EnableUserReport bool `env:"ENABLE_USER_REPORT, default=false"`
+
+	// EnableUserReportWeb will host a web page on the enx-redirect service
+	// under a realm's domain IFF that realm has enabled user report and admin user report
+	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=false"`
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known

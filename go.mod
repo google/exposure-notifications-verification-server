@@ -44,6 +44,7 @@ require (
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.16.0
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.6
 	golang.org/x/tools v0.1.1-0.20210302220138-2ac05c832e1a

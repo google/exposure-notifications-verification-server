@@ -30,6 +30,13 @@ import (
 // Option is a customization option for the client.
 type Option func(c *client) *client
 
+func WithCookieJar(jar http.CookieJar) Option {
+	return func(c *client) *client {
+		c.httpClient.Jar = jar
+		return c
+	}
+}
+
 // WithTimeout sets a custom timeout for each request. The default is 5s.
 func WithTimeout(d time.Duration) Option {
 	return func(c *client) *client {

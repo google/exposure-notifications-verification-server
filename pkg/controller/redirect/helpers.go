@@ -15,9 +15,29 @@
 package redirect
 
 import (
+	"net"
+	"net/http"
 	"net/url"
 	"strings"
 )
+
+func HostRegionFromRequest(r *http.Request, hostnameToRegion map[string]string) string {
+	// Strip of the port if that was passed along in the host header.
+	baseHost := strings.ToLower(r.Host)
+	if host, _, err := net.SplitHostPort(baseHost); err == nil {
+		baseHost = host
+	}
+
+	var hostRegion string = ""
+	for hostname, region := range hostnameToRegion {
+		if hostname == baseHost {
+			hostRegion = region
+			break
+		}
+	}
+
+	return hostRegion
+}
 
 // isAndroid determines if a User-Agent is a Android device.
 func isAndroid(userAgent string) bool {

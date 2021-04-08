@@ -17,7 +17,9 @@ package clients
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
@@ -38,6 +40,55 @@ func NewENXRedirectClient(base string, opts ...Option) (*ENXRedirectClient, erro
 	return &ENXRedirectClient{
 		client: client,
 	}, nil
+}
+
+func (c *ENXRedirectClient) SendUserReportIndex(ctx context.Context, apikey string, nonce string) error {
+	req, err := c.newRequest(ctx, http.MethodPost, "/report", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-API-Key", apikey)
+	req.Header.Set("X-Nonce", nonce)
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error making initial load request: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code from load request: %v", res.StatusCode)
+	}
+	return nil
+}
+
+func (c *ENXRedirectClient) SendUserReportIssue(ctx context.Context, testDate string, symptomDate string, phone string, agree string) error {
+	// Send the issue code request
+	values := url.Values{
+		"testDate":    []string{testDate},
+		"symptomDate": []string{symptomDate},
+		"phone":       []string{phone},
+		"agreement":   []string{agree},
+	}
+
+	log.Printf("VAULES: %+v", values)
+
+	u := c.baseURL.ResolveReference(&url.URL{Path: "report/issue"})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), strings.NewReader(values.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error posting report form: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code from load request: %v", res.StatusCode)
+	}
+	return nil
+
 }
 
 // AppleSiteAssociation calls and parses the Apple site association file.

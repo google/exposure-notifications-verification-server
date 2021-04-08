@@ -41,6 +41,10 @@ func TestIndex(t *testing.T) {
 			"empty": "aa",
 			"okay":  "bb",
 		},
+		Features: config.FeatureConfig{
+			EnableUserReport:    true,
+			EnableUserReportWeb: true,
+		},
 	}
 
 	// Set realm to resolve.
@@ -86,7 +90,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Build routes.
-	mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher)
+	mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher, harness.KeyManager, harness.RateLimiter)
 	if err != nil {
 		t.Fatal(err)
 	}

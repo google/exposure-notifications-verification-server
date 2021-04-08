@@ -39,6 +39,7 @@ const (
 	contextKeyTemplate      = contextKey("template")
 	contextKeyUser          = contextKey("user")
 	contextKeyOS            = contextKey("os")
+	contextKeyNonce         = contextKey("nonce")
 )
 
 // WithOperatingSystem stores the operating system enum in the context.
@@ -59,6 +60,25 @@ func OperatingSystemFromContext(ctx context.Context) database.OSType {
 		return database.OSTypeUnknown
 	}
 	return t
+}
+
+// WithNonce adds a nonce value to the request context.
+func WithNonce(ctx context.Context, nonce string) context.Context {
+	return context.WithValue(ctx, contextKeyNonce, &nonce)
+}
+
+// NonceFromContext retrieves a nonce value from the context.
+func NonceFromContext(ctx context.Context) string {
+	v := ctx.Value(contextKeyNonce)
+	if v == nil {
+		return ""
+	}
+
+	t, ok := v.(*string)
+	if !ok {
+		return ""
+	}
+	return *t
 }
 
 // WithAuthorizedApp stores the authorized app on the context.

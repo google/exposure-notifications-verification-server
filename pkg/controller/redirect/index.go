@@ -89,6 +89,5 @@ func (c *Controller) HandleIndex() http.Handler {
 			"userAgent", r.UserAgent())
 
 		controller.NotFound(w, r, c.h)
-		return
 	})
 }
