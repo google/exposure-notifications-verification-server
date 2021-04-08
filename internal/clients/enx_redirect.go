@@ -51,6 +51,7 @@ func (c *ENXRedirectClient) SendUserReportIndex(ctx context.Context, apikey stri
 	req.Header.Set("X-Nonce", nonce)
 
 	res, err := c.httpClient.Do(req)
+	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error making initial load request: %w", err)
 	}
@@ -80,6 +81,7 @@ func (c *ENXRedirectClient) SendUserReportIssue(ctx context.Context, testDate st
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	res, err := c.httpClient.Do(req)
+	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error posting report form: %w", err)
 	}
