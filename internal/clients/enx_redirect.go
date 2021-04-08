@@ -51,10 +51,10 @@ func (c *ENXRedirectClient) SendUserReportIndex(ctx context.Context, apikey stri
 	req.Header.Set("X-Nonce", nonce)
 
 	res, err := c.httpClient.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error making initial load request: %w", err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from load request: %v", res.StatusCode)
@@ -81,10 +81,10 @@ func (c *ENXRedirectClient) SendUserReportIssue(ctx context.Context, testDate st
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	res, err := c.httpClient.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error posting report form: %w", err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code from load request: %v", res.StatusCode)
