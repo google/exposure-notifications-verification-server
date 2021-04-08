@@ -100,6 +100,10 @@ resource "google_cloud_run_service" "enx-redirect" {
             local.cache_config,
             local.database_config,
             local.observability_config,
+            local.rate_limit_config,
+            local.signing_config,
+            local.issue_config,
+            local.session_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "_all", {}),
