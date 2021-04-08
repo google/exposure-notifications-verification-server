@@ -22,9 +22,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
-const nonceKey = "_nonce"
-const regionKey = "_region"
-
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -54,8 +51,8 @@ func (c *Controller) HandleIndex() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 
 		// stash the nonce value in the session
-		session.Values[nonceKey] = nonce
-		session.Values[regionKey] = realm.RegionCode
+		controller.StoreSessionNonce(session, nonce)
+		controller.StoreSessionRegion(session, realm.RegionCode)
 		m.Title("Request a verification code")
 		m["realm"] = realm
 		c.h.RenderHTML(w, "report/index", m)

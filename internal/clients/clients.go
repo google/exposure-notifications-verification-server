@@ -30,6 +30,9 @@ import (
 // Option is a customization option for the client.
 type Option func(c *client) *client
 
+// WithCookieJar installs the specified cookier jar in the client. This
+// is necessary if you are making successive requests that need to utilize
+// cookies.
 func WithCookieJar(jar http.CookieJar) Option {
 	return func(c *client) *client {
 		c.httpClient.Jar = jar

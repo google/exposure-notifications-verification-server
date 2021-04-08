@@ -24,27 +24,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
-	"github.com/gorilla/sessions"
 )
-
-func stringFromSession(session *sessions.Session, key string) (string, error) {
-	v, ok := session.Values[key]
-	if !ok {
-		return "", fmt.Errorf("there is no %q in the session", key)
-	}
-	strVal, ok := v.(string)
-	if !ok {
-		return "", fmt.Errorf("the session value for %q is not a string", key)
-	}
-	return strVal, nil
-}
 
 func (c *Controller) HandleSend() http.Handler {
 	type FormData struct {
-		TestDate    string `form:"testDate"`
-		SymptomDate string `form:"symptomDate"`
-		Phone       string `form:"phone"`
-		Agreement   bool   `form:"agreement"`
+		TestDate  string `form:"testDate"`
+		Phone     string `form:"phone"`
+		Agreement bool   `form:"agreement"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -53,16 +39,11 @@ func (c *Controller) HandleSend() http.Handler {
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
-			logger.Debugw("missing session")
 			controller.MissingSession(w, r, c.h)
 			return
 		}
 
-		region, err := stringFromSession(session, regionKey)
-		if err != nil {
-			controller.NotFound(w, r, c.h)
-			return
-		}
+		region := controller.RegionFromSession(session)
 		realm, err := c.db.FindRealmByRegion(region)
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -91,8 +72,8 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 
 		// Pull the nonce from the session.
-		nonceStr, err := stringFromSession(session, nonceKey)
-		if err != nil {
+		nonceStr := controller.NonceFromSession(session)
+		if nonceStr == "" {
 			controller.NotFound(w, r, c.h)
 			return
 		}
@@ -106,7 +87,6 @@ func (c *Controller) HandleSend() http.Handler {
 		// Attempt to send the code.
 		issueRequest := &issueapi.IssueRequestInternal{
 			IssueRequest: &api.IssueCodeRequest{
-				SymptomDate:      form.SymptomDate,
 				TestDate:         form.TestDate,
 				TestType:         api.TestTypeUserReport, // Always test type of user report.
 				Phone:            form.Phone,
@@ -122,6 +102,8 @@ func (c *Controller) HandleSend() http.Handler {
 			logger.Errorw("error issuing code", "result", result)
 			controller.InternalError(w, r, c.h, fmt.Errorf("error issuing verification code: %v", result.ErrorReturn.Error))
 		}
+
+		controller.ClearNonceFromSession(session)
 
 		m.Title("Request a verification code")
 		m["realm"] = realm

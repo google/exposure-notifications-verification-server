@@ -45,7 +45,7 @@ type RedirectConfig struct {
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
-	SessionDuration    time.Duration `env:"SESSION_DURATION, default=20h"`
+	SessionDuration    time.Duration `env:"SESSION_DURATION, default=1h"`
 	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
 
 	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.

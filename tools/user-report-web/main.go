@@ -36,7 +36,6 @@ var (
 	nonceSize   = flag.Uint("nonce-size", 256, "size of the nonce to generate, in bytes")
 	phoneNumber = flag.String("phone-number", "", "Phone number to send verification code to")
 	testFlag    = flag.String("test-date", "", "Test date for code issue")
-	onsetFlag   = flag.String("onset", "", "Symptom onset date, YYYY-MM-DD format")
 	timeoutFlag = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	apikeyFlag  = flag.String("apikey", "", "API Key to use")
 	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
@@ -76,19 +75,19 @@ func realMain(ctx context.Context) error {
 		return err
 	}
 
-	client, err := clients.NewENXRedirectClient(*addrFlag,
+	client, err := clients.NewENXRedirectWebClient(*addrFlag, *apikeyFlag,
 		clients.WithCookieJar(jar),
 		clients.WithTimeout(*timeoutFlag))
 	if err != nil {
 		return fmt.Errorf("unable to create client: %w", err)
 	}
 
-	if err := client.SendUserReportIndex(ctx, *apikeyFlag, nonce); err != nil {
+	if err := client.SendUserReportIndex(ctx, nonce); err != nil {
 		return err
 	}
 	logger.Debugw("session established")
 
-	if err := client.SendUserReportIssue(ctx, *testFlag, *onsetFlag, *phoneNumber, "true"); err != nil {
+	if err := client.SendUserReportIssue(ctx, *testFlag, *phoneNumber, "true"); err != nil {
 		return err
 	}
 

@@ -36,11 +36,11 @@ func RequireNonce(h *render.Renderer) mux.MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			logger := logging.FromContext(ctx).Named("middleware.RequireAPIKey")
+			logger := logging.FromContext(ctx).Named("middleware.RequireNonce")
 
 			nonce := strings.TrimSpace(r.Header.Get(NonceHeader))
 			if nonce == "" {
-				logger.Debugw("missing API key in request")
+				logger.Debugw("missing nonce in request")
 				controller.Unauthorized(w, r, h)
 				return
 			}

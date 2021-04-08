@@ -1,16 +1,9 @@
-{{define "report/head"}}
+{{define "report/header"}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta data-build-id="{{.build_id}}" data-build-tag="{{.build_tag}}">
 
-<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-<link rel="manifest" href="/static/site.webmanifest">
-<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
 <link rel="shortcut icon" href="/static/favicon.ico">
-<meta name="msapplication-TileColor" content="#ff0554">
-<meta name="msapplication-config" content="/static/browserconfig.xml">
 <meta name="theme-color" content="#ffffff">
 {{.csrfMeta}}
 
@@ -20,10 +13,7 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
   integrity="sha384-wWci3BOzr88l+HNsAtr3+e5bk9qh5KfjU6gl/rbzfTYdsAVHBEbxB33veLYmFg/a" crossorigin="anonymous">
 <link rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/css/intlTelInput.css"
-  integrity="sha384-TXDx4BvGGuJDYIKlcgXfDntJ100A809RRLB4W72MhjXJzakfj3ptxy4zER5qsxZH" crossorigin="anonymous">
-<link rel="stylesheet"
-  href="/static/css/application.css" crossorigin="anonymous" />
+  href="/static/css/application.css?{{.buildID}}" crossorigin="anonymous" />
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"
   integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
@@ -31,8 +21,6 @@
   integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
   integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/js/intlTelInput.js"
-  integrity="sha384-qqHEed+7J6B7s1PDZUg0ockDBmE8DsXphZqsNwV2pzkH5kXcNP7ZKRYLxbd5f/WL" crossorigin="anonymous"></script>
 <script src="/static/js/application.js?{{.buildID}}" crossorigin="anonymous"></script>
 
 <title>Verification Code Request</title>

@@ -45,19 +45,19 @@ type Controller struct {
 }
 
 // New creates a new login controller.
-func New(cacher cache.Cacher, config *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
-	cfgMap, err := config.HostnameToRegion()
+func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
+	cfgMap, err := cfg.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	issueController := issueapi.New(config, db, limiter, smsSigner, h)
+	issueController := issueapi.New(cfg, db, limiter, smsSigner, h)
 
 	localCache, _ := memcache.New(30 * time.Second)
 
 	return &Controller{
 		cacher:           cacher,
-		config:           config,
+		config:           cfg,
 		db:               db,
 		localCache:       localCache,
 		limiter:          limiter,

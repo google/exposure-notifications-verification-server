@@ -34,7 +34,59 @@ const (
 	sessionKeyLastActivity            = sessionKey("lastActivity")
 	sessionKeyRealmID                 = sessionKey("realmID")
 	sessionKeyWelcomeMessageDisplayed = sessionKey("welcomeMessageDisplayed")
+	nonceKey                          = sessionKey("nonce")
+	regionKey                         = sessionKey("region")
 )
+
+// StoreSessionNonce stores this sessions current nonce value for
+// processing.
+func StoreSessionNonce(session *sessions.Session, nonce string) {
+	if session == nil {
+		return
+	}
+	session.Values[nonceKey] = nonce
+}
+
+// NonceFromSession returns the current nonce from the session or
+// empty string if there isn't one, or the value is malformed.
+func NonceFromSession(session *sessions.Session) string {
+	v := sessionGet(session, nonceKey)
+	if v == nil {
+		return ""
+	}
+	strVal, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return strVal
+}
+
+// ClearNonceFromSession removes the nonce key from the current session.
+func ClearNonceFromSession(session *sessions.Session) {
+	sessionClear(session, nonceKey)
+}
+
+// StoreSessionRegion stores the current operating region in the session.
+func StoreSessionRegion(session *sessions.Session, region string) {
+	if session == nil {
+		return
+	}
+	session.Values[regionKey] = region
+}
+
+// RegionFromSession returns the current region from the session or
+// empty string if there isn't one, or the value is malformed.
+func RegionFromSession(session *sessions.Session) string {
+	v := sessionGet(session, regionKey)
+	if v == nil {
+		return ""
+	}
+	strVal, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return strVal
+}
 
 // StoreSessionCSRFToken stores the CSRF token on the session.
 func StoreSessionCSRFToken(session *sessions.Session, token []byte) {

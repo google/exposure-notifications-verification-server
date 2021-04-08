@@ -17,7 +17,6 @@ package userreport_test
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"log"
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
@@ -92,8 +91,6 @@ func TestIndex(t *testing.T) {
 	t.Cleanup(func() {
 		srv.Close()
 	})
-	log.Printf("url: %s", srv.URL)
-	//client := srv.Client()
 
 	// Generate the nonce
 	nonceBytes := make([]byte, database.NonceLength)
@@ -108,13 +105,13 @@ func TestIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	// initiate the request
-	redirClient, err := clients.NewENXRedirectClient(srv.URL,
+	redirClient, err := clients.NewENXRedirectWebClient(srv.URL, apikey,
 		clients.WithCookieJar(jar), clients.WithTimeout(5*time.Second))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := redirClient.SendUserReportIndex(ctx, apikey, nonce); err != nil {
+	if err := redirClient.SendUserReportIndex(ctx, nonce); err != nil {
 		t.Fatalf("error requesting user report web view: %v", err)
 	}
 }

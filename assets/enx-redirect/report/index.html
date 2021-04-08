@@ -5,7 +5,7 @@
 <!doctype html>
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
-  {{template "report/head" .}}
+  {{template "report/header" .}}
 </head>
 
 <body class="tab-content">
@@ -23,21 +23,7 @@
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header">Enter the date of your COVID-19 symptoms</div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="symptomDate">Leave blank if you have not experienced symptoms</label>
-                <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
-                </div>
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
             </div>
           </div>
@@ -47,20 +33,19 @@
           <div class="card-header">Phone Number</div>
           <div class="card-body">            
             <div class="form-row">
-              <label for="phone">Enter your mobile phone number. Your Exposure Notifications
-                verification code from {{.realm.Name}} will be send to you via text message.
+              <label for="phone">Mobile phone number for receiving SMS
               </label>
             </div>
             <div class="form-row">
               <div class="input-group">
-                <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="w-100" />
+                <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="d-block" />
               </div>              
             </div>
           </div>
         </div>
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">Test Agreement</div>
+          <div class="card-header">Agreement</div>
           <div class="card-body">            
             <div class="form-row">
               <div class="form-check mb-3">                
@@ -85,16 +70,6 @@
   </main>
 
   <script type="text/javascript">
-    // Initialize pretty phone
-    let phone = document.querySelector('#phone');
-    let iti = window.intlTelInput(phone, {
-      nationalMode: true,
-      {{- if $currentRealm.SMSCountry }}
-      initialCountry: '{{$currentRealm.SMSCountry}}',
-      {{- end }}
-      utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.0/js/utils.js',
-    });
-
     {{if $currentRealm.RequireDate}}
       let $dates = $('input#test-date,input#symptom-date');
       $dates.on('input', function() {
