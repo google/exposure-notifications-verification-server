@@ -11,7 +11,7 @@ msgstr ""
 # ----------------
 
 msgid "login.email-address"
-msgstr "عنوان بريد الكتروني"
+msgstr "عنوان البريد الإلكتروني"
 
 msgid "login.password"
 msgstr "كلمة المرور"
@@ -29,10 +29,10 @@ msgid "login.about-exposure-notifications"
 msgstr "Exposure Notifications حول"
 
 msgid "login.signing-out"
-msgstr "تسجيل خروج..."
+msgstr "...تسجيل خروج"
 
 msgid "login.signing-out-error"
-msgstr "فشل تسجيل الخروج. أغلق المتصفح أو امسح ملفات تعريف الارتباط."
+msgstr ".فشل تسجيل الخروج. أغلق المتصفح أو إمسح ملفات تعريف الإرتباط"
 
 msgid "login.realm-selection"
 msgstr "اختيار المجال"
@@ -41,7 +41,7 @@ msgid "login.realm-no-memberships"
 msgstr "أنت لست عضوا في أي عالم."
 
 msgid "account.full-name"
-msgstr "الاسم الكامل"
+msgstr "الإسم الكامل"
 
 msgid "account.header-details"
 msgstr "تفاصيل الحساب"
