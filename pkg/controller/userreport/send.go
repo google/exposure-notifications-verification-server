@@ -99,8 +99,8 @@ func (c *Controller) HandleSend() http.Handler {
 		result := c.issueController.IssueOne(ctx, issueRequest)
 		if result.HTTPCode != http.StatusOK {
 			// TODO(mikehelmick) : render form again and handle errors if appropriate, displaying success may be appropriate.
-			logger.Errorw("error issuing code", "result", result)
 			controller.InternalError(w, r, c.h, fmt.Errorf("error issuing verification code: %v", result.ErrorReturn.Error))
+			return
 		}
 
 		controller.ClearNonceFromSession(session)
