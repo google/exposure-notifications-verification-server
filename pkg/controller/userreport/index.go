@@ -18,18 +18,15 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-
-	"github.com/google/exposure-notifications-server/pkg/logging"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := logging.FromContext(ctx).Named("userreport.HandleIndex")
-		logger.Infow("serving index")
 
 		authApp := controller.AuthorizedAppFromContext(ctx)
 		if authApp == nil {
+			// TODO(mikehelmick) message this better.
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
@@ -46,6 +43,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		// TODO(mikehelmick) - error if nonce isn't valid (encoding + length)
 		nonce := controller.NonceFromContext(ctx)
 
 		m := controller.TemplateMapFromContext(ctx)

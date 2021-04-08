@@ -79,7 +79,7 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 		nonce, err := base64util.DecodeString(nonceStr)
 		if err != nil {
-			logger.Warn("nonce cannot be decoded")
+			logger.Warnw("nonce cannot be decoded", "error", err)
 			controller.BadRequest(w, r, c.h)
 			return
 		}

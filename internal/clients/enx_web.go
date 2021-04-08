@@ -47,7 +47,6 @@ func (c *ENXRedirectWebClient) SendUserReportIndex(ctx context.Context, nonce st
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-API-Key", c.apiKey)
 	req.Header.Set("X-Nonce", nonce)
 
 	res, err := c.httpClient.Do(req)

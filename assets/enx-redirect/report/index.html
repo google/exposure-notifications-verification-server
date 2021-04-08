@@ -10,7 +10,7 @@
 
 <body class="tab-content">
   <main role="main" class="container">
-    <h1>Request exposure notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
+    <h1>Request Exposure Notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
 
     <form method="POST" action="/report/issue" class="floating-form">
       {{ .csrfField }}
@@ -68,16 +68,6 @@
       </div>
     </form>
   </main>
-
-  <script type="text/javascript">
-    {{if $currentRealm.RequireDate}}
-      let $dates = $('input#test-date,input#symptom-date');
-      $dates.on('input', function() {
-        $dates.not(this).prop('required', !$(this).val().length);
-      });
-      {{end}}
-  </script>
-
 </body>
 </html>
 {{end}}

@@ -41,14 +41,8 @@ func RequireHostHeader(allowed []string, h *render.Renderer, stripPort bool) mux
 				}
 			}
 
-			found := false
-			if _, ok := want[host]; ok {
-				found = true
-			}
-
-			if !found {
+			if _, ok := want[host]; !ok {
 				controller.Unauthorized(w, r, h)
-				return
 			}
 
 			next.ServeHTTP(w, r)
