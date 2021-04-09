@@ -494,5 +494,4 @@ func (db *Database) PurgeE2EAuthorizedApps() (int64, error) {
 		Where("realm_id = ? AND created_at < ?", realm.ID, deleteBefore).
 		Delete(&AuthorizedApp{})
 	return result.RowsAffected, result.Error
-
 }
