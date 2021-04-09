@@ -321,6 +321,53 @@ func TestDatabase_PurgeAuthorizedApps(t *testing.T) {
 	}
 }
 
+func TestDatabase_PurgeE2EAuthorizedApps(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	// No realm
+	{
+		n, err := db.PurgeE2EAuthorizedApps()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(0); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
+	}
+
+	realm := NewRealmWithDefaults("e2e-test-realm")
+	realm.RegionCode = "E2E-TEST"
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 5; i++ {
+		if err := db.SaveAuthorizedApp(&AuthorizedApp{
+			RealmID: realm.ID,
+			Name:    fmt.Sprintf("e2e-test-%d", i),
+			APIKey:  fmt.Sprintf("%d", i),
+			Model: gorm.Model{
+				CreatedAt: time.Now().UTC().Add(-25 * time.Hour),
+			},
+		}, SystemTest); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Purges entries.
+	{
+		n, err := db.PurgeE2EAuthorizedApps()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := n, int64(5); got != want {
+			t.Errorf("expected %d to purge, got %d", want, got)
+		}
+	}
+}
+
 func TestAuthorizedApp_Audits(t *testing.T) {
 	t.Parallel()
 

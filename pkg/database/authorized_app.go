@@ -474,3 +474,24 @@ func (db *Database) PurgeAuthorizedApps(maxAge time.Duration) (int64, error) {
 		Delete(&AuthorizedApp{})
 	return result.RowsAffected, result.Error
 }
+
+// PurgeE2EAuthorizedApps purges any API keys for the e2e-runner that have
+// existed for more than 24 hours. In cases where the e2e-runner fails, it can
+// leave behind API keys that are never deleted.
+func (db *Database) PurgeE2EAuthorizedApps() (int64, error) {
+	deleteBefore := time.Now().UTC().Add(-24 * time.Hour)
+
+	realm, err := db.E2ERealm()
+	if err != nil {
+		if IsNotFound(err) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("failed to lookup e2e realm: %w", err)
+	}
+
+	result := db.db.
+		Unscoped().
+		Where("realm_id = ? AND created_at < ?", realm.ID, deleteBefore).
+		Delete(&AuthorizedApp{})
+	return result.RowsAffected, result.Error
+}
