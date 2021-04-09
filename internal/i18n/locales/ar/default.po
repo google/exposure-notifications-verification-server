@@ -65,7 +65,7 @@ msgid "account.verify-email-address-required"
 msgstr "يتطلب %s التحقق من عنوان بريدك الإلكتروني."
 
 msgid "account.verifying-email-address"
-msgstr "التحقق من عنوان البريد الإلكتروني ..."
+msgstr "...جاري التحقق من عنوان البريد الإلكتروني"
 
 msgid "account.verify-email-address-error"
 msgstr "فشل التحقق من عنوان البريد الإلكتروني"
