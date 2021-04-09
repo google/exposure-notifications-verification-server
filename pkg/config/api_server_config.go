@@ -118,7 +118,6 @@ func (c *APIServerConfig) GetFeatureConfig() *FeatureConfig {
 	return &c.Features
 }
 
-// The apiserver only supports self report which doesn't use
 func (c *APIServerConfig) GetAuthenticatedSMSFailClosed() bool {
 	return c.SMSSigning.FailClosed
 }

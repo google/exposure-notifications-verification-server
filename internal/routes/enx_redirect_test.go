@@ -17,10 +17,12 @@ package routes
 import (
 	"testing"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/sethvargo/go-limiter/memorystore"
 )
 
 func TestENXRedirect(t *testing.T) {
@@ -35,7 +37,14 @@ func TestENXRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mux, err := ENXRedirect(ctx, cfg, db, cacher)
+	limiterStore, err := memorystore.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signer := keys.TestKeyManager(t)
+
+	mux, err := ENXRedirect(ctx, cfg, db, cacher, signer, limiterStore)
 	if err != nil {
 		t.Fatal(err)
 	}

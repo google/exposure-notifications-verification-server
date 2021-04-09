@@ -1,0 +1,73 @@
+{{define "report/index"}}
+
+{{$currentRealm := .realm}}
+
+<!doctype html>
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
+<head>
+  {{template "report/header" .}}
+</head>
+
+<body class="tab-content">
+  <main role="main" class="container">
+    <h1>Request Exposure Notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
+
+    <form method="POST" action="/report/issue" class="floating-form">
+      {{ .csrfField }}
+
+      <div id="form-area">
+
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header">Enter the date of your COVID-19 test</div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100" {{if $currentRealm.RequireDate}}required{{end}} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header">Phone Number</div>
+          <div class="card-body">            
+            <div class="form-row">
+              <label for="phone">Mobile phone number for receiving SMS
+              </label>
+            </div>
+            <div class="form-row">
+              <div class="input-group">
+                <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="d-block" />
+              </div>              
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header">Agreement</div>
+          <div class="card-body">            
+            <div class="form-row">
+              <div class="form-check mb-3">                
+                 <input type="checkbox" name="agreement" id="agreement" class="form-check-input" value="true" />
+                 <label for="agreement" class="form-check-label">
+                   I agree that I have received a positive test result for COVID-19, that the phone
+                   number provided belongs to me, and that I would like to receive a verification code
+                   for Exposure Notifications to share my information anonymously with others. 
+                 </label>              
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col">
+            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "codes.issue.create-code-button"}}</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
+{{end}}

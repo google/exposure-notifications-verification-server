@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Exchanges a verification code for a verification token.
+// Does the two step call to the webview to initiate a user report.
 package main
 
 import (
@@ -20,23 +20,22 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
+	"fmt"
+	"net/http/cookiejar"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
-	"github.com/google/exposure-notifications-verification-server/pkg/api"
-
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"golang.org/x/net/publicsuffix"
 )
 
 var (
-	nonceOnly   = flag.Bool("nonce-only", false, "just print out the nonce")
 	nonceSize   = flag.Uint("nonce-size", 256, "size of the nonce to generate, in bytes")
 	phoneNumber = flag.String("phone-number", "", "Phone number to send verification code to")
 	testFlag    = flag.String("test-date", "", "Test date for code issue")
-	onsetFlag   = flag.String("onset", "", "Symptom onset date, YYYY-MM-DD format")
 	timeoutFlag = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	apikeyFlag  = flag.String("apikey", "", "API Key to use")
 	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
@@ -50,7 +49,7 @@ func main() {
 	if os.Getenv("LOG_LEVEL") == "" {
 		os.Setenv("LOG_LEVEL", "DEBUG")
 	}
-	logger := logging.NewLoggerFromEnv().Named("user-report")
+	logger := logging.NewLoggerFromEnv().Named("user-report-web")
 	ctx = logging.WithLogger(ctx, logger)
 
 	err := realMain(ctx)
@@ -64,33 +63,35 @@ func main() {
 func realMain(ctx context.Context) error {
 	logger := logging.FromContext(ctx)
 
-	nonce := make([]byte, *nonceSize)
-	_, err := rand.Read(nonce)
+	nonceBytes := make([]byte, *nonceSize)
+	_, err := rand.Read(nonceBytes)
+	if err != nil {
+		return err
+	}
+	nonce := base64.URLEncoding.EncodeToString(nonceBytes)
+
+	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	if err != nil {
 		return err
 	}
 
-	if *nonceOnly {
-		logger.Warnw("nonce only", "nonce", base64.URLEncoding.EncodeToString(nonce))
-		return nil
-	}
-
-	client, err := clients.NewAPIServerClient(*addrFlag, *apikeyFlag,
+	client, err := clients.NewENXRedirectWebClient(*addrFlag, *apikeyFlag,
+		clients.WithCookieJar(jar),
 		clients.WithTimeout(*timeoutFlag))
 	if err != nil {
+		return fmt.Errorf("unable to create client: %w", err)
+	}
+
+	if err := client.SendUserReportIndex(ctx, nonce); err != nil {
+		return err
+	}
+	logger.Debugw("session established")
+
+	if err := client.SendUserReportIssue(ctx, *testFlag, *phoneNumber, "true"); err != nil {
 		return err
 	}
 
-	resp, err := client.UserReport(ctx, &api.UserReportRequest{
-		TestDate:    *testFlag,
-		SymptomDate: *onsetFlag,
-		Phone:       *phoneNumber,
-		Nonce:       base64.StdEncoding.EncodeToString(nonce),
-	})
-	if err != nil {
-		return err
-	}
+	logger.Infow("code issued", "nonce", nonce)
 
-	logger.Infow("success", "response", resp, "nonce", base64.StdEncoding.EncodeToString(nonce))
 	return nil
 }

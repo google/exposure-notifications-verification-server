@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/server"
 	"github.com/google/exposure-notifications-verification-server/assets"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -28,6 +29,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/sethvargo/go-envconfig"
+	"github.com/sethvargo/go-limiter"
 )
 
 // ENXRedirectServerResponse is the response from a test ENX redirect instance.
@@ -53,6 +55,8 @@ type ENXRedirectServerConfigResponse struct {
 	Database    *database.Database
 	BadDatabase *database.Database
 	Cacher      cache.Cacher
+	KeyManager  keys.KeyManager
+	RateLimiter limiter.Store
 	Renderer    *render.Renderer
 }
 
@@ -75,7 +79,12 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 
 		Features: config.FeatureConfig{
 			EnableAuthenticatedSMS: true,
+			EnableUserReport:       true,
+			EnableUserReportWeb:    true,
 		},
+
+		CookieKeys: config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
+		RateLimit:  *harness.RateLimiterConfig,
 
 		DevMode: true,
 	}
@@ -98,6 +107,8 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 		Database:    harness.Database,
 		BadDatabase: harness.Database,
 		Cacher:      harness.Cacher,
+		RateLimiter: harness.RateLimiter,
+		KeyManager:  harness.KeyManager,
 		Renderer:    renderer,
 	}
 }
@@ -105,7 +116,7 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 // NewServer creates a new server.
 func (r *ENXRedirectServerConfigResponse) NewServer(tb testing.TB) *ENXRedirectServerResponse {
 	ctx := context.Background()
-	mux, err := routes.ENXRedirect(ctx, r.Config, r.Database, r.Cacher)
+	mux, err := routes.ENXRedirect(ctx, r.Config, r.Database, r.Cacher, r.KeyManager, r.RateLimiter)
 	if err != nil {
 		tb.Fatal(err)
 	}

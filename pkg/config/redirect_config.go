@@ -23,9 +23,12 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit"
 
 	"github.com/sethvargo/go-envconfig"
 )
+
+var _ IssueAPIConfig = (*RedirectConfig)(nil)
 
 // RedirectConfig represents the environment based config for the redirect server.
 type RedirectConfig struct {
@@ -41,6 +44,25 @@ type RedirectConfig struct {
 	// If Dev mode is true, extended logging is enabled and template
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
+
+	SessionDuration    time.Duration `env:"SESSION_DURATION, default=1h"`
+	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
+
+	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
+	// They should be base64-encoded.
+	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
+
+	// Issue config is pulled in for the ENX_REDIRECT_DOMAIN
+	Issue IssueAPIVars
+
+	// Rate limiting configuration
+	RateLimit ratelimit.Config
+
+	// SMSSigning defines the SMS signing configuration.
+	SMSSigning SMSSigningConfig
+
+	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
+	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
 	// A map of hostnames to redirect to ens:// and a mapping to the region.
 	// For example to redirect
@@ -63,6 +85,26 @@ func NewRedirectConfig(ctx context.Context) (*RedirectConfig, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+func (c *RedirectConfig) IsMaintenanceMode() bool {
+	return c.MaintenanceMode
+}
+
+func (c *RedirectConfig) IssueConfig() *IssueAPIVars {
+	return &c.Issue
+}
+
+func (c *RedirectConfig) GetRateLimitConfig() *ratelimit.Config {
+	return &c.RateLimit
+}
+
+func (c *RedirectConfig) GetFeatureConfig() *FeatureConfig {
+	return &c.Features
+}
+
+func (c *RedirectConfig) GetAuthenticatedSMSFailClosed() bool {
+	return c.SMSSigning.FailClosed
 }
 
 func (c *RedirectConfig) ObservabilityExporterConfig() *observability.Config {
