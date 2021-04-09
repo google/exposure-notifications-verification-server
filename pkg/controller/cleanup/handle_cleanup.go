@@ -57,10 +57,10 @@ func (c *Controller) HandleCleanup() http.Handler {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "API_KEYS")
 			if count, err := c.db.PurgeAuthorizedApps(c.config.AuthorizedAppMaxAge); err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized apps: %w", err))
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge api keys: %w", err))
 				result = enobs.ResultError("FAILED")
 			} else {
-				logger.Infow("purged authorized apps", "count", count)
+				logger.Infow("purged api keys", "count", count)
 				result = enobs.ResultOK
 			}
 		}()
