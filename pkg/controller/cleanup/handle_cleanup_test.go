@@ -87,41 +87,6 @@ func TestHandleCleanup(t *testing.T) {
 		}
 	})
 
-	t.Run("e2e_api_keys", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		realm := database.NewRealmWithDefaults("e2e-test-realm")
-		realm.RegionCode = "E2E-TEST"
-		if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		c := New(config, db, keyManagerSigner, h)
-
-		authApp := &database.AuthorizedApp{
-			Name: "e2e-test-admin",
-			Model: gorm.Model{
-				CreatedAt: time.Now().UTC().Add(-25 * time.Hour),
-			},
-		}
-		if _, err := realm.CreateAuthorizedApp(db, authApp, database.SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-		c.HandleCleanup().ServeHTTP(w, r)
-
-		apps, _, err := realm.ListAuthorizedApps(db, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got, want := len(apps), 0; got != want {
-			t.Errorf("got %d apps, expected %d", got, want)
-		}
-	})
-
 	t.Run("verification_codes", func(t *testing.T) {
 		t.Parallel()
 
