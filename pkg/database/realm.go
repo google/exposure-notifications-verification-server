@@ -306,24 +306,6 @@ func NewRealmWithDefaults(name string) *Realm {
 	}
 }
 
-// E2ERealm gets the end-to-end realm. The end-to-end realm is defined as the
-// realm that has a region_code beginning with E2E-* or a name beginning with
-// e2e-test-*.
-//
-// If no e2e realm is defined, it returns NotFound.
-func (db *Database) E2ERealm() (*Realm, error) {
-	var realm Realm
-	if err := db.db.
-		Model(&Realm{}).
-		Where("region_code ILIKE 'E2E-%' OR name ILIKE 'e2e-test-%'").
-		Order("created_at ASC").
-		First(&realm).
-		Error; err != nil {
-		return nil, fmt.Errorf("failed to find e2e realm: %w", err)
-	}
-	return &realm, nil
-}
-
 // AllowsUserReport returns true if this realm has enabled user initiated
 // test reporting.
 func (r *Realm) AllowsUserReport() bool {
