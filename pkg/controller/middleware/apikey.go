@@ -43,7 +43,8 @@ func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Rendere
 		allowedTypesMap[t] = struct{}{}
 	}
 
-	cacheTTL := 30 * time.Minute
+	cacheTTL := 5 * time.Minute
+	lastUsedTTL := 15 * time.Minute
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +105,21 @@ func RequireAPIKey(cacher cache.Cacher, db *database.Database, h *render.Rendere
 				logger.Errorw("failed to lookup realm from authorized app", "error", err)
 				controller.InternalError(w, r, h, err)
 				return
+			}
+
+			// Mark API key as used.
+			if authApp.LastUsedAt == nil || time.Since(*authApp.LastUsedAt) > lastUsedTTL {
+				if err := authApp.TouchLastUsedAt(db); err != nil {
+					// Log an error, but do not reject the request.
+					logger.Errorw("failed to update last_used_at", "error", err)
+				} else {
+					// Update the cache entry.
+					if err := cacher.Write(ctx, authAppCacheKey, &authApp, cacheTTL); err != nil {
+						logger.Errorw("failed to update cached entry for last_used_at", "error", err)
+						controller.InternalError(w, r, h, err)
+						return
+					}
+				}
 			}
 
 			// Save the authorized app on the context.

@@ -88,6 +88,11 @@ type AuthorizedApp struct {
 
 	// APIKeyType is the API key type.
 	APIKeyType APIKeyType `gorm:"column:api_key_type; type:integer; not null;"`
+
+	// LastUsedAt is the estimated time at which the API key was last used. For
+	// performance reasons, this not incremented on each use but rather in short
+	// buckets to avoid a write on every read.
+	LastUsedAt *time.Time `gorm:"column:last_used_at; type:timestamp with time zone;"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -458,6 +463,20 @@ func (a *AuthorizedApp) AuditID() string {
 
 func (a *AuthorizedApp) AuditDisplay() string {
 	return a.Name
+}
+
+// TouchLastUsedAt updates the timestamp at which the authorized app was last
+// used. It does not write an audit entry.
+func (a *AuthorizedApp) TouchLastUsedAt(db *Database) error {
+	now := time.Now().UTC()
+	a.LastUsedAt = &now
+	if err := db.db.
+		Model(&AuthorizedApp{}).
+		Update(a).
+		Error; err != nil {
+		return fmt.Errorf("failed to update last_used_at: %w", err)
+	}
+	return nil
 }
 
 // PurgeAuthorizedApps will delete authorized apps that have been deleted for

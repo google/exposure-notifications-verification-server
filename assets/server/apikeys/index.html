@@ -49,8 +49,11 @@
             <tr>
               <th scope="col" width="40"></th>
               <th scope="col">App</th>
-              <th scope="col" width="90">Key</th>
-              <th scope="col" width="90">Type</th>
+              <th scope="col" width="90" class="d-none d-md-table-cell">Key</th>
+              <th scope="col" width="90" class="d-none d-md-table-cell">Type</th>
+              {{if $.features.EnableAPIKeyLastUsedAt}}
+                <th scope="col" width="150" class="d-none d-md-table-cell">Last used</th>
+              {{end}}
               {{if $canWrite}}
                 <th scope="col" width="40"></th>
               {{end}}
@@ -71,14 +74,19 @@
               <td class="text-truncate">
                 <a href="/realm/apikeys/{{.ID}}">{{.Name}}</a>
               </td>
-              <td class="text-center text-monospace">
+              <td class="text-center text-monospace d-none d-md-table-cell">
                 {{.APIKeyPreview}}
               </td>
-              <td class="text-center">
+              <td class="text-center d-none d-md-table-cell">
                 {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="For issuing verification codes">Admin</span>{{end}}
                 {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
                 {{if .IsStatsType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For retrieving realm statistics">Stats</span>{{end}}
               </td>
+              {{if $.features.EnableAPIKeyLastUsedAt}}
+                <td class="d-none d-md-table-cell">
+                  {{.LastUsedAt | humanizeTime}}
+                </td>
+              {{end}}
               {{if $canWrite}}
                 <td class="text-center">
                   {{if .DeletedAt}}

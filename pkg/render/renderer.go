@@ -30,12 +30,13 @@ import (
 	"strings"
 	"sync"
 	texttemplate "text/template"
+	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/leonelquinteros/gotext"
-
 	"go.uber.org/zap"
 )
 
@@ -229,6 +230,21 @@ func translate(t gotext.Translator, key string, vars ...interface{}) (string, er
 	return v, nil
 }
 
+// humanizeTime prints time in a human-readable format.
+func humanizeTime(i interface{}) (string, error) {
+	switch typ := i.(type) {
+	case time.Time:
+		return humanize.Time(typ), nil
+	case *time.Time:
+		if typ == nil {
+			return "never", nil
+		}
+		return humanize.Time(*typ), nil
+	default:
+		return "", fmt.Errorf("unsupported type %T", typ)
+	}
+}
+
 // toStringSlice converts the input slice to strings. The values must be
 // primitive or implement the fmt.Stringer interface.
 func toStringSlice(i interface{}) ([]string, error) {
@@ -317,6 +333,7 @@ func templateFuncs() htmltemplate.FuncMap {
 		"toLower":          strings.ToLower,
 		"toUpper":          strings.ToUpper,
 		"toJSON":           json.Marshal,
+		"humanizeTime":     humanizeTime,
 		"toBase64":         base64.StdEncoding.EncodeToString,
 		"safeHTML":         safeHTML,
 		"checkedIf":        checkedIf,
