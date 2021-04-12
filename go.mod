@@ -7,7 +7,9 @@ require (
 	cloud.google.com/go/firestore v1.5.0 // indirect
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
+	github.com/Azure/azure-sdk-for-go v53.1.0+incompatible // indirect
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/aws/aws-sdk-go v1.38.17 // indirect
 	github.com/chromedp/cdproto v0.0.0-20210323015217-0942afbea50e
 	github.com/chromedp/chromedp v0.6.10
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -17,7 +19,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.25.1-0.20210405233604-262e50e1db77
+	github.com/google/exposure-notifications-server v0.26.0
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/handlers v1.5.1
@@ -45,12 +47,13 @@ require (
 	github.com/unrolled/secure v1.0.8
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
+	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.6
 	golang.org/x/tools v0.1.1-0.20210302220138-2ac05c832e1a
-	google.golang.org/api v0.43.0
-	google.golang.org/genproto v0.0.0-20210405174219-a39eb2f71cb9
+	google.golang.org/api v0.44.0
+	google.golang.org/genproto v0.0.0-20210406143921-e86de6bf7a46
+	google.golang.org/grpc v1.37.0 // indirect
 	gopkg.in/gormigrate.v1 v1.6.0
 	honnef.co/go/tools v0.1.3 // indirect
 )
