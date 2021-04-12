@@ -104,7 +104,7 @@ msgid "mfa.notice-optional"
 msgstr "توصي %s بتمكين المصادقة متعددة العوامل (MFA) لتحسين أمان حسابك."
 
 msgid "mfa.phone-display-name"
-msgstr "اسم العرض"
+msgstr "الإسم المعروض"
 
 msgid "mfa.phone-display-name-help-text"
 msgstr "هذا هو اسم الجهاز كما سيظهر في صفحة إعدادات حسابك."
