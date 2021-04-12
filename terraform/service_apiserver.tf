@@ -89,7 +89,6 @@ resource "google_cloud_run_service" "apiserver" {
         dynamic "env" {
           for_each = merge(
             local.cache_config,
-            local.csrf_config,
             local.database_config,
             local.firebase_config,
             local.gcp_config,

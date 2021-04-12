@@ -14,32 +14,9 @@
 
 locals {
   session_secrets = [
-    google_secret_manager_secret.csrf-token.id, # TODO(sethvargo): Remove in 0.26+
     google_secret_manager_secret.cookie-hmac-key.id,
     google_secret_manager_secret.cookie-encryption-key.id,
   ]
-}
-
-# TODO(sethvargo): Remove in 0.26+
-resource "random_id" "csrf-token" {
-  byte_length = 32
-}
-
-resource "google_secret_manager_secret" "csrf-token" {
-  secret_id = "csrf-token"
-
-  replication {
-    automatic = true
-  }
-
-  depends_on = [
-    google_project_service.services["secretmanager.googleapis.com"],
-  ]
-}
-
-resource "google_secret_manager_secret_version" "csrf-token-version" {
-  secret      = google_secret_manager_secret.csrf-token.id
-  secret_data = random_id.csrf-token.b64_std
 }
 
 resource "random_id" "cookie-hmac-key" {

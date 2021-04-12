@@ -30,11 +30,6 @@ locals {
     BACKUP_DATABASE_NAME         = google_sql_database.db.name
   }
 
-  # TODO(sethvargo): Remove in 0.26+
-  csrf_config = {
-    CSRF_AUTH_KEY = "secret://${google_secret_manager_secret_version.csrf-token-version.id}"
-  }
-
   session_config = {
     COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
   }
