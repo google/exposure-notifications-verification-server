@@ -186,7 +186,7 @@ manager, provide this value directly in the environment.
 
 ### Database encryption keys
 
-**Recommend frequency:** 30 days, on breach
+**Recommend frequency:** 90 days, on breach
 
 These keys control application-layer encryption of secrets before they are
 stored in the database. For example, this key encrypts Twilio credentials so
@@ -201,6 +201,9 @@ manager.
 
 While unlikely, this may require you to update the `DB_ENCRYPTION_KEY`
 environment variable.
+
+**If you are using Google Cloud KMS with the provided Terraform configurations,
+this rotation happens automatically!**
 
 
 ### API Key signature HMAC keys
