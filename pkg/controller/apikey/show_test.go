@@ -37,7 +37,7 @@ func TestHandleShow(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := apikey.New(harness.Cacher, harness.Database, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(c.HandleShow())
+	handler := harness.WithCommonMiddlewares(c.HandleShow())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

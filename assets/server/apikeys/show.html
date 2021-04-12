@@ -51,23 +51,36 @@
         {{end}}
       </div>
       <div class="card-body">
-        <strong>App name</strong>
-        <div id="apikey-name" class="mb-3">
-          {{$authApp.Name}}
+        <div>
+          <strong>App name</strong>
+          <div id="apikey-name">
+            {{$authApp.Name}}
+          </div>
         </div>
 
-        <strong>Type</strong>
-        <div>
-          {{if $authApp.IsDeviceType}}
-            Device (can verify codes)
-          {{else if $authApp.IsAdminType}}
-            Admin (can issue codes)
-          {{else if $authApp.IsStatsType}}
-            Stats (can view stats)
-          {{else}}
-            Unknown
-          {{end}}
+        <div class="mt-3">
+          <strong>Type</strong>
+          <div>
+            {{if $authApp.IsDeviceType}}
+              Device (can verify codes)
+            {{else if $authApp.IsAdminType}}
+              Admin (can issue codes)
+            {{else if $authApp.IsStatsType}}
+              Stats (can view stats)
+            {{else}}
+              Unknown
+            {{end}}
+          </div>
         </div>
+
+        {{if $.features.EnableAPIKeyLastUsedAt}}
+          <div class="mt-3">
+            <strong>Last used</strong>
+            <div>
+              {{$authApp.LastUsedAt | humanizeTime}}
+            </div>
+          </div>
+        {{end}}
       </div>
     </div>
 

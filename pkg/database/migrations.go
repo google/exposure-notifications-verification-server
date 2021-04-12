@@ -2232,6 +2232,19 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS codes_invalid_by_os`)
 			},
 		},
+		{
+			ID: "00102-AddLastUsedAtToAuthorizedApps",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE authorized_apps ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMP WITH TIME ZONE`,
+					`CREATE INDEX idx_authorized_apps_last_used_at ON authorized_apps (last_used_at)`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE authorized_apps DROP COLUMN IF EXISTS last_used_at`,
+					`DROP INDEX IF EXISTS idx_authorized_apps_last_used_at`)
+			},
+		},
 	}
 }
 
