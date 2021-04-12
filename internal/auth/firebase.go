@@ -17,6 +17,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"time"
 
 	firebaseinternal "github.com/google/exposure-notifications-verification-server/internal/firebase"
 	"github.com/sethvargo/go-password/password"
@@ -90,6 +91,18 @@ func (f *firebaseAuth) StoreSession(ctx context.Context, session *sessions.Sessi
 	if !ok {
 		f.ClearSession(ctx, session)
 		return fmt.Errorf("missing id_token: %w", ErrSessionInfoMissing)
+	}
+
+	// Verify ID token.
+	decoded, err := f.firebaseAuth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		f.ClearSession(ctx, session)
+		return fmt.Errorf("invalid id token: %w", err)
+	}
+
+	if time.Now().Unix()-decoded.AuthTime > 5*60 { // 5 minutes
+		f.ClearSession(ctx, session)
+		return fmt.Errorf("session expired")
 	}
 
 	// Convert ID token to long-lived cookie
