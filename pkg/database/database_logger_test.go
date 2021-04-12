@@ -85,9 +85,9 @@ func TestGormZapLogger(t *testing.T) {
 			in: []interface{}{
 				"log",
 				"pkg/database/mobile_app.go:235",
-				fmt.Errorf("something is broken"),
+				"cleared cache",
 			},
-			exp: "ERROR\tgorm error\t{\"caller\": \"pkg/database/mobile_app.go:235\", \"error\": \"something is broken\"}",
+			exp: "DEBUG\tcleared cache",
 		},
 	}
 
