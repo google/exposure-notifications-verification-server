@@ -17,6 +17,9 @@
 
   window.addEventListener('load', () => {
     firebase.initializeApp(firebaseConfig);
+
+    // Disable the firebase cookie - we manage the ID token on the server side.
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
   })
 </script>
 {{end}}
