@@ -60,7 +60,7 @@ resource "google_kms_crypto_key" "database-encrypter" {
   name     = "database-encrypter"
   purpose  = "ENCRYPT_DECRYPT"
 
-  rotation_period = "2592000s" // 30 days
+  rotation_period = "7776000s" // 90 days
 
   version_template {
     algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
