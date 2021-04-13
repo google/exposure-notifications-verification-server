@@ -75,14 +75,14 @@ func (l *GormZapLogger) Print(v ...interface{}) {
 
 		l.logger.Debugw(msg)
 	case "log":
-		msg, ok := v[2].(string)
-		if !ok {
+		switch typ := v[2].(type) {
+		case string:
+			l.logger.Debugw(strings.TrimSpace(typ))
+		case error:
+			l.logger.Errorw(strings.TrimSpace(typ.Error()))
+		default:
 			l.logger.DPanicf("log result is not string (%T): %#v", v[2], v)
-			return
 		}
-		msg = strings.TrimSpace(msg)
-
-		l.logger.Debugw(msg)
 	case "error":
 		caller, err := l.formatCaller(v[1])
 		if err != nil {
