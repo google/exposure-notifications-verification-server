@@ -38,27 +38,20 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
   provider = google-beta
   project  = var.project
 
-  // path rule for each known redirect domain
-  dynamic "host_rule" {
-    for_each = local.enx_domains
-
-    content {
-      path_matcher = split(".", host_rule.value)[0]
-      hosts        = toset([host_rule.value])
-    }
+  host_rule {
+    hosts        = toset(formatlist("*.%s", local.redirect_root_domains))
+    path_matcher = "enx-http-https-redirect"
   }
 
-  dynamic "path_matcher" {
-    for_each = local.enx_domains
+  path_matcher {
+    name = "enx-http-https-redirect"
 
-    content {
-      name = split(".", path_matcher.value)[0]
+    default_url_redirect {
+      https_redirect = true
+      strip_query    = false
 
-      default_url_redirect {
-        host_redirect  = path_matcher.value
-        https_redirect = true
-        strip_query    = false
-      }
+      // Use a 302 response code in case we ever need to change the redirect.
+      redirect_response_code = "FOUND"
     }
   }
 
@@ -67,6 +60,10 @@ resource "google_compute_url_map" "enx-redirect-urlmap-http" {
     path_redirect  = "/ens"
     strip_query    = false
     https_redirect = true
+
+    // Use a 302 response code. We want to avoid a client caching a domain that
+    // may actually exist in the future.
+    redirect_response_code = "FOUND"
   }
 
   depends_on = [
