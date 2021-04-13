@@ -52,7 +52,11 @@
               <th scope="col" width="90" class="d-none d-md-table-cell">Key</th>
               <th scope="col" width="90" class="d-none d-md-table-cell">Type</th>
               {{if $.features.EnableAPIKeyLastUsedAt}}
-                <th scope="col" width="150" class="d-none d-md-table-cell">Last used</th>
+                <th scope="col" width="150" class="d-none d-md-table-cell">
+                  Last used
+                  <span class="oi oi-bell small pl-1 mt-n3" aria-hidden="true"
+                    data-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
+                </th>
               {{end}}
               {{if $canWrite}}
                 <th scope="col" width="40"></th>
