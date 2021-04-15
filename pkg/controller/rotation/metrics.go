@@ -29,6 +29,7 @@ const metricPrefix = observability.MetricRoot + "/rotation"
 var (
 	mClaimRequests       = stats.Int64(metricPrefix+"/claim_requests", "The number of rotation claim requests.", stats.UnitDimensionless)
 	mLatencyMs           = stats.Float64(metricPrefix+"/requests", "The number of rotation requests.", stats.UnitMilliseconds)
+	mSecretsSuccess      = stats.Int64(metricPrefix+"/secrets_success", "successful secrets rotation", stats.UnitDimensionless)
 	mTokenSuccess        = stats.Int64(metricPrefix+"/token_success", "successful token rotation", stats.UnitDimensionless)
 	mVerificationSuccess = stats.Int64(metricPrefix+"/verification_success", "successful verification rotation", stats.UnitDimensionless)
 
@@ -56,6 +57,13 @@ func init() {
 			Measure:     mClaimRequests,
 			Description: "The count of the rotation claim requests",
 			TagKeys:     append(observability.CommonTagKeys(), enobs.ResultTagKey),
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/secrets/success",
+			Description: "Number of secrets rotation successes",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mSecretsSuccess,
 			Aggregation: view.Count(),
 		},
 		{

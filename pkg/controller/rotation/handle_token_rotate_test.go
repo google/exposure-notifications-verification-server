@@ -27,7 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
-func TestHandleRotate(t *testing.T) {
+func TestHandleRotateTokenSigningKey(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -56,12 +56,12 @@ func TestHandleRotate(t *testing.T) {
 
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		// Rotating should create a new key since none exists.
 		{
 			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-			c.HandleRotate().ServeHTTP(w, r)
+			c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
@@ -85,7 +85,7 @@ func TestHandleRotate(t *testing.T) {
 			}
 
 			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-			c.HandleRotate().ServeHTTP(w, r)
+			c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
@@ -100,7 +100,7 @@ func TestHandleRotate(t *testing.T) {
 		// since TokenSigningKeyMaxAge).
 		{
 			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-			c.HandleRotate().ServeHTTP(w, r)
+			c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 
 			keys, err := db.ListTokenSigningKeys()
 			if err != nil {
@@ -125,17 +125,17 @@ func TestHandleRotate(t *testing.T) {
 			MinTTL:                5 * time.Minute,
 		}
 
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
-		c.HandleRotate().ServeHTTP(w, r)
+		c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		// again
-		c.HandleRotate().ServeHTTP(w, r)
+		c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
@@ -147,10 +147,10 @@ func TestHandleRotate(t *testing.T) {
 		db, _ := testDatabaseInstance.NewDatabase(t, nil)
 		db.SetRawDB(envstest.NewFailingDatabase())
 
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-		c.HandleRotate().ServeHTTP(w, r)
+		c.HandleRotateTokenSigningKey().ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)

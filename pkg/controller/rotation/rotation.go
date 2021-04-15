@@ -17,29 +17,33 @@ package rotation
 
 import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
 
 const (
+	secretsRotationLock      = "secretsRotationLock"
 	tokenRotationLock        = "tokenRotationLock"
 	verificationRotationLock = "verificationRotationLock"
 )
 
 type Controller struct {
-	config     *config.RotationConfig
-	db         *database.Database
-	keyManager keys.SigningKeyManager
-	h          *render.Renderer
+	config        *config.RotationConfig
+	db            *database.Database
+	keyManager    keys.SigningKeyManager
+	secretManager secrets.SecretVersionManager
+	h             *render.Renderer
 }
 
-func New(cfg *config.RotationConfig, db *database.Database, keyManager keys.SigningKeyManager, h *render.Renderer) *Controller {
+func New(cfg *config.RotationConfig, db *database.Database, keyManager keys.SigningKeyManager, secretManager secrets.SecretVersionManager, h *render.Renderer) *Controller {
 	return &Controller{
-		config:     cfg,
-		db:         db,
-		keyManager: keyManager,
-		h:          h,
+		config:        cfg,
+		db:            db,
+		keyManager:    keyManager,
+		secretManager: secretManager,
+		h:             h,
 	}
 }
 

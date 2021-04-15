@@ -29,8 +29,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// HandleVerificationRotate handles verification certificate key rotation.
-func (c *Controller) HandleVerificationRotate() http.Handler {
+// HandleRotateVerificationKeys handles verification certificate key rotation.
+func (c *Controller) HandleRotateVerificationKeys() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -52,33 +52,39 @@ func (c *Controller) HandleVerificationRotate() http.Handler {
 			return
 		}
 
-		var merr *multierror.Error
-
-		realms, _, err := c.db.ListRealms(pagination.UnlimitedResults, database.WithRealmAutoKeyRotationEnabled(true))
-		if err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("unable to list realms to rotate signing keys: %w", err))
-		}
-
-		if len(realms) > 0 {
-			if err := c.createNewKeys(ctx, realms); err != nil {
-				merr = multierror.Append(merr, err)
-			}
-
-			if err := c.activateKeys(ctx, realms); err != nil {
-				merr = multierror.Append(merr, err)
-			}
-		}
-
 		// If there are any errors, return them
-		if errs := merr.WrappedErrors(); len(errs) > 0 {
-			logger.Errorw("failed to rotate verification keys", "errors", errs)
-			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+		if err := c.RotateVerificationKeys(ctx); err != nil {
+			logger.Errorw("failed to rotate verification keys", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		stats.Record(ctx, mVerificationSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
+}
+
+// RotateVerificationKeys rotates each realm's verification keys. It does not
+// acquire a database lock.
+func (c *Controller) RotateVerificationKeys(ctx context.Context) error {
+	var merr *multierror.Error
+
+	realms, _, err := c.db.ListRealms(pagination.UnlimitedResults, database.WithRealmAutoKeyRotationEnabled(true))
+	if err != nil {
+		merr = multierror.Append(merr, fmt.Errorf("unable to list realms to rotate signing keys: %w", err))
+	}
+
+	if len(realms) > 0 {
+		if err := c.createNewKeys(ctx, realms); err != nil {
+			merr = multierror.Append(merr, err)
+		}
+
+		if err := c.activateKeys(ctx, realms); err != nil {
+			merr = multierror.Append(merr, err)
+		}
+	}
+
+	return merr.ErrorOrNil()
 }
 
 func (c *Controller) createNewKeys(ctx context.Context, realms []*database.Realm) error {

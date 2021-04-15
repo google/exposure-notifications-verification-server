@@ -29,7 +29,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func TestHandleVerificationRotation(t *testing.T) {
+func TestHandleRotateVerificationKeys(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -65,7 +65,7 @@ func TestHandleVerificationRotation(t *testing.T) {
 			VerificationActivationDelay:  2 * time.Second,
 			MinTTL:                       time.Microsecond,
 		}
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		// create the initial signing key version, which will make it active.
 		if _, err := realm.CreateSigningKeyVersion(ctx, db, database.SystemTest); err != nil {
@@ -104,17 +104,17 @@ func TestHandleVerificationRotation(t *testing.T) {
 			MinTTL:                       5 * time.Minute,
 		}
 
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
 
-		c.HandleVerificationRotate().ServeHTTP(w, r)
+		c.HandleRotateVerificationKeys().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 
 		// again
-		c.HandleVerificationRotate().ServeHTTP(w, r)
+		c.HandleRotateVerificationKeys().ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusOK; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
@@ -131,10 +131,10 @@ func TestHandleVerificationRotation(t *testing.T) {
 			VerificationActivationDelay:  1 * time.Second,
 			MinTTL:                       time.Microsecond,
 		}
-		c := New(cfg, db, keyManagerSigner, h)
+		c := New(cfg, db, keyManagerSigner, nil, h)
 
 		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
-		c.HandleVerificationRotate().ServeHTTP(w, r)
+		c.HandleRotateVerificationKeys().ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
@@ -177,7 +177,7 @@ func invokeRotate(ctx context.Context, tb testing.TB, c *Controller) {
 	tb.Helper()
 
 	w, r := envstest.BuildJSONRequest(ctx, tb, http.MethodGet, "/", nil)
-	c.HandleVerificationRotate().ServeHTTP(w, r)
+	c.HandleRotateVerificationKeys().ServeHTTP(w, r)
 
 	if w.Code != http.StatusOK {
 		tb.Fatalf("invoke didn't return success, status: %v", w.Code)
