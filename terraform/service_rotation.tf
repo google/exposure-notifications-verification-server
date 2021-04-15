@@ -176,8 +176,8 @@ resource "google_cloud_run_service_iam_member" "rotation-invoker" {
   member   = "serviceAccount:${google_service_account.rotation-invoker.email}"
 }
 
-resource "google_cloud_scheduler_job" "rotation-worker" {
-  name             = "rotation-worker"
+resource "google_cloud_scheduler_job" "rotation-worker-token-signing-key" {
+  name             = "rotation-worker-token-signing-key"
   region           = var.cloudscheduler_location
   schedule         = "2,32 * * * *"
   time_zone        = "America/Los_Angeles"
@@ -189,7 +189,7 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
 
   http_target {
     http_method = "GET"
-    uri         = "${google_cloud_run_service.rotation.status.0.url}/"
+    uri         = "${google_cloud_run_service.rotation.status.0.url}/token-signing-key"
     oidc_token {
       audience              = google_cloud_run_service.rotation.status.0.url
       service_account_email = google_service_account.rotation-invoker.email
@@ -203,8 +203,8 @@ resource "google_cloud_scheduler_job" "rotation-worker" {
   ]
 }
 
-resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
-  name   = "realm-key-rotation-worker"
+resource "google_cloud_scheduler_job" "rotation-worker-realm-verification-keys" {
+  name   = "rotation-worker-realm-verification-keys"
   region = var.cloudscheduler_location
 
   // This schedule is offset from the token rotation schedule.
@@ -218,7 +218,7 @@ resource "google_cloud_scheduler_job" "realm-key-rotation-worker" {
 
   http_target {
     http_method = "GET"
-    uri         = "${google_cloud_run_service.rotation.status.0.url}/realms"
+    uri         = "${google_cloud_run_service.rotation.status.0.url}/realm-verification-keys"
     oidc_token {
       audience              = google_cloud_run_service.rotation.status.0.url
       service_account_email = google_service_account.rotation-invoker.email

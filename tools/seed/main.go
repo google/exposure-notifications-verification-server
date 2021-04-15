@@ -32,13 +32,16 @@ import (
 	firebaseauth "firebase.google.com/go/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/rotation"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
+	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/jinzhu/gorm"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-server/pkg/timeutils"
 
 	"github.com/sethvargo/go-envconfig"
@@ -99,6 +102,34 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("failed to configure firebase: %w", err)
 	}
 
+	// System token signing key
+	var tokenConfig config.TokenSigningConfig
+	if err := config.ProcessWith(ctx, &tokenConfig, envconfig.OsLookuper()); err != nil {
+		return fmt.Errorf("failed to process token signing config: %w", err)
+	}
+	keyManager, err := keys.KeyManagerFor(ctx, &tokenConfig.Keys)
+	if err != nil {
+		return fmt.Errorf("failed to create token key manager: %w", err)
+	}
+	keyManagerTyp, ok := keyManager.(keys.SigningKeyManager)
+	if !ok {
+		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", keyManager)
+	}
+
+	// Get secret manager.
+	var secretsConfig secrets.Config
+	if err := config.ProcessWith(ctx, &secretsConfig, envconfig.OsLookuper()); err != nil {
+		return fmt.Errorf("failed to process secrets config: %w", err)
+	}
+	secretManager, err := secrets.SecretManagerFor(ctx, &secretsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create secret manager: %w", err)
+	}
+	secretManagerTyp, ok := secretManager.(secrets.SecretVersionManager)
+	if !ok {
+		return fmt.Errorf("secret manager is not a secret version manager (is %T)", secretManager)
+	}
+
 	// Create a realm
 	var realm1 *database.Realm
 	realm1, err = db.FindRealmByName("Narnia")
@@ -133,6 +164,12 @@ func realMain(ctx context.Context) error {
 		} else {
 			return fmt.Errorf("failed to find realm: %w: %v", err, realm1.ErrorMessages())
 		}
+	}
+
+	// Create secrets - note we do this AFTER realm creation so it creates the
+	// realm verification keys too.
+	if err := createSecrets(ctx, db, keyManagerTyp, secretManagerTyp); err != nil {
+		return fmt.Errorf("failed to create secrets: %w", err)
 	}
 
 	// Create some system sms from numbers
@@ -268,23 +305,6 @@ func realMain(ctx context.Context) error {
 		if err := generateKeyServerStats(db, realm1, maxPerDay); err != nil {
 			return fmt.Errorf("failed to generate key-server stats: %w", err)
 		}
-	}
-
-	// System token signing key
-	var tokenConfig config.TokenSigningConfig
-	if err := config.ProcessWith(ctx, &tokenConfig, envconfig.OsLookuper()); err != nil {
-		return fmt.Errorf("failed to process token signing config: %w", err)
-	}
-	tokenKeyManager, err := keys.KeyManagerFor(ctx, &tokenConfig.Keys)
-	if err != nil {
-		return fmt.Errorf("failed to create token key manager: %w", err)
-	}
-	tokenKeyManagerTyp, ok := tokenKeyManager.(keys.SigningKeyManager)
-	if !ok {
-		return fmt.Errorf("token signing key manager is not SigningKeyManager (got %T)", tokenKeyManager)
-	}
-	if _, err := db.RotateTokenSigningKey(ctx, tokenKeyManagerTyp, tokenConfig.TokenSigningKey, database.SystemTest); err != nil {
-		return fmt.Errorf("failed to rotate token signing key: %w", err)
 	}
 
 	return nil
@@ -583,6 +603,32 @@ func createFirebaseUser(ctx context.Context, firebaseAuth *firebaseauth.Client, 
 
 	if _, err := firebaseAuth.CreateUser(ctx, create); err != nil {
 		return fmt.Errorf("failed to create user %v: %w", user.Email, err)
+	}
+
+	return nil
+}
+
+// createSecrets creates secrets. It re-uses the rotation worker logic and
+// invokes the handler.
+func createSecrets(ctx context.Context, db *database.Database, keyManager keys.SigningKeyManager, secretManager secrets.SecretVersionManager) error {
+	cfg, err := config.NewRotationConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create rotation config: %w", err)
+	}
+
+	h, err := render.New(ctx, nil, cfg.DevMode)
+	if err != nil {
+		return fmt.Errorf("failed to create renderer: %w", err)
+	}
+
+	rotationController := rotation.New(cfg, db, keyManager, secretManager, h)
+
+	if err := rotationController.RotateTokenSigningKey(ctx); err != nil {
+		return fmt.Errorf("failed to create initial token signing key: %w", err)
+	}
+
+	if err := rotationController.RotateVerificationKeys(ctx); err != nil {
+		return fmt.Errorf("failed to create initial verification keys: %w", err)
 	}
 
 	return nil

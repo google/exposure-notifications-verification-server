@@ -15,28 +15,25 @@
 package rotation
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
 )
 
-// HandleRotate handles key rotation.
-func (c *Controller) HandleRotate() http.Handler {
+// HandleRotateTokenSigningKey handles key rotation.
+func (c *Controller) HandleRotateTokenSigningKey() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		logger := logging.FromContext(ctx).Named("rotation.HandleRotate")
 		logger.Debugw("starting")
 		defer logger.Debugw("finishing")
-
-		var merr *multierror.Error
 
 		ok, err := c.db.TryLock(ctx, tokenRotationLock, c.config.MinTTL)
 		if err != nil {
@@ -50,43 +47,48 @@ func (c *Controller) HandleRotate() http.Handler {
 			return
 		}
 
-		// Token signing keys
-		func() {
-			item := tag.Upsert(itemTagKey, "TOKEN_SIGNING_KEYS")
-			result := enobs.ResultOK
-			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
-
-			existing, err := c.db.ActiveTokenSigningKey()
-			if err != nil && !database.IsNotFound(err) {
-				merr = multierror.Append(merr, fmt.Errorf("failed to lookup existing signing key: %w", err))
-				result = enobs.ResultError("FAILED")
-				return
-			}
-			if existing != nil {
-				if age, max := time.Now().UTC().Sub(existing.CreatedAt), c.config.TokenSigningKeyMaxAge; age < max {
-					logger.Debugw("token signing key does not require rotation", "age", age, "max", max)
-					return
-				}
-			}
-
-			key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.TokenSigningKey, RotationActor)
-			if err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("failed to rotate token signing key: %w", err))
-				result = enobs.ResultError("FAILED")
-				return
-			}
-
-			logger.Infow("rotated token signing key", "new", key)
-		}()
-
 		// If there are any errors, return them
-		if errs := merr.WrappedErrors(); len(errs) > 0 {
-			logger.Errorw("failed to rotate", "errors", errs)
-			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+		if err := c.RotateTokenSigningKey(ctx); err != nil {
+			logger.Errorw("failed to rotate", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		stats.Record(ctx, mTokenSuccess.M(1))
 		c.h.RenderJSON(w, http.StatusOK, nil)
 	})
+}
+
+// RotateTokenSigningKey rotates the signing key. It does not acquire a lock.
+func (c *Controller) RotateTokenSigningKey(ctx context.Context) error {
+	logger := logging.FromContext(ctx).Named("rotation.RotateTokenSigningKey")
+
+	var merr *multierror.Error
+
+	// Token signing keys
+	func() {
+		logger.Debugw("rotating token signing key")
+		defer logger.Debugw("finished rotating token signing key")
+
+		existing, err := c.db.ActiveTokenSigningKey()
+		if err != nil && !database.IsNotFound(err) {
+			merr = multierror.Append(merr, fmt.Errorf("failed to lookup existing signing key: %w", err))
+			return
+		}
+		if existing != nil {
+			if age, max := time.Now().UTC().Sub(existing.CreatedAt), c.config.TokenSigningKeyMaxAge; age < max {
+				logger.Debugw("token signing key does not require rotation", "age", age, "max", max)
+				return
+			}
+		}
+
+		key, err := c.db.RotateTokenSigningKey(ctx, c.keyManager, c.config.TokenSigning.TokenSigningKey, RotationActor)
+		if err != nil {
+			merr = multierror.Append(merr, fmt.Errorf("failed to rotate token signing key: %w", err))
+			return
+		}
+		logger.Infow("rotated token signing key", "new", key)
+	}()
+
+	return merr.ErrorOrNil()
 }

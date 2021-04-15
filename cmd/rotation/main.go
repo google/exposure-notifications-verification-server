@@ -32,6 +32,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/mux"
@@ -102,11 +103,21 @@ func realMain(ctx context.Context) error {
 	// Get token key manager.
 	tokenSigner, err := keys.KeyManagerFor(ctx, &cfg.TokenSigning.Keys)
 	if err != nil {
-		return fmt.Errorf("failed to token signing key manager: %w", err)
+		return fmt.Errorf("failed to get token signing key manager: %w", err)
 	}
 	tokenSignerTyp, ok := tokenSigner.(keys.SigningKeyManager)
 	if !ok {
 		return fmt.Errorf("token signing key manager is not a signing key manager (is %T)", tokenSigner)
+	}
+
+	// Get secret manager.
+	secretManager, err := secrets.SecretManagerFor(ctx, &cfg.Secrets)
+	if err != nil {
+		return fmt.Errorf("failed to get secret manager: %w", err)
+	}
+	secretManagerTyp, ok := secretManager.(secrets.SecretVersionManager)
+	if !ok {
+		return fmt.Errorf("secret manager is not a secret version manager (is %T)", secretManager)
 	}
 
 	// Create the router
@@ -127,9 +138,9 @@ func realMain(ctx context.Context) error {
 	recovery := middleware.Recovery(h)
 	r.Use(recovery)
 
-	rotationController := rotation.New(cfg, db, tokenSignerTyp, h)
-	r.Handle("/", rotationController.HandleRotate()).Methods(http.MethodGet)
-	r.Handle("/realms", rotationController.HandleVerificationRotate()).Methods(http.MethodGet)
+	rotationController := rotation.New(cfg, db, tokenSignerTyp, secretManagerTyp, h)
+	r.Handle("/token-signing-key", rotationController.HandleRotateTokenSigningKey()).Methods(http.MethodGet)
+	r.Handle("/realm-verification-keys", rotationController.HandleRotateVerificationKeys()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {
