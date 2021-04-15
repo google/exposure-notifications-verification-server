@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-server/pkg/secrets"
 
 	"github.com/sethvargo/go-envconfig"
 )
@@ -31,6 +32,10 @@ type RotationConfig struct {
 	Database      database.Config
 	Observability observability.Config
 	Features      FeatureConfig
+	Secrets       secrets.Config
+
+	// ProjectID is the Google Cloud project ID.
+	ProjectID string `env:"PROJECT_ID, required"`
 
 	// Port is the port upon which to bind.
 	Port string `env:"PORT, default=8080"`
