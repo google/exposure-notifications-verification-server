@@ -13,53 +13,104 @@
     {{template "flash" .}}
 
     <div class="card shadow-sm mb-3">
-      <div class="card-header">Info</div>
-      <div class="card-body mb-n3">
-        <dl>
-          <dt>Build ID</dt>
-          <dd>{{.buildID}}</dd>
+      <div class="card-header">
+        <span id="icon" class="oi oi-cog mr-2 ml-n1" aria-hidden="true"></span>
+        System information
+      </div>
+      <div class="card-body">
+        <div>
+          <strong>Build ID</strong>
+          <div>{{.buildID}}</div>
+        </div>
 
-          <dt>Build tag</dt>
-          <dd>{{.buildTag}}</dd>
+        <div class="mt-3">
+          <strong>Build tag</strong>
+          <div>{{.buildTag}}</div>
+        </div>
+      </div>
+    </div>
 
-          <dt>Token signing keys</dt>
-          {{if $keys := .tokenSigningKeys}}
-            <dd>
-              <table class="small table table-bordered table-striped table-fixed mt-2">
-                <thead>
-                  <tr>
-                    <th width="40"></th>
-                    <th width="305">Key ID (kid)</th>
-                    <th>Key version</th>
-                    <th width="165">Created at</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{range $key := $keys}}
-                    <tr>
-                      <td class="text-center">
-                        {{if $key.IsActive}}
-                          <span class="oi oi-check" aria-hidden="true" data-toggle="tooltip" title="Active key"></span>
-                        {{end}}
-                      </td>
-                      <td class="text-monospace user-select-all">
-                        {{$key.UUID}}
-                      </td>
-                      <td class="text-monospace user-select-all">
-                        {{$key.KeyVersionID}}
-                      </td>
-                      <td>
-                        <span data-timestamp="{{$key.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">{{$key.CreatedAt.Format "2006-02-01 15:04"}}</span>
-                      </td>
-                    </tr>
-                  {{end}}
-                </tbody>
-              </table>
-            </dd>
-          {{else}}
-            <dd>not configured</dd>
-          {{end}}
-        </dl>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">
+        <span id="icon" class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
+        Keys
+      </div>
+      <div class="card-body mb-n5">
+        {{if $keys := .tokenSigningKeys}}
+          <strong>Token signing keys</strong>
+          <table class="small table table-bordered table-striped table-fixed mt-3 mb-5">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th width="305">Key ID (kid)</th>
+                <th>Key version</th>
+                <th width="175">Created at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{range $key := $keys}}
+                <tr>
+                  <td class="text-center">
+                    {{if $key.IsActive}}
+                      <span class="oi oi-check" aria-hidden="true" data-toggle="tooltip" title="Active key"></span>
+                    {{end}}
+                  </td>
+                  <td class="text-monospace user-select-all">
+                    {{$key.UUID}}
+                  </td>
+                  <td class="text-monospace user-select-all">
+                    {{$key.KeyVersionID}}
+                  </td>
+                  <td>
+                    <span data-timestamp="{{$key.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">{{$key.CreatedAt.Format "2006-02-01 15:04"}}</span>
+                  </td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+        {{else}}
+          <p class="text-center p-3">not configured</p>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">
+        <span id="icon" class="oi oi-lock-locked mr-2 ml-n1" aria-hidden="true"></span>
+        Secrets
+      </div>
+      <div class="card-body mb-n5">
+        {{range $type, $secretsList := .secrets}}
+          <strong>{{$type}}</strong>
+          <table class="small table table-bordered table-striped table-fixed mt-3 mb-5">
+            <thead>
+              <tr>
+                <th width="40"></th>
+                <th>Reference</th>
+                <th width="175">Created at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{range $secret := $secretsList}}
+                <tr>
+                  <td class="text-center">
+                    {{if $secret.Active}}
+                      <span class="oi oi-check" aria-hidden="true" data-toggle="tooltip" title="Active secret"></span>
+                    {{end}}
+                  </td>
+                  <td class="text-monospace user-select-all">
+                    {{$secret.Reference}}
+                  </td>
+                  <td>
+                    <span data-timestamp="{{$secret.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">{{$secret.CreatedAt.Format "2006-02-01 15:04"}}</span>
+                  </td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+        {{else}}
+          <p class="text-center p-3">not configured</p>
+        {{end}}
       </div>
     </div>
   </main>
