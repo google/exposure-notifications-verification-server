@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	secretsRotationLock      = "secretsRotationLock"
 	tokenRotationLock        = "tokenRotationLock"
 	verificationRotationLock = "verificationRotationLock"
 )
