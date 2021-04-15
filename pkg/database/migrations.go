@@ -2245,6 +2245,30 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DROP INDEX IF EXISTS idx_authorized_apps_last_used_at`)
 			},
 		},
+		{
+			ID: "00103-AddSecrets",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE TABLE secrets (
+  					id BIGSERIAL PRIMARY KEY,
+  					type TEXT NOT NULL,
+  					reference TEXT NOT NULL,
+  					active BOOL DEFAULT FALSE NOT NULL,
+  					created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  					updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  					deleted_at TIMESTAMP WITH TIME ZONE
+					);
+					CREATE UNIQUE INDEX uix_secrets_type_reference ON secrets(type, reference);
+					CREATE INDEX idx_secrets_active_created_at ON secrets(active, created_at);
+					CREATE INDEX idx_secrets_created_at ON secrets(created_at);
+					CREATE INDEX idx_secrets_deleted_at ON secrets(deleted_at);
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE secrets`)
+			},
+		},
 	}
 }
 

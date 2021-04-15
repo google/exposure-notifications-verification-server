@@ -27,11 +27,27 @@ import (
 // function length. Note this is an ALIAS. It is NOT a new type.
 type Scope = func(db *gorm.DB) *gorm.DB
 
+// Unscoped returns an unscoped database (for finding soft-deleted records and
+// clearing other scopes).
+func Unscoped() Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Unscoped()
+	}
+}
+
 // OnlySystemAdmins returns a scope that restricts the query to system admins.
 // It's only applicable to functions that query User.
 func OnlySystemAdmins() Scope {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(&User{SystemAdmin: true})
+	}
+}
+
+// InConsumableSecretOrder is a scope that orders secrets in the order in which
+// they should be consumed.
+func InConsumableSecretOrder() Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Order("secrets.active DESC, secrets.created_at DESC")
 	}
 }
 

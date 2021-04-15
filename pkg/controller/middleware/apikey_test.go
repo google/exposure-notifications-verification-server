@@ -62,8 +62,7 @@ func TestRequireAPIKey(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	badDB, _ := testDatabaseInstance.NewDatabase(t, nil)
-	badDB.SetRawDB(envstest.NewFailingDatabase())
+	badDB := harness.BadDatabase
 
 	cases := []struct {
 		name   string

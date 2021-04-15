@@ -18,6 +18,8 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/jinzhu/gorm"
 )
 
 // HandleInfoShow renders the list of system admins.
@@ -27,12 +29,27 @@ func (c *Controller) HandleInfoShow() http.Handler {
 
 		m := controller.TemplateMapFromContext(ctx)
 
+		// Keys
 		tokenSigningKeys, err := c.db.ListTokenSigningKeys()
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 		m["tokenSigningKeys"] = tokenSigningKeys
+
+		// Secrets
+		secrets, err := c.db.ListSecrets(func(db *gorm.DB) *gorm.DB {
+			return db.Order("secrets.type")
+		}, database.InConsumableSecretOrder())
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+		secretsMap := make(map[database.SecretType][]*database.Secret)
+		for _, secret := range secrets {
+			secretsMap[secret.Type] = append(secretsMap[secret.Type], secret)
+		}
+		m["secrets"] = secretsMap
 
 		m.Title("Info - System Admin")
 		c.h.RenderHTML(w, "admin/info", m)
