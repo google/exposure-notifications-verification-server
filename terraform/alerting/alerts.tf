@@ -57,11 +57,11 @@ locals {
     # modeler runs every 4h, alert after 2 failures
     "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
-    # realm-key-rotation runs every 15m, alert after 2 failures
-    "realm-key-rotation" = { metric = "rotation/verification/success", window = 30 * local.minute + 5 * local.minute }
+    # rotation-token runs every 30m, alert after 2 failures
+    "rotation-token" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
 
-    # rotation runs every 30m, alert after 2 failures
-    "rotation" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
+    # rotation-realm-key runs every 15m, alert after 2 failures
+    "rotation-realm-key" = { metric = "rotation/verification/success", window = 30 * local.minute + 5 * local.minute }
 
     # stats-puller runs every 15m, alert after 2 failures
     "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }

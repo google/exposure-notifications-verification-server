@@ -53,13 +53,17 @@ locals {
   rotation_secrets = flatten([
     local.database_secrets,
     local.redis_secrets,
+    local.session_secrets,
   ])
 }
 
+# secretVersionManager grants the process permission to add and destroy
+# versions, but NOT the ability to modify IAM permissions or delete the parent
+# secret.
 resource "google_secret_manager_secret_iam_member" "rotation-secrets" {
   count     = length(local.rotation_secrets)
   secret_id = element(local.rotation_secrets, count.index)
-  role      = "roles/secretmanager.secretAccessor"
+  role      = "roles/secretmanager.secretVersionManager"
   member    = "serviceAccount:${google_service_account.rotation.email}"
 }
 
@@ -97,6 +101,7 @@ resource "google_cloud_run_service" "rotation" {
           for_each = merge(
             local.database_config,
             local.gcp_config,
+            local.rotation_config,
             local.signing_config,
             local.observability_config,
 

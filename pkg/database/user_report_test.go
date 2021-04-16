@@ -106,10 +106,11 @@ func TestFindUserReport(t *testing.T) {
 			t.Parallel()
 
 			userReport, err := db.NewUserReport(tc.phone, []byte{0}, true)
-			userReport.Nonce = tc.nonce // override the encoding from NewUserReport for testing errors.
 			if err != nil {
 				t.Fatalf("error creating user report: %v", err)
 			}
+
+			userReport.Nonce = tc.nonce // override the encoding from NewUserReport for testing errors.
 			err = db.db.Save(userReport).Error
 			errcmp.MustMatch(t, err, tc.want)
 			if diff := cmp.Diff(tc.fieldErrors, userReport.ErrorMessages()); diff != "" {

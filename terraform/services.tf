@@ -82,6 +82,10 @@ locals {
     RATE_LIMIT_REDIS_PASSWORD = var.redis_enable_auth ? "secret://${google_secret_manager_secret_version.redis-auth.id}" : ""
   }
 
+  rotation_config = {
+    SECRETS_PARENT = "projects/${var.project}/secrets"
+  }
+
   signing_config = {
     CERTIFICATE_KEY_MANAGER = "GOOGLE_CLOUD_KMS"
     CERTIFICATE_SIGNING_KEY = trimprefix(data.google_kms_crypto_key_version.certificate-signer-version.id, "//cloudkms.googleapis.com/v1/")
