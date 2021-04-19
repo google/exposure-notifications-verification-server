@@ -60,34 +60,36 @@
   </main>
 
   {{if .firebase}}
-  <script>
-    let $form = $("#verify-email");
-    let $verifyButton = $("#verify-button");
+  <script defer type="text/javascript">
+    window.addEventListener('load', (event) => {
+      let $form = $('#verify-email');
+      let $verifyButton = $('#verify-button');
 
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) {
-        window.location.assign("/signout");
-        return;
-      }
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          window.location.assign('/signout');
+          return;
+        }
 
-      // If the email is already verified, move along.
-      if (user.emailVerified) {
-        flash.clear();
-        flash.alert("Your email address is already verified.");
-        window.location.assign("/login/post-authenticate");
-        return;
-      }
+        // If the email is already verified, move along.
+        if (user.emailVerified) {
+          flash.clear();
+          flash.alert('Your email address is already verified.');
+          window.location.assign('/login/post-authenticate');
+          return;
+        }
 
-      // Get an ID token and embed it onto the page.
-      user.getIdToken().then(idToken => {
-        let $idTokenField = $("<input>");
-        $idTokenField.attr("type", "hidden");
-        $idTokenField.attr("name", "idToken");
-        $idTokenField.attr("value", idToken);
-        $form.append($idTokenField);
+        // Get an ID token and embed it onto the page.
+        user.getIdToken().then(idToken => {
+          let $idTokenField = $('<input>');
+          $idTokenField.attr('type', 'hidden');
+          $idTokenField.attr('name', 'idToken');
+          $idTokenField.attr('value', idToken);
+          $form.append($idTokenField);
 
-        // Now that we have a user, enable the form.
-        $verifyButton.prop("disabled", false);
+          // Now that we have a user, enable the form.
+          $verifyButton.prop('disabled', false);
+        });
       });
     });
   </script>
