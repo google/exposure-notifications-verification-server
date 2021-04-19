@@ -68,7 +68,7 @@ type RotationConfig struct {
 	// CookieKeyMinAge is the TTL at which a new cookie key will be created.
 	// CookieKeyMaxAge is the TTL at which a cookie key is deleted.
 	CookieKeyMinAge time.Duration `env:"COOKIE_KEY_MIN_AGE, default=720h"`  // 30d
-	CookieKeyMaxAge time.Duration `env:"COOKIE_KEY_MAX_AGE, default=1440h"` // 60d
+	CookieKeyMaxAge time.Duration `env:"COOKIE_KEY_MAX_AGE, default=1488h"` // 60d + 2d
 
 	// APIKeyDatabaseHMACKeyMinAge is the age at which to generate a new HMAC
 	// key for HMACing API keys. Revoking an old HMAC key revokes all API keys
@@ -85,14 +85,14 @@ type RotationConfig struct {
 	// at which an HMAC key is deleted (which is 90 days after the last time the
 	// key was used).
 	PhoneNumberDatabaseHMACKeyMinAge time.Duration `env:"PHONE_NUMBER_DATABASE_HMAC_MIN_AGE, default=720h"`  // 30d
-	PhoneNumberDatabaseHMACKeyMaxAge time.Duration `env:"PHONE_NUMBER_DATABASE_HMAC_MAX_AGE, default=2880h"` // 30d + 90d
+	PhoneNumberDatabaseHMACKeyMaxAge time.Duration `env:"PHONE_NUMBER_DATABASE_HMAC_MAX_AGE, default=2928h"` // 30d + 90d + 2d
 
 	// VerificationCodeDatabaseHMACKeyMinAge is the age at which to generate a new
 	// HMAC key for HMACing verification codes in the database.
 	// VerificationCodeDatabaseHMACKeyMaxAge is the age at which the HMAC key can
 	// be safely deleted.
-	VerificationCodeDatabaseHMACKeyMinAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MIN_AGE=4h"`
-	VerificationCodeDatabaseHMACKeyMaxAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MAX_AGE=48h"`
+	VerificationCodeDatabaseHMACKeyMinAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MIN_AGE=24h"`
+	VerificationCodeDatabaseHMACKeyMaxAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MAX_AGE=72h"` // 2d + 1d
 
 	// TokenSigning is the token signing configuration. This defines the parent
 	// key and common data like issuer, but the individual versions are controlled
@@ -123,8 +123,22 @@ func (c *RotationConfig) Validate() error {
 	fields := []struct {
 		Var  time.Duration
 		Name string
+		Min  time.Duration
 	}{
-		{c.TokenSigningKeyMaxAge, "TOKEN_SIGNING_KEY_MAX_AGE"},
+		{c.MinTTL, "MIN_TTL", 0},
+		{c.SecretActivationTTL, "SECRET_ACTIVATION_TTL", 0},
+		{c.SecretDestroyTTL, "SECRET_DESTROY_TTL", 0},
+		{c.CookieKeyMinAge, "COOKIE_KEY_MIN_AGE", 0},
+		{c.CookieKeyMaxAge, "COOKIE_KEY_MAX_AGE", 0},
+		{c.APIKeyDatabaseHMACKeyMinAge, "API_KEY_DATABASE_HMAC_KEY_MIN_AGE", 0},
+		{c.APIKeySignatureHMACKeyMinAge, "API_KEY_SIGNATURE_HMAC_KEY_MIN_AGE", 0},
+		{c.PhoneNumberDatabaseHMACKeyMinAge, "PHONE_NUMBER_DATABASE_HMAC_MIN_AGE", 0},
+		{c.PhoneNumberDatabaseHMACKeyMaxAge, "PHONE_NUMBER_DATABASE_HMAC_MAX_AGE", 0},
+		{c.VerificationCodeDatabaseHMACKeyMinAge, "VERIFICATION_CODE_DATABASE_HMAC_KEY_MIN_AGE", 0},
+		{c.VerificationCodeDatabaseHMACKeyMaxAge, "VERIFICATION_CODE_DATABASE_HMAC_KEY_MAX_AGE", 0},
+		{c.VerificationSigningKeyMaxAge, "VERIFICATION_SIGNING_KEY_MAX_AGE", 0},
+		{c.VerificationActivationDelay, "VERIFICATION_ACTIVATION_DELAY", 0},
+		{c.TokenSigningKeyMaxAge, "TOKEN_SIGNING_KEY_MAX_AGE", 0},
 	}
 
 	for _, f := range fields {

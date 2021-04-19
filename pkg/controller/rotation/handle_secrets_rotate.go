@@ -114,7 +114,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		minTTL := c.config.CookieKeyMinAge
 		maxTTL := c.config.CookieKeyMaxAge
 		env := "COOKIE_KEYS"
-		if err := c.rotateSecret(ctx, typ, parent, 64+32, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 32+64, minTTL, maxTTL, env); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate cookie key: %w", err))
 			return
 		}
