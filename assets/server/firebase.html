@@ -18,8 +18,10 @@
   window.addEventListener('load', () => {
     firebase.initializeApp(firebaseConfig);
 
-    // Disable the firebase cookie - we manage the ID token on the server side.
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+    // Only store the firebase cookie for this browser tab duration. We still
+    // maintain a cookie on the server-side, but the firebase cookie needs to
+    // exist for certain account management pages.
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
   })
 </script>
 {{end}}
