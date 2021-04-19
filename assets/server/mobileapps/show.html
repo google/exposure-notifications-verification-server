@@ -38,7 +38,7 @@
           <dd id="mobileapps-name">{{$app.Name}}</dd>
 
           <dt>AppStore link</dt>
-          <dd id="mobileapps-url"><a href="{{$app.URL}}" rel="noreferrer" target="_blank">{{$app.URL}}</a></dd>
+          <dd id="mobileapps-url"><a href="{{$app.URL | pathUnescape}}" rel="noreferrer" target="_blank">{{$app.URL | pathUnescape}}</a></dd>
 
           <dt>Enable AppStore redirect</dt>
           <dd>{{not $app.DisableRedirect}}</dd>

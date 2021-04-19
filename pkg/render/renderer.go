@@ -25,6 +25,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -344,6 +345,11 @@ func templateFuncs() htmltemplate.FuncMap {
 		"passwordSentinel": pwdSentinel,
 		"hasOne":           hasOne,
 		"hasMany":          hasMany,
+
+		"pathEscape":    url.PathEscape,
+		"pathUnescape":  url.PathUnescape,
+		"queryEscape":   url.QueryEscape,
+		"queryUnescape": url.QueryUnescape,
 
 		"rbac": func() map[string]rbac.Permission {
 			return rbac.NamePermissionMap
