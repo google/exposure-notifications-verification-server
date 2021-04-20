@@ -85,10 +85,6 @@ func AdminAPI(
 	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
-	// Install the rate limiting first. In this case, we want to limit by key
-	// first to reduce the chance of a database lookup.
-	r.Use(rateLimit)
-
 	// Other common middlewares
 	requireAdminAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
 		database.APIKeyTypeAdmin,
@@ -105,6 +101,7 @@ func AdminAPI(
 	{
 		sub := r.PathPrefix("/api").Subrouter()
 		sub.Use(requireAdminAPIKey)
+		sub.Use(rateLimit)
 		sub.Use(processFirewall)
 
 		issueapiController := issueapi.New(cfg, db, limiterStore, smsSigner, h)
@@ -120,6 +117,7 @@ func AdminAPI(
 	{
 		sub := r.PathPrefix("/api/stats").Subrouter()
 		sub.Use(requireStatsAPIKey)
+		sub.Use(rateLimit)
 		sub.Use(processFirewall)
 
 		statsController := stats.New(cacher, db, h)
