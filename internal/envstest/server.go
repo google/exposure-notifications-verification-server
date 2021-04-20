@@ -113,8 +113,18 @@ func (r *TestServerResponse) SessionCookie(session *sessions.Session) (*http.Coo
 	session.Options.Domain = r.Server.Addr()
 	session.Options.Path = "/"
 
+	cookieKeys, err := r.Database.GetCookieHashAndEncryptionKeys(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cookie keys: %w", err)
+	}
+
+	codecs := make([]securecookie.Codec, 0, len(cookieKeys))
+	for _, v := range cookieKeys {
+		cookie := securecookie.New(v[32:], v[:32])
+		codecs = append(codecs, cookie)
+	}
+
 	// Encode and encrypt the cookie using the same configuration as the server.
-	codecs := securecookie.CodecsFromPairs(r.Config.CookieKeys.AsBytes()...)
 	encoded, err := securecookie.EncodeMulti(sessionName, session.Values, codecs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode session cookie: %w", err)
@@ -236,8 +246,6 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 		Features: config.FeatureConfig{
 			EnableAuthenticatedSMS: true,
 		},
-
-		CookieKeys: config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
 
 		CertificateSigning: config.CertificateSigningConfig{
 			Keys:                  *harness.KeyManagerConfig,

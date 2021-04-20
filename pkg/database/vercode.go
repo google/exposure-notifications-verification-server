@@ -425,11 +425,21 @@ func (db *Database) PurgeVerificationCodes(maxAge time.Duration) (int64, error) 
 // GenerateVerificationCodeHMAC generates the HMAC of the code using the latest
 // key.
 func (db *Database) GenerateVerificationCodeHMAC(verCode string) (string, error) {
-	return initialHMAC(db.config.VerificationCodeDatabaseHMAC, verCode)
+	keys, err := db.GetVerificationCodeDatabaseHMAC()
+	if err != nil {
+		return "", fmt.Errorf("failed to get keys to generate verification code database HMAC: %w", err)
+	}
+
+	return initialHMAC(keys, verCode)
 }
 
 // generateVerificationCodeHMACs is a helper for generating all possible HMACs of a
 // token.
 func (db *Database) generateVerificationCodeHMACs(v string) ([]string, error) {
-	return allAllowedHMACs(db.config.VerificationCodeDatabaseHMAC, v)
+	keys, err := db.GetVerificationCodeDatabaseHMAC()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys to generate verification code database HMACs: %w", err)
+	}
+
+	return allAllowedHMACs(keys, v)
 }

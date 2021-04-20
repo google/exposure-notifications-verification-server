@@ -402,14 +402,21 @@ func mutateCookieKeysSecrets() importMutatorFunc {
 			return nil, fmt.Errorf("invalid number of cookie secret bytes (%d), expected even", l)
 		}
 
-		// Cookie keys are currently special as separate secrets, but v2 cookie keys
-		// are stored in the same secret. This concatenates each HMAC key with its
-		// encryption key to be stored in the same secret moving forward.
+		// Cookie keys are currently stored as separate secrets, but v2 cookie keys
+		// are stored in the same secret. This concatenates each encryption key with
+		// its HMAC key to be stored in the same secret moving forward.
 		out := make([][]byte, 0, len(in)/2)
 		for i := 0; i < len(in); i += 2 {
+			encryptionKey := in[i+1]
+			if l := len(encryptionKey); l != 32 {
+				return nil, fmt.Errorf("invalid encryption key in import (got %d)", l)
+			}
+
+			hashKey := in[i]
+
 			b := make([]byte, 0, len(in[i])+len(in[i+1]))
-			b = append(b, in[i]...)
-			b = append(b, in[i+1]...)
+			b = append(b, encryptionKey...)
+			b = append(b, hashKey...)
 			out = append(out, b)
 		}
 		return out, nil

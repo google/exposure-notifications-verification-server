@@ -50,7 +50,7 @@ type RedirectConfig struct {
 
 	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
 	// They should be base64-encoded.
-	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
+	CookieKeys []envconfig.Base64Bytes `env:"COOKIE_KEYS"`
 
 	// Issue config is pulled in for the ENX_REDIRECT_DOMAIN
 	Issue IssueAPIVars

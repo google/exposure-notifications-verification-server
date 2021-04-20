@@ -38,6 +38,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/stats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/cookiestore"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
@@ -63,13 +64,16 @@ func Server(
 	limiterStore limiter.Store,
 ) (http.Handler, error) {
 	// Setup sessions
-	sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
-	sessions.Options.Path = "/"
-	sessions.Options.Domain = cfg.CookieDomain
-	sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
-	sessions.Options.Secure = !cfg.DevMode
-	sessions.Options.SameSite = http.SameSiteStrictMode
-	sessions.Options.HttpOnly = true
+	sessionOpts := &sessions.Options{
+		Domain:   cfg.CookieDomain,
+		MaxAge:   int(cfg.SessionDuration.Seconds()),
+		Secure:   !cfg.DevMode,
+		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
+	}
+	sessions := cookiestore.New(func() ([][]byte, error) {
+		return db.GetCookieHashAndEncryptionKeys(cfg.CookieKeys)
+	}, sessionOpts)
 
 	// Create the router
 	r := mux.NewRouter()

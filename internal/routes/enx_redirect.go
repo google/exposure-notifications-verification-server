@@ -28,6 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/redirect"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/userreport"
+	"github.com/google/exposure-notifications-verification-server/pkg/cookiestore"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -106,14 +107,17 @@ func ENXRedirect(
 			r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
 		}
 
-		// Session config
-		sessions := sessions.NewCookieStore(cfg.CookieKeys.AsBytes()...)
-		sessions.Options.Path = "/"
-		sessions.Options.Domain = cfg.Issue.ENExpressRedirectDomain
-		sessions.Options.MaxAge = int(cfg.SessionDuration.Seconds())
-		sessions.Options.Secure = !cfg.DevMode
-		sessions.Options.SameSite = http.SameSiteStrictMode
-		sessions.Options.HttpOnly = true
+		// Setup sessions
+		sessionOpts := &sessions.Options{
+			Domain:   cfg.Issue.ENExpressRedirectDomain,
+			MaxAge:   int(cfg.SessionDuration.Seconds()),
+			Secure:   !cfg.DevMode,
+			SameSite: http.SameSiteStrictMode,
+			HttpOnly: true,
+		}
+		sessions := cookiestore.New(func() ([][]byte, error) {
+			return db.GetCookieHashAndEncryptionKeys(cfg.CookieKeys)
+		}, sessionOpts)
 
 		// Limiter
 		httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,

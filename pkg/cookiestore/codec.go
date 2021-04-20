@@ -20,9 +20,9 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-// EntropyFunc is a function that returns the hash and encryption keys. Values
-// at the odd position are the 64-byte hash key. Values at the even position are
-// 32-byte encryption keys.
+// EntropyFunc is a function that returns the cookie hash and encryption keys.
+// The first 32 bytes are the encryption key, the remaining bytes are the HMAC
+// key.
 type EntropyFunc func() ([][]byte, error)
 
 var _ securecookie.Codec = (*HotCodec)(nil)
@@ -63,12 +63,12 @@ func (c *HotCodec) newSecureCookies() ([]securecookie.Codec, error) {
 
 	codecs := make([]securecookie.Codec, len(bs))
 	for i, b := range bs {
-		if got, want := len(b), 64+32; got != want {
-			return nil, fmt.Errorf("expected byte length %d to be %d", got, want)
+		if got, want := len(b), 32; got < want {
+			return nil, fmt.Errorf("expected byte length %d to be at least %d", got, want)
 		}
 
-		// The first 64 bytes are the HMAC key, the rest are the encryption key.
-		cookie := securecookie.New(b[:64], b[64:])
+		// The first 32 bytes are the encryption key, remaining are the HMAC key.
+		cookie := securecookie.New(b[32:], b[:32])
 		cookie.MaxAge(c.maxAge)
 		codecs[i] = cookie
 	}

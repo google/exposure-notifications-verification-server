@@ -60,6 +60,9 @@ locals {
     # modeler runs every 4h, alert after 2 failures
     "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
+    # rotation-secrets runs every 5m, alert after 2 failures
+    "rotation-secrets" = { metric = "rotation/secrets/success", window = 10 * local.minute + 1 * local.minute }
+
     # rotation-token runs every 30m, alert after 2 failures
     "rotation-token" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
 

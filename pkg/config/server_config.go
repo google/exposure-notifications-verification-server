@@ -82,7 +82,7 @@ type ServerConfig struct {
 
 	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
 	// They should be base64-encoded.
-	CookieKeys Base64ByteSlice `env:"COOKIE_KEYS,required"`
+	CookieKeys []envconfig.Base64Bytes `env:"COOKIE_KEYS"`
 
 	// CookieDomain is the domain for which cookie should be valid.
 	CookieDomain string `env:"COOKIE_DOMAIN"`
@@ -205,17 +205,4 @@ func (c *ServerConfig) FirebaseConfig() *firebase.Config {
 		ProjectID:     c.Firebase.ProjectID,
 		StorageBucket: c.Firebase.StorageBucket,
 	}
-}
-
-// Base64ByteSlice is a slice of base64-encoded strings that we want to convert
-// to bytes.
-type Base64ByteSlice []envconfig.Base64Bytes
-
-// AsBytes returns the value as a slice of bytes instead of its main type.
-func (c Base64ByteSlice) AsBytes() [][]byte {
-	s := make([][]byte, len(c))
-	for i, v := range c {
-		s[i] = []byte(v)
-	}
-	return s
 }

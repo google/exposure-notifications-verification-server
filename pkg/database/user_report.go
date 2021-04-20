@@ -143,7 +143,12 @@ func (db *Database) PurgeClaimedUserReports(maxAge time.Duration) (int64, error)
 
 // GeneratePhoneNumberHMAC generates the HMAC of the phone number using the latest key.
 func (db *Database) GeneratePhoneNumberHMAC(phoneNumber string) (string, error) {
-	s, err := initialHMAC(db.config.PhoneNumberHMAC, phoneNumber)
+	keys, err := db.GetPhoneNumberDatabaseHMAC()
+	if err != nil {
+		return "", fmt.Errorf("failed to get keys to generate phone number database HMAC: %w", err)
+	}
+
+	s, err := initialHMAC(keys, phoneNumber)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate phone number HMAC: %w", err)
 	}
@@ -152,5 +157,10 @@ func (db *Database) GeneratePhoneNumberHMAC(phoneNumber string) (string, error) 
 
 // generatePhoneNumberHMACs is a helper for generating all possible HMACs of a phone number.
 func (db *Database) generatePhoneNumberHMACs(phoneNumber string) ([]string, error) {
-	return allAllowedHMACs(db.config.PhoneNumberHMAC, phoneNumber)
+	keys, err := db.GetPhoneNumberDatabaseHMAC()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys to generate phone number database HMACs: %w", err)
+	}
+
+	return allAllowedHMACs(keys, phoneNumber)
 }
