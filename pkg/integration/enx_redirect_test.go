@@ -49,7 +49,7 @@ func TestENXRedirect(t *testing.T) {
 	}
 
 	if err := server.Database.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatalf("err: %v, errors: %+v", err, realm.ErrorMessages())
+		t.Fatal(err)
 	}
 
 	client, err := clients.NewENXRedirectClient("http://"+server.Server.Addr(),

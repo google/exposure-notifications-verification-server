@@ -218,19 +218,10 @@ func handleEndToEnd(cfg *config.E2ERunnerConfig, db *database.Database, h *rende
 		logger := logging.FromContext(ctx)
 
 		if cfg.DoUserReport {
-			userReport, err := db.FindUserReport(db.RawDB(), project.TestPhoneNumber)
-			if err != nil && !database.IsNotFound(err) {
-				logger.Errorw("error looking up user reports for test phone number", "error", err)
+			if err := db.DeleteUserReport(project.TestPhoneNumber); err != nil {
+				logger.Errorw("error deleting previous user report for test phone number", "error", err)
 				h.RenderJSON(w, http.StatusInternalServerError, err)
 				return
-			}
-
-			if userReport != nil {
-				if err := db.RawDB().Delete(userReport); err != nil {
-					logger.Errorw("error deleting previous user report for test phone number", "error", err)
-					h.RenderJSON(w, http.StatusInternalServerError, err)
-					return
-				}
 			}
 		}
 

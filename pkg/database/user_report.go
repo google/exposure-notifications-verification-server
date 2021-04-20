@@ -108,6 +108,22 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 	return &ur, nil
 }
 
+// DeleteUserReport removes a specific phone number from the user report
+// de-duplication table.
+func (db *Database) DeleteUserReport(phoneNumber string) error {
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		ur, err := db.FindUserReport(tx, phoneNumber)
+		if err != nil && !IsNotFound(err) {
+			return fmt.Errorf("findUserReport: %w", err)
+		}
+
+		if ur != nil {
+			return tx.Delete(ur).Error
+		}
+		return nil
+	})
+}
+
 // PurgeUnclaimedUserReports deletes record from the database
 // if the phone number was used in a user report, but the code was never claimed.
 func (db *Database) PurgeUnclaimedUserReports(maxAge time.Duration) (int64, error) {
