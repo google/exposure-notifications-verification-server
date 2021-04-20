@@ -14,7 +14,7 @@
 
 locals {
   session_secrets = [
-    google_secret_manager_secret.cookie-keys,
+    google_secret_manager_secret.cookie-keys.id,
     google_secret_manager_secret.cookie-hmac-key.id,
     google_secret_manager_secret.cookie-encryption-key.id,
   ]
