@@ -35,6 +35,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
@@ -156,8 +157,9 @@ func realMain(ctx context.Context) error {
 	recovery := middleware.Recovery(h)
 	r.Use(recovery)
 
-	r.Handle("/default", handleDefault(cfg, h))
-	r.Handle("/revise", handleRevise(cfg, h))
+	r.Handle("/default", handleDefault(cfg, db, h))
+	r.Handle("/revise", handleRevise(cfg, db, h))
+	r.Handle("/user-report", handleUserReport(cfg, db, h))
 	r.Handle("/enx-redirect", handleENXRedirect(enxRedirectClient, h))
 
 	mux := http.Handler(r)
@@ -175,25 +177,62 @@ func realMain(ctx context.Context) error {
 }
 
 // handleDefault handles the default end-to-end scenario.
-func handleDefault(cfg *config.E2ERunnerConfig, h *render.Renderer) http.Handler {
+func handleDefault(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
 	c := *cfg
 	c.DoRevise = false
-	return handleEndToEnd(&c, h, mDefaultSuccess)
+	c.DoUserReport = false
+	return handleEndToEnd(&c, db, h, mDefaultSuccess)
 }
 
 // handleRevise runs the end-to-end runner with revision tokens.
-func handleRevise(cfg *config.E2ERunnerConfig, h *render.Renderer) http.Handler {
+func handleRevise(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
 	c := *cfg
 	c.DoRevise = true
-	return handleEndToEnd(&c, h, mRevisionSuccess)
+	c.DoUserReport = false
+	return handleEndToEnd(&c, db, h, mRevisionSuccess)
+}
+
+//handleUserReport runs the end-to-end runner initiated by a user-report API request.
+func handleUserReport(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
+	if !cfg.Features.EnableUserReport {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			logger := logging.FromContext(ctx)
+			logger.Warnw("user-report feature is not enabled on this server")
+			stats.Record(ctx, mUserReportSuccess.M(1))
+			h.RenderJSON(w, http.StatusOK, nil)
+		})
+	}
+
+	c := *cfg
+	c.DoRevise = false
+	c.DoUserReport = true
+	return handleEndToEnd(&c, db, h, mUserReportSuccess)
 }
 
 // handleEndToEnd handles the common end-to-end scenario. m is incremented iff
 // the run succeeds.
-func handleEndToEnd(cfg *config.E2ERunnerConfig, h *render.Renderer, m *stats.Int64Measure) http.Handler {
+func handleEndToEnd(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer, m *stats.Int64Measure) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		logger := logging.FromContext(ctx)
+
+		if cfg.DoUserReport {
+			userReport, err := db.FindUserReport(db.RawDB(), project.TestPhoneNumber)
+			if err != nil && !database.IsNotFound(err) {
+				logger.Errorw("error looking up user reports for test phone number", "error", err)
+				h.RenderJSON(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			if userReport != nil {
+				if err := db.RawDB().Delete(userReport); err != nil {
+					logger.Errorw("error deleting previous user report for test phone number", "error", err)
+					h.RenderJSON(w, http.StatusInternalServerError, err)
+					return
+				}
+			}
+		}
 
 		if err := clients.RunEndToEnd(ctx, cfg); err != nil {
 			logger.Errorw("failure", "error", err)

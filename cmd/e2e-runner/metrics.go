@@ -25,9 +25,10 @@ import (
 const metricPrefix = observability.MetricRoot + "/e2e"
 
 var (
-	mDefaultSuccess  = stats.Int64(metricPrefix+"/default/success", "successful default execution", stats.UnitDimensionless)
-	mRevisionSuccess = stats.Int64(metricPrefix+"/revision/success", "successful revision execution", stats.UnitDimensionless)
-	mRedirectSuccess = stats.Int64(metricPrefix+"/redirect/success", "successful redirect execution", stats.UnitDimensionless)
+	mDefaultSuccess    = stats.Int64(metricPrefix+"/default/success", "successful default execution", stats.UnitDimensionless)
+	mRevisionSuccess   = stats.Int64(metricPrefix+"/revision/success", "successful revision execution", stats.UnitDimensionless)
+	mRedirectSuccess   = stats.Int64(metricPrefix+"/redirect/success", "successful redirect execution", stats.UnitDimensionless)
+	mUserReportSuccess = stats.Int64(metricPrefix+"/user-report/success", "successful user-report execution", stats.UnitDimensionless)
 )
 
 func init() {
@@ -48,6 +49,12 @@ func init() {
 			Name:        metricPrefix + "/redirect/success",
 			Description: "Number of redirect successes",
 			Measure:     mRedirectSuccess,
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/user-report/success",
+			Description: "Number of user-report successes",
+			Measure:     mUserReportSuccess,
 			Aggregation: view.Count(),
 		},
 	}...)

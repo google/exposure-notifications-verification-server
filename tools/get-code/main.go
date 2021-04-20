@@ -37,6 +37,7 @@ var (
 	apikeyFlag   = flag.String("apikey", "", "API Key to use")
 	adminIDFlag  = flag.String("adminID", "", "AdminID for statistics tracking")
 	addrFlag     = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
+	phoneFlag    = flag.String("phone-number", "", "If provided, phone number to send SMS to")
 )
 
 func main() {
@@ -72,6 +73,7 @@ func realMain(ctx context.Context) error {
 		SymptomDate:      *onsetFlag,
 		TZOffset:         float32(*tzOffsetFlag),
 		ExternalIssuerID: *adminIDFlag,
+		Phone:            *phoneFlag,
 	})
 	if err != nil {
 		return err

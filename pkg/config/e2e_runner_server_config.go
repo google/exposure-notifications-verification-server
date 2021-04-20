@@ -40,7 +40,9 @@ type E2ERunnerConfig struct {
 	VerificationAPIServerKey   string `env:"VERIFICATION_SERVER_API_KEY"`
 	KeyServer                  string `env:"KEY_SERVER, default=http://localhost:8080"`
 	HealthAuthorityCode        string `env:"HEALTH_AUTHORITY_CODE,required"`
-	DoRevise                   bool   `env:"DO_REVISIONS"`
+	// Not environment vars, but set by each type of test run.
+	DoRevise     bool
+	DoUserReport bool
 
 	// ENXRedirectURL is the host to use for testing the ENX redirector service.
 	// This should be the value of the e2e realm's host, like
