@@ -111,17 +111,12 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 // DeleteUserReport removes a specific phone number from the user report
 // de-duplication table.
 func (db *Database) DeleteUserReport(phoneNumber string) error {
-	return db.db.Transaction(func(tx *gorm.DB) error {
-		ur, err := db.FindUserReport(tx, phoneNumber)
-		if err != nil && !IsNotFound(err) {
-			return fmt.Errorf("findUserReport: %w", err)
-		}
+	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
+	if err != nil {
+		return fmt.Errorf("failed to create hmac: %w", err)
+	}
 
-		if ur != nil {
-			return tx.Delete(ur).Error
-		}
-		return nil
-	})
+	return db.db.Where("phone_hash IN (?)", hmacedCodes).Delete(&UserReport{}).Error
 }
 
 // PurgeUnclaimedUserReports deletes record from the database
