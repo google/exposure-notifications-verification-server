@@ -192,7 +192,7 @@ func handleRevise(cfg *config.E2ERunnerConfig, db *database.Database, h *render.
 	return handleEndToEnd(&c, db, h, mRevisionSuccess)
 }
 
-//handleUserReport runs the end-to-end runner initiated by a user-report API request.
+// handleUserReport runs the end-to-end runner initiated by a user-report API request.
 func handleUserReport(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
 	if !cfg.Features.EnableUserReport {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
