@@ -44,7 +44,6 @@ func TestENXRedirect(t *testing.T) {
 	realm.EnableENExpress = true
 	template := "[enslink]"
 	realm.SMSTextTemplate = template
-
 	for k := range realm.SMSTextAlternateTemplates {
 		realm.SMSTextAlternateTemplates[k] = &template
 	}
