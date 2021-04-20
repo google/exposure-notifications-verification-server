@@ -51,6 +51,9 @@ locals {
     # e2e-revision runs every 5 minutes, alert after 2 failures
     "e2e-revision" = { metric = "e2e/revision/success", window = 10 * local.minute + 1 * local.minute },
 
+    # e2e-user-report runs every 5 minutes, alert after 2 failures
+    "e2e-user-report" = { metric = "e2e/user-report/success", window = 10 * local.minute + 1 * local.minute },
+
     # e2e-redirect runs every 5 minutes, alert after 2 failures
     "e2e-redirect" = { metric = "e2e/redirect/success", window = 10 * local.minute + 1 * local.minute },
 

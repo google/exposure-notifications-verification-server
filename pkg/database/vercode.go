@@ -54,11 +54,12 @@ var (
 		"user-report": {},
 	}
 
-	ErrInvalidTestType    = errors.New("invalid test type, must be confirmed, likely, negative, or self_report")
-	ErrCodeAlreadyExpired = errors.New("code already expired")
-	ErrCodeAlreadyClaimed = errors.New("code already claimed")
-	ErrCodeTooShort       = errors.New("verification code is too short")
-	ErrAlreadyReported    = errors.New("phone number not eligible for user report, try again later")
+	ErrInvalidTestType     = errors.New("invalid test type, must be confirmed, likely, negative, or self_report")
+	ErrCodeAlreadyExpired  = errors.New("code already expired")
+	ErrCodeAlreadyClaimed  = errors.New("code already claimed")
+	ErrCodeTooShort        = errors.New("verification code is too short")
+	ErrAlreadyReported     = errors.New("phone number not eligible for user report, try again later")
+	ErrRequiresPhoneNumber = errors.New("phone number is required for user report requests")
 )
 
 // VerificationCode represents a verification code in the database.
@@ -276,7 +277,7 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 		var err error
 		if vc.TestType == verifyapi.ReportTypeSelfReport {
 			if len(vc.PhoneNumber) == 0 {
-				return fmt.Errorf("request has nonce but no phone number for SMS, invalid combination")
+				return ErrRequiresPhoneNumber
 			}
 			userReport, err = db.FindUserReport(tx, vc.PhoneNumber)
 			if err != nil && !IsNotFound(err) {

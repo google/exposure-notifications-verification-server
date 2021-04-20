@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
@@ -103,9 +104,15 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 		return
 	}
 
+	// If the report type is user-report AND the SMS template is not being set, change it to the user report template.
+	if request.TestType == api.TestTypeUserReport && request.SMSTemplateLabel == "" {
+		request.SMSTemplateLabel = database.UserReportTemplateLabel
+	}
+
 	internalRequest := &IssueRequestInternal{
 		IssueRequest: &request,
 	}
+
 	res := c.IssueOne(ctx, internalRequest)
 	result.HTTPCode = res.HTTPCode
 

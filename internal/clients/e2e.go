@@ -105,6 +105,9 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 		testType = "likely"
 		iterations++
 	}
+	if cfg.DoUserReport {
+		testType = "user-report"
+	}
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 	adminID := ""
 	revisionToken := ""

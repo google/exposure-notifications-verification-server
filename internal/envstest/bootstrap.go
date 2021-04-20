@@ -71,8 +71,10 @@ func Bootstrap(ctx context.Context, db *database.Database) (*BootstrapResponse, 
 	}
 
 	realm.AllowedTestTypes = database.TestTypeNegative | database.TestTypeConfirmed | database.TestTypeLikely
+	realm.AddUserReportToAllowedTestTypes()
 	realm.AllowBulkUpload = true
 	realm.UseAuthenticatedSMS = true
+	realm.AllowAdminUserReport = true
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
 		return &resp, fmt.Errorf("failed to save realm: %w", err)
 	}

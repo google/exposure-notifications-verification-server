@@ -120,6 +120,40 @@ func TestFindUserReport(t *testing.T) {
 	}
 }
 
+func TestDeleteUserReport(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	phoneNumber := "+8128675309"
+	userReport, err := db.NewUserReport(phoneNumber, generateNonce(t), true)
+	if err != nil {
+		t.Fatalf("error creating user report: %v", err)
+	}
+	if err := db.db.Save(userReport).Error; err != nil {
+		t.Fatalf("error writing user report: %v", err)
+	}
+
+	if err := db.DeleteUserReport(phoneNumber); err != nil {
+		t.Fatal(err)
+	}
+
+	var got *UserReport
+	err = db.db.Transaction(func(tx *gorm.DB) error {
+		got, err = db.FindUserReport(tx, phoneNumber)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil && !IsNotFound(err) {
+		t.Fatalf("error finding user reports: %v", err)
+	}
+	if got != nil {
+		t.Fatalf("found record that should have been deleted: %+v", *got)
+	}
+}
+
 func TestPurgeUserReports(t *testing.T) {
 	t.Parallel()
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
