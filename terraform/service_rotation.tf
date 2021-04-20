@@ -57,10 +57,17 @@ locals {
   ])
 }
 
+resource "google_secret_manager_secret_iam_member" "rotation-secrets-accessor" {
+  count     = length(local.rotation_secrets)
+  secret_id = element(local.rotation_secrets, count.index)
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.rotation.email}"
+}
+
 # secretVersionManager grants the process permission to add and destroy
 # versions, but NOT the ability to modify IAM permissions or delete the parent
 # secret.
-resource "google_secret_manager_secret_iam_member" "rotation-secrets" {
+resource "google_secret_manager_secret_iam_member" "rotation-secrets-version-manager" {
   count     = length(local.rotation_secrets)
   secret_id = element(local.rotation_secrets, count.index)
   role      = "roles/secretmanager.secretVersionManager"
@@ -134,7 +141,8 @@ resource "google_cloud_run_service" "rotation" {
     google_kms_key_ring_iam_member.rotation-verification-key-admin,
     google_kms_key_ring_iam_member.rotation-verification-key-signer-verifier,
     google_project_iam_member.rotation-observability,
-    google_secret_manager_secret_iam_member.rotation-secrets,
+    google_secret_manager_secret_iam_member.rotation-secrets-accessor,
+    google_secret_manager_secret_iam_member.rotation-secrets-version-manager,
 
     null_resource.build,
     null_resource.migrate,
