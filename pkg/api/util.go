@@ -28,7 +28,7 @@ type AcceptTypes map[string]struct{}
 func (v *VerifyCodeRequest) GetAcceptedTestTypes() (AcceptTypes, error) {
 	accepted := AcceptTypes{}
 	if len(v.AcceptTestTypes) == 0 {
-		accepted.AddAcceptTypes(TestTypeConfirmed, TestTypeLikely, TestTypeNegative)
+		accepted.AddAcceptTypes(TestTypeConfirmed, TestTypeLikely, TestTypeNegative, TestTypeUserReport)
 		return accepted, nil
 	}
 
