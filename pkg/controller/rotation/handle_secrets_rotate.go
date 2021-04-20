@@ -399,7 +399,7 @@ func mutateCookieKeysSecrets() importMutatorFunc {
 	return func(in [][]byte) ([][]byte, error) {
 		// Sanity check even number of elements.
 		if l := len(in); l%2 != 0 {
-			return nil, fmt.Errorf("invalid number of cookie secret bytes (%d), expected even", l)
+			return nil, fmt.Errorf("failed to mutate cookie keys: invalid number of cookie secret bytes (%d), expected even", l)
 		}
 
 		// Cookie keys are currently stored as separate secrets, but v2 cookie keys
@@ -409,7 +409,7 @@ func mutateCookieKeysSecrets() importMutatorFunc {
 		for i := 0; i < len(in); i += 2 {
 			encryptionKey := in[i+1]
 			if l := len(encryptionKey); l != 32 {
-				return nil, fmt.Errorf("invalid encryption key in import (got %d)", l)
+				return nil, fmt.Errorf("failed to mutate cookie keys: invalid encryption key length in import (got %d)", l)
 			}
 
 			hashKey := in[i]
