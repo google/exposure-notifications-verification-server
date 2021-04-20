@@ -623,6 +623,10 @@ func createSecrets(ctx context.Context, db *database.Database, keyManager keys.S
 
 	rotationController := rotation.New(cfg, db, keyManager, secretManager, h)
 
+	if err := rotationController.RotateSecrets(ctx); err != nil {
+		return fmt.Errorf("failed to create initial secrets: %w", err)
+	}
+
 	if err := rotationController.RotateTokenSigningKey(ctx); err != nil {
 		return fmt.Errorf("failed to create initial token signing key: %w", err)
 	}

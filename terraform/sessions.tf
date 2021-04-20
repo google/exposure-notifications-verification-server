@@ -14,8 +14,21 @@
 
 locals {
   session_secrets = [
+    google_secret_manager_secret.cookie-keys,
     google_secret_manager_secret.cookie-hmac-key.id,
     google_secret_manager_secret.cookie-encryption-key.id,
+  ]
+}
+
+resource "google_secret_manager_secret" "cookie-keys" {
+  secret_id = "cookie-keys"
+
+  replication {
+    automatic = true
+  }
+
+  depends_on = [
+    google_project_service.services["secretmanager.googleapis.com"],
   ]
 }
 
