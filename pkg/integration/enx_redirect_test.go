@@ -42,9 +42,15 @@ func TestENXRedirect(t *testing.T) {
 
 	realm := bs.Realm
 	realm.EnableENExpress = true
-	realm.SMSTextTemplate = "[enslink]"
+	template := "[enslink]"
+	realm.SMSTextTemplate = template
+
+	for k := range realm.SMSTextAlternateTemplates {
+		realm.SMSTextAlternateTemplates[k] = &template
+	}
+
 	if err := server.Database.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatal(err)
+		t.Fatalf("err: %v, errors: %+v", err, realm.ErrorMessages())
 	}
 
 	client, err := clients.NewENXRedirectClient("http://"+server.Server.Addr(),
