@@ -86,7 +86,7 @@ resource "google_monitoring_alert_policy" "probers" {
       | align next_older(1m)
       | every 1m
       | group_by [resource.host], [val: fraction_true(value.check_passed)]
-      | condition val < 20 '%'
+      | condition val < 60 '%'
       EOT
       trigger {
         count = 1
