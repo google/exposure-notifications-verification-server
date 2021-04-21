@@ -297,11 +297,12 @@ func TestRealm_BeforeSave(t *testing.T) {
 		{
 			Name: "valid",
 			Input: &Realm{
-				Name:            "a",
-				CodeLength:      6,
-				LongCodeLength:  12,
-				EnableENExpress: false,
-				SMSTextTemplate: valid,
+				Name:                "a",
+				CodeLength:          6,
+				LongCodeLength:      12,
+				EnableENExpress:     false,
+				SMSTextTemplate:     valid,
+				ShortCodeMaxMinutes: 60,
 			},
 		},
 		{
@@ -311,6 +312,7 @@ func TestRealm_BeforeSave(t *testing.T) {
 				EnableENExpress:           false,
 				SMSTextTemplate:           valid,
 				SMSTextAlternateTemplates: map[string]*string{"alternate1": nil},
+				ShortCodeMaxMinutes:       60,
 			},
 			Error: "no template for label alternate1",
 		},
@@ -320,6 +322,7 @@ func TestRealm_BeforeSave(t *testing.T) {
 				Name:                      "b",
 				CodeLength:                6,
 				LongCodeLength:            12,
+				ShortCodeMaxMinutes:       60,
 				EnableENExpress:           false,
 				SMSTextTemplate:           valid,
 				SMSTextAlternateTemplates: map[string]*string{"alternate1": &valid},

@@ -170,6 +170,13 @@ type Realm struct {
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16;"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400;"` // default 24h
 
+	// ShortCodeMaxMinutes can only be set by system admins and allows for a
+	// realm to have a higher max short code duration
+	ShortCodeMaxMinutes uint
+	// ENXCodeExpirationConfigurable can only be set by system admins and allows
+	// for an ENX realm to change the short code expiration time (normally fixed)
+	ENXCodeExpirationConfigurable bool
+
 	// SMS configuration
 	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours';"`
 	SMSTextAlternateTemplates postgres.Hstore `gorm:"column:alternate_sms_templates; type:hstore;"`
@@ -299,6 +306,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		CodeDuration:        FromDuration(15 * time.Minute),
 		LongCodeLength:      16,
 		LongCodeDuration:    FromDuration(24 * time.Hour),
+		ShortCodeMaxMinutes: 60,
 		SMSTextTemplate:     DefaultSMSTextTemplate,
 		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
@@ -384,11 +392,24 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("passwordWarn", "may not be longer than password rotation period")
 	}
 
+	if r.ShortCodeMaxMinutes < 60 || r.ShortCodeMaxMinutes > 120 {
+		r.AddError("shortCodeMaxMinutes", "must be >= 60 and <= 120")
+	}
+
 	if r.CodeLength < 6 {
 		r.AddError("codeLength", "must be at least 6")
 	}
-	if r.CodeDuration.Duration > maxCodeDuration {
-		r.AddError("codeDuration", "must be no more than 1 hour")
+
+	// Validation of the max code duration is dependent on overrides.
+	overrideDuration := time.Minute * time.Duration(r.ShortCodeMaxMinutes)
+	if overrideDuration != maxCodeDuration {
+		if r.CodeDuration.Duration > overrideDuration {
+			r.AddError("codeDuration", fmt.Sprintf("must be no more than %v minutes", r.ShortCodeMaxMinutes))
+		}
+	} else {
+		if r.CodeDuration.Duration > maxCodeDuration {
+			r.AddError("codeDuration", "must be no more than 1 hour")
+		}
 	}
 
 	if r.LongCodeLength < 12 {
