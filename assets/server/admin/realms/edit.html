@@ -43,10 +43,13 @@
             <label for="code">Region code</label>
           </div>
 
-          <h6 class="mb-3">Verification Code Settings</h6>
-          <div class="form-label-group">
+          <h6 class="mb-3">Verification code settings</h6>
+          <div class="form-label-group input-group">
             <input name="short_code_max_minutes" id="short-code-max-minutes" type="text" class="form-control" value="{{$realm.ShortCodeMaxMinutes}}"  />
-            <label for="short-code-max-minutes">Short Code Max Minutes</label>
+            <span class="input-group-append">
+              <span class="input-group-text bg-transparent border-left-0">minutes</span>
+            </span>
+            <label for="short-code-max-minutes">Short code max duration</label>
           </div>
 
           <div class="form-check mb-3">

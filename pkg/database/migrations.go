@@ -2284,8 +2284,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realms
-						DROP COLUMN short_code_max_minutes,
-						DROP COLUMN enx_code_expiration_configurable`)
+						DROP COLUMN IF EXISTS short_code_max_minutes,
+						DROP COLUMN IF EXISTS enx_code_expiration_configurable`)
 			},
 		},
 	}

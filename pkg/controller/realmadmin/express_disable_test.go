@@ -55,7 +55,8 @@ func TestHandleDisableExpress(t *testing.T) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
-				EnableENExpress: true,
+				EnableENExpress:     true,
+				ShortCodeMaxMinutes: 60,
 			},
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
@@ -76,7 +77,8 @@ func TestHandleDisableExpress(t *testing.T) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
-				EnableENExpress: false,
+				EnableENExpress:     false,
+				ShortCodeMaxMinutes: 60,
 			},
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
@@ -100,7 +102,8 @@ func TestHandleDisableExpress(t *testing.T) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
-				EnableENExpress: true,
+				EnableENExpress:     true,
+				ShortCodeMaxMinutes: 60,
 			},
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
@@ -123,6 +126,7 @@ func TestHandleDisableExpress(t *testing.T) {
 		realm := database.NewRealmWithDefaults("realmy2")
 		realm.RegionCode = "TT"
 		realm.EnableENExpress = true
+		realm.ShortCodeMaxMinutes = 60
 		realm.SMSTextTemplate = "[enslink]"
 		if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 			t.Errorf("%#v", realm.ErrorMessages())

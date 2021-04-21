@@ -31,7 +31,6 @@ import (
 
 var (
 	shortCodeLengths            = []int{6, 7, 8}
-	shortCodeMinutes            = []int{}
 	longCodeLengths             = []int{12, 13, 14, 15, 16}
 	longCodeHours               = []int{}
 	mfaGracePeriod              = []int64{0, 1, 7, 30}
@@ -47,9 +46,6 @@ const (
 )
 
 func init() {
-	for i := 5; i <= maxShortCodeMinutes; i++ {
-		shortCodeMinutes = append(shortCodeMinutes, i)
-	}
 	for i := 1; i <= 24; i++ {
 		longCodeHours = append(longCodeHours, i)
 	}
