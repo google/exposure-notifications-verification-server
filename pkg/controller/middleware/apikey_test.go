@@ -87,7 +87,7 @@ func TestRequireAPIKey(t *testing.T) {
 		{
 			name:   "bad_database_conn",
 			apiKey: apiKey,
-			code:   http.StatusInternalServerError,
+			code:   http.StatusUnauthorized,
 			db:     badDB,
 		},
 		{

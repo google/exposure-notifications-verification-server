@@ -83,8 +83,7 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 			EnableUserReportWeb:    true,
 		},
 
-		CookieKeys: config.Base64ByteSlice{randomBytes(tb, 64), randomBytes(tb, 32)},
-		RateLimit:  *harness.RateLimiterConfig,
+		RateLimit: *harness.RateLimiterConfig,
 
 		DevMode: true,
 	}

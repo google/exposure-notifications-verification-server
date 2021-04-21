@@ -317,7 +317,10 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 // GenerateAPIKeyHMAC generates the HMAC of the provided API key using the
 // latest HMAC key.
 func (db *Database) GenerateAPIKeyHMAC(apiKey string) (string, error) {
-	keys := db.config.APIKeyDatabaseHMAC
+	keys, err := db.GetAPIKeyDatabaseHMAC()
+	if err != nil {
+		return "", fmt.Errorf("failed get keys to generate API key database HMAC: %w", err)
+	}
 	if len(keys) < 1 {
 		return "", fmt.Errorf("expected at least 1 hmac key")
 	}
@@ -332,8 +335,13 @@ func (db *Database) GenerateAPIKeyHMAC(apiKey string) (string, error) {
 // generateAPIKeyHMACs creates a permutation of all possible API keys based on
 // the provided HMACs. It's primarily used to find an API key in the database.
 func (db *Database) generateAPIKeyHMACs(apiKey string) ([]string, error) {
-	sigs := make([]string, 0, len(db.config.APIKeyDatabaseHMAC))
-	for _, key := range db.config.APIKeyDatabaseHMAC {
+	keys, err := db.GetAPIKeyDatabaseHMAC()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys to generate API key database HMACs: %w", err)
+	}
+
+	sigs := make([]string, 0, len(keys))
+	for _, key := range keys {
 		sig := hmac.New(sha512.New, key)
 		if _, err := sig.Write([]byte(apiKey)); err != nil {
 			return nil, err
@@ -373,12 +381,22 @@ func (db *Database) GenerateAPIKey(realmID uint) (string, error) {
 
 // GenerateAPIKeySignature returns all possible signatures of the given key.
 func (db *Database) GenerateAPIKeySignature(apiKey string) (string, error) {
-	return initialHMAC(db.config.APIKeySignatureHMAC, apiKey)
+	keys, err := db.GetAPIKeySignatureHMAC()
+	if err != nil {
+		return "", fmt.Errorf("failed to get keys to generate API key signature HMAC: %w", err)
+	}
+
+	return initialHMAC(keys, apiKey)
 }
 
 // generateAPIKeySignatures returns all possible signatures of the given key.
 func (db *Database) generateAPIKeySignatures(apiKey string) ([][]byte, error) {
-	allSigs, err := allAllowedHMACs(db.config.APIKeySignatureHMAC, apiKey)
+	keys, err := db.GetAPIKeySignatureHMAC()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys to generate API key signature HMACs: %w", err)
+	}
+
+	allSigs, err := allAllowedHMACs(keys, apiKey)
 	if err != nil {
 		return nil, err
 	}

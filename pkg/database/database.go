@@ -75,6 +75,9 @@ type Database struct {
 	// secretManager is used to resolve secrets.
 	secretManager secrets.SecretManager
 
+	// secretResolver is used for resolving secrets.
+	secretResolver *SecretResolver
+
 	statsCloser func()
 }
 
@@ -103,6 +106,132 @@ func (db *Database) KeyManager() keys.KeyManager {
 	return db.keyManager
 }
 
+// GetCookieHashAndEncryptionKeys gets the cookie hash and encryption keys. The
+// first 32 bytes are the encryption key and the remaining bytes are the HMAC
+// key.
+func (db *Database) GetCookieHashAndEncryptionKeys(fallback []envconfig.Base64Bytes) ([][]byte, error) {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeCookieKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sethvargo): remove in 0.28.0+
+	if len(results) == 0 {
+		existing := envconfigBytesToBytes(fallback)
+		if l := len(existing); l%2 != 0 {
+			return nil, fmt.Errorf("fallback bytes are not even (got %d)", l)
+		}
+
+		// In v1 cookies, the HMAC key is first, then the encryption key.
+		final := make([][]byte, len(existing)/2)
+		for i := 0; i < len(existing); i += 2 {
+			encryptionBytes := existing[i+1]
+			if l := len(encryptionBytes); l != 32 {
+				return nil, fmt.Errorf("fallback encryption bytes are not 32 (got %d)", l)
+			}
+
+			hmacBytes := existing[i]
+
+			final[i/2] = append(final[i/2], encryptionBytes...)
+			final[i/2] = append(final[i/2], hmacBytes...)
+		}
+		return final, nil
+	}
+
+	return results, nil
+}
+
+// GetAPIKeyDatabaseHMAC returns the HMAC keys for storing API keys in the
+// database.
+func (db *Database) GetAPIKeyDatabaseHMAC() ([][]byte, error) {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeAPIKeyDatabaseHMAC)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sethvargo): remove in 0.28.0+
+	if len(results) == 0 {
+		return envconfigBytesToBytes(db.config.APIKeyDatabaseHMAC), nil
+	}
+
+	return results, nil
+}
+
+// GetAPIKeySignatureHMAC returns the HMAC keys for signing API keys in the
+// database.
+func (db *Database) GetAPIKeySignatureHMAC() ([][]byte, error) {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeAPIKeySignatureHMAC)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sethvargo): remove in 0.28.0+
+	if len(results) == 0 {
+		return envconfigBytesToBytes(db.config.APIKeySignatureHMAC), nil
+	}
+
+	return results, nil
+}
+
+// GetPhoneNumberDatabaseHMAC returns the HMAC keys for storing phone numbers in
+// the database.
+func (db *Database) GetPhoneNumberDatabaseHMAC() ([][]byte, error) {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypePhoneNumberDatabaseHMAC)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sethvargo): remove in 0.28.0+
+	if len(results) == 0 {
+		return envconfigBytesToBytes(db.config.PhoneNumberHMAC), nil
+	}
+
+	return results, nil
+}
+
+// GetVerificationCodeDatabaseHMAC returns the HMAC keys for storing verification
+// codes in the database.
+func (db *Database) GetVerificationCodeDatabaseHMAC() ([][]byte, error) {
+	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
+	defer done()
+
+	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeVerificationCodeDatabaseHMAC)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(sethvargo): remove in 0.28.0+
+	if len(results) == 0 {
+		return envconfigBytesToBytes(db.config.VerificationCodeDatabaseHMAC), nil
+	}
+
+	return results, nil
+}
+
+// envconfigBytesToBytes is a helper that converts envconfig.Base64Bytes to
+// [][]byte.
+//
+// TODO(sethvargo): remove in 0.28.0+
+func envconfigBytesToBytes(in []envconfig.Base64Bytes) [][]byte {
+	result := make([][]byte, len(in))
+	for i, v := range in {
+		result[i] = v.Bytes()
+	}
+	return result
+}
+
 // Load loads the configuration and processes any dependencies like secret and
 // key managers. It does NOT connect to the database.
 func (c *Config) Load(ctx context.Context) (*Database, error) {
@@ -113,6 +242,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret manager: %w", err)
 	}
+	secretResolver := NewSecretResolver()
 
 	// Create the key manager.
 	keyManager, err := keys.KeyManagerFor(ctx, &c.Keys)
@@ -133,6 +263,7 @@ func (c *Config) Load(ctx context.Context) (*Database, error) {
 		signingKeyManager: signingKeyManager,
 		logger:            logger,
 		secretManager:     secretManager,
+		secretResolver:    secretResolver,
 	}, nil
 }
 
@@ -292,6 +423,14 @@ func (db *Database) SetRawDB(tx *gorm.DB) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 	db.db = tx
+}
+
+// SetSecretResolver sets the underlying secret resolver. This is publicly exposed for
+// tests.
+func (db *Database) SetSecretResolver(r *SecretResolver) {
+	db.dbLock.Lock()
+	defer db.dbLock.Unlock()
+	db.secretResolver = r
 }
 
 // IsNotFound determines if an error is a record not found.
@@ -717,10 +856,8 @@ func uintDiff(then, now uint) string {
 	return stringDiff(strconv.FormatUint(uint64(then), 10), strconv.FormatUint(uint64(now), 10))
 }
 
-// initialHMAC uses the currently active HMAC key to seed a new record
-// This depends on envconfig.Base64Bytes since the callers are all using items
-// directly from config struct and this avoids unnecessary casing.
-func initialHMAC(keys []envconfig.Base64Bytes, data string) (string, error) {
+// initialHMAC uses the currently active HMAC key to seed a new record.
+func initialHMAC(keys [][]byte, data string) (string, error) {
 	if len(keys) < 1 {
 		return "", fmt.Errorf("expected at least 1 hmac key")
 	}
@@ -731,11 +868,9 @@ func initialHMAC(keys []envconfig.Base64Bytes, data string) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(sig.Sum(nil)), nil
 }
 
-// allAllowedHMACs uses all passed in HMAC keys to return al valid
-// results for searching for a previously saved record.
-// This depends on envconfig.Base64Bytes since the callers are all using items
-// directly from config struct and this avoids unnecessary casing.
-func allAllowedHMACs(keys []envconfig.Base64Bytes, data string) ([]string, error) {
+// allAllowedHMACs uses all passed in HMAC keys to return all valid results for
+// searching for a previously saved record.
+func allAllowedHMACs(keys [][]byte, data string) ([]string, error) {
 	sigs := make([]string, 0, len(keys))
 	for _, key := range keys {
 		sig := hmac.New(sha512.New, key)

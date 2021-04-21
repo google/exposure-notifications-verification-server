@@ -155,24 +155,6 @@ func NewTestInstance() (*TestInstance, error) {
 		return nil, fmt.Errorf("failed to expire database container: %w", err)
 	}
 
-	// Generate keys.
-	apiKeyDatabaseHMAC, err := generateKeys(2, 128)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate api key database hmac: %w", err)
-	}
-	apiKeySignatureHMAC, err := generateKeys(2, 128)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate api key signature hmac: %w", err)
-	}
-	verificationCodeDatabaseHMAC, err := generateKeys(2, 128)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate verification code database hmac: %w", err)
-	}
-	phoneHMAC, err := generateKeys(2, 128)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate phone number database hmac: %w", err)
-	}
-
 	// Create a temporary directory for the key manager,
 	tmpdir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -182,11 +164,6 @@ func NewTestInstance() (*TestInstance, error) {
 	// Build database configuration. This is required to connect to the database
 	// and to run the initial migrations.
 	config := &Config{
-		APIKeyDatabaseHMAC:           apiKeyDatabaseHMAC,
-		APIKeySignatureHMAC:          apiKeySignatureHMAC,
-		VerificationCodeDatabaseHMAC: verificationCodeDatabaseHMAC,
-		PhoneNumberHMAC:              phoneHMAC,
-
 		Host:     container.GetBoundIP("5432/tcp"),
 		Port:     container.GetPort("5432/tcp"),
 		User:     databaseUser,
@@ -341,12 +318,26 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 		db.config.EncryptionKey = keys.TestEncryptionKey(tb, db.keyManager)
 	}
 
+	if db.secretManager == nil {
+		secretManager, err := secrets.NewInMemory(context.Background(), &secrets.Config{})
+		if err != nil {
+			tb.Fatalf("failed to create secret manager: %s", err)
+		}
+		db.secretManager = secretManager
+	}
+
 	// Try to establish a connection to the database.
 	if err := db.OpenWithCacher(ctx, cacher); err != nil {
 		tb.Fatalf("failed to open database connection: %s", err)
 	}
 	db.db.SetLogger(gorm.Logger{LogWriter: log.New(io.Discard, "", 0)})
 	db.db.LogMode(false)
+
+	// Create secrets
+	if err := createSecrets(ctx, db); err != nil {
+		tb.Fatalf("failed to create initial secrets: %s", err)
+	}
+	db.secretResolver.ClearCaches()
 
 	// Close connection and delete database when done.
 	tb.Cleanup(func() {
@@ -400,6 +391,51 @@ func runMigrations(db *Database) error {
 	if err := db.MigrateTo(context.Background(), "", false); err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
+	return nil
+}
+
+// createSecrets generates and inserts the initial secrets into the secret
+// manager and database entry.
+func createSecrets(ctx context.Context, db *Database) error {
+	secretManagerTyp, ok := db.secretManager.(secrets.SecretVersionManager)
+	if !ok {
+		return fmt.Errorf("secret manager cannot manage versions")
+	}
+
+	secrets := []struct {
+		typ    SecretType
+		length int
+	}{
+		{SecretTypeAPIKeyDatabaseHMAC, 128},
+		{SecretTypeAPIKeySignatureHMAC, 128},
+		{SecretTypeCookieKeys, 64 + 32},
+		{SecretTypePhoneNumberDatabaseHMAC, 128},
+		{SecretTypeVerificationCodeDatabaseHMAC, 128},
+	}
+
+	for _, v := range secrets {
+		b, err := generateKeys(1, v.length)
+		if err != nil {
+			return fmt.Errorf("failed to generate bytes for %s: %w", v.typ, err)
+		}
+
+		parent := fmt.Sprintf("seed/%s", v.typ)
+		ref, err := secretManagerTyp.CreateSecretVersion(ctx, parent, b[0])
+		if err != nil {
+			return fmt.Errorf("failed to create secret version for %s: %w", v.typ, err)
+		}
+
+		// Save, bypass audits because some tests count the number of audits.
+		secret := &Secret{
+			Type:      v.typ,
+			Reference: ref,
+			Active:    true,
+		}
+		if err := db.db.Save(secret).Error; err != nil {
+			return fmt.Errorf("failed to save secret reference for %s: %w", v.typ, err)
+		}
+	}
+
 	return nil
 }
 

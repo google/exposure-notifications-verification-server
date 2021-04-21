@@ -323,6 +323,12 @@ func TestImportExistingSecretFromEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cookieEncryptionKeyValueRef, err := secretManagerTyp.CreateSecretVersion(ctx, "cookie-encryption-key",
+		[]byte(base64.StdEncoding.EncodeToString([]byte("thisisroughly32charactersright??"))))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cases := []struct {
 		name     string
 		envval   string
@@ -362,9 +368,9 @@ func TestImportExistingSecretFromEnv(t *testing.T) {
 		{
 			// The cookie mutator should combine 2 values into 1.
 			name:     "cookie_mutator",
-			envval:   fmt.Sprintf("secret://%s,secret://%s", multiValueRef, multiValueRef),
+			envval:   fmt.Sprintf("secret://%s,secret://%s", singleValueRef, cookieEncryptionKeyValueRef),
 			mutators: []importMutatorFunc{mutateCookieKeysSecrets()},
-			exp:      2,
+			exp:      1,
 		},
 		{
 			name:     "cookie_mutator_odd",
@@ -427,8 +433,8 @@ func TestMutateCookieKeysSecrets(t *testing.T) {
 		},
 		{
 			name: "merges",
-			in:   [][]byte{[]byte("hello"), []byte("world")},
-			out:  [][]byte{[]byte("helloworld")},
+			in:   [][]byte{[]byte("hello"), []byte("thisisroughly32charactersright??")},
+			out:  [][]byte{[]byte("thisisroughly32charactersright??hello")},
 		},
 	}
 

@@ -65,19 +65,35 @@ type Config struct {
 
 	// APIKeyDatabaseHMAC is the HMAC key to use for API keys before storing them
 	// in the database.
-	APIKeyDatabaseHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY,required" json:"-"`
+	//
+	// TODO(sethvargo): remove in 0.28.0+
+	//
+	// Deprecated: Secrets management and rotation have moved into the database.
+	APIKeyDatabaseHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY" json:"-"`
 
 	// APIKeySignatureHMAC is the HMAC key to sign API keys before returning them
 	// to the requestor.
-	APIKeySignatureHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY,required" json:"-"`
+	//
+	// TODO(sethvargo): remove in 0.28.0+
+	//
+	// Deprecated: Secrets management and rotation have moved into the database.
+	APIKeySignatureHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY" json:"-"`
 
 	// VerificationCodeDatabaseHMAC is the HMAC key to hash codes before storing
 	// them in the database.
-	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY,required" json:"-"`
+	//
+	// TODO(sethvargo): remove in 0.28.0+
+	//
+	// Deprecated: Secrets management and rotation have moved into the database.
+	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY" json:"-"`
 
 	// PhoneNumberHMAC is the HMAC key to hash phone numbers before storing
 	// in the database. This is only used of user initiated reporting is enabled
 	// at the system and at the realm level.
+	//
+	// TODO(sethvargo): remove in 0.28.0+
+	//
+	// Deprecated: Secrets management and rotation have moved into the database.
 	PhoneNumberHMAC []envconfig.Base64Bytes `env:"DB_PHONE_HMAC_KEY" json:"-"`
 
 	// Secrets is the secret configuration. This is used to resolve values that

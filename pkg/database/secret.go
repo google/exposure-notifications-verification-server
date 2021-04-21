@@ -131,10 +131,10 @@ func (db *Database) ListSecretsForType(typ SecretType, scopes ...Scope) ([]*Secr
 
 // ActivateSecrets activates all secrets that are not currently activate but
 // have been created for since the provided timestamp.
-func (db *Database) ActivateSecrets(since time.Time) error {
+func (db *Database) ActivateSecrets(typ SecretType, since time.Time) error {
 	if err := db.db.
 		Model(&Secret{}).
-		Where("active IS FALSE AND created_at < ?", since).
+		Where("active IS FALSE AND type = ? AND created_at < ?", typ, since).
 		UpdateColumn("active", true).
 		Error; err != nil && !IsNotFound(err) {
 		return fmt.Errorf("failed to activate secrets: %w", err)

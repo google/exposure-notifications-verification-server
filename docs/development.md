@@ -75,14 +75,6 @@ represent best practices.
     # Disable local observability.
     export OBSERVABILITY_EXPORTER="NOOP"
 
-    # Configure cookie encryption, the first is 64 bytes, the second is 32.
-    # Create your own values with:
-    #
-    #     openssl rand -base64 NUM
-    #
-    # where NUM is 32 or 64, respectively.
-    export COOKIE_KEYS="ARLaFwAqBGIkm5pLjAveJuahtCnX2NLoAUz2kCZKrScUaUkEaxHSvJLVYb5yAPCc441Cho5n5yp8jdEmy6hyig==,RLjcRZeqc07s6dh3OK4CM1POjHDZHC+usNU1w/XNTjM="
-
     # Configure cache and cache HMAC. Create your own values with:
     #
     #     openssl rand -base64 128
@@ -124,15 +116,6 @@ represent best practices.
     # your own encryption key with `openssl rand -base64 64`.
     export KEY_MANAGER="IN_MEMORY"
     export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
-
-    # Database HMAC keys - these should be at least 64 bytes, preferably 128.
-    # Create your own with:
-    #
-    #     openssl rand -base64 128
-    #
-    export DB_APIKEY_DATABASE_KEY="RlV/RBEt0lDeK54r8U9Zi7EDFZid3fiKM2HFgjR9sZGMb+duuQomjGdNKYnzrNyKgeTBcc1V4qVs6fBrN6IFTLbgkp/u52MGhSooAQI4EuZ6JFuyxQBeu54Ia3mihF111BMcCWpHDg2MAh8k8f669plEQaqoQFg3GThP/Lx1OY0="
-    export DB_APIKEY_SIGNATURE_KEY="HFeglmupbtv/I2X04OQRl1V7mcvfAXuv8XtmIFYV6aYsPuwQVFtXDlfFrjouYT2Z6kYln7B90RcutHJNjpPDRkyBQ28HtWmid3dr0tpJ1KiiK5NGG7JS9mU8fCvEYklw5RV+1f8qN13nWzHpW8/RQw9rR/vQGy90yL5/aydBuVA="
-    export DB_VERIFICATION_CODE_DATABASE_KEY="YEN4+tnuf1DzQPryRzrPVilqT0Q2TO8IIg3C8prvXWGAaoABOWACl79hS40OneuaU8GsQHwhJ13wM2A5ooyOq+uqxCjrqVJZZXPU5xzl/6USEYAp4z2b0ZYrfkx2SRk1o9HfFi1RMqpaBf1TRIbsNOK9hNRG3nS2It49y6mR1ho="
 
     # Configure database pooling.
     export DB_POOL_MIN_CONNS="2"

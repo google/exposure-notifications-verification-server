@@ -141,6 +141,7 @@ func realMain(ctx context.Context) error {
 	rotationController := rotation.New(cfg, db, tokenSignerTyp, secretManagerTyp, h)
 	r.Handle("/token-signing-key", rotationController.HandleRotateTokenSigningKey()).Methods(http.MethodGet)
 	r.Handle("/realm-verification-keys", rotationController.HandleRotateVerificationKeys()).Methods(http.MethodGet)
+	r.Handle("/secrets", rotationController.HandleRotateSecrets()).Methods(http.MethodGet)
 
 	srv, err := server.New(cfg.Port)
 	if err != nil {
