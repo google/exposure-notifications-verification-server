@@ -425,6 +425,14 @@ func (db *Database) SetRawDB(tx *gorm.DB) {
 	db.db = tx
 }
 
+// SetSecretResolver sets the underlying secret resolver. This is publicly exposed for
+// tests.
+func (db *Database) SetSecretResolver(r *SecretResolver) {
+	db.dbLock.Lock()
+	defer db.dbLock.Unlock()
+	db.secretResolver = r
+}
+
 // IsNotFound determines if an error is a record not found.
 func IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound) || gorm.IsRecordNotFoundError(err)

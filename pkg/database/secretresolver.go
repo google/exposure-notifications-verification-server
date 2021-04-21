@@ -119,3 +119,11 @@ func (r *SecretResolver) ResolveValue(ctx context.Context, sm secrets.SecretMana
 	}
 	return typ, nil
 }
+
+// ClearCaches purges all cached data from the references and values cache.
+func (r *SecretResolver) ClearCaches() {
+	fmt.Printf("\n\nclearing caches\n\n")
+
+	r.referencesCache.Clear()
+	r.valuesCache.Clear()
+}

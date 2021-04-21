@@ -149,6 +149,7 @@ func NewTestHarness(tb testing.TB, testDatabaseInstance *database.TestInstance) 
 	// Create the bad database.
 	badDB := *db //nolint:govet
 	badDB.SetRawDB(NewFailingDatabase())
+	badDB.SetSecretResolver(database.NewSecretResolver())
 
 	// Create the rate limiter.
 	limiterStore, err := memorystore.New(&memorystore.Config{

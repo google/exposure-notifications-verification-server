@@ -337,6 +337,7 @@ func (i *TestInstance) NewDatabase(tb testing.TB, cacher cache.Cacher, opts ...U
 	if err := createSecrets(ctx, db); err != nil {
 		tb.Fatalf("failed to create initial secrets: %s", err)
 	}
+	db.secretResolver.ClearCaches()
 
 	// Close connection and delete database when done.
 	tb.Cleanup(func() {
