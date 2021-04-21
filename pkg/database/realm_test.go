@@ -204,11 +204,12 @@ func TestRealm_BeforeSave(t *testing.T) {
 		{
 			Name: "code_duration_too_long",
 			Input: &Realm{
-				Name:         "a",
-				CodeLength:   6,
-				CodeDuration: FromDuration(time.Hour + time.Minute),
+				Name:                "a",
+				CodeLength:          6,
+				CodeDuration:        FromDuration(time.Hour + time.Minute),
+				ShortCodeMaxMinutes: 60, // the default.
 			},
-			Error: "codeDuration must be no more than 1 hour",
+			Error: "codeDuration must be no more than 60 minutes",
 		},
 		{
 			Name: "long_code_length_too_short",

@@ -109,7 +109,6 @@ var (
 var ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
 
 const (
-	maxCodeDuration     = time.Hour
 	maxLongCodeDuration = 24 * time.Hour
 
 	SMSRegion        = "[region]"
@@ -401,15 +400,9 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// Validation of the max code duration is dependent on overrides.
-	overrideDuration := time.Minute * time.Duration(r.ShortCodeMaxMinutes)
-	if overrideDuration != maxCodeDuration {
-		if r.CodeDuration.Duration > overrideDuration {
-			r.AddError("codeDuration", fmt.Sprintf("must be no more than %v minutes", r.ShortCodeMaxMinutes))
-		}
-	} else {
-		if r.CodeDuration.Duration > maxCodeDuration {
-			r.AddError("codeDuration", "must be no more than 1 hour")
-		}
+	realmMaxCodeDuration := time.Minute * time.Duration(r.ShortCodeMaxMinutes)
+	if r.CodeDuration.Duration > realmMaxCodeDuration {
+		r.AddError("codeDuration", fmt.Sprintf("must be no more than %v minutes", r.ShortCodeMaxMinutes))
 	}
 
 	if r.LongCodeLength < 12 {
