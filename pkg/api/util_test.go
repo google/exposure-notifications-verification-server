@@ -25,6 +25,12 @@ func TestGetAcceptedTestTypes(t *testing.T) {
 	t.Parallel()
 
 	allTypes := AcceptTypes{
+		"confirmed":   struct{}{},
+		"likely":      struct{}{},
+		"negative":    struct{}{},
+		"user-report": struct{}{},
+	}
+	nonUserReport := AcceptTypes{
 		"confirmed": struct{}{},
 		"likely":    struct{}{},
 		"negative":  struct{}{},
@@ -56,7 +62,7 @@ func TestGetAcceptedTestTypes(t *testing.T) {
 		},
 		{
 			name:  "full_suite",
-			input: []string{"CONFIRMED", "Likely", "negative"},
+			input: []string{"CONFIRMED", "Likely", "negative", "user-report"},
 			want:  allTypes,
 		},
 		{
@@ -77,6 +83,11 @@ func TestGetAcceptedTestTypes(t *testing.T) {
 		{
 			name:  "just_negative",
 			input: []string{"negative"},
+			want:  nonUserReport,
+		},
+		{
+			name:  "negative_and_user",
+			input: []string{"negative", "user-report"},
 			want:  allTypes,
 		},
 	}
