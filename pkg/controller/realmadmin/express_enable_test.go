@@ -72,12 +72,13 @@ func TestHandleEnableExpress(t *testing.T) {
 	t.Run("already_enabled", func(t *testing.T) {
 		t.Parallel()
 
+		realm := database.NewRealmWithDefaults("already_enabled")
+		realm.EnableENExpress = true
+
 		ctx := ctx
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
-			Realm: &database.Realm{
-				EnableENExpress: true,
-			},
+			Realm:       realm,
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,
 		})
@@ -100,7 +101,8 @@ func TestHandleEnableExpress(t *testing.T) {
 		ctx = controller.WithSession(ctx, &sessions.Session{})
 		ctx = controller.WithMembership(ctx, &database.Membership{
 			Realm: &database.Realm{
-				EnableENExpress: false,
+				EnableENExpress:     false,
+				ShortCodeMaxMinutes: 60,
 			},
 			User:        &database.User{},
 			Permissions: rbac.SettingsWrite,

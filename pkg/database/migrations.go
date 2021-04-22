@@ -2269,6 +2269,25 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`DROP TABLE secrets`)
 			},
 		},
+		{
+			ID: "00104-AddCodeOverrides",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS short_code_max_minutes SMALLINT DEFAULT 60,
+						ADD COLUMN IF NOT EXISTS enx_code_expiration_configurable BOOL DEFAULT false`,
+					`ALTER TABLE realms
+						ALTER COLUMN short_code_max_minutes SET NOT NULL,
+						ALTER COLUMN enx_code_expiration_configurable SET NOT NULL`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS short_code_max_minutes,
+						DROP COLUMN IF EXISTS enx_code_expiration_configurable`)
+			},
+		},
 	}
 }
 

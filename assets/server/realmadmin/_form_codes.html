@@ -179,7 +179,7 @@
 
   <div class="form-group">
     <label for="code-duration">Short code expiration</label>
-    {{if $realm.EnableENExpress}}
+    {{if and $realm.EnableENExpress (not $realm.ENXCodeExpirationConfigurable)}}
       <input type="text" id="code-duration" class="form-control{{if $realm.ErrorsFor "CodeDurationSeconds"}} is-invalid{{end}}" value="{{$realm.GetCodeDurationMinutes}} minutes" readonly />
       <small class="form-text text-muted">
         This value cannot be changed when ENExpress is enabled.
@@ -192,7 +192,7 @@
         {{end}}
       </select>
       <small class="form-text text-muted">
-        The short code can be valid from anywhere between <code>5</code> and <code>60</code>
+        The short code can be valid from anywhere between <code>5</code> and <code>{{.maxShortCodeMinutes}}</code>
         minutes. If you are using SMS deeplinks, it is recommended to keep this duration
         short and let the long code be valid for a longer period (up to <code>24</code> hours).
       </small>

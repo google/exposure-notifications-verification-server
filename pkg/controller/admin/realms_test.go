@@ -244,6 +244,7 @@ func TestHandleRealmsUpdate(t *testing.T) {
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
 			"can_use_system_sms_config":   []string{"1"},
 			"can_use_system_email_config": []string{"1"},
+			"short_code_max_minutes":      []string{"60"},
 		})
 		r = mux.SetURLVars(r, map[string]string{"id": "1"})
 		handler.ServeHTTP(w, r)

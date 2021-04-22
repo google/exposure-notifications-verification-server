@@ -185,8 +185,10 @@ func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter,
 
 func (c *Controller) HandleRealmsUpdate() http.Handler {
 	type FormData struct {
-		CanUseSystemSMSConfig   bool `form:"can_use_system_sms_config"`
-		CanUseSystemEmailConfig bool `form:"can_use_system_email_config"`
+		CanUseSystemSMSConfig         bool `form:"can_use_system_sms_config"`
+		CanUseSystemEmailConfig       bool `form:"can_use_system_email_config"`
+		ShortCodeMaxMinutes           uint `form:"short_code_max_minutes"`
+		ENXCodeExpirationConfigurable bool `form:"enx_code_expiration_configurable"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -266,6 +268,8 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 		realm.CanUseSystemSMSConfig = form.CanUseSystemSMSConfig
 		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
+		realm.ShortCodeMaxMinutes = form.ShortCodeMaxMinutes
+		realm.ENXCodeExpirationConfigurable = form.ENXCodeExpirationConfigurable
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)

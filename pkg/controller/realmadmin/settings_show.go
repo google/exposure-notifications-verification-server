@@ -145,7 +145,13 @@ func (c *Controller) renderSettings(
 	m["passwordWarnDays"] = passwordRotationWarningDays
 	// Valid settings for code parameters.
 	m["shortCodeLengths"] = shortCodeLengths
-	m["shortCodeMinutes"] = shortCodeMinutes
+	m["maxShortCodeMinutes"] = maxShortCodeMinutes
+	// Generate possible values for short code expiration minutes.
+	realmShortCodeMinutes := make([]int, 0, realm.ShortCodeMaxMinutes-5)
+	for i := 5; i <= int(realm.ShortCodeMaxMinutes); i++ {
+		realmShortCodeMinutes = append(realmShortCodeMinutes, i)
+	}
+	m["shortCodeMinutes"] = realmShortCodeMinutes
 	m["longCodeLengths"] = longCodeLengths
 	m["longCodeHours"] = longCodeHours
 	m["enxRedirectDomain"] = c.config.IssueConfig().ENExpressRedirectDomain

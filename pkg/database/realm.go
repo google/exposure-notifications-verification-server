@@ -109,8 +109,12 @@ var (
 var ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
 
 const (
-	maxCodeDuration     = time.Hour
-	maxLongCodeDuration = 24 * time.Hour
+	DefaultShortCodeLength            = 8
+	DefaultShortCodeExpirationMinutes = 15
+	DefaultLongCodeLength             = 16
+	DefaultLongCodeExpirationHours    = 24
+	DefaultMaxShortCodeMinutes        = 60
+	maxLongCodeDuration               = 24 * time.Hour
 
 	SMSRegion        = "[region]"
 	SMSCode          = "[code]"
@@ -169,6 +173,13 @@ type Realm struct {
 	CodeDuration     DurationSeconds `gorm:"type:bigint; not null; default: 900;"` // default 15m (in seconds)
 	LongCodeLength   uint            `gorm:"type:smallint; not null; default: 16;"`
 	LongCodeDuration DurationSeconds `gorm:"type:bigint; not null; default: 86400;"` // default 24h
+
+	// ShortCodeMaxMinutes can only be set by system admins and allows for a
+	// realm to have a higher max short code duration
+	ShortCodeMaxMinutes uint `gorm:"column: short_code_max_minutes; type:smallint; not null; default: 60;"`
+	// ENXCodeExpirationConfigurable can only be set by system admins and allows
+	// for an ENX realm to change the short code expiration time (normally fixed)
+	ENXCodeExpirationConfigurable bool `gorm:"column: enx_code_expiration_configurable; type:bool; not null; default: false;"`
 
 	// SMS configuration
 	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours';"`
@@ -295,10 +306,11 @@ type Realm struct {
 func NewRealmWithDefaults(name string) *Realm {
 	return &Realm{
 		Name:                name,
-		CodeLength:          8,
-		CodeDuration:        FromDuration(15 * time.Minute),
-		LongCodeLength:      16,
-		LongCodeDuration:    FromDuration(24 * time.Hour),
+		CodeLength:          DefaultShortCodeLength,
+		CodeDuration:        FromDuration(DefaultShortCodeExpirationMinutes * time.Minute),
+		LongCodeLength:      DefaultLongCodeLength,
+		LongCodeDuration:    FromDuration(DefaultLongCodeExpirationHours * time.Hour),
+		ShortCodeMaxMinutes: DefaultMaxShortCodeMinutes,
 		SMSTextTemplate:     DefaultSMSTextTemplate,
 		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
@@ -384,11 +396,20 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("passwordWarn", "may not be longer than password rotation period")
 	}
 
+	// TODO(mikehelmick) - make these configurable. There isn't currently a good way
+	// to thread config to this point though.
+	if r.ShortCodeMaxMinutes < 60 || r.ShortCodeMaxMinutes > 120 {
+		r.AddError("shortCodeMaxMinutes", "must be >= 60 and <= 120")
+	}
+
 	if r.CodeLength < 6 {
 		r.AddError("codeLength", "must be at least 6")
 	}
-	if r.CodeDuration.Duration > maxCodeDuration {
-		r.AddError("codeDuration", "must be no more than 1 hour")
+
+	// Validation of the max code duration is dependent on overrides.
+	realmMaxCodeDuration := time.Minute * time.Duration(r.ShortCodeMaxMinutes)
+	if r.CodeDuration.Duration > realmMaxCodeDuration {
+		r.AddError("codeDuration", fmt.Sprintf("must be no more than %v minutes", r.ShortCodeMaxMinutes))
 	}
 
 	if r.LongCodeLength < 12 {

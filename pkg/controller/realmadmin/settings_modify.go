@@ -31,7 +31,6 @@ import (
 
 var (
 	shortCodeLengths            = []int{6, 7, 8}
-	shortCodeMinutes            = []int{}
 	longCodeLengths             = []int{12, 13, 14, 15, 16}
 	longCodeHours               = []int{}
 	mfaGracePeriod              = []int64{0, 1, 7, 30}
@@ -40,14 +39,13 @@ var (
 )
 
 const (
+	maxShortCodeMinutes = 60
+
 	labelPrefix    = "sms_text_label_"
 	templatePrefix = "sms_text_template_"
 )
 
 func init() {
-	for i := 5; i <= 60; i++ {
-		shortCodeMinutes = append(shortCodeMinutes, i)
-	}
 	for i := 1; i <= 24; i++ {
 		longCodeHours = append(longCodeHours, i)
 	}
@@ -245,6 +243,11 @@ func (c *Controller) HandleSettings() http.Handler {
 				currentRealm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
 				currentRealm.LongCodeLength = form.LongCodeLength
 				currentRealm.LongCodeDuration.Duration = time.Duration(form.LongCodeDurationHours) * time.Hour
+			} else {
+				// A system admin can allow an ENX realm to edit their code expiration.
+				if currentRealm.ENXCodeExpirationConfigurable {
+					currentRealm.CodeDuration.Duration = time.Duration(form.CodeDurationMinutes) * time.Minute
+				}
 			}
 		}
 
