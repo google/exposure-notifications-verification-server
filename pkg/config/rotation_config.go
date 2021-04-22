@@ -91,8 +91,8 @@ type RotationConfig struct {
 	// HMAC key for HMACing verification codes in the database.
 	// VerificationCodeDatabaseHMACKeyMaxAge is the age at which the HMAC key can
 	// be safely deleted.
-	VerificationCodeDatabaseHMACKeyMinAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MIN_AGE=24h"`
-	VerificationCodeDatabaseHMACKeyMaxAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MAX_AGE=72h"` // 2d + 1d
+	VerificationCodeDatabaseHMACKeyMinAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MIN_AGE, default=24h"`
+	VerificationCodeDatabaseHMACKeyMaxAge time.Duration `env:"VERIFICATION_CODE_DATABASE_HMAC_KEY_MAX_AGE, default=72h"` // 2d + 1d
 
 	// TokenSigning is the token signing configuration. This defines the parent
 	// key and common data like issuer, but the individual versions are controlled
