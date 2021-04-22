@@ -117,12 +117,13 @@ func (c *Controller) HandleCertificate() http.Handler {
 			claims.SymptomOnsetInterval = subject.SymptomInterval()
 		}
 
+		issueTime := now.Add(-1 * c.config.CertificateSigning.AllowedClockSkew).Unix()
 		claims.SignedMAC = request.ExposureKeyHMAC
 		claims.StandardClaims.Audience = signerInfo.Audience
 		claims.StandardClaims.Issuer = signerInfo.Issuer
-		claims.StandardClaims.IssuedAt = now.Unix()
+		claims.StandardClaims.IssuedAt = issueTime
 		claims.StandardClaims.ExpiresAt = now.Add(signerInfo.Duration).Unix()
-		claims.StandardClaims.NotBefore = now.Add(-1 * c.config.CertificateSigning.AllowedClockSkew).Unix()
+		claims.StandardClaims.NotBefore = issueTime
 
 		certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 		certToken.Header[verifyapi.KeyIDHeader] = signerInfo.KeyID
