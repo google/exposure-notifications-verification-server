@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/hashicorp/go-multierror"
@@ -70,13 +71,19 @@ func Bootstrap(ctx context.Context, db *database.Database) (*BootstrapResponse, 
 		realm.RegionCode = RegionCode
 	}
 
+	logger := logging.FromContext(ctx)
+
 	realm.AllowedTestTypes = database.TestTypeNegative | database.TestTypeConfirmed | database.TestTypeLikely
 	realm.AddUserReportToAllowedTestTypes()
 	realm.AllowBulkUpload = true
 	realm.UseAuthenticatedSMS = true
 	realm.AllowAdminUserReport = true
 	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
-		return &resp, fmt.Errorf("failed to save realm (errors: %v): %w", realm.ErrorMessages(), err)
+		logger.Errorw("failed to save realm",
+			"realm", realm,
+			"err", err,
+			"validation", realm.ErrorMessages())
+		return &resp, fmt.Errorf("failed to save realm: %w", err)
 	}
 	resp.Realm = realm
 
