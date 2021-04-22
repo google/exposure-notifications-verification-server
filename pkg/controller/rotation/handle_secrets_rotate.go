@@ -189,9 +189,19 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 		existing = append(existing, created...)
 	}
 
+	// Find the "newest" secret that has been created. Since ListSecretsForType
+	// sorts by usable, it's possible that a new secret exists but is not yet
+	// active. That would be at the end of the list.
+	latestSecretCreatedAt := time.Time{}
+	for _, secret := range existing {
+		if secret.CreatedAt.After(latestSecretCreatedAt) {
+			latestSecretCreatedAt = secret.CreatedAt
+		}
+	}
+
 	// If there is no latest secret, or if the latest secret has existed for
 	// longer than the minimum age, create a new one.
-	if minTTL > 0 && (len(existing) == 0 || now.Sub(existing[0].CreatedAt) > minTTL) {
+	if minTTL > 0 && now.Sub(latestSecretCreatedAt) > minTTL {
 		logger.Infow("latest secret does not exist or is older than min_ttl, creating new secret",
 			"secret", existing)
 
