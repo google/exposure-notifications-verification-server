@@ -176,10 +176,10 @@ type Realm struct {
 
 	// ShortCodeMaxMinutes can only be set by system admins and allows for a
 	// realm to have a higher max short code duration
-	ShortCodeMaxMinutes uint `gorm:"column: short_code_max_minutes; type:smallint; not null; default: 60;"`
+	ShortCodeMaxMinutes uint `gorm:"column:short_code_max_minutes; type:smallint; not null; default: 60;"`
 	// ENXCodeExpirationConfigurable can only be set by system admins and allows
 	// for an ENX realm to change the short code expiration time (normally fixed)
-	ENXCodeExpirationConfigurable bool `gorm:"column: enx_code_expiration_configurable; type:bool; not null; default: false;"`
+	ENXCodeExpirationConfigurable bool `gorm:"column:enx_code_expiration_configurable; type:bool; not null; default: false;"`
 
 	// SMS configuration
 	SMSTextTemplate           string          `gorm:"type:text; not null; default: 'This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours';"`
