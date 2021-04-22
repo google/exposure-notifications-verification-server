@@ -194,8 +194,8 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 	// active. That would be at the end of the list.
 	latestSecretCreatedAt := time.Time{}
 	for _, secret := range existing {
-		if secret.CreatedAt.After(latestSecretCreatedAt) {
-			latestSecretCreatedAt = secret.CreatedAt
+		if secret.CreatedAt.UTC().After(latestSecretCreatedAt) {
+			latestSecretCreatedAt = secret.CreatedAt.UTC()
 		}
 	}
 
@@ -225,7 +225,7 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 		// Activate any secrets that are ready to be activated. Please don't try to
 		// optimize this. Yes, this could be reduced into a single SQL statement,
 		// but we want to ensure the logging and AuditLog exist for debugging.
-		if !secret.Active && secret.CreatedAt == secret.UpdatedAt && now.Sub(secret.CreatedAt) > c.config.SecretActivationTTL {
+		if !secret.Active && secret.CreatedAt.UTC() == secret.UpdatedAt.UTC() && now.Sub(secret.CreatedAt.UTC()) > c.config.SecretActivationTTL {
 			logger.Infow("activating secret", "secret", secret)
 
 			secret.Active = true
@@ -240,7 +240,7 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 			// it. This will move it to the end of the list. For HMAC-style secrets,
 			// this means it will still be available to validate values as the cache
 			// updates, but will not be used to HMAC new values.
-			if secret.Active && now.Sub(secret.CreatedAt) > maxTTL {
+			if secret.Active && now.Sub(secret.CreatedAt.UTC()) > maxTTL {
 				logger.Infow("deactivating expired secret", "secret", secret)
 
 				secret.Active = false
@@ -259,7 +259,7 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 			//
 			// Without this check, a secret with a low TTL could be marked for
 			// deletion before activation.
-			if !secret.Active && secret.CreatedAt != secret.UpdatedAt && now.Sub(secret.UpdatedAt) > c.config.SecretActivationTTL {
+			if !secret.Active && secret.CreatedAt.UTC() != secret.UpdatedAt.UTC() && now.Sub(secret.UpdatedAt.UTC()) > c.config.SecretActivationTTL {
 				logger.Infow("marking secret for deletion", "secret", secret)
 
 				if err := c.db.DeleteSecret(secret, RotationActor); err != nil {
@@ -276,10 +276,16 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 		return fmt.Errorf("failed to list unscoped secrets for type %s: %w", typ, err)
 	}
 	for _, secret := range toDelete {
-		if secret.DeletedAt != nil && now.Sub(*secret.DeletedAt) > c.config.SecretDestroyTTL {
+		deletedAt := secret.DeletedAt
+		if deletedAt != nil {
+			t := deletedAt.UTC()
+			deletedAt = &t
+		}
+
+		if deletedAt != nil && now.Sub(*deletedAt) > c.config.SecretDestroyTTL {
 			logger.Infow("purging expired secret", "secret", secret)
 
-			if err := c.destroyUpstreamSecretVresion(ctx, secret.Reference); err != nil {
+			if err := c.destroyUpstreamSecretVersion(ctx, secret.Reference); err != nil {
 				return fmt.Errorf("failed to destroy %s: %w", secret.Reference, err)
 			}
 
@@ -308,7 +314,7 @@ func (c *Controller) createUpstreamSecretVersion(ctx context.Context, name strin
 	return version, nil
 }
 
-func (c *Controller) destroyUpstreamSecretVresion(ctx context.Context, name string) error {
+func (c *Controller) destroyUpstreamSecretVersion(ctx context.Context, name string) error {
 	if err := c.secretManager.DestroySecretVersion(ctx, name); err != nil {
 		return fmt.Errorf("failed to destroy upstream secret version: %w", err)
 	}
