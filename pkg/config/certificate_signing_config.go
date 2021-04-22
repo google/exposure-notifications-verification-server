@@ -27,6 +27,9 @@ type CertificateSigningConfig struct {
 	// configuration.
 	Keys keys.Config `env:",prefix=CERTIFICATE_"`
 
+	// AllowedClockSkew impacts the "not before" or NBF time for certificates
+	AllowedClockSkew time.Duration `env:"ALLOWED_CLOCK_SKEW,default=5s"`
+
 	PublicKeyCacheDuration  time.Duration `env:"PUBLIC_KEY_CACHE_DURATION, default=15m"`
 	SignerCacheDuration     time.Duration `env:"CERTIFICATE_SIGNER_CACHE_DURATION, default=1m"`
 	CertificateSigningKey   string        `env:"CERTIFICATE_SIGNING_KEY, required"`
