@@ -147,7 +147,7 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 1; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 
 			initialSecret = secrets[0]
@@ -166,7 +166,7 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 1; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 			if got, want := secrets[0].Active, true; got != want {
 				t.Errorf("expected %t to be %t: %#v", got, want, secrets[0])
@@ -183,7 +183,30 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 2; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
+			}
+
+			// The activation TTL has not elapsed, so the first secret should still be
+			// active, but the newly-created secret should be inactive.
+			if got, want := secrets[0].Active, true; got != want {
+				t.Errorf("expected %t to be %t: %#v", got, want, secrets[0])
+			}
+			if got, want := secrets[1].Active, false; got != want {
+				t.Errorf("expected %t to be %t: %#v", got, want, secrets[1])
+			}
+		}
+
+		// Rotate again should do nothing.
+		{
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 10*time.Second, 0, ""); err != nil {
+				t.Fatal(err)
+			}
+			secrets, err := db.ListSecrets()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := len(secrets), 2; got != want {
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 
 			// The activation TTL has not elapsed, so the first secret should still be
@@ -207,7 +230,7 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 2; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 
 			// The activation TTL has elapsed, so both should be active.
@@ -230,7 +253,7 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 2; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 
 			// The maxTTL has elapsed, so both should be inactive.
@@ -254,7 +277,7 @@ func TestRotateSecret(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := len(secrets), 0; got != want {
-				t.Errorf("expected %d secret, got %d: %#v", want, got, secrets)
+				t.Fatalf("expected %d secret, got %d: %#v", want, got, secrets)
 			}
 
 			// Secrets should still exist in secret manager though.
