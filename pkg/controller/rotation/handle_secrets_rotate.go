@@ -175,6 +175,8 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 	// If the secret exist in the environment, import.
 	// TODO(sethvargo): remove after 0.28.0+
 	if val := strings.TrimSpace(os.Getenv(env)); len(existing) == 0 && val != "" {
+		logger.Debugw("no existing secrets, attempting import")
+
 		var mutators []importMutatorFunc
 
 		if typ == database.SecretTypeCookieKeys {
@@ -198,6 +200,10 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 			latestSecretCreatedAt = secret.CreatedAt.UTC()
 		}
 	}
+	logger.Debugw("calculated latest secret created time",
+		"created_at", latestSecretCreatedAt,
+		"ttl", now.Sub(latestSecretCreatedAt),
+		"secrets", existing)
 
 	// If there is no latest secret, or if the latest secret has existed for
 	// longer than the minimum age, create a new one.
@@ -221,11 +227,24 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 		existing = append(existing, secret)
 	}
 
+	logger.Debugw("activating existing secrets")
 	for _, secret := range existing {
+		modified := secret.CreatedAt.UTC() != secret.UpdatedAt.UTC()
+		createdTTL := now.Sub(secret.CreatedAt.UTC())
+		updatedTTL := now.Sub(secret.UpdatedAt.UTC())
+
+		logger = logger.With(
+			"secret", secret,
+			"modified", modified,
+			"created_ttl", createdTTL,
+			"updated_ttl", updatedTTL)
+
+		logger.Debugw("checking if secret is ready to be activated")
+
 		// Activate any secrets that are ready to be activated. Please don't try to
 		// optimize this. Yes, this could be reduced into a single SQL statement,
 		// but we want to ensure the logging and AuditLog exist for debugging.
-		if !secret.Active && secret.CreatedAt.UTC() == secret.UpdatedAt.UTC() && now.Sub(secret.CreatedAt.UTC()) > c.config.SecretActivationTTL {
+		if !secret.Active && !modified && createdTTL >= c.config.SecretActivationTTL {
 			logger.Infow("activating secret", "secret", secret)
 
 			secret.Active = true
@@ -236,11 +255,13 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 
 		// If a maximum TTL was given, check for expirations.
 		if maxTTL > 0 {
+			logger.Debugw("checking secret is expired")
+
 			// If the secret has existed for longer than the maximum TTL, deactivate
 			// it. This will move it to the end of the list. For HMAC-style secrets,
 			// this means it will still be available to validate values as the cache
 			// updates, but will not be used to HMAC new values.
-			if secret.Active && now.Sub(secret.CreatedAt.UTC()) > maxTTL {
+			if secret.Active && createdTTL >= maxTTL {
 				logger.Infow("deactivating expired secret", "secret", secret)
 
 				secret.Active = false
@@ -259,7 +280,7 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 			//
 			// Without this check, a secret with a low TTL could be marked for
 			// deletion before activation.
-			if !secret.Active && secret.CreatedAt.UTC() != secret.UpdatedAt.UTC() && now.Sub(secret.UpdatedAt.UTC()) > c.config.SecretActivationTTL {
+			if !secret.Active && modified && updatedTTL >= c.config.SecretActivationTTL {
 				logger.Infow("marking secret for deletion", "secret", secret)
 
 				if err := c.db.DeleteSecret(secret, RotationActor); err != nil {
@@ -268,6 +289,8 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 			}
 		}
 	}
+
+	logger.Debugw("checking for secrets to purge")
 
 	// Hard delete any secrets that are marked for deletion and have exceeded
 	// the destroy TTL.
