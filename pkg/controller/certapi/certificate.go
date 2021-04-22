@@ -122,7 +122,7 @@ func (c *Controller) HandleCertificate() http.Handler {
 		claims.StandardClaims.Issuer = signerInfo.Issuer
 		claims.StandardClaims.IssuedAt = now.Unix()
 		claims.StandardClaims.ExpiresAt = now.Add(signerInfo.Duration).Unix()
-		claims.StandardClaims.NotBefore = now.Add(-1 * time.Second).Unix()
+		claims.StandardClaims.NotBefore = now.Add(-1 * c.config.CertificateSigning.AllowedClockSkew).Unix()
 
 		certToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
 		certToken.Header[verifyapi.KeyIDHeader] = signerInfo.KeyID
