@@ -14,7 +14,7 @@
 
     <div class="card shadow-sm mb-3">
       <div class="card-header">
-        <span id="icon" class="oi oi-cog mr-2 ml-n1" aria-hidden="true"></span>
+        <span id="icon" class="oi oi-info mr-2 ml-n1" aria-hidden="true"></span>
         System information
       </div>
       <div class="card-body">
@@ -111,6 +111,38 @@
         {{else}}
           <p class="text-center p-3">not configured</p>
         {{end}}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">
+        <span id="icon" class="oi oi-cog mr-2 ml-n1" aria-hidden="true"></span>
+        Configuration
+      </div>
+      <div class="card-body mb-n5">
+        <strong>Features</strong>
+        <table class="small table table-bordered table-striped table-fixed mt-3 mb-5">
+          <thead>
+            <tr>
+              <th width="40"></th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $name, $value := .featuresMap}}
+              <tr>
+                <td class="text-center">
+                  {{if $value}}
+                    <span class="oi oi-check" aria-hidden="true" data-toggle="tooltip" title="Enabled"></span>
+                  {{end}}
+                </td>
+                <td class="text-monospace user-select-all">
+                  {{$name}}
+                </td>
+              </tr>
+            {{end}}
+          </tbody>
+        </table>
       </div>
     </div>
   </main>

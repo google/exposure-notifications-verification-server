@@ -17,6 +17,7 @@ package admin
 import (
 	"net/http"
 
+	"github.com/fatih/structs"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/jinzhu/gorm"
@@ -50,6 +51,9 @@ func (c *Controller) HandleInfoShow() http.Handler {
 			secretsMap[secret.Type] = append(secretsMap[secret.Type], secret)
 		}
 		m["secrets"] = secretsMap
+
+		// Features
+		m["featuresMap"] = structs.Map(m["features"])
 
 		m.Title("Info - System Admin")
 		c.h.RenderHTML(w, "admin/info", m)
