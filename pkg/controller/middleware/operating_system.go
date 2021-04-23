@@ -25,9 +25,11 @@ import (
 
 func AddOperatingSystemFromUserAgent() mux.MiddlewareFunc {
 	userAgents := map[string]database.OSType{
-		"darwin": database.OSTypeIOS,
-		"iphone": database.OSTypeIOS,
-		"dalvik": database.OSTypeAndroid,
+		"darwin":                 database.OSTypeIOS,
+		"iphone":                 database.OSTypeIOS,
+		"alamofire":              database.OSTypeIOS,
+		"dalvik":                 database.OSTypeAndroid,
+		"androiddownloadmanager": database.OSTypeAndroid,
 	}
 
 	return func(next http.Handler) http.Handler {

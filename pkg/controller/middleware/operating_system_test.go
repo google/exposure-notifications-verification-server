@@ -46,13 +46,23 @@ func TestAddOperatingSystemFromUserAgent(t *testing.T) {
 		want      database.OSType
 	}{
 		{
-			name:      "android",
+			name:      "android_Dalvik",
 			userAgent: "Dalvik/2.1.0 (Linux; U; Android S Build/SP1A.210322.002)",
+			want:      database.OSTypeAndroid,
+		},
+		{
+			name:      "android_AndroidDownloadManager",
+			userAgent: "AndroidDownloadManager/S (Linux; U; Android S; Build/SP1A.210322.003.A3)",
 			want:      database.OSTypeAndroid,
 		},
 		{
 			name:      "iOS_enx",
 			userAgent: "bluetoothd (unknown version) CFNetwork/1237 Darwin/20.5.0",
+			want:      database.OSTypeIOS,
+		},
+		{
+			name:      "iOS_Alamofire",
+			userAgent: "XXXX US/1.1.0 (xx.xx.xx; build:30; iOS 14.3.0) Alamofire/5.2.1",
 			want:      database.OSTypeIOS,
 		},
 		{
