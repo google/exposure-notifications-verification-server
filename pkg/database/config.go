@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/secrets"
-	"github.com/sethvargo/go-envconfig"
 )
 
 // Config represents the env var based configuration for database connections.
@@ -62,39 +61,6 @@ type Config struct {
 	// for application-layer encryption before values are persisted to the
 	// database.
 	EncryptionKey string `env:"DB_ENCRYPTION_KEY,required" json:"-"`
-
-	// APIKeyDatabaseHMAC is the HMAC key to use for API keys before storing them
-	// in the database.
-	//
-	// TODO(sethvargo): remove in 0.28.0+
-	//
-	// Deprecated: Secrets management and rotation have moved into the database.
-	APIKeyDatabaseHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_DATABASE_KEY" json:"-"`
-
-	// APIKeySignatureHMAC is the HMAC key to sign API keys before returning them
-	// to the requestor.
-	//
-	// TODO(sethvargo): remove in 0.28.0+
-	//
-	// Deprecated: Secrets management and rotation have moved into the database.
-	APIKeySignatureHMAC []envconfig.Base64Bytes `env:"DB_APIKEY_SIGNATURE_KEY" json:"-"`
-
-	// VerificationCodeDatabaseHMAC is the HMAC key to hash codes before storing
-	// them in the database.
-	//
-	// TODO(sethvargo): remove in 0.28.0+
-	//
-	// Deprecated: Secrets management and rotation have moved into the database.
-	VerificationCodeDatabaseHMAC []envconfig.Base64Bytes `env:"DB_VERIFICATION_CODE_DATABASE_KEY" json:"-"`
-
-	// PhoneNumberHMAC is the HMAC key to hash phone numbers before storing
-	// in the database. This is only used of user initiated reporting is enabled
-	// at the system and at the realm level.
-	//
-	// TODO(sethvargo): remove in 0.28.0+
-	//
-	// Deprecated: Secrets management and rotation have moved into the database.
-	PhoneNumberHMAC []envconfig.Base64Bytes `env:"DB_PHONE_HMAC_KEY" json:"-"`
 
 	// Secrets is the secret configuration. This is used to resolve values that
 	// are actually pointers to secrets before returning them to the caller. The
@@ -149,18 +115,6 @@ func (c *Config) clone() *Config {
 			SecretExpansion: c.Secrets.SecretExpansion,
 		},
 	}
-
-	cfg.APIKeyDatabaseHMAC = make([]envconfig.Base64Bytes, len(c.APIKeyDatabaseHMAC))
-	copy(cfg.APIKeyDatabaseHMAC, c.APIKeyDatabaseHMAC)
-
-	cfg.APIKeySignatureHMAC = make([]envconfig.Base64Bytes, len(c.APIKeySignatureHMAC))
-	copy(cfg.APIKeySignatureHMAC, c.APIKeySignatureHMAC)
-
-	cfg.VerificationCodeDatabaseHMAC = make([]envconfig.Base64Bytes, len(c.VerificationCodeDatabaseHMAC))
-	copy(cfg.VerificationCodeDatabaseHMAC, c.VerificationCodeDatabaseHMAC)
-
-	cfg.PhoneNumberHMAC = make([]envconfig.Base64Bytes, len(c.PhoneNumberHMAC))
-	copy(cfg.PhoneNumberHMAC, c.PhoneNumberHMAC)
 
 	return cfg
 }

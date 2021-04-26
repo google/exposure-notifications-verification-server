@@ -48,10 +48,6 @@ type RedirectConfig struct {
 	SessionDuration    time.Duration `env:"SESSION_DURATION, default=1h"`
 	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
 
-	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
-	// They should be base64-encoded.
-	CookieKeys []envconfig.Base64Bytes `env:"COOKIE_KEYS"`
-
 	// Issue config is pulled in for the ENX_REDIRECT_DOMAIN
 	Issue IssueAPIVars
 

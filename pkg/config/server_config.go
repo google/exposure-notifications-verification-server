@@ -80,10 +80,6 @@ type ServerConfig struct {
 	// Password Config
 	PasswordRequirements PasswordRequirementsConfig
 
-	// CookieKeys is a slice of bytes. The first is 64 bytes, the second is 32.
-	// They should be base64-encoded.
-	CookieKeys []envconfig.Base64Bytes `env:"COOKIE_KEYS"`
-
 	// CookieDomain is the domain for which cookie should be valid.
 	CookieDomain string `env:"COOKIE_DOMAIN"`
 

@@ -116,7 +116,7 @@ func ENXRedirect(
 			HttpOnly: true,
 		}
 		sessions := cookiestore.New(func() ([][]byte, error) {
-			return db.GetCookieHashAndEncryptionKeys(cfg.CookieKeys)
+			return db.GetCookieHashAndEncryptionKeys()
 		}, sessionOpts)
 
 		// Limiter

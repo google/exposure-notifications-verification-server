@@ -15,11 +15,7 @@
 package rotation
 
 import (
-	"encoding/base64"
-	"fmt"
 	"net/http"
-	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -139,7 +135,7 @@ func TestRotateSecret(t *testing.T) {
 
 		// No secrets, so initial value should be created and active.
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 1*time.Nanosecond, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 1*time.Nanosecond, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -158,7 +154,7 @@ func TestRotateSecret(t *testing.T) {
 
 		// Rotating again where minTTL has not elapsed does nothing.
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 5*time.Second, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 5*time.Second, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -175,7 +171,7 @@ func TestRotateSecret(t *testing.T) {
 
 		// Rotate again where minTTL has elapsed generates a new secret.
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 1*time.Nanosecond, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 1*time.Nanosecond, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -198,7 +194,7 @@ func TestRotateSecret(t *testing.T) {
 
 		// Rotate again should do nothing.
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 10*time.Second, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 10*time.Second, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -222,7 +218,7 @@ func TestRotateSecret(t *testing.T) {
 		// Wait for activation delay, all secrets should be active.
 		time.Sleep(cfg.SecretActivationTTL + 100*time.Millisecond)
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -245,7 +241,7 @@ func TestRotateSecret(t *testing.T) {
 		// If the maxTTL has passed, secrets should be inactive.
 		{
 			// Use a no minTTL because we don't want to create a new version.
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 1*time.Nanosecond, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 1*time.Nanosecond); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -269,7 +265,7 @@ func TestRotateSecret(t *testing.T) {
 		// delay, it should be marked for deletion.
 		time.Sleep(cfg.SecretActivationTTL + 100*time.Millisecond)
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 1*time.Nanosecond, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 1*time.Nanosecond); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets()
@@ -289,7 +285,7 @@ func TestRotateSecret(t *testing.T) {
 		// After a secret has been deleted for more than the destroy TTL, purge it.
 		time.Sleep(cfg.SecretDestroyTTL + 100*time.Millisecond)
 		{
-			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 0, ""); err != nil {
+			if err := c.rotateSecret(ctx, typ, parent, numBytes, 0, 0); err != nil {
 				t.Fatal(err)
 			}
 			secrets, err := db.ListSecrets(database.Unscoped())
@@ -306,175 +302,4 @@ func TestRotateSecret(t *testing.T) {
 			}
 		}
 	})
-}
-
-func TestImportExistingSecretFromEnv(t *testing.T) {
-	t.Parallel()
-
-	ctx := project.TestContext(t)
-
-	h, err := render.New(ctx, nil, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cfg := &config.RotationConfig{
-		SecretsParent: "test/rotation",
-	}
-
-	secretManager, err := secrets.NewInMemory(ctx, &secrets.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	secretManagerTyp, ok := secretManager.(secrets.SecretVersionManager)
-	if !ok {
-		t.Fatal("secret manager cannot manage versions")
-	}
-	notBase64Ref, err := secretManagerTyp.CreateSecretVersion(ctx, "not-b64",
-		[]byte("%"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	singleValueRef, err := secretManagerTyp.CreateSecretVersion(ctx, "single-value",
-		[]byte(base64.StdEncoding.EncodeToString([]byte("hello"))))
-	if err != nil {
-		t.Fatal(err)
-	}
-	multiValueRef, err := secretManagerTyp.CreateSecretVersion(ctx, "multi-value",
-		[]byte(base64.StdEncoding.EncodeToString([]byte("hello"))+","+base64.StdEncoding.EncodeToString([]byte("world"))))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cookieEncryptionKeyValueRef, err := secretManagerTyp.CreateSecretVersion(ctx, "cookie-encryption-key",
-		[]byte(base64.StdEncoding.EncodeToString([]byte("thisisroughly32charactersright??"))))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cases := []struct {
-		name     string
-		envval   string
-		mutators []importMutatorFunc
-		exp      int
-		err      string
-	}{
-		{
-			name:   "empty",
-			envval: "",
-		},
-		{
-			name:   "missing_secret",
-			envval: "secret://foo",
-			err:    "failed to access initial secret",
-		},
-		{
-			name:   "secret_not_base64",
-			envval: fmt.Sprintf("secret://%s", notBase64Ref),
-			err:    "failed to decode initial secret",
-		},
-		{
-			name:   "single_value",
-			envval: fmt.Sprintf("secret://%s", singleValueRef),
-			exp:    1,
-		},
-		{
-			name:   "multi_value",
-			envval: fmt.Sprintf("secret://%s", multiValueRef),
-			exp:    2,
-		},
-		{
-			name:   "multi_env_value",
-			envval: fmt.Sprintf("secret://%s,secret://%s?target=file", singleValueRef, multiValueRef),
-			exp:    3,
-		},
-		{
-			// The cookie mutator should combine 2 values into 1.
-			name:     "cookie_mutator",
-			envval:   fmt.Sprintf("secret://%s,secret://%s", singleValueRef, cookieEncryptionKeyValueRef),
-			mutators: []importMutatorFunc{mutateCookieKeysSecrets()},
-			exp:      1,
-		},
-		{
-			name:     "cookie_mutator_odd",
-			envval:   fmt.Sprintf("secret://%s,secret://%s", singleValueRef, multiValueRef),
-			mutators: []importMutatorFunc{mutateCookieKeysSecrets()},
-			err:      "invalid number of cookie secret bytes (3)",
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			db, _ := testDatabaseInstance.NewDatabase(t, nil)
-			c := New(cfg, db, nil, secretManagerTyp, h)
-
-			typ := database.SecretTypeCookieKeys
-			result, err := c.importExistingSecretFromEnv(ctx, typ, tc.name, "env", tc.envval, tc.mutators...)
-			if err != nil {
-				if tc.err == "" {
-					t.Fatal(err)
-				}
-
-				if got, want := err.Error(), tc.err; !strings.Contains(got, want) {
-					t.Errorf("expected %q to contain %q", got, want)
-				}
-			} else {
-				if tc.err != "" {
-					t.Fatalf("expected error %q, got nothing", tc.err)
-				}
-			}
-
-			if got, want := len(result), tc.exp; got != want {
-				t.Errorf("expected %d secrets, got %d: %#v", want, got, result)
-			}
-		})
-	}
-}
-
-func TestMutateCookieKeysSecrets(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		name string
-		in   [][]byte
-		out  [][]byte
-		err  bool
-	}{
-		{
-			name: "empty",
-			in:   nil,
-			out:  [][]byte{},
-		},
-		{
-			name: "odd",
-			in:   [][]byte{[]byte("hi")},
-			err:  true,
-		},
-		{
-			name: "merges",
-			in:   [][]byte{[]byte("hello"), []byte("thisisroughly32charactersright??")},
-			out:  [][]byte{[]byte("thisisroughly32charactersright??hello")},
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := mutateCookieKeysSecrets()(tc.in)
-			if (err != nil) != tc.err {
-				t.Fatal(err)
-			}
-
-			if got, want := got, tc.out; !reflect.DeepEqual(got, want) {
-				t.Errorf("expected %#v to be %#v", got, want)
-			}
-		})
-	}
 }

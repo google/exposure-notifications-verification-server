@@ -30,9 +30,7 @@ locals {
     BACKUP_DATABASE_NAME         = google_sql_database.db.name
   }
 
-  session_config = {
-    COOKIE_KEYS = "secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
-  }
+  session_config = {}
 
   cache_config = {
     CACHE_TYPE           = "REDIS"
@@ -43,22 +41,18 @@ locals {
   }
 
   database_config = {
-    DB_KEY_MANAGER          = "GOOGLE_CLOUD_KMS"
-    DB_APIKEY_DATABASE_KEY  = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-    DB_APIKEY_SIGNATURE_KEY = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
-    DB_ENCRYPTION_KEY       = google_kms_crypto_key.database-encrypter.self_link
-    DB_KEYRING              = google_kms_key_ring.verification.self_link
+    DB_KEY_MANAGER    = "GOOGLE_CLOUD_KMS"
+    DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
+    DB_KEYRING        = google_kms_key_ring.verification.self_link
 
-    DB_HOST                           = google_sql_database_instance.db-inst.private_ip_address
-    DB_NAME                           = google_sql_database.db.name
-    DB_PASSWORD                       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
-    DB_SSLCERT                        = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
-    DB_SSLKEY                         = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
-    DB_SSLMODE                        = "verify-ca"
-    DB_SSLROOTCERT                    = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
-    DB_USER                           = google_sql_user.user.name
-    DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
-    DB_PHONE_HMAC_KEY                 = "secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
+    DB_HOST        = google_sql_database_instance.db-inst.private_ip_address
+    DB_NAME        = google_sql_database.db.name
+    DB_PASSWORD    = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+    DB_SSLCERT     = "secret://${google_secret_manager_secret_version.db-secret-version["sslcert"].id}?target=file"
+    DB_SSLKEY      = "secret://${google_secret_manager_secret_version.db-secret-version["sslkey"].id}?target=file"
+    DB_SSLMODE     = "verify-ca"
+    DB_SSLROOTCERT = "secret://${google_secret_manager_secret_version.db-secret-version["sslrootcert"].id}?target=file"
+    DB_USER        = google_sql_user.user.name
   }
 
   firebase_config = {
@@ -116,8 +110,4 @@ locals {
   server_config = {}
 
   observability_config = {}
-}
-
-output "cookie_keys" {
-  value = local.session_config["COOKIE_KEYS"]
 }

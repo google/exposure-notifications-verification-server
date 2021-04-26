@@ -18,12 +18,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"path"
-	"strings"
 	"time"
 
-	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -81,8 +78,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		parent := "db-apikey-db-hmac"
 		minTTL := c.config.APIKeyDatabaseHMACKeyMinAge
 		maxTTL := time.Duration(0)
-		env := "DB_APIKEY_DATABASE_KEY"
-		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate api key database hmac key: %w", err))
 			return
 		}
@@ -97,8 +93,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		parent := "db-apikey-sig-hmac"
 		minTTL := c.config.APIKeySignatureHMACKeyMinAge
 		maxTTL := time.Duration(0)
-		env := "DB_APIKEY_SIGNATURE_KEY"
-		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate api key signature hmac key: %w", err))
 			return
 		}
@@ -113,8 +108,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		parent := "cookie-keys"
 		minTTL := c.config.CookieKeyMinAge
 		maxTTL := c.config.CookieKeyMaxAge
-		env := "COOKIE_KEYS"
-		if err := c.rotateSecret(ctx, typ, parent, 32+64, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 32+64, minTTL, maxTTL); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate cookie key: %w", err))
 			return
 		}
@@ -129,8 +123,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		parent := "db-phone-number-hmac"
 		minTTL := c.config.PhoneNumberDatabaseHMACKeyMinAge
 		maxTTL := c.config.PhoneNumberDatabaseHMACKeyMaxAge
-		env := "DB_PHONE_HMAC_KEY"
-		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate phone number database hmac key: %w", err))
 			return
 		}
@@ -145,8 +138,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 		parent := "db-verification-code-hmac"
 		minTTL := c.config.VerificationCodeDatabaseHMACKeyMinAge
 		maxTTL := c.config.VerificationCodeDatabaseHMACKeyMaxAge
-		env := "DB_VERIFICATION_CODE_DATABASE_KEY"
-		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL, env); err != nil {
+		if err := c.rotateSecret(ctx, typ, parent, 128, minTTL, maxTTL); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("failed to rotate verification code database hmac key: %w", err))
 			return
 		}
@@ -157,7 +149,7 @@ func (c *Controller) RotateSecrets(ctx context.Context) error {
 
 // rotateAPIKeyHMAC rotates the key used to HMAC API keys stored in the
 // database.
-func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, parent string, numBytes int, minTTL, maxTTL time.Duration, env string) error {
+func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, parent string, numBytes int, minTTL, maxTTL time.Duration) error {
 	now := time.Now().UTC()
 
 	logger := logging.FromContext(ctx).Named("rotateSecret").
@@ -170,25 +162,6 @@ func (c *Controller) rotateSecret(ctx context.Context, typ database.SecretType, 
 	existing, err := c.db.ListSecretsForType(typ)
 	if err != nil {
 		return fmt.Errorf("failed to lookup existing secrets: %w", err)
-	}
-
-	// If the secret exist in the environment, import.
-	// TODO(sethvargo): remove after 0.28.0+
-	if val := strings.TrimSpace(os.Getenv(env)); len(existing) == 0 && val != "" {
-		logger.Debugw("no existing secrets, attempting import")
-
-		var mutators []importMutatorFunc
-
-		if typ == database.SecretTypeCookieKeys {
-			// Hack, but cookie keys are special
-			mutators = append(mutators, mutateCookieKeysSecrets())
-		}
-
-		created, err := c.importExistingSecretFromEnv(ctx, typ, parent, env, val, mutators...)
-		if err != nil {
-			return fmt.Errorf("failed to import secrets from environment: %w", err)
-		}
-		existing = append(existing, created...)
 	}
 
 	// Find the "newest" secret that has been created. Since ListSecretsForType
@@ -342,122 +315,4 @@ func (c *Controller) destroyUpstreamSecretVersion(ctx context.Context, name stri
 		return fmt.Errorf("failed to destroy upstream secret version: %w", err)
 	}
 	return nil
-}
-
-// importMutatorFunc mutates raw bytes resolved secrets.
-type importMutatorFunc func([][]byte) ([][]byte, error)
-
-// importExistingSecretFromEnv downloads and parses v1 secrets into v2 secrets.
-func (c *Controller) importExistingSecretFromEnv(ctx context.Context, typ database.SecretType, secretName, envvar, envval string, mutators ...importMutatorFunc) ([]*database.Secret, error) {
-	logger := logging.FromContext(ctx).Named("importExistingSecretFromEnv").
-		With("type", typ).
-		With("env", envvar).
-		With("secretName", secretName)
-
-	now := time.Now().UTC()
-
-	// allSecretsBytes is the ordered list of all secrets in bytes format.
-	allSecretsBytes := make([][]byte, 0, 4)
-
-	// Iterate over each secret in the envvar, separated by commas. This collects
-	// the raw secret values as bytes.
-	parts := strings.Split(envval, ",")
-	for _, part := range parts {
-		// These should be in the form secret://...?target=file. Transform them
-		// back into their normal form.
-		ref := strings.TrimSpace(part)
-		if !strings.HasPrefix(ref, "secret://") {
-			continue
-		}
-		ref = strings.TrimPrefix(ref, "secret://")
-		ref = strings.TrimSuffix(ref, "?target=file")
-
-		logger.Infow("importing secret value", "ref", ref)
-
-		// Get the initial secret value.
-		val, err := c.secretManager.GetSecretValue(ctx, ref)
-		if err != nil {
-			return nil, fmt.Errorf("failed to access initial secret %s: %w", ref, err)
-		}
-
-		// v1 secrets are base64-encoded separated by commas.
-		insideParts := strings.Split(val, ",")
-		for i, insidePart := range insideParts {
-			dec, err := base64util.DecodeString(insidePart)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode initial secret %s at %d: %w", ref, i, err)
-			}
-			allSecretsBytes = append(allSecretsBytes, dec)
-		}
-	}
-
-	// Apply any mutations.
-	for _, fn := range mutators {
-		var err error
-		allSecretsBytes, err = fn(allSecretsBytes)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Now that we have all bytes, iterate and create the secrets.
-	orderedRefs := make([]string, 0, len(allSecretsBytes))
-	for _, b := range allSecretsBytes {
-		parent := path.Join(c.config.SecretsParent, secretName)
-		version, err := c.secretManager.CreateSecretVersion(ctx, parent, b)
-		if err != nil {
-			return nil, fmt.Errorf("failed to add secret version to %s: %w", parent, err)
-		}
-		orderedRefs = append(orderedRefs, version)
-	}
-
-	// Now that all secrets are created upstream, create the database records.
-	created := make([]*database.Secret, 0, len(orderedRefs))
-	for i, ref := range orderedRefs {
-		logger.Infow("create secret reference in database", "ref", ref)
-
-		secret := &database.Secret{
-			Type:      typ,
-			Reference: ref,
-			Active:    true,
-
-			CreatedAt: now.Add(time.Duration(-i) * time.Hour),
-			UpdatedAt: now.Add(time.Duration(-i) * time.Hour),
-		}
-		if err := c.db.SaveSecret(secret, RotationActor); err != nil {
-			return nil, fmt.Errorf("failed to save secret ref %s in database: %w", ref, err)
-		}
-		created = append(created, secret)
-	}
-
-	return created, nil
-}
-
-// mutateCookieKeysSecrets handles the special case of importing cookie keys.
-func mutateCookieKeysSecrets() importMutatorFunc {
-	return func(in [][]byte) ([][]byte, error) {
-		// Sanity check even number of elements.
-		if l := len(in); l%2 != 0 {
-			return nil, fmt.Errorf("failed to mutate cookie keys: invalid number of cookie secret bytes (%d), expected even", l)
-		}
-
-		// Cookie keys are currently stored as separate secrets, but v2 cookie keys
-		// are stored in the same secret. This concatenates each encryption key with
-		// its HMAC key to be stored in the same secret moving forward.
-		out := make([][]byte, 0, len(in)/2)
-		for i := 0; i < len(in); i += 2 {
-			encryptionKey := in[i+1]
-			if l := len(encryptionKey); l != 32 {
-				return nil, fmt.Errorf("failed to mutate cookie keys: invalid encryption key length in import (got %d)", l)
-			}
-
-			hashKey := in[i]
-
-			b := make([]byte, 0, len(in[i])+len(in[i+1]))
-			b = append(b, encryptionKey...)
-			b = append(b, hashKey...)
-			out = append(out, b)
-		}
-		return out, nil
-	}
 }
