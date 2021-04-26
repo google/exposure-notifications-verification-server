@@ -34,9 +34,7 @@ type FeatureConfig struct {
 
 	// EnableAPIKeyLastUsedAt controls whether the UI will show the last_used_at
 	// value for an API key.
-	//
-	// TODO(sethvargo): Move to true in 0.28.0+.
-	EnableAPIKeyLastUsedAt bool `env:"ENABLE_API_KEY_LAST_USED_AT, default=false"`
+	EnableAPIKeyLastUsedAt bool `env:"ENABLE_API_KEY_LAST_USED_AT, default=true"`
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known
