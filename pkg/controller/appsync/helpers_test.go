@@ -65,8 +65,6 @@ func Test_syncApps(t *testing.T) {
 						PackageName:            "testAppID-butDifferent",
 						SHA256CertFingerprints: "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
-					AgencyColor: agencyColor,
-					AgencyImage: agencyImage,
 				}, {
 					Region: "US-WA",
 					IsEnx:  true,
@@ -75,6 +73,8 @@ func Test_syncApps(t *testing.T) {
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
+					AgencyColor: agencyColor,
+					AgencyImage: agencyImage,
 				},
 			},
 		}

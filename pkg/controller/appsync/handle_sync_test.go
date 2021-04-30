@@ -132,8 +132,6 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 						PackageName:            "testAppID-butDifferent",
 						SHA256CertFingerprints: "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
-					AgencyColor: "#AABBCC",
-					AgencyImage: "https://example.com/logo.png",
 				}, {
 					Region: "US-WA",
 					IsEnx:  true,
@@ -142,6 +140,8 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
+					AgencyColor: "#AABBCC",
+					AgencyImage: "https://example.com/logo.png",
 				},
 			},
 		}
