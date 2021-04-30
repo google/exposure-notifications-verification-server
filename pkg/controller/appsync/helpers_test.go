@@ -103,6 +103,5 @@ func Test_syncApps(t *testing.T) {
 		if gotRealm.AgencyImage != agencyImage {
 			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyImage, agencyImage)
 		}
-
 	})
 }
