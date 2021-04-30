@@ -43,8 +43,13 @@ func TestENXRedirect(t *testing.T) {
 	realm := bs.Realm
 	realm.EnableENExpress = true
 	template := "[enslink]"
+	urTemplate := "[code]"
 	realm.SMSTextTemplate = template
 	for k := range realm.SMSTextAlternateTemplates {
+		if k == database.UserReportTemplateLabel {
+			realm.SMSTextAlternateTemplates[k] = &urTemplate
+			continue
+		}
 		realm.SMSTextAlternateTemplates[k] = &template
 	}
 

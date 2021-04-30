@@ -10,6 +10,12 @@
 
 <body class="tab-content">
   <main role="main" class="container">
+    {{if $currentRealm.AgencyImage}}
+    <div id="logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
+      <img src="{{$currentRealm.AgencyImage}}" style="width: 80vw; max-width: 720px;" />
+    </div>
+    {{end}}
+
     <h1>Request Exposure Notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
 
     <form method="POST" action="/report/issue" class="floating-form">
@@ -53,7 +59,9 @@
                  <label for="agreement" class="form-check-label">
                    I agree that I have received a positive test result for COVID-19, that the phone
                    number provided belongs to me, and that I would like to receive a verification code
-                   for Exposure Notifications to share my information anonymously with others. 
+                   for Exposure Notifications to share my information anonymously with others. I understand
+                   that my phone number may be saved temporarily for anti-abuse purposes and this phone number
+                   will not be shared or used in any other way.
                  </label>              
               </div>
             </div>

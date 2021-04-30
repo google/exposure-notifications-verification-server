@@ -163,6 +163,12 @@
           For the <strong>User Report</strong> template it is strongly recommended that you
           indicate that the user should not use the code if they did not request it.
         </div>
+
+        <div class="alert alert-info" role="alert">
+          The <strong>User Report</strong> template must have the <code>[code]</code>
+          expansion (short code) for auto fill in the operating system / application.
+          Other fields can be included.
+        </div>
       {{end}}
       {{if or (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
       <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>

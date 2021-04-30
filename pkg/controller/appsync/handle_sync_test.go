@@ -140,6 +140,8 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
+					AgencyColor: "#AABBCC",
+					AgencyImage: "https://example.com/logo.png",
 				},
 			},
 		}

@@ -2288,6 +2288,22 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS enx_code_expiration_configurable`)
 			},
 		},
+		{
+			ID: "00105-AddAgencyData",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS agency_background_color TEXT,
+						ADD COLUMN IF NOT EXISTS agency_image TEXT`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS agency_background_color,
+						DROP COLUMN IF EXISTS agency_image`)
+			},
+		},
 	}
 }
 

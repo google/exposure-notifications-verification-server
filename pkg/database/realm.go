@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -104,9 +105,11 @@ func (r AuthRequirement) String() string {
 var (
 	ErrNoSigningKeyManagement = errors.New("no signing key management")
 	ErrBadDateRange           = errors.New("bad date range")
-)
 
-var ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
+	ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
+
+	colorRegex = regexp.MustCompile(`\A#[0-9a-f]{6}\z`)
+)
 
 const (
 	DefaultShortCodeLength            = 8
@@ -129,8 +132,8 @@ const (
 	DefaultTemplateLabel     = "Default SMS template"
 	DefaultSMSTextTemplate   = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
 	UserReportTemplateLabel  = "User Report"
-	UserReportDefaultText    = "Your requested Exposure Notifications code: [longcode] expires in [expires] minutes. If you did not request this code, please ignore this message."
-	UserReportDefaultENXText = "Your requested Exposure Notifications link: [enslink] expires in [expires] minutes. If you did not request this code, please ignore this message."
+	UserReportDefaultText    = "Your requested Exposure Notifications code: [code] expires in [expires] minutes. If you did not request this code, please ignore this message."
+	UserReportDefaultENXText = "Your requested Exposure Notifications code: [code] expires in [expires] minutes. If you did not request this code, please ignore this message. Click to redeem: [enslink]"
 
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
@@ -164,6 +167,13 @@ type Realm struct {
 	// markdown. Do not modify WelcomeMessagePtr directly.
 	WelcomeMessage    string  `gorm:"-"`
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
+
+	// AgencyBackgroundColor and AgencyImage are synced from the Google
+	// ENX-Express sync source
+	AgencyBackgroundColor    string  `gorm:"-"`
+	AgencyBackgroundColorPtr *string `gorm:"column:agency_background_color; type:text;"`
+	AgencyImage              string  `gorm:"-"`
+	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
 
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
@@ -354,6 +364,8 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
 	r.SMSCountry = stringValue(r.SMSCountryPtr)
 	r.SMSFromNumberID = uintValue(r.SMSFromNumberIDPtr)
+	r.AgencyBackgroundColor = stringValue(r.AgencyBackgroundColorPtr)
+	r.AgencyImage = stringValue(r.AgencyImagePtr)
 
 	return nil
 }
@@ -373,6 +385,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 	r.WelcomeMessage = project.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
+
+	if c := r.AgencyBackgroundColor; c != "" && !colorRegex.MatchString(c) {
+		r.AddError("agencyBackgroundColor", "is not a valid hex color string")
+	}
+	r.AgencyBackgroundColorPtr = stringPtr(r.AgencyBackgroundColor)
+	r.AgencyImagePtr = stringPtr(r.AgencyImage)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
@@ -500,24 +518,32 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(label, t string) {
-	if !r.EnableENExpress {
-		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
-			r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+	if label == UserReportTemplateLabel {
+		// For self report - the short code must be included. Including the long code or EN Express link is OK, but is optional.
+		if !strings.Contains(t, SMSCode) {
+			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSCode))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSCode))
 		}
 	} else {
-		if !strings.Contains(t, SMSENExpressLink) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(t, SMSRegion) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(t, SMSLongCode) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+		if !r.EnableENExpress {
+			// Check that we have exactly one of [code] or [longcode] as template substitutions.
+			if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+				r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+			}
+		} else {
+			if !strings.Contains(t, SMSENExpressLink) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
+			if strings.Contains(t, SMSRegion) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
+			if strings.Contains(t, SMSLongCode) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
 		}
 	}
 

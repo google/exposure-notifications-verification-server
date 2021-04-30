@@ -32,7 +32,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		realm := controller.RealmFromContext(ctx)
-		if !(realm.AllowsUserReport() && realm.AllowAdminUserReport) {
+		if !realm.AllowsUserReport() {
 			controller.NotFound(w, r, c.h)
 			return
 		}

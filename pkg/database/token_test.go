@@ -146,7 +146,7 @@ func TestIssueToken(t *testing.T) {
 	}
 	realm.AddUserReportToAllowedTestTypes()
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
-		t.Fatalf("unable to enable user-report on test realm: %v", err)
+		t.Fatalf("unable to enable user-report on test realm: %v errors: %+v", err, realm.ErrorMessages())
 	}
 
 	authApp := &AuthorizedApp{
