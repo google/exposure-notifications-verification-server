@@ -57,7 +57,7 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 		ctx = controller.WithRealm(ctx, realm)
 
-		if !(realm.AllowsUserReport() && realm.AllowAdminUserReport) {
+		if !realm.AllowsUserReport() {
 			controller.NotFound(w, r, c.h)
 			return
 		}

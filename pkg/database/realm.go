@@ -129,8 +129,8 @@ const (
 	DefaultTemplateLabel     = "Default SMS template"
 	DefaultSMSTextTemplate   = "This is your Exposure Notifications Verification code: [longcode] Expires in [longexpires] hours"
 	UserReportTemplateLabel  = "User Report"
-	UserReportDefaultText    = "Your requested Exposure Notifications code: [longcode] expires in [expires] minutes. If you did not request this code, please ignore this message."
-	UserReportDefaultENXText = "Your requested Exposure Notifications link: [enslink] expires in [expires] minutes. If you did not request this code, please ignore this message."
+	UserReportDefaultText    = "Your requested Exposure Notifications code: [code] expires in [expires] minutes. If you did not request this code, please ignore this message."
+	UserReportDefaultENXText = "Your requested Exposure Notifications code: [code] expires in [expires] minutes. If you did not request this code, please ignore this message. Click to redeem: [enslink]"
 
 	EmailInviteLink        = "[invitelink]"
 	EmailPasswordResetLink = "[passwordresetlink]"
@@ -164,6 +164,11 @@ type Realm struct {
 	// markdown. Do not modify WelcomeMessagePtr directly.
 	WelcomeMessage    string  `gorm:"-"`
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
+
+	// AgencyBackgroundColor and AgencyImage are synced from the Google
+	// ENX-Express sync source
+	AgencyBackgroundColor string `gorm:"column:agency_background_color; type:text; not null; default: '#ffffff'"`
+	AgencyImage           string `gorm:"column:agency_image; type:text;  not null; default: ''"`
 
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
@@ -449,7 +454,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 			if l == DefaultTemplateLabel {
 				r.AddError("smsTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				r.AddError(l, fmt.Sprintf("label %s reserved for the default template", l))
-				continue
 			}
 			r.validateSMSTemplate(l, *t)
 		}
@@ -500,24 +504,33 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(label, t string) {
-	if !r.EnableENExpress {
-		// Check that we have exactly one of [code] or [longcode] as template substitutions.
-		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
-			r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+
+	if label == UserReportTemplateLabel {
+		// For self report - the short code must be included. Including the long code or EN Express link is OK, but is optional.
+		if !strings.Contains(t, SMSCode) {
+			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSCode))
+			r.AddError(label, fmt.Sprintf("must contain %q", SMSCode))
 		}
 	} else {
-		if !strings.Contains(t, SMSENExpressLink) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(t, SMSRegion) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
-		}
-		if strings.Contains(t, SMSLongCode) {
-			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
-			r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+		if !r.EnableENExpress {
+			// Check that we have exactly one of [code] or [longcode] as template substitutions.
+			if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+				r.AddError(label, fmt.Sprintf("must contain exactly one of %q or %q", SMSCode, SMSLongCode))
+			}
+		} else {
+			if !strings.Contains(t, SMSENExpressLink) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("must contain %q", SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
+			if strings.Contains(t, SMSRegion) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - this is automatically included in %q", SMSRegion, SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
+			if strings.Contains(t, SMSLongCode) {
+				r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - the long code is automatically included in %q", SMSLongCode, SMSENExpressLink))
+				r.AddError(label, fmt.Sprintf("must contain %q", SMSENExpressLink))
+			}
 		}
 	}
 

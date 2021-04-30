@@ -52,6 +52,9 @@ func Test_syncApps(t *testing.T) {
 			t.Fatalf("error saving realm: %v", err)
 		}
 
+		agencyColor := "#000000"
+		agencyImage := "https://example.com/logo.png"
+
 		resp := &clients.AppsResponse{
 			Apps: []clients.App{
 				{
@@ -62,6 +65,8 @@ func Test_syncApps(t *testing.T) {
 						PackageName:            "testAppID-butDifferent",
 						SHA256CertFingerprints: "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
+					AgencyColor: agencyColor,
+					AgencyImage: agencyImage,
 				}, {
 					Region: "US-WA",
 					IsEnx:  true,
@@ -87,5 +92,17 @@ func Test_syncApps(t *testing.T) {
 		if got, want := len(apps), 2; got != want {
 			t.Errorf("got %d apps, expected %d", got, want)
 		}
+
+		gotRealm, err := db.FindRealmByRegion(realm.RegionCode)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if gotRealm.AgencyBackgroundColor != agencyColor {
+			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyBackgroundColor, agencyColor)
+		}
+		if gotRealm.AgencyImage != agencyImage {
+			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyImage, agencyImage)
+		}
+
 	})
 }

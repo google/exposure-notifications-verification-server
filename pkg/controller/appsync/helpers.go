@@ -38,6 +38,11 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 	realms := map[string]*database.Realm{}
 	appsByRealm := map[uint][]*database.MobileApp{}
 
+	// agencyUpdatedAlready is used to ensure that if a realm has multiple apps synced we only update
+	// this to a non-empty value once and that we don't let a later element in the list without agency
+	// images clear something saved earlier.
+	agencyUpdatedAlready := make(map[string]struct{})
+
 	for _, app := range apps.Apps {
 		realm, err := c.findRealmForApp(app, realms)
 		if err != nil {
@@ -49,6 +54,20 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 				merr = multierror.Append(merr, fmt.Errorf("unable to lookup realm for region %q: %w", app.Region, err))
 			}
 			continue
+		}
+
+		if _, found := agencyUpdatedAlready[realm.RegionCode]; !found {
+			// Sync the realm level items.
+			realm.AgencyBackgroundColor = app.AgencyColor
+			realm.AgencyImage = app.AgencyImage
+			if err := c.db.SaveRealm(realm, database.System); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("unable to update agency information: %w", err))
+				continue
+			}
+
+			if app.AgencyImage != "" {
+				agencyUpdatedAlready[realm.RegionCode] = struct{}{}
+			}
 		}
 
 		realmApps, err := c.findAppsForRealm(realm.ID, appsByRealm)

@@ -89,14 +89,6 @@
     {{if .features.EnableUserReport}}
     <label>User report</label>
 
-    {{if and $realm.AllowsUserReport (not $realm.UseAuthenticatedSMS)}}
-    <div class="alert alert-warning" role="alert">
-      This realm has user report enabled, but authenticated SMS disabled. It is recommended
-      to enable authenticated SMS as an extra security measure when using
-      user report. Contact Apple and Google if you have questions about this feature.
-    </div>
-    {{end}}
-
     <div class="form-check mb-3">
       <input type="checkbox" name="allow_user_report" id="allow-user-report" class="form-check-input" value="true" {{checkedIf ($realm.AllowsUserReport)}} />
       <label for="allow-user-report" class="form-check-label">
