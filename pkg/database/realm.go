@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -104,9 +105,11 @@ func (r AuthRequirement) String() string {
 var (
 	ErrNoSigningKeyManagement = errors.New("no signing key management")
 	ErrBadDateRange           = errors.New("bad date range")
-)
 
-var ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
+	ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
+
+	colorRegex = regexp.MustCompile(`\A#[0-9a-f]{6}\z`)
+)
 
 const (
 	DefaultShortCodeLength            = 8
@@ -167,8 +170,10 @@ type Realm struct {
 
 	// AgencyBackgroundColor and AgencyImage are synced from the Google
 	// ENX-Express sync source
-	AgencyBackgroundColor string `gorm:"column:agency_background_color; type:text; not null; default: '#ffffff'"`
-	AgencyImage           string `gorm:"column:agency_image; type:text;  not null; default: ''"`
+	AgencyBackgroundColor    string  `gorm:"-"`
+	AgencyBackgroundColorPtr *string `gorm:"column:agency_background_color; type:text;"`
+	AgencyImage              string  `gorm:"-"`
+	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
 
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
@@ -359,6 +364,8 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.WelcomeMessage = stringValue(r.WelcomeMessagePtr)
 	r.SMSCountry = stringValue(r.SMSCountryPtr)
 	r.SMSFromNumberID = uintValue(r.SMSFromNumberIDPtr)
+	r.AgencyBackgroundColor = stringValue(r.AgencyBackgroundColorPtr)
+	r.AgencyImage = stringValue(r.AgencyImagePtr)
 
 	return nil
 }
@@ -378,6 +385,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 	r.WelcomeMessage = project.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
+
+	if c := r.AgencyBackgroundColor; c != "" && !colorRegex.MatchString(c) {
+		r.AddError("agencyBackgroundColor", "is not a valid hex color string")
+	}
+	r.AgencyBackgroundColorPtr = stringPtr(r.AgencyBackgroundColor)
+	r.AgencyImagePtr = stringPtr(r.AgencyImage)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
@@ -454,6 +467,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 			if l == DefaultTemplateLabel {
 				r.AddError("smsTextTemplate", fmt.Sprintf("no label for template %s", *t))
 				r.AddError(l, fmt.Sprintf("label %s reserved for the default template", l))
+				continue
 			}
 			r.validateSMSTemplate(l, *t)
 		}

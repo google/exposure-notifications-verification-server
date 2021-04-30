@@ -168,6 +168,14 @@ func TestRealm_BeforeSave(t *testing.T) {
 			Error: "regionCode cannot be blank when using EN Express",
 		},
 		{
+			Name: "bad_color",
+			Input: &Realm{
+				RegionCode:            "USA",
+				AgencyBackgroundColor: "green",
+			},
+			Error: "agencyBackgroundColor is not a valid hex color string",
+		},
+		{
 			Name: "system_sms_forbidden",
 			Input: &Realm{
 				UseSystemSMSConfig:    true,

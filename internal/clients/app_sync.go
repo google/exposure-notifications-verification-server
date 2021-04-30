@@ -60,8 +60,8 @@ type App struct {
 	Region        string `json:"region"`
 	IsEnx         bool   `json:"is_enx,omitempty"`
 	AndroidTarget `json:"android_target"`
-	AgencyColor   string `json:"agencyColor"`
-	AgencyImage   string `json:"agencyImage"`
+	AgencyColor   string `json:"agency_color"`
+	AgencyImage   string `json:"agency_image"`
 }
 
 // AndroidTarget holds the android metadata for an App of AppResponse.

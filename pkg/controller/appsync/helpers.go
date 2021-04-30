@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
@@ -58,7 +59,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 		if _, found := agencyUpdatedAlready[realm.RegionCode]; !found {
 			// Sync the realm level items.
-			realm.AgencyBackgroundColor = app.AgencyColor
+			realm.AgencyBackgroundColor = strings.ToLower(app.AgencyColor)
 			realm.AgencyImage = app.AgencyImage
 			if err := c.db.SaveRealm(realm, database.System); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("unable to update agency information: %w", err))

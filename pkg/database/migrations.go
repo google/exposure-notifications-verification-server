@@ -2293,11 +2293,8 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realms
-						ADD COLUMN IF NOT EXISTS agency_background_color TEXT DEFAULT '#ffffff',
-						ADD COLUMN IF NOT EXISTS agency_image TEXT DEFAULT ''`,
-					`ALTER TABLE realms
-						ALTER COLUMN agency_background_color SET NOT NULL,
-						ALTER COLUMN agency_image SET NOT NULL`,
+						ADD COLUMN IF NOT EXISTS agency_background_color TEXT,
+						ADD COLUMN IF NOT EXISTS agency_image TEXT`,
 				)
 			},
 			Rollback: func(tx *gorm.DB) error {
