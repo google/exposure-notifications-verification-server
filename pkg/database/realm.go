@@ -504,7 +504,6 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
 func (r *Realm) validateSMSTemplate(label, t string) {
-
 	if label == UserReportTemplateLabel {
 		// For self report - the short code must be included. Including the long code or EN Express link is OK, but is optional.
 		if !strings.Contains(t, SMSCode) {
