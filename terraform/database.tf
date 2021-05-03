@@ -187,13 +187,6 @@ resource "google_secret_manager_secret_version" "db-secret-version" {
   secret_data = each.value
 }
 
-# Create secret for the database HMAC for API keys
-# TODO(sethvargo): remove in v0.28.0+
-resource "random_id" "db-apikey-db-hmac" {
-  count       = var.db_apikey_db_hmac_count
-  byte_length = 128
-}
-
 resource "google_secret_manager_secret" "db-apikey-db-hmac" {
   secret_id = "db-apikey-db-hmac"
 
@@ -204,19 +197,6 @@ resource "google_secret_manager_secret" "db-apikey-db-hmac" {
   depends_on = [
     google_project_service.services["secretmanager.googleapis.com"],
   ]
-}
-
-# TODO(sethvargo): remove in v0.28.0+
-resource "google_secret_manager_secret_version" "db-apikey-db-hmac" {
-  secret      = google_secret_manager_secret.db-apikey-db-hmac.id
-  secret_data = join(",", reverse(random_id.db-apikey-db-hmac.*.b64_std))
-}
-
-# Create secret for signature HMAC for api keys
-# TODO(sethvargo): remove in v0.28.0+
-resource "random_id" "db-apikey-sig-hmac" {
-  count       = var.db_apikey_sig_hmac_count
-  byte_length = 128
 }
 
 resource "google_secret_manager_secret" "db-apikey-sig-hmac" {
@@ -231,19 +211,6 @@ resource "google_secret_manager_secret" "db-apikey-sig-hmac" {
   ]
 }
 
-# TODO(sethvargo): remove in v0.28.0+
-resource "google_secret_manager_secret_version" "db-apikey-sig-hmac" {
-  secret      = google_secret_manager_secret.db-apikey-sig-hmac.id
-  secret_data = join(",", reverse(random_id.db-apikey-sig-hmac.*.b64_std))
-}
-
-# Create secret for the database HMAC for verification codes
-# TODO(sethvargo): remove in v0.28.0+
-resource "random_id" "db-verification-code-hmac" {
-  count       = var.db_verification_code_hmac_count
-  byte_length = 128
-}
-
 resource "google_secret_manager_secret" "db-verification-code-hmac" {
   secret_id = "db-verification-code-hmac"
 
@@ -254,19 +221,6 @@ resource "google_secret_manager_secret" "db-verification-code-hmac" {
   depends_on = [
     google_project_service.services["secretmanager.googleapis.com"],
   ]
-}
-
-# TODO(sethvargo): remove in v0.28.0+
-resource "google_secret_manager_secret_version" "db-verification-code-hmac" {
-  secret      = google_secret_manager_secret.db-verification-code-hmac.id
-  secret_data = join(",", reverse(random_id.db-verification-code-hmac.*.b64_std))
-}
-
-# Create secret for the database HMAC for phone numbers
-# TODO(sethvargo): remove in v0.28.0+
-resource "random_id" "db-phone-number-hmac" {
-  count       = var.db_phone_number_hmac_count
-  byte_length = 128
 }
 
 resource "google_secret_manager_secret" "db-phone-number-hmac" {
@@ -280,13 +234,6 @@ resource "google_secret_manager_secret" "db-phone-number-hmac" {
     google_project_service.services["secretmanager.googleapis.com"],
   ]
 }
-
-# TODO(sethvargo): remove in v0.28.0+
-resource "google_secret_manager_secret_version" "db-phone-number-hmac" {
-  secret      = google_secret_manager_secret.db-phone-number-hmac.id
-  secret_data = join(",", reverse(random_id.db-phone-number-hmac.*.b64_std))
-}
-
 
 # Grant Cloud Build the ability to access the database secrets (required to run
 # migrations).
@@ -369,18 +316,14 @@ resource "null_resource" "migrate" {
       PROJECT_ID = var.project
       REGION     = var.region
 
-      DB_APIKEY_DATABASE_KEY            = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-      DB_APIKEY_SIGNATURE_KEY           = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
-      DB_CONN                           = google_sql_database_instance.db-inst.connection_name
-      DB_DEBUG                          = true
-      DB_ENCRYPTION_KEY                 = google_kms_crypto_key.database-encrypter.self_link
-      DB_NAME                           = google_sql_database.db.name
-      DB_PASSWORD                       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
-      DB_USER                           = google_sql_user.user.name
-      DB_VERIFICATION_CODE_DATABASE_KEY = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
-      DB_PHONE_HMAC_KEY                 = "secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
-      LOG_LEVEL                         = "debug"
-      TAG                               = "initial"
+      DB_CONN           = google_sql_database_instance.db-inst.connection_name
+      DB_DEBUG          = true
+      DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
+      DB_NAME           = google_sql_database.db.name
+      DB_PASSWORD       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
+      DB_USER           = google_sql_user.user.name
+      LOG_LEVEL         = "debug"
+      TAG               = "initial"
     }
 
     command = "${path.module}/../scripts/migrate"
@@ -388,7 +331,6 @@ resource "null_resource" "migrate" {
 
   depends_on = [
     google_sql_database.db,
-    google_secret_manager_secret_version.db-apikey-sig-hmac,
     google_project_service.services["cloudbuild.googleapis.com"],
     google_secret_manager_secret_iam_member.cloudbuild-db-pwd,
     google_project_iam_member.cloudbuild-sql,
@@ -456,7 +398,7 @@ output "db_password" {
 }
 
 output "migrate_command" {
-  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.self_link}\" DB_APIKEY_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}\" DB_APIKEY_SIGNATURE_KEY=\"secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}\" DB_VERIFICATION_CODE_DATABASE_KEY=\"secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}\" DB_PHONE_HMAC_KEY=\"secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_LEVEL=\"debug\" ./scripts/migrate"
+  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.self_link}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_LEVEL=\"debug\" ./scripts/migrate"
 }
 
 output "proxy_command" {
@@ -473,22 +415,6 @@ output "psql_env" {
 
 output "db_encryption_key_secret" {
   value = google_kms_crypto_key.database-encrypter.self_link
-}
-
-output "db_apikey_database_key_secret" {
-  value = "secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-}
-
-output "db_apikey_signature_key_secret" {
-  value = "secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
-}
-
-output "db_verification_code_key_secret" {
-  value = "secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
-}
-
-output "db_phone_number_key_secret" {
-  value = "secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
 }
 
 output "db_backup_command" {

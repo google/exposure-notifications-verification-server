@@ -173,11 +173,7 @@ resource "local_file" "env" {
 export PROJECT_ID="${var.project}"
 export REGION="${var.region}"
 
-export COOKIE_KEYS="secret://${google_secret_manager_secret_version.cookie-hmac-key-version.id},secret://${google_secret_manager_secret_version.cookie-encryption-key-version.id}"
-
 # Note: these configurations assume you're using the Cloud SQL proxy!
-export DB_APIKEY_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-apikey-db-hmac.id}"
-export DB_APIKEY_SIGNATURE_KEY="secret://${google_secret_manager_secret_version.db-apikey-sig-hmac.id}"
 export DB_CONN="${google_sql_database_instance.db-inst.connection_name}"
 export DB_DEBUG="true"
 export DB_ENCRYPTION_KEY="${google_kms_crypto_key.database-encrypter.self_link}"
@@ -187,8 +183,6 @@ export DB_PASSWORD="secret://${google_secret_manager_secret_version.db-secret-ve
 export DB_PORT="5432"
 export DB_SSLMODE="disable"
 export DB_USER="${google_sql_user.user.name}"
-export DB_VERIFICATION_CODE_DATABASE_KEY="secret://${google_secret_manager_secret_version.db-verification-code-hmac.id}"
-export DB_PHONE_HMAC_KEY="secret://${google_secret_manager_secret_version.db-phone-number-hmac.id}"
 
 export FIREBASE_API_KEY="${data.google_firebase_web_app_config.default.api_key}"
 export FIREBASE_APP_ID="${google_firebase_web_app.default.app_id}"

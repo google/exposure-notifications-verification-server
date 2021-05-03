@@ -113,7 +113,7 @@ func (r *TestServerResponse) SessionCookie(session *sessions.Session) (*http.Coo
 	session.Options.Domain = r.Server.Addr()
 	session.Options.Path = "/"
 
-	cookieKeys, err := r.Database.GetCookieHashAndEncryptionKeys(nil)
+	cookieKeys, err := r.Database.GetCookieHashAndEncryptionKeys()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cookie keys: %w", err)
 	}

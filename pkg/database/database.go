@@ -40,7 +40,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/jinzhu/gorm"
-	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-retry"
 	"go.opencensus.io/stats"
 	"go.uber.org/zap"
@@ -109,36 +108,13 @@ func (db *Database) KeyManager() keys.KeyManager {
 // GetCookieHashAndEncryptionKeys gets the cookie hash and encryption keys. The
 // first 32 bytes are the encryption key and the remaining bytes are the HMAC
 // key.
-func (db *Database) GetCookieHashAndEncryptionKeys(fallback []envconfig.Base64Bytes) ([][]byte, error) {
+func (db *Database) GetCookieHashAndEncryptionKeys() ([][]byte, error) {
 	ctx, done := context.WithTimeout(context.Background(), 5*time.Second)
 	defer done()
 
 	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeCookieKeys)
 	if err != nil {
 		return nil, err
-	}
-
-	// TODO(sethvargo): remove in 0.28.0+
-	if len(results) == 0 {
-		existing := envconfigBytesToBytes(fallback)
-		if l := len(existing); l%2 != 0 {
-			return nil, fmt.Errorf("fallback bytes are not even (got %d)", l)
-		}
-
-		// In v1 cookies, the HMAC key is first, then the encryption key.
-		final := make([][]byte, len(existing)/2)
-		for i := 0; i < len(existing); i += 2 {
-			encryptionBytes := existing[i+1]
-			if l := len(encryptionBytes); l != 32 {
-				return nil, fmt.Errorf("fallback encryption bytes are not 32 (got %d)", l)
-			}
-
-			hmacBytes := existing[i]
-
-			final[i/2] = append(final[i/2], encryptionBytes...)
-			final[i/2] = append(final[i/2], hmacBytes...)
-		}
-		return final, nil
 	}
 
 	return results, nil
@@ -155,11 +131,6 @@ func (db *Database) GetAPIKeyDatabaseHMAC() ([][]byte, error) {
 		return nil, err
 	}
 
-	// TODO(sethvargo): remove in 0.28.0+
-	if len(results) == 0 {
-		return envconfigBytesToBytes(db.config.APIKeyDatabaseHMAC), nil
-	}
-
 	return results, nil
 }
 
@@ -172,11 +143,6 @@ func (db *Database) GetAPIKeySignatureHMAC() ([][]byte, error) {
 	results, err := db.secretResolver.Resolve(ctx, db, db.secretManager, SecretTypeAPIKeySignatureHMAC)
 	if err != nil {
 		return nil, err
-	}
-
-	// TODO(sethvargo): remove in 0.28.0+
-	if len(results) == 0 {
-		return envconfigBytesToBytes(db.config.APIKeySignatureHMAC), nil
 	}
 
 	return results, nil
@@ -193,11 +159,6 @@ func (db *Database) GetPhoneNumberDatabaseHMAC() ([][]byte, error) {
 		return nil, err
 	}
 
-	// TODO(sethvargo): remove in 0.28.0+
-	if len(results) == 0 {
-		return envconfigBytesToBytes(db.config.PhoneNumberHMAC), nil
-	}
-
 	return results, nil
 }
 
@@ -212,24 +173,7 @@ func (db *Database) GetVerificationCodeDatabaseHMAC() ([][]byte, error) {
 		return nil, err
 	}
 
-	// TODO(sethvargo): remove in 0.28.0+
-	if len(results) == 0 {
-		return envconfigBytesToBytes(db.config.VerificationCodeDatabaseHMAC), nil
-	}
-
 	return results, nil
-}
-
-// envconfigBytesToBytes is a helper that converts envconfig.Base64Bytes to
-// [][]byte.
-//
-// TODO(sethvargo): remove in 0.28.0+
-func envconfigBytesToBytes(in []envconfig.Base64Bytes) [][]byte {
-	result := make([][]byte, len(in))
-	for i, v := range in {
-		result[i] = v.Bytes()
-	}
-	return result
 }
 
 // Load loads the configuration and processes any dependencies like secret and
