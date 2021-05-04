@@ -18,6 +18,17 @@
 
     <h1>Request Exposure Notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
 
+    {{if .error}}
+    <div class="alert alert-danger" role="alert">
+      <ul>
+      {{range .error}}
+        <li>{{.}}</li>
+      {{end}}
+      </ul>
+    </div>
+    {{end}}
+
+    {{if not .skipForm}}
     <form method="POST" action="/report/issue" class="floating-form">
       {{ .csrfField }}
 
@@ -29,7 +40,8 @@
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100" {{if $currentRealm.RequireDate}}required{{end}} />
+                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}} value="{{.date}}"/>
+                {{if .dateError}}<div class="invalid-feedback">{{.dateError}}</div>{{end}}
               </div>
             </div>
           </div>
@@ -44,7 +56,8 @@
             </div>
             <div class="form-row">
               <div class="input-group">
-                <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="d-block" />
+                <input type="tel" id="phone" name="phone" class="form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" class="d-block" value="{{.phoneNumber}}" />
+                {{if .phoneError}}<div class="invalid-feedback">{{.phoneError}}</div>{{end}}
               </div>              
             </div>
           </div>
@@ -55,7 +68,7 @@
           <div class="card-body">            
             <div class="form-row">
               <div class="form-check mb-3">                
-                 <input type="checkbox" name="agreement" id="agreement" class="form-check-input" value="true" />
+                 <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" {{if .agreement}}checked{{end}} />
                  <label for="agreement" class="form-check-label">
                    I agree that I have received a positive test result for COVID-19, that the phone
                    number provided belongs to me, and that I would like to receive a verification code
@@ -63,6 +76,7 @@
                    that my phone number may be saved temporarily for anti-abuse purposes and this phone number
                    will not be shared or used in any other way.
                  </label>              
+                 {{if .termsError}}<div class="invalid-feedback">{{.termsError}}</div>{{end}}
               </div>
             </div>
           </div>
@@ -75,6 +89,7 @@
         </div>
       </div>
     </form>
+    {{end}}
   </main>
 </body>
 </html>

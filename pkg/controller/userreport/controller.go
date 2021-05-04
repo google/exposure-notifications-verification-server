@@ -67,3 +67,10 @@ func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database,
 		issueController:  issueController,
 	}, nil
 }
+
+func addError(message string, errors []string) []string {
+	if len(errors) == 0 {
+		return []string{message}
+	}
+	return append(errors, message)
+}
