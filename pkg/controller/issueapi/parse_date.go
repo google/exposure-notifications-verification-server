@@ -75,7 +75,7 @@ func (c *Controller) parseDate(d string, tzOffset int, parseSettings *dateParseS
 
 	validatedDate, err := ValidateDate(parsed, minDate, maxDate, tzOffset)
 	if err != nil {
-		err := fmt.Errorf("%s date must be on/after %v and on/before %v %v",
+		err := fmt.Errorf("%s date must be on/after %v and on/before %v. Received %v",
 			parseSettings.Name,
 			minDate.Format(project.RFC3339Date),
 			maxDate.Format(project.RFC3339Date),

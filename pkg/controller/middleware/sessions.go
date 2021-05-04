@@ -33,11 +33,21 @@ const (
 	sessionName = "verification-server-session"
 )
 
+// RequireNamedSession retrieves or creates a new session with a specific name, other
+// than the default session name.
+func RequireNamedSession(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, name, h)
+}
+
 // RequireSession retrieves or creates a new session and stores it on the
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
 func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, sessionName, h)
+}
+
+func buildHandler(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -45,7 +55,7 @@ func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler)
 			logger := logging.FromContext(ctx).Named("middleware.RequireSession")
 
 			// Get or create a session from the store.
-			session, err := store.Get(r, sessionName)
+			session, err := store.Get(r, name)
 			if err != nil {
 				logger.Errorw("failed to get session", "error", err)
 
@@ -53,7 +63,7 @@ func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler)
 				// whatever). According to the spec, this can return an error but can never
 				// return an empty session. We intentionally discard the error to ensure we
 				// have a session.
-				session, _ = store.New(r, sessionName)
+				session, _ = store.New(r, name)
 			}
 
 			// Save the flash in the template map.

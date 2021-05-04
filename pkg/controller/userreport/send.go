@@ -15,7 +15,6 @@
 package userreport
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -65,11 +64,15 @@ func (c *Controller) HandleSend() http.Handler {
 		m := controller.TemplateMapFromContext(ctx)
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			// TODO(mikehelmick) : render form again and handle errors
 			logger.Warn("error binding form", "error", err)
-			controller.BadRequest(w, r, c.h)
+			// TODO(mikehelmick): i18n
+			m["error"] = []string{"Internal error, please try again"}
+			c.renderIndex(w, realm, m)
 			return
 		}
+		m["date"] = form.TestDate
+		m["phoneNumber"] = form.Phone
+		m["agreement"] = form.Agreement
 
 		// Pull the nonce from the session.
 		nonceStr := controller.NonceFromSession(session)
@@ -80,7 +83,19 @@ func (c *Controller) HandleSend() http.Handler {
 		nonce, err := base64util.DecodeString(nonceStr)
 		if err != nil {
 			logger.Warnw("nonce cannot be decoded", "error", err)
-			controller.BadRequest(w, r, c.h)
+			// TODO(mikehelmick): i18n
+			m["error"] = []string{"Internal error, please close your Exposure Notifications application and try again."}
+			c.renderIndex(w, realm, m)
+			return
+		}
+
+		// Check agreement.
+		if !form.Agreement {
+			// TODO(mikehelmick): i18n
+			msg := "You must agree to the terms to request a verification code"
+			m["error"] = []string{msg}
+			m["termsError"] = msg
+			c.renderIndex(w, realm, m)
 			return
 		}
 
@@ -98,8 +113,30 @@ func (c *Controller) HandleSend() http.Handler {
 
 		result := c.issueController.IssueOne(ctx, issueRequest)
 		if result.HTTPCode != http.StatusOK {
-			// TODO(mikehelmick) : render form again and handle errors if appropriate, displaying success may be appropriate.
-			controller.InternalError(w, r, c.h, fmt.Errorf("error issuing verification code: %v", result.ErrorReturn.Error))
+			// Handle errors that the user can fix.
+			// TODO(mikehelmick): i18n for messaging.
+			if result.ErrorReturn.ErrorCode == api.ErrInvalidDate {
+				m["error"] = []string{result.ErrorReturn.Error}
+				m["dateError"] = result.ErrorReturn.Error
+				c.renderIndex(w, realm, m)
+				return
+			}
+			if result.ErrorReturn.ErrorCode == api.ErrMissingPhone {
+				m["error"] = []string{result.ErrorReturn.Error}
+				m["phoneError"] = result.ErrorReturn.Error
+				c.renderIndex(w, realm, m)
+				return
+			}
+			if result.ErrorReturn.ErrorCode == api.ErrQuotaExceeded {
+				m["error"] = []string{result.ErrorReturn.Error}
+				c.renderIndex(w, realm, m)
+				return
+			}
+
+			// The error returned isn't something the user can easily fix, show internal error, but hide form.
+			m["error"] = []string{"There was an internal error. A verification code cannot be requested at this time."}
+			m["skipForm"] = true
+			c.renderIndex(w, realm, m)
 			return
 		}
 

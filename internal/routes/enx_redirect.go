@@ -134,7 +134,8 @@ func ENXRedirect(
 		// Only allow this on the top level redirect domain
 		allowedHostHeaders := []string{cfg.Issue.ENExpressRedirectDomain}
 		hostHeaderCheck := middleware.RequireHostHeader(allowedHostHeaders, h, cfg.DevMode)
-		requireSession := middleware.RequireSession(sessions, h)
+		// Using a different name, makes it so cookies don't interfer in local dev.
+		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", h)
 		// Load localization
 		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
 		if err != nil {
