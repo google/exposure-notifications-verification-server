@@ -322,6 +322,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		LongCodeDuration:    FromDuration(DefaultLongCodeExpirationHours * time.Hour),
 		ShortCodeMaxMinutes: DefaultMaxShortCodeMinutes,
 		SMSTextTemplate:     DefaultSMSTextTemplate,
+		SMSCountry:          "us",
 		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
@@ -470,6 +471,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 				continue
 			}
 			r.validateSMSTemplate(l, *t)
+		}
+	}
+
+	if r.AllowsUserReport() {
+		if r.SMSCountry == "" {
+			r.AddError("smsCountry", "A default SMS Country must be set when user report is enabled")
 		}
 	}
 

@@ -74,6 +74,8 @@ const (
 	ErrQuotaExceeded = "quota_exceeded"
 	// ErrSMSQueueFull indicates that Twilio's SMS queue is full and may not accept more SMS messages to send.
 	ErrSMSQueueFull = "sms_queue_full"
+	// ErrPhoneNumberInvalid indicates the phone number could not be parsed, details in the error message.
+	ErrPhoneNumberInvalid = "phone_number_invalid"
 	// ErrSMSFailure indicates that Twilio's responded with a failure.
 	ErrSMSFailure = "sms_failure"
 	// ErrMissingNonce indicates a UserReport request is missing the nonce value.

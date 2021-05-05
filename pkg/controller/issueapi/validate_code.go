@@ -94,6 +94,16 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest 
 				ErrorReturn: api.Error(err),
 			}
 		}
+
+		canonicalPhone, err := CanonicalPhoneNumber(request.Phone, realm.SMSCountry)
+		if err != nil {
+			return nil, &IssueResult{
+				obsResult:   enobs.ResultError("INVALID_PHONE"),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Error(err).WithCode(api.ErrPhoneNumberInvalid),
+			}
+		}
+		request.Phone = canonicalPhone
 	}
 
 	if request.Phone == "" || smsProvider == nil {

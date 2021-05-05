@@ -145,6 +145,7 @@ func TestIssueToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	realm.AddUserReportToAllowedTestTypes()
+	realm.SMSCountry = "us"
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatalf("unable to enable user-report on test realm: %v errors: %+v", err, realm.ErrorMessages())
 	}
