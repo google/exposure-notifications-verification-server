@@ -39,6 +39,7 @@ require (
 	github.com/lib/pq v1.10.1
 	github.com/microcosm-cc/bluemonday v1.0.9
 	github.com/mikehelmick/go-chaff v0.5.0
+	github.com/nyaruka/phonenumbers v1.0.68 // indirect
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.21.0 // indirect

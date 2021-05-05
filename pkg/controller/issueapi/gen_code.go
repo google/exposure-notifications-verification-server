@@ -83,7 +83,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 			return &IssueResult{
 				obsResult:   enobs.ResultError("DUPLICATE_USER_REPORT"),
 				HTTPCode:    http.StatusConflict,
-				ErrorReturn: api.Errorf("phone number not current eligible for user report").WithCode(api.ErrUserReportTryLater),
+				ErrorReturn: api.Errorf("phone number not currently eligible for user report").WithCode(api.ErrUserReportTryLater),
 			}
 		}
 		if errors.Is(err, database.ErrRequiresPhoneNumber) {

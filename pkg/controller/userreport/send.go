@@ -132,7 +132,14 @@ func (c *Controller) HandleSend() http.Handler {
 				c.renderIndex(w, realm, m)
 				return
 			}
+			if result.ErrorReturn.ErrorCode == api.ErrUserReportTryLater {
+				m["error"] = []string{result.ErrorReturn.Error}
+				m["skipForm"] = true
+				c.renderIndex(w, realm, m)
+				return
+			}
 
+			logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", result.ErrorReturn.Error)
 			// The error returned isn't something the user can easily fix, show internal error, but hide form.
 			m["error"] = []string{"There was an internal error. A verification code cannot be requested at this time."}
 			m["skipForm"] = true

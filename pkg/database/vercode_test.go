@@ -271,6 +271,7 @@ func TestSaveUserReport(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	realm := NewRealmWithDefaults("The Grid")
 	realm.AddUserReportToAllowedTestTypes()
+	realm.SMSCountry = "us"
 	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
