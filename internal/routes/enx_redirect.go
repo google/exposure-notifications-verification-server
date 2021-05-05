@@ -163,7 +163,7 @@ func ENXRedirect(
 
 			// This allows developers to send GET requests in a browser with query params
 			// to test the UI. Normally this is required to be initiated via POST and headers.
-			if cfg.DevMode {
+			if cfg.DevMode || cfg.AllowUserReportGet {
 				sub.Use(middleware.QueryHeaderInjection(middleware.APIKeyHeader, "apikey"))
 				sub.Use(middleware.QueryHeaderInjection(middleware.NonceHeader, "nonce"))
 			}
@@ -175,7 +175,7 @@ func ENXRedirect(
 			sub.Use(middleware.RequireNonce(h))
 
 			indexMethods := []string{http.MethodPost}
-			if cfg.DevMode {
+			if cfg.DevMode || cfg.AllowUserReportGet {
 				indexMethods = append(indexMethods, http.MethodGet)
 			}
 			sub.Handle("", userReportController.HandleIndex()).Methods(indexMethods...)
