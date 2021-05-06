@@ -16,7 +16,11 @@
     </div>
     {{end}}
 
-    <h1>Request Exposure Notifications verification code from {{.realm.Name}} ({{.realm.RegionCode}})</h1>
+    <h1>Request a code from {{.realm.Name}}</h1>
+
+    <div class="alert alert-info" role="alert">
+      If you have tested positive for COVID-19 but have not received a code from your Health Authority by text or phone call, you may request one here.
+    </div>
 
     {{if .error}}
     <div class="alert alert-danger" role="alert">
@@ -51,7 +55,7 @@
           <div class="card-header">Phone Number</div>
           <div class="card-body">            
             <div class="form-row">
-              <label for="phone">Mobile phone number for receiving SMS
+              <label for="phone">Mobile phone number (to receive verification code)
               </label>
             </div>
             <div class="form-row">
@@ -70,11 +74,7 @@
               <div class="form-check mb-3">                
                  <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" {{if .agreement}}checked{{end}} />
                  <label for="agreement" class="form-check-label">
-                   I agree that I have received a positive test result for COVID-19, that the phone
-                   number provided belongs to me, and that I would like to receive a verification code
-                   for Exposure Notifications to share my information anonymously with others. I understand
-                   that my phone number may be saved temporarily for anti-abuse purposes and this phone number
-                   will not be shared or used in any other way.
+                  I have received a positive test result for COVID-19 and the phone number I have provided is my own.
                  </label>              
                  {{if .termsError}}<div class="invalid-feedback">{{.termsError}}</div>{{end}}
               </div>
