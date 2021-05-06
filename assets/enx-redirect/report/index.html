@@ -16,11 +16,11 @@
     </div>
     {{end}}
 
-    <h1>Request a code from {{.realm.Name}}</h1>
+    <h1>{{t $.locale "user-report.request-code-from"}} {{.realm.Name}}</h1>
 
-    <div class="alert alert-info" role="alert">
-      If you have tested positive for COVID-19 but have not received a code from your Health Authority by text or phone call, you may request one here.
-    </div>
+    {{if not .skipForm}}
+    <div class="alert alert-info" role="alert">{{t $.locale "user-report.instructions"}}</div>
+    {{end}}
 
     {{if .error}}
     <div class="alert alert-danger" role="alert">
@@ -39,7 +39,7 @@
       <div id="form-area">
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">Enter the date of your COVID-19 test</div>
+          <div class="card-header">{{t $.locale "user-report.enter-date-instructions"}}</div>
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
@@ -52,10 +52,11 @@
         </div>
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">Phone Number</div>
+          <div class="card-header">{{t $.locale "user-report.phone-number-header"}}</div>
           <div class="card-body">            
             <div class="form-row">
-              <label for="phone">Mobile phone number (to receive verification code)
+              <label for="phone">
+                {{t $.locale "user-report.phone-number-instructions"}}
               </label>
             </div>
             <div class="form-row">
@@ -68,13 +69,13 @@
         </div>
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">Agreement</div>
+          <div class="card-header">{{t $.locale "user-report.agreement-header"}}</div>
           <div class="card-body">            
             <div class="form-row">
               <div class="form-check mb-3">                
                  <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" {{if .agreement}}checked{{end}} />
                  <label for="agreement" class="form-check-label">
-                  I have received a positive test result for COVID-19 and the phone number I have provided is my own.
+                   {{t $.locale "user-report.agreement"}}
                  </label>              
                  {{if .termsError}}<div class="invalid-feedback">{{.termsError}}</div>{{end}}
               </div>
@@ -84,7 +85,7 @@
 
         <div class="row mb-3">
           <div class="col">
-            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "codes.issue.create-code-button"}}</button>
+            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "user-report.request-button"}}</button>
           </div>
         </div>
       </div>

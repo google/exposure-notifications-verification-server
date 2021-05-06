@@ -387,3 +387,68 @@ msgstr "Sumber daya itu tidak ada."
 
 msgid "static.redirect-not-found"
 msgstr "Untuk menukarkan kode Exposure Notifications, kunjungi tautan di perangkat seluler Anda."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Minta kode verifikasi"
+
+msgid "user-report.navbar"
+msgstr "Minta kode verifikasi Pemberitahuan Pemaparan"
+
+msgid "user-report.request-code-from"
+msgstr "Minta kode dari"
+
+msgid "user-report.instructions"
+msgstr "Jika Anda telah dites positif COVID-19 tetapi belum menerima kode dari Otoritas Kesehatan Anda melalui teks atau panggilan telepon, Anda dapat memintanya di sini."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Masukkan tanggal tes COVID-19 Anda"
+
+msgid "user-report.phone-number-header"
+msgstr "Nomor telepon"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Nomor ponsel (untuk menerima kode verifikasi)"
+
+msgid "user-report.agreement-header"
+msgstr "Perjanjian"
+
+msgid "user-report.agreement"
+msgstr "Saya telah menerima hasil tes positif untuk COVID-19 dan nomor telepon yang saya berikan adalah nomor saya sendiri."
+
+msgid "user-report.request-button"
+msgstr "Minta kode verifikasi"
+
+msgid "user-report.code-issued"
+msgstr "Kode verifikasi dikeluarkan"
+
+msgid "user-report.check-mobile-device"
+msgstr "Silakan periksa pesan teks Anda di perangkat seluler Anda."
+
+msgid "user-report.invalid-request"
+msgstr "Permintaan tidak valid, silakan luncurkan dari aplikasi Pemberitahuan Eksposur di perangkat seluler Anda."
+
+msgid "user-report.not-available"
+msgstr "Otoritas kesehatan lokal Anda tidak menerima laporan yang dimulai pengguna saat ini."
+
+msgid "user-report.missing-agreement"
+msgstr "Anda harus menyetujui persyaratan untuk meminta kode verifikasi"
+
+msgid "user-report.error-invalid-date"
+msgstr "Tanggal tes harus antara 14 hari yang lalu dan hari ini."
+
+msgid "user-report.error-missing-phone"
+msgstr "Diperlukan nomor ponsel."
+
+msgid "user-report.quota-exceeded"
+msgstr "Untuk sementara tidak dapat mengeluarkan kode verifikasi, coba lagi nanti."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Nomor telepon Anda saat ini tidak memenuhi syarat untuk laporan pengguna"
+
+msgid "user-report.internal-error"
+msgstr "Ada kesalahan internal. Kode verifikasi tidak dapat diminta saat ini."

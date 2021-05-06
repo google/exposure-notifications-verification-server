@@ -387,3 +387,68 @@ msgstr "Bu kaynak mevcut değil."
 
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications kodunu kullanmak için mobil cihazınızdaki bağlantıyı ziyaret edin."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Doğrulama kodu isteyin"
+
+msgid "user-report.navbar"
+msgstr "Karşılaşma Bildirimleri doğrulama kodunu isteyin"
+
+msgid "user-report.request-code-from"
+msgstr "Bir kod isteyin"
+
+msgid "user-report.instructions"
+msgstr "COVID-19 için pozitif test ettiyseniz ancak Sağlık Otoritenizden metin veya telefon görüşmesi yoluyla bir kod almadıysanız, buradan bir kod isteyebilirsiniz.
+
+msgid "user-report.enter-date-instructions"
+msgstr "COVID-19 testinizin tarihini girin"
+
+msgid "user-report.phone-number-header"
+msgstr "Telefon numarası"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Cep telefonu numarası (doğrulama kodunu almak için)"
+
+msgid "user-report.agreement-header"
+msgstr "Sözleşme"
+
+msgid "user-report.agreement"
+msgstr "COVID-19 için pozitif bir test sonucu aldım ve verdiğim telefon numarası bana ait."
+
+msgid "user-report.request-button"
+msgstr "Doğrulama kodu iste"
+
+msgid "user-report.code-issued"
+msgstr "Doğrulama kodu verildi"
+
+msgid "user-report.check-mobile-device"
+msgstr "Lütfen mobil cihazınızdaki metin mesajlarınızı kontrol edin."
+
+msgid "user-report.invalid-request"
+msgstr "Geçersiz istek, lütfen mobil cihazınızdaki Poz Bildirimleri uygulamanızdan başlatın."
+
+msgid "user-report.not-available"
+msgstr "Yerel sağlık yetkiliniz şu anda kullanıcı tarafından başlatılan raporları kabul etmiyor."
+
+msgid "user-report.missing-agreement"
+msgstr "Doğrulama kodu istemek için şartları kabul etmelisiniz"
+
+msgid "user-report.error-invalid-date"
+msgstr "Test tarihi 14 gün öncesi ile bugün arasında olmalıdır."
+
+msgid "user-report.error-missing-phone"
+msgstr "Cep telefonu numarası gereklidir."
+
+msgid "user-report.quota-exceeded"
+msgstr "Doğrulama kodlarını geçici olarak veremiyorum, lütfen daha sonra tekrar deneyin."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Telefon numaranız şu anda kullanıcı raporu için uygun değil"
+
+msgid "user-report.internal-error"
+msgstr "Dahili bir hata oluştu. Şu anda doğrulama kodu istenemez."

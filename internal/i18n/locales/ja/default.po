@@ -387,3 +387,68 @@ msgstr "そのリソースは存在しません。"
 
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications コードを利用するには、モバイルデバイスのリンクにアクセスしてください。"
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "確認コードをリクエストしてください"
+
+msgid "user-report.navbar"
+msgstr「接触通知の要求確認コード」
+
+msgid "user-report.request-code-from"
+msgstr "からコードをリクエストする"
+
+msgid "user-report.instructions"
+msgstr "COVID-19の検査で陽性であったが、テキストまたは電話で保健当局からコードを受け取っていない場合は、ここでコードをリクエストできます。
+
+msgid "user-report.enter-date-instructions"
+msgstr "COVID-19テストの日付を入力してください"
+
+msgid "user-report.phone-number-header"
+msgstr "電話番号"
+
+msgid "user-report.phone-number-instructions"
+msgstr "携帯電話番号（確認コードを受け取るため）"
+
+msgid "user-report.agreement-header"
+msgstr「合意」
+
+msgid "user-report.agreement"
+msgstr「COVID-19の検査結果が陽性で、提供した電話番号は自分のものです。」
+
+msgid "user-report.request-button"
+msgstr "確認コードのリクエスト"
+
+msgid "user-report.code-issued"
+msgstr "確認コードが発行されました"
+
+msgid "user-report.check-mobile-device"
+msgstr "モバイルデバイスでテキストメッセージを確認してください。"
+
+msgid "user-report.invalid-request"
+msgstr「リクエストが無効です。モバイルデバイスの接触通知アプリケーションから起動してください。」
+
+msgid "user-report.not-available"
+msgstr "現在、地域の保健当局はユーザーが開始したレポートを受け付けていません。"
+
+msgid "user-report.missing-agreement"
+msgstr "確認コードをリクエストするには規約に同意する必要があります"
+
+msgid "user-report.error-invalid-date"
+msgstr "テスト日は14日前から今日まででなければなりません。"
+
+msgid "user-report.error-missing-phone"
+msgstr "携帯電話番号が必要です。"
+
+msgid "user-report.quota-exceeded"
+msgstr "一時的に確認コードを発行できません。しばらくしてからもう一度お試しください。"
+
+msgid "user-report.phone-not-eligible"
+msgstr "あなたの電話番号は現在ユーザーレポートの対象ではありません"
+
+msgid "user-report.internal-error"
+msgstr "内部エラーが発生しました。現時点では確認コードをリクエストできません。"

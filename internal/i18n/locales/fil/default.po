@@ -387,3 +387,68 @@ msgstr "Wala ang mapagkukunang iyon."
 
 msgid "static.redirect-not-found"
 msgstr "Upang makuha ang isang Exposure Notifications code, bisitahin ang link sa iyong mobile device."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Humiling ng isang verification code"
+
+msgid "user-report.navbar"
+msgstr "Humiling ng code sa pag-verify ng Mga Abiso sa Exposure"
+
+msgid "user-report.request-code-from"
+msgstr "Humiling ng isang code mula sa"
+
+msgid "user-report.instructions"
+msgstr "Kung sumubok ka ng positibo para sa COVID-19 ngunit hindi nakatanggap ng isang code mula sa iyong Health Authority sa pamamagitan ng text o tawag sa telepono, maaari kang humiling ng isa rito."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Ipasok ang petsa ng iyong pagsubok sa COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Numero ng telepono"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Numero ng mobile phone (upang makatanggap ng verification code)"
+
+msgid "user-report.agreement-header"
+msgstr "Kasunduan"
+
+msgid "user-report.agreement"
+msgstr "Nakatanggap ako ng positibong resulta sa pagsubok para sa COVID-19 at ang ibinigay kong numero ng telepono ay aking sarili."
+
+msgid "user-report.request-button"
+msgstr "Humiling ng verification code"
+
+msgid "user-report.code-issued"
+msgstr "Inisyu ang verification code"
+
+msgid "user-report.check-mobile-device"
+msgstr "Mangyaring suriin ang iyong mga text message sa iyong mobile device."
+
+msgid "user-report.invalid-request"
+msgstr "Di-wastong kahilingan, mangyaring ilunsad mula sa iyong application ng Mga Exposure Notification sa iyong mobile device."
+
+msgid "user-report.not-available"
+msgstr "Ang iyong lokal na awtoridad sa kalusugan ay hindi tumatanggap ng mga ulat na pinasimulan ng gumagamit sa ngayon."
+
+msgid "user-report.missing-agreement"
+msgstr "Dapat kang sumang-ayon sa mga tuntunin upang humiling ng isang verification code"
+
+msgid "user-report.error-invalid-date"
+msgstr "Ang petsa ng pagsubok ay dapat na nasa pagitan ng 14 araw na ang nakakaraan at ngayon."
+
+msgid "user-report.error-missing-phone"
+msgstr "Kinakailangan ang numero ng mobile phone."
+
+msgid "user-report.quota-exceeded"
+msgstr "Pansamantalang hindi makapag-isyu ng mga verification code, mangyaring subukang muli sa ibang pagkakataon."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Ang numero ng iyong telepono na kasalukuyang hindi karapat-dapat para sa ulat ng gumagamit"
+
+msgid "user-report.internal-error"
+msgstr "Nagkaroon ng panloob na error. Ang isang verification code ay hindi maaaring hilingin sa ngayon."

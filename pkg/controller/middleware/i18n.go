@@ -53,6 +53,8 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 			locale := locales.Lookup(param, header)
 			m["locale"] = locale
 
+			ctx = controller.WithLocale(ctx, locale)
+
 			// by default, no CSS is needed for left aligned languages.
 			textLanguage := i18n.TranslatorLanguage(locale)
 			textDirection := LeftAlign

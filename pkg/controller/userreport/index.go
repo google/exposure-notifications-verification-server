@@ -15,6 +15,7 @@
 package userreport
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -46,21 +47,26 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		locale := controller.LocaleFromContext(ctx)
+		if locale == nil {
+			logger.Errorw("no locale in context")
+			controller.InternalError(w, r, c.h, fmt.Errorf("Internal error, please try again"))
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		var errorMessages []string
 		// Check the nonce - if it isn't valid, show an error page, but with branding since we know the app.
 		nonce := controller.NonceFromContext(ctx)
 		if decoded, err := base64util.DecodeString(nonce); err != nil || len(decoded) != database.NonceLength {
 			logger.Warnw("invalid nonce on webview load", "error", err, "nonce-length", len(decoded))
-			// TODO(mikehelmick): i18n
-			errorMessages = addError("Invalid request, please launch from your Exposure Notifications application on your mobile device.", errorMessages)
+			errorMessages = addError(locale.Get("user-report.invalid-request"), errorMessages)
 			m["skipForm"] = true
 		}
 
 		// This could get triggered in a pause.
 		if !realm.AllowsUserReport() {
-			// TODO(mikehelmick): i18n
-			errorMessages = addError("Your local health authority is not accepting user initiated reports at this time.", errorMessages)
+			errorMessages = addError(locale.Get("user-report.not-available"), errorMessages)
 			m["skipForm"] = true
 		}
 
@@ -73,7 +79,6 @@ func (c *Controller) HandleIndex() http.Handler {
 }
 
 func (c *Controller) renderIndex(w http.ResponseWriter, realm *database.Realm, m controller.TemplateMap) {
-	m.Title("Request a verification code")
 	m["realm"] = realm
 	c.h.RenderHTML(w, "report/index", m)
 }

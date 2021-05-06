@@ -387,3 +387,67 @@ msgstr "Тэр нөөц байхгүй."
 
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications кодыг зарцуулахын тулд мобайл төхөөрөмж дээрх холбоосоор зочилно уу."
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Баталгаажуулах код хүсэх"
+
+msgid "user-report.navbar"
+msgstr "Гэрэл зургийн мэдэгдэл баталгаажуулах кодыг авах хүсэлт гаргах."
+
+msgid "user-report.request-code-from"
+msgstr "Дараахаас код хүсэх"
+
+msgid "user-report.instructions"
+msgstr "Хэрэв танд COVID-19 илэрсэн нь батлагдсан боловч эрүүл мэндийн газраас код, мессежээр эсвэл утасны дуудлага хүлээж аваагүй бол та эндээс хүсэлт гаргаж болно."
+
+msgid "user-report.enter-date-instructions"
+msgstr "COVID-19 туршилтын огноог оруулна уу."
+
+msgid "user-report.phone-number-header"
+msgstr "Утасны дугаар"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Гар утасны дугаар (баталгаажуулах кодыг хүлээн авахын тулд)"
+
+msgid "user-report.agreement-header"
+msgstr "Гэрээ"
+
+msgid "user-report.agreement"
+msgstr "Би COVID-19-ийн туршилтын эерэг хариу авсан бөгөөд миний өгсөн утасны дугаар минийх байна."
+
+msgid "user-report.request-button"
+msgstr "Баталгаажуулах код хүсэх"
+
+msgid "user-report.code-issued"
+msgstr "Баталгаажуулах код гаргасан"
+
+msgid "user-report.check-mobile-device"
+msgstr "Гар утасны төхөөрөмж дээрээ текст мессежээ шалгана уу."
+
+msgid "user-report.invalid-request"
+msgstr "Хүчингүй хүсэлт, мобайл төхөөрөмж дээрх Exposure Notifications програмаас эхлүүлнэ үү."
+
+msgid "user-report.not-available"
+msgstr "Танай орон нутгийн эрүүл мэндийн байгууллага одоогоор хэрэглэгчийн санаачилсан тайланг хүлээж авахгүй байна."
+
+msgid "user-report.missing-agreement"
+msgstr "Баталгаажуулах код шаардахын тулд та нөхцлийг зөвшөөрөх ёстой."
+
+msgid "user-report.error-invalid-date"
+msgstr "Туршилтын огноо 14 хоногийн өмнө ба өнөөдрийн хооронд байх ёстой."
+
+msgid "user-report.error-missing-phone"
+msgstr "Гар утасны дугаар шаардлагатай."
+
+msgid "user-report.quota-exceeded"
+msgstr "Баталгаажуулах кодыг түр хугацаанд гаргаж чадахгүй байна. Дараа дахин оролдоно уу."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Таны утасны дугаар одоогоор хэрэглэгчийн тайланд орох эрхгүй байна."
+
+msgid "user-report.internal-error"
+msgstr "Дотоод алдаа гарсан байна. Баталгаажуулах кодыг одоогоор шаардах боломжгүй байна."
