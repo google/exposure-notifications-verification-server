@@ -323,9 +323,7 @@ func Server(
 		realmkeysRoutes(sub, realmkeysController)
 
 		realmSMSKeysController := smskeys.New(cfg, db, publicKeyCache, h)
-		if cfg.Features.EnableAuthenticatedSMS {
-			realmSMSkeysRoutes(sub, realmSMSKeysController)
-		}
+		realmSMSkeysRoutes(sub, realmSMSKeysController)
 	}
 
 	// JWKs
