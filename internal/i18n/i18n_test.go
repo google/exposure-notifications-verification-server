@@ -49,10 +49,6 @@ func TestI18n_matching(t *testing.T) {
 		po.ParseFile(pth)
 		pos = append(pos, po)
 
-		if po.Language == "" {
-			t.Errorf("no langauge in path %q", pth)
-		}
-
 		return nil
 	}); err != nil {
 		t.Fatal(err)

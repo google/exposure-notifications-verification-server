@@ -397,7 +397,7 @@ msgid "user-report.title"
 msgstr "確認コードをリクエストしてください"
 
 msgid "user-report.navbar"
-msgstr「接触通知の要求確認コード」
+msgstr "接触通知の要求確認コード"
 
 msgid "user-report.request-code-from"
 msgstr "からコードをリクエストする"
@@ -415,10 +415,10 @@ msgid "user-report.phone-number-instructions"
 msgstr "携帯電話番号（確認コードを受け取るため）"
 
 msgid "user-report.agreement-header"
-msgstr「合意」
+msgstr "合意"
 
 msgid "user-report.agreement"
-msgstr「COVID-19の検査結果が陽性で、提供した電話番号は自分のものです。」
+msgstr "COVID-19の検査結果が陽性で、提供した電話番号は自分のものです。"
 
 msgid "user-report.request-button"
 msgstr "確認コードのリクエスト"
@@ -430,7 +430,7 @@ msgid "user-report.check-mobile-device"
 msgstr "モバイルデバイスでテキストメッセージを確認してください。"
 
 msgid "user-report.invalid-request"
-msgstr「リクエストが無効です。モバイルデバイスの接触通知アプリケーションから起動してください。」
+msgstr "リクエストが無効です。モバイルデバイスの接触通知アプリケーションから起動してください。"
 
 msgid "user-report.not-available"
 msgstr "現在、地域の保健当局はユーザーが開始したレポートを受け付けていません。"

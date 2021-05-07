@@ -50,7 +50,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		locale := controller.LocaleFromContext(ctx)
 		if locale == nil {
 			logger.Errorw("no locale in context")
-			controller.InternalError(w, r, c.h, fmt.Errorf("Internal error, please try again"))
+			controller.InternalError(w, r, c.h, fmt.Errorf("internal error, please try again"))
 			return
 		}
 
