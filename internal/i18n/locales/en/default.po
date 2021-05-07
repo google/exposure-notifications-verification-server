@@ -387,3 +387,68 @@ msgstr "That resource does not exist."
 
 msgid "static.redirect-not-found"
 msgstr "To redeem an Exposure Notifications code, visit the link on your mobile device."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Request a verification code"
+
+msgid "user-report.navbar"
+msgstr "Request Exposure Notifications verification code"
+
+msgid "user-report.request-code-from"
+msgstr "Request a code from"
+
+msgid "user-report.instructions"
+msgstr "If you have tested positive for COVID-19 but have not received a code from your Health Authority by text or phone call, you may request one here."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Enter the date of your COVID-19 test"
+
+msgid "user-report.phone-number-header"
+msgstr "Phone number"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Mobile phone number (to receive verification code)"
+
+msgid "user-report.agreement-header"
+msgstr "Agreement"
+
+msgid "user-report.agreement"
+msgstr "I have received a positive test result for COVID-19 and the phone number I have provided is my own."
+
+msgid "user-report.request-button"
+msgstr "Request verification code"
+
+msgid "user-report.code-issued"
+msgstr "Verification code issued"
+
+msgid "user-report.check-mobile-device"
+msgstr "Please check your text messages on your mobile device."
+
+msgid "user-report.invalid-request"
+msgstr "Invalid request, please launch from your Exposure Notifications application on your mobile device." 
+
+msgid "user-report.not-available"
+msgstr "Your local health authority is not accepting user initiated reports at this time."
+
+msgid "user-report.missing-agreement"
+msgstr "You must agree to the terms to request a verification code"
+
+msgid "user-report.error-invalid-date"
+msgstr "Test date must be between 14 days ago and today."
+
+msgid "user-report.error-missing-phone"
+msgstr "Mobile phone number is required."
+
+msgid "user-report.quota-exceeded"
+msgstr "Temporarily unable to issue verification codes, please try again later."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Your phone number not currently eligible for user report"
+
+msgid "user-report.internal-error"
+msgstr "There was an internal error. A verification code cannot be requested at this time."

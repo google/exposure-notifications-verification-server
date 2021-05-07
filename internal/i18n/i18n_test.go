@@ -48,6 +48,7 @@ func TestI18n_matching(t *testing.T) {
 		po := new(gotext.Po)
 		po.ParseFile(pth)
 		pos = append(pos, po)
+
 		return nil
 	}); err != nil {
 		t.Fatal(err)

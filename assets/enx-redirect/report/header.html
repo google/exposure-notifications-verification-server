@@ -21,12 +21,12 @@
   integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
 <script src="/static/js/application.js?{{.buildID}}" crossorigin="anonymous"></script>
 
-<title>{{if .title}}{{.title}}{{else}}Verification Code Request{{end}}</title>
+<title>{{t $.locale "user-report.title"}}</title>
 
 <header class="mb-3">
   <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
     <div class="container">
-      <a class="navbar-brand" href="#">Request Exposure Notifications verification code</a>
+      <a class="navbar-brand" href="#">{{t $.locale "user-report.navbar"}}</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>

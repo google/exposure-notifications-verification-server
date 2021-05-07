@@ -387,3 +387,68 @@ msgstr "সেই সংস্থান নেই"
 
 msgid "static.redirect-not-found"
 msgstr "একটি এক্সপোজার বিজ্ঞপ্তি কোড রিডিম করতে, আপনার মোবাইল ডিভাইসের লিঙ্কটি দেখুন।"
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "একটি যাচাই কোড অনুরোধ করুন"
+
+msgid "user-report.navbar"
+msgstr "অনুরোধ এক্সপোজার বিজ্ঞপ্তি যাচাইকরণ কোড"
+
+msgid "user-report.request-code-from"
+msgstr "থেকে একটি কোড অনুরোধ"
+
+msgid "user-report.instructions"
+msgstr "আপনি যদি কভিড -১৯ এর জন্য ইতিবাচক পরীক্ষা করেছেন তবে পাঠ্য বা ফোন কল করে আপনার স্বাস্থ্য কর্তৃপক্ষের কাছ থেকে কোনও কোড না পেয়েছেন, আপনি এখানে একটি অনুরোধ করতে পারেন।"
+
+msgid "user-report.enter-date-instructions"
+msgstr "আপনার COVID-19 পরীক্ষার তারিখ লিখুন"
+
+msgid "user-report.phone-number-header"
+msgstr "ফোন নম্বর"
+
+msgid "user-report.phone-number-instructions"
+msgstr "মোবাইল ফোন নম্বর (যাচাইকরণ কোড পেতে)"
+
+msgid "user-report.agreement-header"
+msgstr "চুক্তি"
+
+msgid "user-report.agreement"
+msgstr "আমি COVID-19 এর জন্য একটি ইতিবাচক পরীক্ষার ফলাফল পেয়েছি এবং আমি যে ফোন নম্বর সরবরাহ করেছি তা আমার নিজের।"
+
+msgid "user-report.request-button"
+msgstr "অনুরোধ যাচাইকরণ কোড"
+
+msgid "user-report.code-issued"
+msgstr "যাচাইকরণ কোড জারি"
+
+msgid "user-report.check-mobile-device"
+msgstr "আপনার মোবাইল ডিভাইসে আপনার পাঠ্য বার্তাগুলি পরীক্ষা করুন।"
+
+msgid "user-report.invalid-request"
+msgstr "অবৈধ অনুরোধ, আপনার মোবাইল ডিভাইসে আপনার এক্সপোজার বিজ্ঞপ্তি অ্যাপ্লিকেশন থেকে লঞ্চ করুন।" 
+
+msgid "user-report.not-available"
+msgstr "আপনার স্থানীয় স্বাস্থ্য কর্তৃপক্ষ এই মুহুর্তে ব্যবহারকারী সূচিত প্রতিবেদনগুলি গ্রহণ করছে না।"
+
+msgid "user-report.missing-agreement"
+msgstr "একটি যাচাইকরণ কোডের অনুরোধ করার জন্য আপনাকে অবশ্যই শর্তাদির সাথে একমত হতে হবে"
+
+msgid "user-report.error-invalid-date"
+msgstr "পরীক্ষার তারিখ 14 দিন আগের এবং আজকের মধ্যে হতে হবে।"
+
+msgid "user-report.error-missing-phone"
+msgstr "মোবাইল ফোন নম্বর প্রয়োজন।"
+
+msgid "user-report.quota-exceeded"
+msgstr "অস্থায়ীভাবে যাচাইকরণ কোডগুলি ইস্যু করতে অক্ষম, দয়া করে পরে আবার চেষ্টা করুন।"
+
+msgid "user-report.phone-not-eligible"
+msgstr "আপনার ফোন নম্বরটি বর্তমানে ব্যবহারকারী রিপোর্টের জন্য যোগ্য নয়"
+
+msgid "user-report.internal-error"
+msgstr "অভ্যন্তরীণ ত্রুটি ছিল। এই সময়ে একটি যাচাইকরণ কোডের জন্য অনুরোধ করা যাবে না।"

@@ -386,3 +386,68 @@ msgstr "Diese ressource existiert nicht."
 
 msgid "static.redirect-not-found"
 msgstr "Besuchen Sie den Link auf Ihrem Mobilgerät, um einen Exposure Notifications Code einzulösen."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Bestätigungscode anfordern"
+
+msgid "user-report.navbar"
+msgstr "Bestätigungscode für Expositionsbenachrichtigungen anfordern"
+
+msgid "user-report.request-code-from"
+msgstr "Code anfordern von"
+
+msgid "user-report.instructions"
+msgstr "Wenn Sie positiv auf COVID-19 getestet haben, aber keinen Code von Ihrer Gesundheitsbehörde per Text oder Telefonanruf erhalten haben, können Sie hier einen anfordern."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Geben Sie das Datum Ihres COVID-19-Tests ein"
+
+msgid "user-report.phone-number-header"
+msgstr "Telefonnummer"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Handynummer (um den Bestätigungscode zu erhalten)"
+
+msgid "user-report.agreement-header"
+msgstr "Vereinbarung"
+
+msgid "user-report.agreement"
+msgstr "Ich habe ein positives Testergebnis für COVID-19 erhalten und die von mir angegebene Telefonnummer ist meine eigene."
+
+msgid "user-report.request-button"
+msgstr "Bestätigungscode anfordern"
+
+msgid "user-report.code-issued"
+msgstr "Bestätigungscode ausgegeben"
+
+msgid "user-report.check-mobile-device"
+msgstr "Bitte überprüfen Sie Ihre Textnachrichten auf Ihrem Mobilgerät."
+
+msgid "user-report.invalid-request"
+msgstr "Ungültige Anfrage, bitte starten Sie von Ihrer Exposure Notifications-Anwendung auf Ihrem Mobilgerät."
+
+msgid "user-report.not-available"
+msgstr "Ihre lokale Gesundheitsbehörde akzeptiert derzeit keine vom Benutzer initiierten Berichte."
+
+msgid "user-report.missing-agreement"
+msgstr "Sie müssen den Bedingungen zustimmen, um einen Bestätigungscode anzufordern."
+
+msgid "user-report.error-invalid-date"
+msgstr "Das Testdatum muss zwischen 14 Tagen und heute liegen."
+
+msgid "user-report.error-missing-phone"
+msgstr "Handynummer ist erforderlich."
+
+msgid "user-report.quota-exceeded"
+msgstr "Vorübergehend können keine Bestätigungscodes ausgegeben werden. Bitte versuchen Sie es später erneut."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Ihre Telefonnummer ist derzeit nicht für den Benutzerbericht geeignet"
+
+msgid "user-report.internal-error"
+msgstr "Es ist ein interner Fehler aufgetreten. Ein Bestätigungscode kann derzeit nicht angefordert werden."

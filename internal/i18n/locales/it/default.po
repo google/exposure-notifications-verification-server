@@ -387,3 +387,68 @@ msgstr "Quella risorsa non esiste."
 
 msgid "static.redirect-not-found"
 msgstr "Per riscattare un codice Exposure Notifications, visita il link sul tuo dispositivo mobile."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Richiedi un codice di verifica"
+
+msgid "user-report.navbar"
+msgstr "Richiedi codice di verifica notifiche esposizione"
+
+msgid "user-report.request-code-from"
+msgstr "Richiedi un codice da"
+
+msgid "user-report.instructions"
+msgstr "Se sei risultato positivo al COVID-19 ma non hai ricevuto un codice dalla tua autorità sanitaria tramite SMS o telefonata, puoi richiederne uno qui."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Inserisci la data del tuo test COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Numero di telefono"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Numero di cellulare (per ricevere il codice di verifica)"
+
+msgid "user-report.agreement-header"
+msgstr "Accordo"
+
+msgid "user-report.agreement"
+msgstr "Ho ricevuto un risultato positivo del test per COVID-19 e il numero di telefono che ho fornito è il mio."
+
+msgid "user-report.request-button"
+msgstr "Richiedi codice di verifica"
+
+msgid "user-report.code-issued"
+msgstr "Codice di verifica emesso"
+
+msgid "user-report.check-mobile-device"
+msgstr "Controlla i tuoi messaggi di testo sul tuo dispositivo mobile."
+
+msgid "user-report.invalid-request"
+msgstr "Richiesta non valida, avvia dall'applicazione Exposure Notifications sul tuo dispositivo mobile."
+
+msgid "user-report.not-available"
+msgstr "Al momento la tua autorità sanitaria locale non accetta rapporti avviati dall'utente."
+
+msgid "user-report.missing-agreement"
+msgstr "Devi accettare i termini per richiedere un codice di verifica"
+
+msgid "user-report.error-invalid-date"
+msgstr "La data del test deve essere compresa tra 14 giorni fa e oggi."
+
+msgid "user-report.error-missing-phone"
+msgstr "Il numero di cellulare è obbligatorio."
+
+msgid "user-report.quota-exceeded"
+msgstr "Temporaneamente impossibile emettere codici di verifica, riprova più tardi."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Il tuo numero di telefono non è attualmente idoneo per il rapporto utente"
+
+msgid "user-report.internal-error"
+msgstr "Si è verificato un errore interno. Impossibile richiedere un codice di verifica in questo momento."

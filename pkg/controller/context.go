@@ -22,6 +22,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/gorilla/sessions"
+	"github.com/leonelquinteros/gotext"
 )
 
 // contextKey is a unique type to avoid clashing with other packages that use
@@ -40,6 +41,7 @@ const (
 	contextKeyUser          = contextKey("user")
 	contextKeyOS            = contextKey("os")
 	contextKeyNonce         = contextKey("nonce")
+	contextKeyLocale        = contextKey("locale")
 )
 
 // WithOperatingSystem stores the operating system enum in the context.
@@ -198,6 +200,25 @@ func (m TemplateMap) Title(f string, args ...interface{}) {
 	}
 
 	m["title"] = s
+}
+
+// WithLocale adds the translator / locale to use for this request.
+func WithLocale(ctx context.Context, locale gotext.Translator) context.Context {
+	return context.WithValue(ctx, contextKeyLocale, locale)
+}
+
+// LocaleFromContext returns nil or the local from the context.
+func LocaleFromContext(ctx context.Context) gotext.Translator {
+	v := ctx.Value(contextKeyLocale)
+	if v == nil {
+		return nil
+	}
+
+	t, ok := v.(gotext.Translator)
+	if !ok {
+		return nil
+	}
+	return t
 }
 
 // WithTemplateMap creates a context with the given template map.

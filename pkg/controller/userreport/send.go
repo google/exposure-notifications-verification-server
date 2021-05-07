@@ -15,6 +15,7 @@
 package userreport
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -61,12 +62,17 @@ func (c *Controller) HandleSend() http.Handler {
 			return
 		}
 
+		locale := controller.LocaleFromContext(ctx)
+		if locale == nil {
+			controller.InternalError(w, r, c.h, fmt.Errorf(locale.Get("user-report.invalid-request")))
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Warn("error binding form", "error", err)
-			// TODO(mikehelmick): i18n
-			m["error"] = []string{"Internal error, please try again"}
+			m["error"] = []string{locale.Get("user-report.invalid-request")}
 			c.renderIndex(w, realm, m)
 			return
 		}
@@ -83,16 +89,14 @@ func (c *Controller) HandleSend() http.Handler {
 		nonce, err := base64util.DecodeString(nonceStr)
 		if err != nil {
 			logger.Warnw("nonce cannot be decoded", "error", err)
-			// TODO(mikehelmick): i18n
-			m["error"] = []string{"Internal error, please close your Exposure Notifications application and try again."}
+			m["error"] = []string{locale.Get("user-report.invalid-request")}
 			c.renderIndex(w, realm, m)
 			return
 		}
 
 		// Check agreement.
 		if !form.Agreement {
-			// TODO(mikehelmick): i18n
-			msg := "You must agree to the terms to request a verification code"
+			msg := locale.Get("user-report.missing-agreement")
 			m["error"] = []string{msg}
 			m["termsError"] = msg
 			c.renderIndex(w, realm, m)
@@ -114,26 +118,30 @@ func (c *Controller) HandleSend() http.Handler {
 		result := c.issueController.IssueOne(ctx, issueRequest)
 		if result.HTTPCode != http.StatusOK {
 			// Handle errors that the user can fix.
-			// TODO(mikehelmick): i18n for messaging.
 			if result.ErrorReturn.ErrorCode == api.ErrInvalidDate {
-				m["error"] = []string{result.ErrorReturn.Error}
-				m["dateError"] = result.ErrorReturn.Error
+				// This shows a localized error without specifics and an English error string w/ specific dates.
+				m["error"] = []string{
+					locale.Get("user-report.error-invalid-date"),
+					result.ErrorReturn.Error,
+				}
+				m["dateError"] = locale.Get("user-report.error-invalid-date")
 				c.renderIndex(w, realm, m)
 				return
 			}
 			if result.ErrorReturn.ErrorCode == api.ErrMissingPhone {
-				m["error"] = []string{result.ErrorReturn.Error}
-				m["phoneError"] = result.ErrorReturn.Error
+				msg := locale.Get("user-report.error-missing-phone")
+				m["error"] = []string{msg}
+				m["phoneError"] = msg
 				c.renderIndex(w, realm, m)
 				return
 			}
 			if result.ErrorReturn.ErrorCode == api.ErrQuotaExceeded {
-				m["error"] = []string{result.ErrorReturn.Error}
+				m["error"] = []string{locale.Get("user-report.quota-exceeded")}
 				c.renderIndex(w, realm, m)
 				return
 			}
 			if result.ErrorReturn.ErrorCode == api.ErrUserReportTryLater {
-				m["error"] = []string{result.ErrorReturn.Error}
+				m["error"] = []string{locale.Get("user-report.phone-not-eligible")}
 				m["skipForm"] = true
 				c.renderIndex(w, realm, m)
 				return
@@ -141,7 +149,7 @@ func (c *Controller) HandleSend() http.Handler {
 
 			logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", result.ErrorReturn.Error)
 			// The error returned isn't something the user can easily fix, show internal error, but hide form.
-			m["error"] = []string{"There was an internal error. A verification code cannot be requested at this time."}
+			m["error"] = []string{locale.Get("user-report.internal-error")}
 			m["skipForm"] = true
 			c.renderIndex(w, realm, m)
 			return
@@ -149,7 +157,6 @@ func (c *Controller) HandleSend() http.Handler {
 
 		controller.ClearNonceFromSession(session)
 
-		m.Title("Request a verification code")
 		m["realm"] = realm
 		c.h.RenderHTML(w, "report/issue", m)
 	})

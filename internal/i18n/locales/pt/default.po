@@ -387,3 +387,68 @@ msgstr "Esse recurso não existe."
 
 msgid "static.redirect-not-found"
 msgstr "Para resgatar um código Exposure Notifications, visite o link em seu dispositivo móvel."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Solicite um código de verificação"
+
+msgid "user-report.navbar"
+msgstr "Solicitar código de verificação de notificações de exposição"
+
+msgid "user-report.request-code-from"
+msgstr "Solicite um código de"
+
+msgid "user-report.instructions"
+msgstr "Se você testou positivo para COVID-19, mas não recebeu um código da Autoridade de Saúde por mensagem de texto ou telefone, você pode solicitar um aqui."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Insira a data do seu teste COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Número de telefone"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Número do celular (para receber o código de verificação)"
+
+msgid "user-report.agreement-header"
+msgstr "Acordo"
+
+msgid "user-report.agreement"
+msgstr "Recebi um resultado de teste positivo para COVID-19 e o número de telefone que indiquei é o meu."
+
+msgid "user-report.request-button"
+msgstr "Solicitar código de verificação"
+
+msgid "user-report.code-issued"
+msgstr "Código de verificação emitido"
+
+msgid "user-report.check-mobile-device"
+msgstr "Por favor, verifique suas mensagens de texto em seu dispositivo móvel."
+
+msgid "user-report.invalid-request"
+msgstr "Solicitação inválida, inicie a partir de seu aplicativo de notificações de exposição em seu dispositivo móvel."
+
+msgid "user-report.not-available"
+msgstr "Sua autoridade de saúde local não está aceitando relatórios iniciados pelo usuário neste momento."
+
+msgid "user-report.missing-agreement"
+msgstr "Você deve concordar com os termos para solicitar um código de verificação"
+
+msgid "user-report.error-invalid-date"
+msgstr "A data do teste deve ser entre 14 dias atrás e hoje."
+
+msgid "user-report.error-missing-phone"
+msgstr "O número do celular é obrigatório."
+
+msgid "user-report.quota-exceeded"
+msgstr "Temporariamente impossibilitado de emitir códigos de verificação, tente novamente mais tarde."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Seu número de telefone não está atualmente qualificado para relatório de usuário"
+
+msgid "user-report.internal-error"
+msgstr "Ocorreu um erro interno. Um código de verificação não pode ser solicitado neste momento."
