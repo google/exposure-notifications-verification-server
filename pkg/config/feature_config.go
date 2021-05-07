@@ -26,11 +26,11 @@ type FeatureConfig struct {
 
 	// EnableUserReport allows for realms to enable user initiated diagnosis reporting,
 	// via API + SMS.
-	EnableUserReport bool `env:"ENABLE_USER_REPORT, default=false"`
+	EnableUserReport bool `env:"ENABLE_USER_REPORT, default=true"`
 
 	// EnableUserReportWeb will host a web page on the enx-redirect service
-	// under a realm's domain IFF that realm has enabled user report and admin user report
-	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=false"`
+	// under a realm's domain IFF that realm has enabled user report.
+	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=true"`
 
 	// EnableAPIKeyLastUsedAt controls whether the UI will show the last_used_at
 	// value for an API key.
