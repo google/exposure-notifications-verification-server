@@ -6,14 +6,18 @@ production on GCP. All of our responses here are specific to GCP.
 
 ## Alerts
 
- - [Elevated500s](alerts/Elevated500s.md)
- - [ElevatedLatencyGreaterThan2s](alerts/ElevatedLatencyGreaterThan2s.md)
+ - [AuthenticatedSMSFailure](alerts/AuthenticatedSMSFailure.md)
  - [ElevatedRateLimitedCount](alerts/ElevatedRateLimitedCount.md)
- - [FastErrorBudgetBurn](alerts/FastErrorBudgetBurn.md)
  - [ForwardProgressFailed](alerts/ForwardProgressFailed.md)
  - [HostDown](alerts/HostDown.md)
+ - [HumanAccessedSecret](alerts/HumanAccessedSecret.md)
+ - [HumanDecryptedValue](alerts/HumanDecryptedValue.md)
  - [StackdriverExportFailed](alerts/StackdriverExportFailed.md)
+ - [UpstreamUserRecreates](alerts/UpstreamUserRecreates.md)
 
-## Common Actions
+## Others
 
  - New Realm Admin
+ - [Tips](tips.md)
+ - [DOS](dos.md)
+ - [slo/FastErrorBudgetBurn](slo/FastErrorBudgetBurn.md)
