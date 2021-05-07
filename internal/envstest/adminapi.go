@@ -82,9 +82,7 @@ func NewAdminAPIServerConfig(tb testing.TB, testDatabaseInstance *database.TestI
 			FailClosed: true,
 		},
 
-		Features: config.FeatureConfig{
-			EnableAuthenticatedSMS: true,
-		},
+		Features: config.FeatureConfig{},
 
 		APIKeyCacheDuration: 5 * time.Second,
 		Issue: config.IssueAPIVars{

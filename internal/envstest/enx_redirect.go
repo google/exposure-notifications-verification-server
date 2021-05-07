@@ -78,9 +78,8 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 		},
 
 		Features: config.FeatureConfig{
-			EnableAuthenticatedSMS: true,
-			EnableUserReport:       true,
-			EnableUserReportWeb:    true,
+			EnableUserReport:    true,
+			EnableUserReportWeb: true,
 		},
 
 		RateLimit: *harness.RateLimiterConfig,

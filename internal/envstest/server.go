@@ -243,9 +243,7 @@ func NewServerConfig(tb testing.TB, testDatabaseInstance *database.TestInstance)
 			FailClosed: true,
 		},
 
-		Features: config.FeatureConfig{
-			EnableAuthenticatedSMS: true,
-		},
+		Features: config.FeatureConfig{},
 
 		CertificateSigning: config.CertificateSigningConfig{
 			Keys:                  *harness.KeyManagerConfig,
