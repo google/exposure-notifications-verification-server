@@ -119,6 +119,12 @@ func (c *Controller) HandleUserReport() http.Handler {
 		case http.StatusInternalServerError:
 			controller.InternalError(w, r, c.h, errors.New(res.ErrorReturn.Error))
 			return
+		case http.StatusConflict:
+			c.h.RenderJSON(w, http.StatusOK, &api.UserReportResponse{
+				ExpiresAt:          res.IssueCodeResponse().ExpiresAt,
+				ExpiresAtTimestamp: res.IssueCodeResponse().ExpiresAtTimestamp,
+			})
+			return
 		case http.StatusOK:
 			c.h.RenderJSON(w, http.StatusOK, &api.UserReportResponse{
 				ExpiresAt:          res.IssueCodeResponse().ExpiresAt,

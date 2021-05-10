@@ -81,6 +81,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 		if errors.Is(err, database.ErrAlreadyReported) {
 			stats.Record(ctx, mUserReportColission.M(1))
 			return &IssueResult{
+				VerCode:     vCode,
 				obsResult:   enobs.ResultError("DUPLICATE_USER_REPORT"),
 				HTTPCode:    http.StatusConflict,
 				ErrorReturn: api.Errorf("phone number not currently eligible for user report").WithCode(api.ErrUserReportTryLater),

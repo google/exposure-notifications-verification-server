@@ -94,14 +94,16 @@ func TestUserReport(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
+			// Same phone number as previous case.
+			// The API still returns "success" to prevent
+			// probing for phone numbers that have reported positive.
 			name: "too_soon",
 			request: &api.UserReportRequest{
 				SymptomDate: symptomDate,
 				Phone:       "+12068675309",
 				Nonce:       nonce,
 			},
-			httpStatusCode: http.StatusConflict,
-			responseErr:    "user_report_try_later",
+			httpStatusCode: http.StatusOK,
 		},
 		{
 			name: "missing_phone",
