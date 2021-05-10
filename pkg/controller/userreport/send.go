@@ -116,6 +116,7 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 
 		result := c.issueController.IssueOne(ctx, issueRequest)
+		suppressError := false
 		if result.HTTPCode != http.StatusOK {
 			// Handle errors that the user can fix.
 			if result.ErrorReturn.ErrorCode == api.ErrInvalidDate {
@@ -141,18 +142,20 @@ func (c *Controller) HandleSend() http.Handler {
 				return
 			}
 			if result.ErrorReturn.ErrorCode == api.ErrUserReportTryLater {
-				m["error"] = []string{locale.Get("user-report.phone-not-eligible")}
+				// This error counts as success. It prevents a user
+				// from probing for phone numbers that have already been used to
+				// self report.
+				suppressError = true
+			}
+
+			if !suppressError {
+				logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", result.ErrorReturn.Error)
+				// The error returned isn't something the user can easily fix, show internal error, but hide form.
+				m["error"] = []string{locale.Get("user-report.internal-error")}
 				m["skipForm"] = true
 				c.renderIndex(w, realm, m)
 				return
 			}
-
-			logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", result.ErrorReturn.Error)
-			// The error returned isn't something the user can easily fix, show internal error, but hide form.
-			m["error"] = []string{locale.Get("user-report.internal-error")}
-			m["skipForm"] = true
-			c.renderIndex(w, realm, m)
-			return
 		}
 
 		controller.ClearNonceFromSession(session)

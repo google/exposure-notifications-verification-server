@@ -230,6 +230,10 @@ corresponds to the export report type of `SELF_REPORT`.
 
 **UserReportResponse**
 
+For successful responses, it could be that the phone number is not currently eligible
+for user report due to reporting too close together. In this case, success is returned
+and no SMS is send to the phone number.
+
 ```json
 http 200
 {
@@ -261,7 +265,6 @@ Possible error code responses. New error codes may be added in future releases.
 | `invalid_date`          | 400         | No    | The provided test or symptom date, was older or newer than the realm allows.                                    |
 | `missing_nonce`         | 400         | No    | The request is missing the required `nonce` field |
 | `missing_phone`         | 400         | No    | The request is missing the required `phone` field |
-| `user_report_try_later` | 409         | No    | The provided phone number is not allowed to make requests right now. It could be for as little as 30 minutes, or as much as 90 days. A cool down time is not provided. |
 | `maintenance_mode   `   | 429         | Yes   | The server is temporarily down for maintenance. Wait and retry later.                                           |
 | `quota_exceeded`        | 429         | Yes   | The realm has run out of its daily quota allocation for issuing codes. Wait and retry later.                    |
 |                         | 500         | Yes   | Internal processing error, may be successful on retry.                           |
