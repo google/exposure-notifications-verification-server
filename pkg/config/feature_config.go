@@ -19,17 +19,7 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 // FeatureConfig represents features that are introduced as off by default allowing
 // for server operators to control their release.
 type FeatureConfig struct {
-	// EnableUserReport allows for realms to enable user initiated diagnosis reporting,
-	// via API + SMS.
-	EnableUserReport bool `env:"ENABLE_USER_REPORT, default=true"`
-
-	// EnableUserReportWeb will host a web page on the enx-redirect service
-	// under a realm's domain IFF that realm has enabled user report.
-	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=true"`
-
-	// EnableAPIKeyLastUsedAt controls whether the UI will show the last_used_at
-	// value for an API key.
-	EnableAPIKeyLastUsedAt bool `env:"ENABLE_API_KEY_LAST_USED_AT, default=true"`
+	// Currently, there are no feature flags.
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known

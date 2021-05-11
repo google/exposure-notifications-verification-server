@@ -43,10 +43,7 @@ func TestIndex(t *testing.T) {
 		DevMode:        true,
 		HostnameConfig: map[string]string{},
 
-		Features: config.FeatureConfig{
-			EnableUserReport:    true,
-			EnableUserReportWeb: true,
-		},
+		Features: config.FeatureConfig{},
 	}
 	cfg.Issue.ENExpressRedirectDomain = "127.0.0.1"
 
