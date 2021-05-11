@@ -96,7 +96,7 @@ func ENXRedirect(
 	// Handle health.
 	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 
-	if cfg.Features.EnableUserReportWeb {
+	{ // User report web-view configuration.
 		// Share static assets with server.
 		{
 			staticFS := assets.ServerStaticFS()

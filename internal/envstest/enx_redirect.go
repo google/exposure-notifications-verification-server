@@ -77,10 +77,7 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 			"e2e-test.test.local": "e2e-test",
 		},
 
-		Features: config.FeatureConfig{
-			EnableUserReport:    true,
-			EnableUserReportWeb: true,
-		},
+		Features: config.FeatureConfig{},
 
 		RateLimit: *harness.RateLimiterConfig,
 

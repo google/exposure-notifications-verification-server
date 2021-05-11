@@ -120,8 +120,7 @@ func APIServer(
 		certChaffTracker.Close()
 	}
 
-	// The user-report handler is only installed if this functionality is enabled.
-	if cfg.Features.EnableUserReport {
+	{
 		sub := r.PathPrefix("/api/user-report").Subrouter()
 		sub.Use(requireAPIKey)
 		sub.Use(processFirewall)

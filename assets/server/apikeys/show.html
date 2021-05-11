@@ -73,18 +73,17 @@
           </div>
         </div>
 
-        {{if $.features.EnableAPIKeyLastUsedAt}}
-          <div class="mt-3">
-            <strong>
-              Last used
-              <span class="oi oi-bell small pl-1 mt-n3" aria-hidden="true"
-                data-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
-            </strong>
-            <div>
-              {{$authApp.LastUsedAt | humanizeTime}}
-            </div>
+        
+        <div class="mt-3">
+          <strong>
+            Last used
+            <span class="oi oi-bell small pl-1 mt-n3" aria-hidden="true"
+              data-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
+          </strong>
+          <div>
+            {{$authApp.LastUsedAt | humanizeTime}}
           </div>
-        {{end}}
+        </div>        
       </div>
     </div>
 

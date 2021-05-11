@@ -194,16 +194,6 @@ func handleRevise(cfg *config.E2ERunnerConfig, db *database.Database, h *render.
 
 // handleUserReport runs the end-to-end runner initiated by a user-report API request.
 func handleUserReport(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
-	if !cfg.Features.EnableUserReport {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			logger := logging.FromContext(ctx)
-			logger.Warnw("user-report feature is not enabled on this server")
-			stats.Record(ctx, mUserReportSuccess.M(1))
-			h.RenderJSON(w, http.StatusOK, nil)
-		})
-	}
-
 	c := *cfg
 	c.DoRevise = false
 	c.DoUserReport = true
