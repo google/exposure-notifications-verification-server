@@ -18,8 +18,7 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 
 // FeatureConfig represents features that are introduced as off by default allowing
 // for server operators to control their release.
-type FeatureConfig struct {
-	// Currently, there are no feature flags.
+type FeatureConfig struct { // Currently, there are no feature flags.
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known
