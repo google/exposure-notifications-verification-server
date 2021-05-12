@@ -150,6 +150,7 @@ func ENXRedirect(
 			sub.Use(requireSession)
 			sub.Use(httplimiter.Handle)
 			sub.Use(processLocale)
+			sub.Use(middleware.AddOperatingSystemFromUserAgent())
 
 			sub.Handle("", userReportController.HandleSend()).Methods(http.MethodPost)
 		}

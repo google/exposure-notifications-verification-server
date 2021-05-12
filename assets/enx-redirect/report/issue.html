@@ -15,5 +15,16 @@
     <p>{{t $.locale "user-report.check-mobile-device"}}</p>
   </main>
 </body>
+
+
+{{if .webkitClose}}
+<script>
+window.webkit.messageHandlers.progressObserver.postMessage ({
+          "userDidSubmit": true
+});
+</script>
+{{end}}
+  
+
 </html>
 {{end}}
