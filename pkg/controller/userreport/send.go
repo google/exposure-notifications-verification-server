@@ -160,6 +160,11 @@ func (c *Controller) HandleSend() http.Handler {
 
 		controller.ClearNonceFromSession(session)
 
+		// If this is being accessed from an iOS device, send the close signal.
+		if controller.OperatingSystemFromContext(ctx) == database.OSTypeIOS {
+			m["webkitClose"] = true
+		}
+
 		m["realm"] = realm
 		c.h.RenderHTML(w, "report/issue", m)
 	})
