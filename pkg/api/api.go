@@ -220,13 +220,28 @@ type IssueCodeRequest struct {
 	// callers are using a single API key behind an ERP, or when callers are using
 	// the verification server as an API with a different authentication system.
 	// This field is optional.
-
+	//
 	// The information provided is stored exactly as-is. If the identifier is
 	// uniquely identifying PII (such as an email address, employee ID, SSN, etc),
 	// the caller should apply a cryptographic hash before sending that data. The
 	// system does not sanitize or encrypt these external IDs, it is the caller's
 	// responsibility to do so.
 	ExternalIssuerID string `json:"externalIssuerID"`
+
+	// OnlyGenerateSMS is a boolean field which indicates whether the response
+	// should generate and return the SMS message.
+	//
+	// If true, the system will not send the SMS message, but the message will be
+	// returned in the response.
+	//
+	// If true, the Phone field must also be provided.
+	//
+	// If true and the realm has Authenticated SMS enabled, the returned message
+	// will include the authentication signature as part of the body.
+	//
+	// This field can only be set to true if the realm is configured to allow
+	// generated SMS messages.
+	OnlyGenerateSMS bool `json:"onlyGenerateSMS"`
 }
 
 // IssueCodeResponse defines the response type for IssueCodeRequest.
@@ -251,6 +266,11 @@ type IssueCodeResponse struct {
 	// code expires, in UTC seconds since epoch.
 	LongExpiresAt          string `json:"longExpiresAt,omitempty"`
 	LongExpiresAtTimestamp int64  `json:"longExpiresAtTimestamp,omitempty"`
+
+	// GenerateSMS is the compiled SMS message. This field will only be present if
+	// a phone number was provided and onlyGenerateSMS was specified on the
+	// request.
+	GeneratedSMS string `json:"generatedSMS,omitempty"`
 
 	Error     string `json:"error,omitempty"`
 	ErrorCode string `json:"errorCode,omitempty"`

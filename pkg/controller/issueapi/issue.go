@@ -18,10 +18,12 @@ import (
 	"context"
 	"crypto"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	enobs "github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -41,10 +43,11 @@ type IssueRequestInternal struct {
 
 // IssueResult is the response returned from IssueLogic.IssueOne or IssueMany.
 type IssueResult struct {
-	VerCode     *database.VerificationCode
-	ErrorReturn *api.ErrorReturn
-	HTTPCode    int
-	obsResult   tag.Mutator
+	VerCode      *database.VerificationCode
+	GeneratedSMS string
+	ErrorReturn  *api.ErrorReturn
+	HTTPCode     int
+	obsResult    tag.Mutator
 }
 
 // IssueCodeResponse converts an IssueResult to the external api response.
@@ -64,6 +67,7 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
 		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
 		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
+		GeneratedSMS:           result.GeneratedSMS,
 	}
 }
 
@@ -83,9 +87,9 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 	// Generate codes
 	results := make([]*IssueResult, len(requests))
 	for i, req := range requests {
-		vCode, result := c.BuildVerificationCode(ctx, req, realm)
-		if result != nil {
-			results[i] = result
+		vCode, resultErr := c.BuildVerificationCode(ctx, req, realm)
+		if resultErr != nil {
+			results[i] = resultErr
 			continue
 		}
 		vCode.Nonce = req.Nonce
@@ -112,21 +116,45 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 		return results
 	}
 
-	if smsProvider != nil {
-		var wg sync.WaitGroup
-		for i, result := range results {
-			if result.ErrorReturn != nil {
-				continue
-			}
+	var wg sync.WaitGroup
+	for i, result := range results {
+		// Do not attempt to process things that have already errored.
+		if result.ErrorReturn != nil {
+			continue
+		}
 
+		// Get the associated request for this result.
+		issueReq := requests[i].IssueRequest
+
+		// Do not attempt to process requests that do not have a phone number.
+		if issueReq.Phone == "" {
+			continue
+		}
+
+		// If the request was only to generate the SMS, generate and sign the SMS
+		// and attach the message to the response.
+		if issueReq.OnlyGenerateSMS {
+			message, err := c.BuildSMS(ctx, realm, smsSigner, keyID, issueReq, result.VerCode)
+			if err != nil {
+				result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
+				result.HTTPCode = http.StatusInternalServerError
+				result.ErrorReturn = api.Errorf("failed to build sms: %s", err).WithCode(api.ErrSMSFailure)
+			}
+			result.GeneratedSMS = message
+
+			// Do not attempt to send if OnlyGenerateSMS was true.
+			continue
+		}
+
+		if smsProvider != nil {
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
 				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
-			}(requests[i].IssueRequest, result)
+			}(issueReq, result)
 		}
-		wg.Wait()
 	}
+	wg.Wait()
 
 	return results
 }
