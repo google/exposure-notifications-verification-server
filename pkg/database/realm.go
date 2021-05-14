@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
@@ -174,6 +175,15 @@ type Realm struct {
 	AgencyBackgroundColorPtr *string `gorm:"column:agency_background_color; type:text;"`
 	AgencyImage              string  `gorm:"-"`
 	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
+
+	// UserReportWebhookURL and UserReportWebhookSecret are used as callbacks for
+	// user reports.
+	UserReportWebhookURL                   string  `gorm:"-"`
+	UserReportWebhookURLPtr                *string `gorm:"column:user_report_webhook_url; type:text;"`
+	UserReportWebhookSecret                string  `gorm:"-" json:"-"`
+	UserReportWebhookSecretPtr             *string `gorm:"column:user_report_webhook_secret; type:text;" json:"-"`
+	UserReportWebhookSecretPlaintextCache  string  `gorm:"-"`
+	UserReportWebhookSecretCiphertextCache string  `gorm:"-"`
 
 	// AllowBulkUpload allows users to issue codes from a batch file of test results.
 	AllowBulkUpload bool `gorm:"type:boolean; not null; default:false;"`
@@ -373,6 +383,8 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.SMSFromNumberID = uintValue(r.SMSFromNumberIDPtr)
 	r.AgencyBackgroundColor = stringValue(r.AgencyBackgroundColorPtr)
 	r.AgencyImage = stringValue(r.AgencyImagePtr)
+	r.UserReportWebhookURL = stringValue(r.UserReportWebhookURLPtr)
+	r.UserReportWebhookSecret = stringValue(r.UserReportWebhookSecretPtr)
 
 	return nil
 }
@@ -398,6 +410,26 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	}
 	r.AgencyBackgroundColorPtr = stringPtr(r.AgencyBackgroundColor)
 	r.AgencyImagePtr = stringPtr(r.AgencyImage)
+
+	r.UserReportWebhookSecret = project.TrimSpace(r.UserReportWebhookSecret)
+	r.UserReportWebhookSecretPtr = stringPtr(r.UserReportWebhookSecret)
+
+	r.UserReportWebhookURL = project.TrimSpace(r.UserReportWebhookURL)
+	if v := r.UserReportWebhookURL; v != "" {
+		u, err := url.Parse(v)
+		if err != nil {
+			r.AddError("userReportWebhookURL", "is not a valid URL")
+		}
+		if u.Scheme != "https" {
+			r.AddError("userReportWebhookURL", "must begin with https://")
+		}
+
+		// A webhook secret is required if a URL was provided.
+		if want := 12; len(r.UserReportWebhookSecret) < want {
+			r.AddError("userReportWebhookSecret", fmt.Sprintf("must be at least %d characters", want))
+		}
+	}
+	r.UserReportWebhookURLPtr = stringPtr(r.UserReportWebhookURL)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")

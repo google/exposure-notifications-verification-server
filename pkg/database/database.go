@@ -308,6 +308,15 @@ func (db *Database) OpenWithCacher(ctx context.Context, cacher cache.Cacher) err
 
 	rawDB.Callback().Query().After("gorm:after_query").Register("email_configs:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "email_configs", "SMTPPassword"))
 
+	// Realms
+	rawDB.Callback().Create().Before("gorm:create").Register("realms:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "realms", "UserReportWebhookSecret"))
+	rawDB.Callback().Create().After("gorm:create").Register("realms:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "realms", "UserReportWebhookSecret"))
+
+	rawDB.Callback().Update().Before("gorm:update").Register("realms:encrypt", callbackKMSEncrypt(ctx, db.keyManager, c.EncryptionKey, "realms", "UserReportWebhookSecret"))
+	rawDB.Callback().Update().After("gorm:update").Register("realms:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "realms", "UserReportWebhookSecret"))
+
+	rawDB.Callback().Query().After("gorm:after_query").Register("realms:decrypt", callbackKMSDecrypt(ctx, db.keyManager, c.EncryptionKey, "realms", "UserReportWebhookSecret"))
+
 	// Verification codes
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "code"))
 	rawDB.Callback().Create().Before("gorm:create").Register("verification_codes:hmac_long_code", callbackHMAC(ctx, db.GenerateVerificationCodeHMAC, "verification_codes", "long_code"))
@@ -518,6 +527,7 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
 		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+		ptrField, _, _ := getFieldString(scope, column+"Ptr")
 
 		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
 		// ciphertext is unchanged, do not decrypt.
@@ -543,7 +553,14 @@ func callbackKMSDecrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(plaintext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
+				return
+			}
+		}
+
+		if ptrField != nil {
+			if err := ptrField.Set(plaintext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ptrField.Name, err))
 				return
 			}
 		}
@@ -590,6 +607,7 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		plaintextCacheField, plaintextCache, hasPlaintextCache := getFieldString(scope, column+"PlaintextCache")
 		ciphertextCacheField, ciphertextCache, hasCiphertextCache := getFieldString(scope, column+"CiphertextCache")
+		ptrField, _, _ := getFieldString(scope, column+"Ptr")
 
 		// Optimization - if PlaintextCache and CiphertextCache columns exist and the
 		// plaintext is unchanged, do not re-encrypt.
@@ -609,8 +627,14 @@ func callbackKMSEncrypt(ctx context.Context, keyManager keys.KeyManager, keyID, 
 
 		if hasRealField {
 			if err := realField.Set(ciphertext); err != nil {
-				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", column, err))
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", realField.Name, err))
 				return
+			}
+		}
+
+		if ptrField != nil {
+			if err := ptrField.Set(ciphertext); err != nil {
+				_ = scope.Err(fmt.Errorf("failed to set column %s: %w", ptrField.Name, err))
 			}
 		}
 
@@ -669,6 +693,10 @@ func callbackHMAC(ctx context.Context, hashFunc func(string) (string, error), ta
 func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) {
 	field, ok := scope.FieldByName(name)
 	if !ok {
+		return field, "", false
+	}
+
+	if !field.Field.IsValid() {
 		return field, "", false
 	}
 

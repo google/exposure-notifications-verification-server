@@ -61,16 +61,18 @@ type formData struct {
 	KeyServerURLOverride      string `form:"key_server_url"`
 	KeyServerAudienceOverride string `form:"key_server_audience"`
 
-	Codes                 bool              `form:"codes"`
-	AllowedTestTypes      database.TestType `form:"allowed_test_types"`
-	AllowUserReport       bool              `form:"allow_user_report"`
-	AllowAdminUserReport  bool              `form:"allow_admin_user_report"`
-	AllowBulkUpload       bool              `form:"allow_bulk"`
-	RequireDate           bool              `form:"require_date"`
-	CodeLength            uint              `form:"code_length"`
-	CodeDurationMinutes   int64             `form:"code_duration"`
-	LongCodeLength        uint              `form:"long_code_length"`
-	LongCodeDurationHours int64             `form:"long_code_duration"`
+	Codes                   bool              `form:"codes"`
+	AllowedTestTypes        database.TestType `form:"allowed_test_types"`
+	AllowUserReport         bool              `form:"allow_user_report"`
+	AllowAdminUserReport    bool              `form:"allow_admin_user_report"`
+	UserReportWebhookURL    string            `form:"user_report_webhook_url"`
+	UserReportWebhookSecret string            `form:"user_report_webhook_secret"`
+	AllowBulkUpload         bool              `form:"allow_bulk"`
+	RequireDate             bool              `form:"require_date"`
+	CodeLength              uint              `form:"code_length"`
+	CodeDurationMinutes     int64             `form:"code_duration"`
+	LongCodeLength          uint              `form:"long_code_length"`
+	LongCodeDurationHours   int64             `form:"long_code_duration"`
 
 	SMS                       bool               `form:"sms"`
 	UseSystemSMSConfig        bool               `form:"use_system_sms_config"`
@@ -228,6 +230,12 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.AllowedTestTypes = form.AllowedTestTypes
 			currentRealm.RequireDate = form.RequireDate
 			currentRealm.AllowBulkUpload = form.AllowBulkUpload
+
+			currentRealm.UserReportWebhookURL = form.UserReportWebhookURL
+			if form.UserReportWebhookSecret != project.PasswordSentinel {
+				currentRealm.UserReportWebhookSecret = form.UserReportWebhookSecret
+			}
+
 			if form.AllowUserReport {
 				currentRealm.AddUserReportToAllowedTestTypes()
 				currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
