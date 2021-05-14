@@ -2304,6 +2304,20 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS agency_image`)
 			},
 		},
+		{
+			ID: "00165-AddAllowGeneratedSMS",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS allow_generated_sms BOOL NOT NULL DEFAULT FALSE`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS allow_generated_sms`)
+			},
+		},
 	}
 }
 

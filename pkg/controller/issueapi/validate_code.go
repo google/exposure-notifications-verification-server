@@ -73,9 +73,28 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest 
 		return nil, result
 	}
 
+	if request.OnlyGenerateSMS {
+		if !realm.AllowGeneratedSMS {
+			return nil, &IssueResult{
+				obsResult:   enobs.ResultError("ONLY_GENERATE_SMS_NOT_ALLOWED"),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Errorf("realm is not permitted to use onlyGenerateSMS").WithCode(api.ErrUnparsableRequest),
+			}
+		}
+
+		if request.Phone == "" {
+			err := fmt.Errorf("generated sms requested, but no phone number was provided")
+			return nil, &IssueResult{
+				obsResult:   enobs.ResultError("INVALID_GENERATE_SMS_REQUEST"),
+				HTTPCode:    http.StatusBadRequest,
+				ErrorReturn: api.Error(err),
+			}
+		}
+	}
+
 	// Verify SMS configuration if phone was provided
 	var smsProvider sms.Provider
-	if request.Phone != "" {
+	if !request.OnlyGenerateSMS && request.Phone != "" {
 		var err error
 		smsProvider, err = realm.SMSProvider(c.db)
 		if err != nil {

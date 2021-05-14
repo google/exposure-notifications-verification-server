@@ -17,6 +17,7 @@ package issueapi_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -35,7 +36,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestIssueMalformed(t *testing.T) {
+func TestIssue(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -45,6 +46,7 @@ func TestIssueMalformed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	realm.AllowedTestTypes = database.TestTypeConfirmed | database.TestTypeLikely | database.TestTypeNegative | database.TestTypeUserReport
 	realm.AllowBulkUpload = true
 
 	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, harness.Renderer)
@@ -122,7 +124,6 @@ func TestIssueMalformed(t *testing.T) {
 		},
 		{
 			name: "issue batch, realm not allowed",
-
 			membership: &database.Membership{
 				Realm: &database.Realm{
 					AllowBulkUpload: false,
@@ -132,6 +133,43 @@ func TestIssueMalformed(t *testing.T) {
 			fn:   c.BatchIssueWithUIAuth,
 			req:  api.BatchIssueCodeRequest{},
 			code: http.StatusBadRequest,
+		},
+		{
+			name: "generated_sms_realm_not_allowed",
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					AllowGeneratedSMS: false,
+				},
+				Permissions: rbac.CodeIssue,
+			},
+			fn: c.IssueWithUIAuth,
+			req: api.IssueCodeRequest{
+				Phone:           "something",
+				OnlyGenerateSMS: true,
+			},
+			code: http.StatusBadRequest,
+		},
+		{
+			name: "generated_sms_realm_allowed",
+			membership: &database.Membership{
+				Realm: &database.Realm{
+					CodeDuration:      database.FromDuration(5 * time.Minute),
+					CodeLength:        8,
+					LongCodeDuration:  database.FromDuration(15 * time.Minute),
+					LongCodeLength:    16,
+					AllowedTestTypes:  database.TestTypeConfirmed,
+					AllowGeneratedSMS: true,
+				},
+				Permissions: rbac.CodeIssue,
+			},
+			fn: c.IssueWithUIAuth,
+			req: api.IssueCodeRequest{
+				Phone:           "something",
+				SymptomDate:     time.Now().UTC().Format(project.RFC3339Date),
+				TestType:        "confirmed",
+				OnlyGenerateSMS: true,
+			},
+			code: http.StatusOK,
 		},
 	}
 
@@ -148,7 +186,7 @@ func TestIssueMalformed(t *testing.T) {
 			tc.fn(w, r)
 
 			if got, want := w.Code, tc.code; got != want {
-				t.Errorf("incorrect error code. got %d, want %d", got, want)
+				t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
 			}
 		})
 	}
