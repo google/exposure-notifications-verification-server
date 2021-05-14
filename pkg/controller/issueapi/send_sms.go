@@ -17,6 +17,7 @@ package issueapi
 import (
 	"context"
 	"crypto"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +28,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/signatures"
 	"github.com/google/exposure-notifications-verification-server/pkg/sms"
-	"go.opencensus.io/stats"
 )
 
 // scrubbers is a list of known Twilio error messages that contain the send to phone number.
@@ -80,46 +80,57 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 	}
 }
 
-func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvider sms.Provider, signer crypto.Signer, keyID string, request *api.IssueCodeRequest, result *IssueResult) error {
-	smsStart := time.Now()
-	defer enobs.RecordLatency(ctx, smsStart, mSMSLatencyMs, &result.obsResult)
+// BuildSMS builds and signs (if configured) the SMS message. It returns the
+// complete and compiled message.
+func (c *Controller) BuildSMS(ctx context.Context, realm *database.Realm, signer crypto.Signer, keyID string, request *api.IssueCodeRequest, vercode *database.VerificationCode) (string, error) {
+	now := time.Now()
 
-	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
+	logger := logging.FromContext(ctx).Named("issueapi.BuildSMS")
+	redirectDomain := c.config.IssueConfig().ENExpressRedirectDomain
 
-	message, err := realm.BuildSMSText(result.VerCode.Code, result.VerCode.LongCode, c.config.IssueConfig().ENExpressRedirectDomain, request.SMSTemplateLabel)
+	message, err := realm.BuildSMSText(vercode.Code, vercode.LongCode, redirectDomain, request.SMSTemplateLabel)
 	if err != nil {
-		result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
-		return err
+		logger.Errorw("failed to build sms text for realm",
+			"template", request.SMSTemplateLabel,
+			"error", err)
+		return "", fmt.Errorf("failed to build sms message: %w", err)
 	}
 
 	// A signer will only be provided if the realm has configured and enabled
 	// SMS signing.
-	if signer != nil {
-		var err error
-		purpose := signatures.SMSPurposeENReport
-		if request.TestType == api.TestTypeUserReport {
-			purpose = signatures.SMSPurposeUserReport
-		}
-		message, err = signatures.SignSMS(signer, keyID, smsStart, purpose, request.Phone, message)
-		if err != nil {
-			defer func() {
-				if err := stats.RecordWithOptions(ctx,
-					stats.WithMeasurements(mAuthenticatedSMSFailure.M(1)),
-					stats.WithTags(enobs.ResultError("FAILED_TO_SIGN_SMS"))); err != nil {
-					logger.Errorw("failed to record stats", "error", err)
-				}
-			}()
-
-			if c.config.GetAuthenticatedSMSFailClosed() {
-				result.obsResult = enobs.ResultError("FAILED_TO_SIGN_SMS")
-				return err
-			}
-
-			// Fail open, but still log the error and record the metric.
-			logger.Errorw("failed to sign sms", "error", err)
-		}
+	if signer == nil {
+		return message, nil
 	}
 
+	purpose := signatures.SMSPurposeENReport
+	if request.TestType == api.TestTypeUserReport {
+		purpose = signatures.SMSPurposeUserReport
+	}
+
+	message, err = signatures.SignSMS(signer, keyID, now, purpose, request.Phone, message)
+	if err != nil {
+		logger.Errorw("failed to sign sms", "error", err)
+		if c.config.GetAuthenticatedSMSFailClosed() {
+			return "", fmt.Errorf("failed to sign sms: %w", err)
+		}
+	}
+	return message, nil
+}
+
+func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvider sms.Provider, signer crypto.Signer, keyID string, request *api.IssueCodeRequest, result *IssueResult) error {
+	defer enobs.RecordLatency(ctx, time.Now(), mSMSLatencyMs, &result.obsResult)
+
+	logger := logging.FromContext(ctx).Named("issueapi.sendSMS")
+
+	// Build the message
+	message, err := c.BuildSMS(ctx, realm, signer, keyID, request, result.VerCode)
+	if err != nil {
+		logger.Errorw("failed to build sms", "error", err)
+		result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
+		return err
+	}
+
+	// Send the message
 	if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 		// Delete the token
 		if err := c.db.DeleteVerificationCode(result.VerCode.Code); err != nil {
@@ -131,5 +142,6 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 		result.obsResult = enobs.ResultError("FAILED_TO_SEND_SMS")
 		return err
 	}
+
 	return nil
 }

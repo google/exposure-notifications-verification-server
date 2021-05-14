@@ -221,6 +221,12 @@ type Realm struct {
 	// containing verification codes.
 	UseAuthenticatedSMS bool `gorm:"column:use_authenticated_sms; type:bool; not null; default:false;"`
 
+	// AllowGeneratedSMS indicates if this realm can request generated SMS
+	// messages via the API. If enabled, callers can request a fully-compiled and
+	// signed (if Authenticated SMS is enabled) SMS message to be returned when
+	// calling the issue API.
+	AllowGeneratedSMS bool `gorm:"column:allow_generated_sms; type:bool; not null; default:false;"`
+
 	// EmailInviteTemplate is the template for inviting new users.
 	EmailInviteTemplate string `gorm:"type:text;"`
 

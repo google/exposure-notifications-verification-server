@@ -2,20 +2,20 @@
 
 - [API access](#api-access)
 - [API usage](#api-usage)
-    - [Authenticating](#authenticating)
-    - [Error reporting](#error-reporting)
+  - [Authenticating](#authenticating)
+  - [Error reporting](#error-reporting)
 - [API Methods](#api-methods)
-    - [`/api/verify`](#apiverify)
-    - [`/api/certificate`](#apicertificate)
-    - [`/api/user-report`](#apiuser-report)
+  - [`/api/verify`](#apiverify)
+  - [`/api/certificate`](#apicertificate)
+  - [`/api/user-report`](#apiuser-report)
 - [Admin APIs](#admin-apis)
-    - [`/api/issue`](#apiissue)
-        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-    - [`/api/batch-issue`](#apibatch-issue)
-        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-    - [`/api/checkcodestatus`](#apicheckcodestatus)
-    - [`/api/expirecode`](#apiexpirecode)
-    - [`/api/stats/*`](#apistats)
+  - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+  - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*`](#apistats)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
 
@@ -195,7 +195,7 @@ Possible error code responses. New error codes may be added in future releases.
 
 ## `/api/user-report`
 
-Request a verification code for a `user-report` verification code, which 
+Request a verification code for a `user-report` verification code, which
 corresponds to the export report type of `SELF_REPORT`.
 
 **UserReportRequest**
@@ -290,6 +290,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "padding": "<bytes>",
   "uuid": "optional string UUID",
   "externalIssuerID": "external-ID",
+  "onlyGenerateSMS": "<true|false>",
 }
 ```
 
@@ -325,6 +326,11 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
     the caller should apply a cryptographic hash before sending that data. **The
     system does not sanitize or encrypt these external IDs, it is the caller's
     responsibility to do so.**
+* `onlyGenerateSMS` is an optional field. If true, the system will **not** send
+  the SMS message and will instead return the generated SMS message as part of
+  the response. If the realm is configured with Authenticated SMS, the generated
+  SMS will also be signed. If true, the `phone` field is also required. This
+  feature must be enabled on a per-realm basis by a system administrator.
 
 **IssueCodeResponse**
 
@@ -339,6 +345,7 @@ http 200
   "expiresAtTimestamp": 0,
   "longExpiresAt": "RFC1123 UTC timestamp",
   "longExpiresAtTimestamp": 0,
+  "generatedSMS": "string message",
 }
 
 or
@@ -363,6 +370,8 @@ or
   * represents the time that the link containing a 'long' verification code expires (if one was issued)
 * `longExpiresAtTimestamp`
   * Unix, seconds since the epoch for `longExpiresAt`
+* `generatedSMS`
+  * The compiled (and possibly signed) SMS message.
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
@@ -405,12 +414,11 @@ messages.
 
 The server attempts to issue every code in the batch. If errors are encountered, each item in `codes` will contain the error details for
 the corresponding code. The overall request will get the error status code of the first seen error, although some codes may have
-succeeded.
+succeeded. For example:
 
-eg.
-```
+```json
 {
-  codes: [
+  "codes": [
     {
       "error": "the first code failed",
       "errorCode": "missing_date",
@@ -422,14 +430,15 @@ eg.
       "expiresAtTimestamp": 0,
       "expiresAt": "RFC1123 UTC timestamp",
       "expiresAtTimestamp": 0,
+      "generatedSMS": "string message",
     },
     {
       "error": "the third code failed",
       "errorCode": "unparsable_request",
     },
   ],
-  error: "the first code failed",
-  errorCode: "missing_date",
+  "error": "the first code failed",
+  "errorCode": "missing_date",
 }
 ```
 
@@ -446,6 +455,7 @@ eg.
       "phone": "+CC Phone number",
       "uuid": "optional string UUID",
       "externalIssuerID": "external-ID",
+      "onlyGenerateSMS": "<true|false>",
     },
     {
       ...
@@ -461,7 +471,7 @@ Note: The `error` and `errorCode` of the outer response body will match the firs
 The response http code will also match the first seen error. The caller should iterate `codes` to handle errors
 for each code response. The index of each responses will match the index of the original request.
 
-```
+```json
 {
   "codes": [
     {
@@ -473,6 +483,7 @@ for each code response. The index of each responses will match the index of the 
       "expiresAtTimestamp": 0,
       "longExpiresAt": "RFC1123 UTC timestamp",
       "longExpiresAtTimestamp": 0,
+      "generatedSMS": "string message",
       "error": "[optional] descriptive error message",
       "errorCode": "[optional] well defined error code from api.go",
     },
@@ -480,7 +491,7 @@ for each code response. The index of each responses will match the index of the 
       ...
     },
   ],
-  "padding": "<bytes>"
+  "padding": "<bytes>",
   "error": "[optional] descriptive error message. The first seen error from 'codes'",
   "errorCode": "[optional] well defined error code from api.go. The first-seen errorCode of 'codes'",
 }
@@ -578,7 +589,7 @@ endpoints without notice.
 -  `/api/stats/realm/key-server.{csv,json}` - Daily statistics gathered from the
    key-server if enabled for the realm. This includes publish requests, EN days
    active before upload, and onset-to-upload distribution.
-  
+
 -   `/api/stats/realm/composite.{csv,json}` - Daily statistics for the realm
    including all realm and key server information.
 
