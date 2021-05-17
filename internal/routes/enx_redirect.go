@@ -105,6 +105,9 @@ func ENXRedirect(
 			// Browers and devices seem to always hit this - serve it to keep our logs
 			// cleaner.
 			r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
+
+			// Install robots.txt serving here to prevent indexing.
+			r.Path("/robots.txt").Handler(http.FileServer(http.FS(staticFS)))
 		}
 
 		// Setup sessions
