@@ -60,15 +60,20 @@ func (result *IssueResult) IssueCodeResponse() *api.IssueCodeResponse {
 	}
 
 	v := result.VerCode
-	return &api.IssueCodeResponse{
+	resp := &api.IssueCodeResponse{
 		UUID:                   v.UUID,
 		VerificationCode:       v.Code,
 		ExpiresAt:              v.ExpiresAt.Format(time.RFC1123),
 		ExpiresAtTimestamp:     v.ExpiresAt.UTC().Unix(),
 		LongExpiresAt:          v.LongExpiresAt.Format(time.RFC1123),
 		LongExpiresAtTimestamp: v.LongExpiresAt.UTC().Unix(),
-		GeneratedSMS:           result.GeneratedSMS,
 	}
+
+	if result.GeneratedSMS != "" {
+		resp.GeneratedSMS = result.GeneratedSMS
+		resp.Phone = v.PhoneNumber
+	}
+	return resp
 }
 
 // IssueOne handles validating a single IssueCodeRequest, issuing a new code, and sending an SMS message.

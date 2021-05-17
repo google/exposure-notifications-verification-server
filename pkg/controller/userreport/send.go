@@ -15,7 +15,14 @@
 package userreport
 
 import (
+	"bytes"
+	"context"
+	"crypto/hmac"
+	"crypto/sha512"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -24,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleSend() http.Handler {
@@ -58,6 +66,7 @@ func (c *Controller) HandleSend() http.Handler {
 		ctx = controller.WithRealm(ctx, realm)
 
 		if !realm.AllowsUserReport() {
+			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			controller.NotFound(w, r, c.h)
 			return
 		}
@@ -83,11 +92,13 @@ func (c *Controller) HandleSend() http.Handler {
 		// Pull the nonce from the session.
 		nonceStr := controller.NonceFromSession(session)
 		if nonceStr == "" {
+			stats.Record(ctx, mMissingNonce.M(1))
 			controller.NotFound(w, r, c.h)
 			return
 		}
 		nonce, err := base64util.DecodeString(nonceStr)
 		if err != nil {
+			stats.Record(ctx, mInvalidNonce.M(1))
 			logger.Warnw("nonce cannot be decoded", "error", err)
 			m["error"] = []string{locale.Get("user-report.invalid-request")}
 			c.renderIndex(w, realm, m)
@@ -96,6 +107,7 @@ func (c *Controller) HandleSend() http.Handler {
 
 		// Check agreement.
 		if !form.Agreement {
+			stats.Record(ctx, mMissingAgreement.M(1))
 			msg := locale.Get("user-report.missing-agreement")
 			m["error"] = []string{msg}
 			m["termsError"] = msg
@@ -113,6 +125,13 @@ func (c *Controller) HandleSend() http.Handler {
 			},
 			UserRequested: true,
 			Nonce:         nonce,
+		}
+
+		// If the realm has configured a custom webhook URL, do not send the message
+		// even if an SMS provider was given. Instead, generate the SMS message and
+		// post the payload to their endpoint.
+		if realm.UserReportWebhookURL != "" {
+			issueRequest.IssueRequest.OnlyGenerateSMS = true
 		}
 
 		result := c.issueController.IssueOne(ctx, issueRequest)
@@ -142,9 +161,8 @@ func (c *Controller) HandleSend() http.Handler {
 				return
 			}
 			if result.ErrorReturn.ErrorCode == api.ErrUserReportTryLater {
-				// This error counts as success. It prevents a user
-				// from probing for phone numbers that have already been used to
-				// self report.
+				// This error counts as success. It prevents a user from probing for
+				// phone numbers that have already been used to self report.
 				suppressError = true
 			}
 
@@ -153,6 +171,17 @@ func (c *Controller) HandleSend() http.Handler {
 				// The error returned isn't something the user can easily fix, show internal error, but hide form.
 				m["error"] = []string{locale.Get("user-report.internal-error")}
 				m["skipForm"] = true
+				c.renderIndex(w, realm, m)
+				return
+			}
+		}
+
+		// Compile and send the payload to the webhook URL.
+		if realm.UserReportWebhookURL != "" {
+			if err := sendWebhookRequest(ctx, c.httpClient, realm, result); err != nil {
+				stats.Record(ctx, mWebhookError.M(1))
+				logger.Errorw("failed to send webhook request", "error", err)
+				m["error"] = []string{locale.Get("user-report.internal-error")}
 				c.renderIndex(w, realm, m)
 				return
 			}
@@ -168,4 +197,59 @@ func (c *Controller) HandleSend() http.Handler {
 		m["realm"] = realm
 		c.h.RenderHTML(w, "report/issue", m)
 	})
+}
+
+// sendWebhookRequest builds and sends the webhook request to the realm's
+// webhook URL.
+func sendWebhookRequest(ctx context.Context, client *http.Client, realm *database.Realm, result *issueapi.IssueResult) error {
+	logger := logging.FromContext(ctx).Named("userreport.sendWebhookRequest").
+		With("realm", realm.ID).
+		With("webhook_url", realm.UserReportWebhookURL)
+
+	b, mac, err := buildAndSignPayloadForWebhook(realm.UserReportWebhookSecret, result)
+	if err != nil {
+		return fmt.Errorf("failed to build and sign payload for webhook: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, realm.UserReportWebhookURL, bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("failed to build webhook request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Signature", mac)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to issue payload request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if code := resp.StatusCode; code != 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		logger.Errorw("unsuccessful response from webhook",
+			"code", code,
+			"headers", resp.Header,
+			"body", body)
+		return fmt.Errorf("unsuccessful response from webhook (%d)", code)
+	}
+
+	return nil
+}
+
+// buildAndSignPayloaForWebhook encodes the response as JSON, generates an HMAC
+// of the generated JSON, and returns the generated JSON and computed HMAC to
+// the caller.
+func buildAndSignPayloadForWebhook(secret string, body interface{}) ([]byte, string, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to marshal json for webhook: %w", err)
+	}
+
+	mac := hmac.New(sha512.New, []byte(secret))
+	if _, err := mac.Write(b); err != nil {
+		return nil, "", fmt.Errorf("failed to write hmac for webhook: %w", err)
+	}
+	result := hex.EncodeToString(mac.Sum(nil))
+
+	return b, result, nil
 }

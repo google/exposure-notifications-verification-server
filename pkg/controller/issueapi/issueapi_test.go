@@ -86,7 +86,7 @@ func TestIssue(t *testing.T) {
 			},
 			fn: c.IssueWithAPIAuth,
 			req: api.IssueCodeRequest{
-				Phone: "something",
+				Phone: "5005550000",
 			},
 			code: http.StatusInternalServerError, // unauthorized at middleware
 		},
@@ -108,7 +108,7 @@ func TestIssue(t *testing.T) {
 			},
 			fn: c.IssueWithUIAuth,
 			req: api.IssueCodeRequest{
-				Phone: "something",
+				Phone: "5005550000",
 			},
 			code: http.StatusUnauthorized,
 		},
@@ -144,7 +144,7 @@ func TestIssue(t *testing.T) {
 			},
 			fn: c.IssueWithUIAuth,
 			req: api.IssueCodeRequest{
-				Phone:           "something",
+				Phone:           "5005550000",
 				OnlyGenerateSMS: true,
 			},
 			code: http.StatusBadRequest,
@@ -159,12 +159,13 @@ func TestIssue(t *testing.T) {
 					LongCodeLength:    16,
 					AllowedTestTypes:  database.TestTypeConfirmed,
 					AllowGeneratedSMS: true,
+					SMSCountry:        "US",
 				},
 				Permissions: rbac.CodeIssue,
 			},
 			fn: c.IssueWithUIAuth,
 			req: api.IssueCodeRequest{
-				Phone:           "something",
+				Phone:           "5005550000",
 				SymptomDate:     time.Now().UTC().Format(project.RFC3339Date),
 				TestType:        "confirmed",
 				OnlyGenerateSMS: true,

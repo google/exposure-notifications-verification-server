@@ -17,6 +17,7 @@ package userreport
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
@@ -36,6 +37,7 @@ type Controller struct {
 	config           *config.RedirectConfig
 	db               *database.Database
 	localCache       *memcache.Cache
+	httpClient       *http.Client
 	limiter          limiter.Store
 	smsSigner        keys.KeyManager
 	h                *render.Renderer
@@ -55,11 +57,16 @@ func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database,
 
 	localCache, _ := memcache.New(30 * time.Second)
 
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	return &Controller{
 		cacher:           cacher,
 		config:           cfg,
 		db:               db,
 		localCache:       localCache,
+		httpClient:       httpClient,
 		limiter:          limiter,
 		smsSigner:        smsSigner,
 		h:                h,

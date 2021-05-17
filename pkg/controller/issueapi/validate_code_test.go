@@ -81,16 +81,16 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusOK,
 		},
 		{
-			name: "no phone provider",
+			name: "no_phone_provider",
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: symptomDate,
-				Phone:       "+somephone",
+				Phone:       "5005550000",
 			},
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "unsupported test type",
+			name: "unsupported_test_type",
 			request: api.IssueCodeRequest{
 				TestType:    "negative", // this realm only supports confirmed
 				SymptomDate: symptomDate,
@@ -99,7 +99,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "invalid test type",
+			name: "invalid_test_type",
 			request: api.IssueCodeRequest{
 				TestType:    "invalid",
 				SymptomDate: symptomDate,
@@ -108,7 +108,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "no test date",
+			name: "no_test_date",
 			request: api.IssueCodeRequest{
 				TestType: "confirmed",
 			},
@@ -116,7 +116,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "unparsable test date",
+			name: "unparsable_test_date",
 			request: api.IssueCodeRequest{
 				TestType: "confirmed",
 				TestDate: "invalid date",
@@ -125,7 +125,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "really old test date",
+			name: "really_old_test_date",
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: "1988-09-14",
@@ -134,7 +134,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "future date",
+			name: "future_date",
 			request: api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: "3020-01-01",
@@ -143,7 +143,7 @@ func TestValidate(t *testing.T) {
 			httpStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "test older than minDate",
+			name: "test_older_than_minDate",
 			request: api.IssueCodeRequest{
 				TestType: "confirmed",
 				TestDate: minDate.Add(-12 * time.Hour).Format(project.RFC3339Date),

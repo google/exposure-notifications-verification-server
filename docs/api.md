@@ -16,6 +16,7 @@
   - [`/api/checkcodestatus`](#apicheckcodestatus)
   - [`/api/expirecode`](#apiexpirecode)
   - [`/api/stats/*`](#apistats)
+- [User report webhooks](#user-report-webhooks)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
 
@@ -610,6 +611,95 @@ endpoints without notice.
 -   `/api/stats/realm/external-issuers.{csv,json}` - Daily statistics for codes
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.
+
+# User report webhooks
+
+You can use your own gateway to dispatch SMS messages for user reports. When a
+user completes a self report, the verification server will send a request with
+the compiled SMS message and destination phone number to your server.
+
+- Must be a **publicly-accessible** endpoint
+- Must be **unauthenticated**
+- Must be **secured via TLS** (https)
+- Must accept a **POST** request
+- Must parse the response as JSON
+- Must send a 200 OK response **within 10 seconds**
+
+The request body will be identical to the [API /issue response](#apiissue). Your
+server should parse the JSON body and extract the `generatedSMS` field.
+
+Before accepting the request, your server **MUST** validate the integrity of the
+request. All messages from the verification server will include an `X-Signature`
+header. The value of this header will be the hex-encoded SHA-512 HMAC using the
+configured webhook secret as the HMAC secret.
+
+It is critical that your server validate the authenticity of the message. Here
+are some examples of validating the request payload:
+
+```go
+// secret is the webhook secret. It must be the same value as configured in the
+// verification server.
+const secret = "my-super-secret-value"
+
+func acceptPayload(w http.ResponseWriter, r *http.Request) {
+  defer r.Body.Close()
+
+  sig := w.Header.Get("X-Signature")
+  if sig == "" {
+    w.WriteHeader(400)
+    return
+  }
+
+  lr := io.LimitReader(r.Body, 2_097_152) // 2 MB
+  body, err := ioutil.ReadAll(lr)
+  if err != nil {
+    w.WriteHeader(500)
+    return
+  }
+
+  mac := hmac.New(sha512.New, []byte(secret))
+  mac.Write(body)
+  expected := hex.EncodeToString(mac.Sum(nil))
+
+  if subtle.ConstantTimeCompare([]byte(expected), []byte(sig)) != 1 {
+    w.WriteHeader(400)
+    return
+  }
+
+  // Success, process request as JSON and send SMS...
+  s := struct {
+    Phone        string `json:"phone"`
+    GeneratedSMS string `json:"generatedSMS"`
+  }{}
+  if err := json.NewDecoder(bytes.NewReader(body)).Decode(&s); err != nil {
+    w.WriteHeader(500)
+    return
+  }
+  sendSMS(s.Phone, s.GeneratedSMS)
+}
+```
+
+```ruby
+SECRET = "my-super-secret-value".freeze
+
+post '/' do
+  sig = headers['X-Signature']
+  return halt 400 if sig.empty?
+
+  request.body.rewind
+  body = request.body.read
+
+  expected = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha512'), SECRET, body)
+
+  return halt 400 unless Rack::Utils.secure_compare(expected, sig)
+
+  # Success, process request as JSON and send SMS...
+  parsed = JSON.parse(body)
+  phone = parsed['phone']
+  message = parsed['generatedSMS']
+  send_sms(phone, message)
+end
+```
 
 
 # Chaffing requests
