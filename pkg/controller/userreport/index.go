@@ -22,6 +22,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleIndex() http.Handler {
@@ -59,6 +60,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		// Check the nonce - if it isn't valid, show an error page, but with branding since we know the app.
 		nonce := controller.NonceFromContext(ctx)
 		if decoded, err := base64util.DecodeString(nonce); err != nil || len(decoded) != database.NonceLength {
+			stats.Record(ctx, mInvalidNonce.M(1))
 			logger.Warnw("invalid nonce on webview load", "error", err, "nonce-length", len(decoded))
 			errorMessages = addError(locale.Get("user-report.invalid-request"), errorMessages)
 			m["skipForm"] = true
@@ -66,6 +68,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 		// This could get triggered in a pause.
 		if !realm.AllowsUserReport() {
+			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			errorMessages = addError(locale.Get("user-report.not-available"), errorMessages)
 			m["skipForm"] = true
 		}

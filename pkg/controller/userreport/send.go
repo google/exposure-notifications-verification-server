@@ -31,6 +31,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.opencensus.io/stats"
 )
 
 func (c *Controller) HandleSend() http.Handler {
@@ -65,6 +66,7 @@ func (c *Controller) HandleSend() http.Handler {
 		ctx = controller.WithRealm(ctx, realm)
 
 		if !realm.AllowsUserReport() {
+			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			controller.NotFound(w, r, c.h)
 			return
 		}
@@ -90,11 +92,13 @@ func (c *Controller) HandleSend() http.Handler {
 		// Pull the nonce from the session.
 		nonceStr := controller.NonceFromSession(session)
 		if nonceStr == "" {
+			stats.Record(ctx, mMissingNonce.M(1))
 			controller.NotFound(w, r, c.h)
 			return
 		}
 		nonce, err := base64util.DecodeString(nonceStr)
 		if err != nil {
+			stats.Record(ctx, mInvalidNonce.M(1))
 			logger.Warnw("nonce cannot be decoded", "error", err)
 			m["error"] = []string{locale.Get("user-report.invalid-request")}
 			c.renderIndex(w, realm, m)
@@ -103,6 +107,7 @@ func (c *Controller) HandleSend() http.Handler {
 
 		// Check agreement.
 		if !form.Agreement {
+			stats.Record(ctx, mMissingAgreement.M(1))
 			msg := locale.Get("user-report.missing-agreement")
 			m["error"] = []string{msg}
 			m["termsError"] = msg
@@ -174,6 +179,7 @@ func (c *Controller) HandleSend() http.Handler {
 		// Compile and send the payload to the webhook URL.
 		if realm.UserReportWebhookURL != "" {
 			if err := sendWebhookRequest(ctx, c.httpClient, realm, result); err != nil {
+				stats.Record(ctx, mWebhookError.M(1))
 				logger.Errorw("failed to send webhook request", "error", err)
 				m["error"] = []string{locale.Get("user-report.internal-error")}
 				c.renderIndex(w, realm, m)

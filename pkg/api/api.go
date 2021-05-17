@@ -272,8 +272,8 @@ type IssueCodeResponse struct {
 	// request.
 	GeneratedSMS string `json:"generatedSMS,omitempty"`
 
-	// Phone is the phone number in which to send the compiled SMS message. This
-	// field will only be present if a phone number was provided and
+	// Phone is the E.164-formatted phone number in which to send the compiled SMS
+	// message. This field will only be present if a phone number was provided and
 	// onlyGenerateSMS was specified on the request.
 	Phone string `json:"phone,omitempty"`
 

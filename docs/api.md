@@ -623,6 +623,7 @@ the compiled SMS message and destination phone number to your server.
 - Must be **secured via TLS** (https)
 - Must accept a **POST** request
 - Must parse the response as JSON
+- Must send a 200 OK response **within 10 seconds**
 
 The request body will be identical to the [API /issue response](#apiissue). Your
 server should parse the JSON body and extract the `generatedSMS` field.
@@ -649,7 +650,8 @@ func acceptPayload(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  body, err := ioutil.ReadAll(r.Body)
+  lr := io.LimitReader(r.Body, 2_097_152) // 2 MB
+  body, err := ioutil.ReadAll(lr)
   if err != nil {
     w.WriteHeader(500)
     return
