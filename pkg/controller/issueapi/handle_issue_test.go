@@ -79,7 +79,7 @@ func TestHandleIssue(t *testing.T) {
 			request: &api.IssueCodeRequest{
 				TestType:        "confirmed",
 				SymptomDate:     symptomDate,
-				Phone:           "something",
+				Phone:           "5005550000",
 				OnlyGenerateSMS: true,
 			},
 			httpStatusCode: http.StatusOK,
