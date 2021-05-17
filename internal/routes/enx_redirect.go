@@ -100,14 +100,17 @@ func ENXRedirect(
 		// Share static assets with server.
 		{
 			staticFS := assets.ServerStaticFS()
-			r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+			fs := http.FileServer(http.FS(staticFS))
+
+			// Static assets.
+			r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
 			// Browers and devices seem to always hit this - serve it to keep our logs
 			// cleaner.
-			r.Path("/favicon.ico").Handler(http.FileServer(http.FS(staticFS)))
+			r.Path("/favicon.ico").Handler(fs)
 
 			// Install robots.txt serving here to prevent indexing.
-			r.Path("/robots.txt").Handler(http.FileServer(http.FS(staticFS)))
+			r.Path("/robots.txt").Handler(fs)
 		}
 
 		// Setup sessions
