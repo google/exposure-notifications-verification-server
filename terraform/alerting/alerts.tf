@@ -397,3 +397,42 @@ resource "google_monitoring_alert_policy" "HumanDecryptedValue" {
     null_resource.manual-step-to-enable-workspace,
   ]
 }
+
+resource "google_monitoring_alert_policy" "UserReportWebhookError" {
+  project      = var.project
+  display_name = "UserReportWebhookError"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "User-report webhooks are failing"
+
+    condition_monitoring_query_language {
+      duration = "0s"
+
+      query = <<-EOT
+      fetch generic_task
+      | metric '${local.custom_prefix}/user-report/webhook_error'
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.webhook_error)]
+      | condition val > 5
+      EOT
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/UserReportWebhookError.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
