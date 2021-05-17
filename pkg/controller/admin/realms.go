@@ -189,6 +189,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		CanUseSystemEmailConfig       bool `form:"can_use_system_email_config"`
 		ShortCodeMaxMinutes           uint `form:"short_code_max_minutes"`
 		ENXCodeExpirationConfigurable bool `form:"enx_code_expiration_configurable"`
+		AllowGeneratedSMS             bool `form:"allow_generated_sms"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,6 +271,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		realm.CanUseSystemEmailConfig = form.CanUseSystemEmailConfig
 		realm.ShortCodeMaxMinutes = form.ShortCodeMaxMinutes
 		realm.ENXCodeExpirationConfigurable = form.ENXCodeExpirationConfigurable
+		realm.AllowGeneratedSMS = form.AllowGeneratedSMS
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)

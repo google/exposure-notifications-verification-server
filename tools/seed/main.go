@@ -138,6 +138,7 @@ func realMain(ctx context.Context) error {
 			realm1 = database.NewRealmWithDefaults("Narnia")
 			realm1.RegionCode = "US-PA"
 			realm1.AbusePreventionEnabled = true
+			realm1.AllowGeneratedSMS = true
 			realm1.AddUserReportToAllowedTestTypes() // Enable user reporting on Narnia
 			if err := db.SaveRealm(realm1, database.System); err != nil {
 				return fmt.Errorf("failed to create realm: %w: %v", err, realm1.ErrorMessages())
@@ -157,6 +158,7 @@ func realMain(ctx context.Context) error {
 			realm2.AllowedTestTypes = database.TestTypeLikely | database.TestTypeConfirmed
 			realm2.RegionCode = "US-WA"
 			realm2.AbusePreventionEnabled = true
+			realm1.AllowGeneratedSMS = true
 			if err := db.SaveRealm(realm2, database.System); err != nil {
 				return fmt.Errorf("failed to create realm: %w: %v", err, realm2.ErrorMessages())
 			}

@@ -2,6 +2,7 @@
 
 {{$realm := .realm}}
 {{$testTypes := .testTypes}}
+{{$userReportDocs := "https://github.com/google/exposure-notifications-verification-server/blob/main/docs/api.md#user-report-webhooks"}}
 
 <p class="mb-4">
   These are the settings for verification codes. These values determine how and
@@ -40,6 +41,7 @@
   </div>
 
   <hr>
+
   <div class="form-group">
     <label>Allowed test types</label>
     {{if not $realm.EnableENExpress}}
@@ -85,8 +87,11 @@
         </small>
       </label>
     </div>
+  </div>
 
-    
+  <hr>
+
+  <div class="form-group">
     <label>User report</label>
 
     <div class="form-check mb-3">
@@ -119,9 +124,41 @@
         </small>
       </label>
     </div>
+
+    {{if $realm.AllowGeneratedSMS}}
+      <div class="form-label-group">
+        <input type="text" name="user_report_webhook_url" id="user-report-webhook-url" class="form-control text-monospace{{if $realm.ErrorsFor "userReportWebhookURL"}} is-invalid{{end}}"
+          placeholder="Webhook URL" value="{{$realm.UserReportWebhookURL}}" />
+        <label for="user-report-webhook-url">Webhook URL</label>
+        {{template "errorable" $realm.ErrorsFor "userReportWebhookURL"}}
+        <small class="form-text text-muted">
+          To use your own gateway to dispatch SMS messages for user reports, you
+          must provide a publicly-accessible endpoint secured with TLS. When a
+          user completes a diagnosis, this server will send a request with the
+          compiled SMS message and destination phone number to your server. For
+          more information, see the
+          <a href="{{$userReportDocs}}">user report webhook documentation</a>.
+        </small>
+      </div>
+
+      <div class="form-label-group">
+        <input type="password" name="user_report_webhook_secret" id="user-report-webhook-secret" class="form-control text-monospace user-select-all{{if $realm.ErrorsFor "userReportWebhookSecret"}} is-invalid{{end}}"
+          placeholder="Webhook secret" {{if $realm.UserReportWebhookSecret}}value="{{passwordSentinel}}"{{end}} />
+        <label for="user-report-webhook-secret">Webhook secret</label>
+        {{template "errorable" $realm.ErrorsFor "userReportWebhookSecret"}}
+        <small class="form-text text-muted">
+          This shared secret is used to calculate the HMAC of the payload. Your
+          server can use this secret to verify the request came from this
+          server. This value is required if you specify a webhook URL, and it
+          must be at least 12 characters. For more information, see the <a
+          href="{{$userReportDocs}}">user report webhook documentation</a>.
+        </small>
+      </div>
+    {{end}}
   </div>
 
   <hr>
+
   <div class="form-group">
     <label>Date configuration</label>
     <div class="form-group">

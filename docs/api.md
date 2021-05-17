@@ -2,20 +2,21 @@
 
 - [API access](#api-access)
 - [API usage](#api-usage)
-    - [Authenticating](#authenticating)
-    - [Error reporting](#error-reporting)
+  - [Authenticating](#authenticating)
+  - [Error reporting](#error-reporting)
 - [API Methods](#api-methods)
-    - [`/api/verify`](#apiverify)
-    - [`/api/certificate`](#apicertificate)
-    - [`/api/user-report`](#apiuser-report)
+  - [`/api/verify`](#apiverify)
+  - [`/api/certificate`](#apicertificate)
+  - [`/api/user-report`](#apiuser-report)
 - [Admin APIs](#admin-apis)
-    - [`/api/issue`](#apiissue)
-        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-    - [`/api/batch-issue`](#apibatch-issue)
-        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-    - [`/api/checkcodestatus`](#apicheckcodestatus)
-    - [`/api/expirecode`](#apiexpirecode)
-    - [`/api/stats/*`](#apistats)
+  - [`/api/issue`](#apiissue)
+    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+  - [`/api/batch-issue`](#apibatch-issue)
+    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+  - [`/api/checkcodestatus`](#apicheckcodestatus)
+  - [`/api/expirecode`](#apiexpirecode)
+  - [`/api/stats/*`](#apistats)
+- [User report webhooks](#user-report-webhooks)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
 
@@ -195,7 +196,7 @@ Possible error code responses. New error codes may be added in future releases.
 
 ## `/api/user-report`
 
-Request a verification code for a `user-report` verification code, which 
+Request a verification code for a `user-report` verification code, which
 corresponds to the export report type of `SELF_REPORT`.
 
 **UserReportRequest**
@@ -290,6 +291,7 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
   "padding": "<bytes>",
   "uuid": "optional string UUID",
   "externalIssuerID": "external-ID",
+  "onlyGenerateSMS": "<true|false>",
 }
 ```
 
@@ -325,6 +327,11 @@ Request a verification code to be issued. Accepts [optional] symptom date and te
     the caller should apply a cryptographic hash before sending that data. **The
     system does not sanitize or encrypt these external IDs, it is the caller's
     responsibility to do so.**
+* `onlyGenerateSMS` is an optional field. If true, the system will **not** send
+  the SMS message and will instead return the generated SMS message as part of
+  the response. If the realm is configured with Authenticated SMS, the generated
+  SMS will also be signed. If true, the `phone` field is also required. This
+  feature must be enabled on a per-realm basis by a system administrator.
 
 **IssueCodeResponse**
 
@@ -339,6 +346,7 @@ http 200
   "expiresAtTimestamp": 0,
   "longExpiresAt": "RFC1123 UTC timestamp",
   "longExpiresAtTimestamp": 0,
+  "generatedSMS": "string message",
 }
 
 or
@@ -363,6 +371,8 @@ or
   * represents the time that the link containing a 'long' verification code expires (if one was issued)
 * `longExpiresAtTimestamp`
   * Unix, seconds since the epoch for `longExpiresAt`
+* `generatedSMS`
+  * The compiled (and possibly signed) SMS message.
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
@@ -405,12 +415,11 @@ messages.
 
 The server attempts to issue every code in the batch. If errors are encountered, each item in `codes` will contain the error details for
 the corresponding code. The overall request will get the error status code of the first seen error, although some codes may have
-succeeded.
+succeeded. For example:
 
-eg.
-```
+```json
 {
-  codes: [
+  "codes": [
     {
       "error": "the first code failed",
       "errorCode": "missing_date",
@@ -422,14 +431,15 @@ eg.
       "expiresAtTimestamp": 0,
       "expiresAt": "RFC1123 UTC timestamp",
       "expiresAtTimestamp": 0,
+      "generatedSMS": "string message",
     },
     {
       "error": "the third code failed",
       "errorCode": "unparsable_request",
     },
   ],
-  error: "the first code failed",
-  errorCode: "missing_date",
+  "error": "the first code failed",
+  "errorCode": "missing_date",
 }
 ```
 
@@ -446,6 +456,7 @@ eg.
       "phone": "+CC Phone number",
       "uuid": "optional string UUID",
       "externalIssuerID": "external-ID",
+      "onlyGenerateSMS": "<true|false>",
     },
     {
       ...
@@ -461,7 +472,7 @@ Note: The `error` and `errorCode` of the outer response body will match the firs
 The response http code will also match the first seen error. The caller should iterate `codes` to handle errors
 for each code response. The index of each responses will match the index of the original request.
 
-```
+```json
 {
   "codes": [
     {
@@ -473,6 +484,7 @@ for each code response. The index of each responses will match the index of the 
       "expiresAtTimestamp": 0,
       "longExpiresAt": "RFC1123 UTC timestamp",
       "longExpiresAtTimestamp": 0,
+      "generatedSMS": "string message",
       "error": "[optional] descriptive error message",
       "errorCode": "[optional] well defined error code from api.go",
     },
@@ -480,7 +492,7 @@ for each code response. The index of each responses will match the index of the 
       ...
     },
   ],
-  "padding": "<bytes>"
+  "padding": "<bytes>",
   "error": "[optional] descriptive error message. The first seen error from 'codes'",
   "errorCode": "[optional] well defined error code from api.go. The first-seen errorCode of 'codes'",
 }
@@ -578,7 +590,7 @@ endpoints without notice.
 -  `/api/stats/realm/key-server.{csv,json}` - Daily statistics gathered from the
    key-server if enabled for the realm. This includes publish requests, EN days
    active before upload, and onset-to-upload distribution.
-  
+
 -   `/api/stats/realm/composite.{csv,json}` - Daily statistics for the realm
    including all realm and key server information.
 
@@ -599,6 +611,95 @@ endpoints without notice.
 -   `/api/stats/realm/external-issuers.{csv,json}` - Daily statistics for codes
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.
+
+# User report webhooks
+
+You can use your own gateway to dispatch SMS messages for user reports. When a
+user completes a self report, the verification server will send a request with
+the compiled SMS message and destination phone number to your server.
+
+- Must be a **publicly-accessible** endpoint
+- Must be **unauthenticated**
+- Must be **secured via TLS** (https)
+- Must accept a **POST** request
+- Must parse the response as JSON
+- Must send a 200 OK response **within 10 seconds**
+
+The request body will be identical to the [API /issue response](#apiissue). Your
+server should parse the JSON body and extract the `generatedSMS` field.
+
+Before accepting the request, your server **MUST** validate the integrity of the
+request. All messages from the verification server will include an `X-Signature`
+header. The value of this header will be the hex-encoded SHA-512 HMAC using the
+configured webhook secret as the HMAC secret.
+
+It is critical that your server validate the authenticity of the message. Here
+are some examples of validating the request payload:
+
+```go
+// secret is the webhook secret. It must be the same value as configured in the
+// verification server.
+const secret = "my-super-secret-value"
+
+func acceptPayload(w http.ResponseWriter, r *http.Request) {
+  defer r.Body.Close()
+
+  sig := w.Header.Get("X-Signature")
+  if sig == "" {
+    w.WriteHeader(400)
+    return
+  }
+
+  lr := io.LimitReader(r.Body, 2_097_152) // 2 MB
+  body, err := ioutil.ReadAll(lr)
+  if err != nil {
+    w.WriteHeader(500)
+    return
+  }
+
+  mac := hmac.New(sha512.New, []byte(secret))
+  mac.Write(body)
+  expected := hex.EncodeToString(mac.Sum(nil))
+
+  if subtle.ConstantTimeCompare([]byte(expected), []byte(sig)) != 1 {
+    w.WriteHeader(400)
+    return
+  }
+
+  // Success, process request as JSON and send SMS...
+  s := struct {
+    Phone        string `json:"phone"`
+    GeneratedSMS string `json:"generatedSMS"`
+  }{}
+  if err := json.NewDecoder(bytes.NewReader(body)).Decode(&s); err != nil {
+    w.WriteHeader(500)
+    return
+  }
+  sendSMS(s.Phone, s.GeneratedSMS)
+}
+```
+
+```ruby
+SECRET = "my-super-secret-value".freeze
+
+post '/' do
+  sig = headers['X-Signature']
+  return halt 400 if sig.empty?
+
+  request.body.rewind
+  body = request.body.read
+
+  expected = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha512'), SECRET, body)
+
+  return halt 400 unless Rack::Utils.secure_compare(expected, sig)
+
+  # Success, process request as JSON and send SMS...
+  parsed = JSON.parse(body)
+  phone = parsed['phone']
+  message = parsed['generatedSMS']
+  send_sms(phone, message)
+end
+```
 
 
 # Chaffing requests

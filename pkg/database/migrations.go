@@ -2304,6 +2304,35 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS agency_image`)
 			},
 		},
+		{
+			ID: "00106-AddAllowGeneratedSMS",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS allow_generated_sms BOOL NOT NULL DEFAULT FALSE`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP COLUMN IF EXISTS allow_generated_sms`)
+			},
+		},
+		{
+			ID: "00107-AddUserReportWebhook",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS user_report_webhook_url TEXT,
+						ADD COLUMN IF NOT EXISTS user_report_webhook_secret TEXT`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS user_report_webhook_url,
+						DROP COLUMN IF EXISTS user_report_webhook_secret`)
+			},
+		},
 	}
 }
 

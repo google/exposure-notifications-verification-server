@@ -382,6 +382,28 @@ func TestRealm_BeforeSave(t *testing.T) {
 			},
 			Error: "certificateAudience cannot be blank",
 		},
+		{
+			Name: "user_report_webhook_url_no_protocol",
+			Input: &Realm{
+				UserReportWebhookURL: "foo.bar",
+			},
+			Error: "userReportWebhookURL must begin with https://",
+		},
+		{
+			Name: "user_report_webhook_url_http",
+			Input: &Realm{
+				UserReportWebhookURL: "http://foo.bar",
+			},
+			Error: "userReportWebhookURL must begin with https://",
+		},
+		{
+			Name: "user_report_webhook_secret_short",
+			Input: &Realm{
+				UserReportWebhookURL:    "http://foo.bar",
+				UserReportWebhookSecret: "abcd",
+			},
+			Error: "userReportWebhookSecret must be at least 12 characters",
+		},
 	}
 
 	for _, tc := range cases {

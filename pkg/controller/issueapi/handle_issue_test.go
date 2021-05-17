@@ -28,7 +28,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
-func TestIssue(t *testing.T) {
+func TestHandleIssue(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -39,6 +39,7 @@ func TestIssue(t *testing.T) {
 		t.Fatal(err)
 	}
 	realm.AllowBulkUpload = true
+	realm.AllowGeneratedSMS = true
 	realm.AllowedTestTypes = database.TestTypeConfirmed
 	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatal(err)
@@ -70,6 +71,16 @@ func TestIssue(t *testing.T) {
 			request: &api.IssueCodeRequest{
 				TestType:    "confirmed",
 				SymptomDate: symptomDate,
+			},
+			httpStatusCode: http.StatusOK,
+		},
+		{
+			name: "only_generate_sms",
+			request: &api.IssueCodeRequest{
+				TestType:        "confirmed",
+				SymptomDate:     symptomDate,
+				Phone:           "5005550000",
+				OnlyGenerateSMS: true,
 			},
 			httpStatusCode: http.StatusOK,
 		},

@@ -21,7 +21,7 @@ import (
 	"github.com/nyaruka/phonenumbers"
 )
 
-// CanonicalPhoneNumber returns the E164 formatted phone number.
+// CanonicalPhoneNumber returns the E.164 formatted phone number.
 func CanonicalPhoneNumber(phone string, defaultRegion string) (string, error) {
 	cc := strings.ToUpper(defaultRegion)
 	pn, err := phonenumbers.Parse(phone, cc)

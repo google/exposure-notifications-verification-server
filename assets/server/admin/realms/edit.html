@@ -46,10 +46,10 @@
           <h6 class="mb-3">Verification code settings</h6>
           <div class="form-label-group input-group">
             <input name="short_code_max_minutes" id="short-code-max-minutes" type="text" class="form-control" value="{{$realm.ShortCodeMaxMinutes}}"  />
+            <label for="short-code-max-minutes">Short code max duration</label>
             <span class="input-group-append">
               <span class="input-group-text bg-transparent border-left-0">minutes</span>
             </span>
-            <label for="short-code-max-minutes">Short code max duration</label>
           </div>
 
           <div class="form-check mb-3">
@@ -60,6 +60,18 @@
                 If EN Express is enabled, the short code expiration time is normally
                 fixed at 15 minutes. By enabling this setting, a realm admin can customize
                 their short code expiration time even with EN Express enabled.
+              </small>
+            </label>
+          </div>
+
+          <div class="form-check mb-3">
+            <input type="checkbox" name="allow_generated_sms" id="allow-generated-sms" class="form-check-input" value="true" {{checkedIf ($realm.AllowGeneratedSMS)}} />
+            <label for="allow-generated-sms" class="form-check-label">
+              Allow generated SMS
+              <small class="form-text text-muted mb-3">
+                Permit this realm to request full generated SMS messages be
+                returned via the API. This must be enabled for realms to use
+                their own SMS gateway for sending messages.
               </small>
             </label>
           </div>
