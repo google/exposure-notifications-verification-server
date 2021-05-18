@@ -402,7 +402,7 @@ msgid "user-report.request-code-from"
 msgstr "Solicitar un código de"
 
 msgid "user-report.instructions"
-msgstr "Si ha dado positivo por COVID-19 pero no ha recibido un código de su Autoridad de Salud por mensaje de texto o llamada telefónica, puede solicitar uno aquí".
+msgstr "Si ha dado positivo por COVID-19 pero no ha recibido un código de su Autoridad de Salud por mensaje de texto o llamada telefónica, puede solicitar uno aquí"
 
 msgid "user-report.enter-date-instructions"
 msgstr "Ingrese la fecha de su prueba COVID-19"
@@ -417,7 +417,7 @@ msgid "user-report.agreement-header"
 msgstr "Acuerdo"
 
 msgid "user-report.agreement"
-msgstr "He recibido un resultado positivo en la prueba de COVID-19 y el número de teléfono que he proporcionado es el mío".
+msgstr "He recibido un resultado positivo en la prueba de COVID-19 y el número de teléfono que he proporcionado es el mío"
 
 msgid "user-report.request-button"
 msgstr "Solicitar código de verificación"
@@ -426,28 +426,28 @@ msgid "user-report.code-issued"
 msgstr "Código de verificación emitido"
 
 msgid "user-report.check-mobile-device"
-msgstr "Por favor revise sus mensajes de texto en su dispositivo móvil".
+msgstr "Por favor revise sus mensajes de texto en su dispositivo móvil"
 
 msgid "user-report.invalid-request"
-msgstr "Solicitud no válida, inicie desde su aplicación de notificaciones de exposición en su dispositivo móvil".
+msgstr "Solicitud no válida, inicie desde su aplicación de notificaciones de exposición en su dispositivo móvil"
 
 msgid "user-report.not-available"
-msgstr "Su autoridad sanitaria local no acepta informes iniciados por el usuario en este momento".
+msgstr "Su autoridad sanitaria local no acepta informes iniciados por el usuario en este momento"
 
 msgid "user-report.missing-agreement"
 msgstr "Debe aceptar los términos para solicitar un código de verificación"
 
 msgid "user-report.error-invalid-date"
-msgstr "La fecha de la prueba debe estar entre hace 14 días y hoy".
+msgstr "La fecha de la prueba debe estar entre hace 14 días y hoy"
 
 msgid "user-report.error-missing-phone"
-msgstr "Se requiere el número de teléfono móvil".
+msgstr "Se requiere el número de teléfono móvil"
 
 msgid "user-report.quota-exceeded"
-msgstr "No se pueden emitir códigos de verificación temporalmente. Vuelve a intentarlo más tarde".
+msgstr "No se pueden emitir códigos de verificación temporalmente. Vuelve a intentarlo más tarde"
 
 msgid "user-report.phone-not-eligible"
 msgstr "Su número de teléfono no es actualmente apto para el informe de usuario"
 
 msgid "user-report.internal-error"
-msgstr "Hubo un error interno. No se puede solicitar un código de verificación en este momento".
+msgstr "Hubo un error interno. No se puede solicitar un código de verificación en este momento"
