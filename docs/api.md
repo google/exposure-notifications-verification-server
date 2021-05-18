@@ -347,6 +347,7 @@ http 200
   "longExpiresAt": "RFC1123 UTC timestamp",
   "longExpiresAtTimestamp": 0,
   "generatedSMS": "string message",
+  "phone": "E.164 phone number",
 }
 
 or
@@ -373,6 +374,8 @@ or
   * Unix, seconds since the epoch for `longExpiresAt`
 * `generatedSMS`
   * The compiled (and possibly signed) SMS message.
+* `phone`
+  * The E.164-formatted phone number. This is only present if the request included a phone number.
 * `padding` is a field that obfuscates the size of the response body to a
   network observer. The server _may_ generate and insert a random number of
   base64-encoded bytes into this field. The client should not process the
