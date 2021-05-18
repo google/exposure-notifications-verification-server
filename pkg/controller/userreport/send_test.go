@@ -15,6 +15,7 @@
 package userreport
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -83,12 +84,32 @@ func TestSendWebhookRequest(t *testing.T) {
 	}
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
 		if v := r.Header.Get("Content-Type"); v != "application/json" {
 			t.Errorf("expected content-type to be application/json: %q", w.Header())
 		}
 
 		if r.Header.Get("X-Signature") == "" {
 			t.Errorf("expected signature to be present")
+		}
+
+		var m map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+			t.Errorf("bad json: %s", err)
+		}
+
+		if got, want := m["generatedSMS"], "TODO"; got != want {
+			t.Errorf("expected %q to be %q: %v", got, want, m)
+		}
+		if got, want := m["phone"], "+15005550000"; got != want {
+			t.Errorf("expected %q to be %q: %v", got, want, m)
+		}
+		if got, want := m["code"], "abcd1234"; got != want {
+			t.Errorf("expected %q to be %q: %v", got, want, m)
+		}
+		if _, ok := m["uuid"]; !ok {
+			t.Errorf("expected uuid to be present: %v", m)
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -102,7 +123,14 @@ func TestSendWebhookRequest(t *testing.T) {
 		UserReportWebhookSecret: "super-secret",
 	}
 
-	if err := sendWebhookRequest(ctx, client, realm, &issueapi.IssueResult{}); err != nil {
+	if err := sendWebhookRequest(ctx, client, realm, &issueapi.IssueResult{
+		VerCode: &database.VerificationCode{
+			RealmID:     realm.ID,
+			PhoneNumber: "+15005550000",
+			Code:        "abcd1234",
+		},
+		GeneratedSMS: "TODO",
+	}); err != nil {
 		t.Fatal(err)
 	}
 }
