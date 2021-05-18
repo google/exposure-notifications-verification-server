@@ -206,7 +206,7 @@ func sendWebhookRequest(ctx context.Context, client *http.Client, realm *databas
 		With("realm", realm.ID).
 		With("webhook_url", realm.UserReportWebhookURL)
 
-	b, mac, err := buildAndSignPayloadForWebhook(realm.UserReportWebhookSecret, result)
+	b, mac, err := buildAndSignPayloadForWebhook(realm.UserReportWebhookSecret, result.IssueCodeResponse())
 	if err != nil {
 		return fmt.Errorf("failed to build and sign payload for webhook: %w", err)
 	}
