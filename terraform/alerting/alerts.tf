@@ -416,7 +416,7 @@ resource "google_monitoring_alert_policy" "UserReportWebhookError" {
       | every 1m
       | group_by [resource.project_id],
           [val: aggregate(value.webhook_error)]
-      | condition val > 5
+      | condition val > 1 '1/s'
       EOT
 
       trigger {
