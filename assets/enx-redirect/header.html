@@ -13,26 +13,13 @@
 <meta name="msapplication-config" content="/static/browserconfig.xml">
 <meta name="theme-color" content="#ffffff">
 
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-  integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
-<link rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
-  integrity="sha256-BJ/G+e+y7bQdrYkS2RBTyNfBHpA9IuGaPmf9htub5MQ=" crossorigin="anonymous">
+{{if eq $.textDirection "rtl"}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.rtl.min.css"
+  integrity="sha384-LPvXVVAlyPoBSGkX8UddpctDks+1P4HG8MhT7/YwqHtJ40bstjzCqjj+VVVDhsCo" crossorigin="anonymous">
+{{else}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+  integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+{{end}}
 
 <title>{{if .title}}{{.title}}{{else}}Exposure Notifications Express Redirect Service{{end}}</title>
-
-<style type="text/css">
-  nav.navbar {
-    margin-bottom: 40px;
-  }
-
-  div.realm-header {
-    background-color: #0055b1;
-  }
-
-  a.input-group-text:hover {
-    cursor: pointer;
-    text-decoration: none;
-  }
-</style>
 {{end}}

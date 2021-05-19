@@ -5,14 +5,14 @@
   {{template "head" .}}
 </head>
 
-<body>
-  <main role="main" class="container mt-5">
+<body id="not-found" class="my-4 g-4">
+  <main role="main" class="container">
     <h1>{{t $.locale "static.not-found"}}</h1>
     <p>
       {{t $.locale "static.redirect-not-found"}}
     </p>
     <div class="d-flex justify-content-center">
-      <a href="https://g.co/ens" class="small text-muted">{{t $.locale "login.about-exposure-notifications"}}</a>
+      <a href="https://g.co/ens" class="small text-decoration-none text-muted">{{t $.locale "login.about-exposure-notifications"}}</a>
     </div>
   </main>
 </body>

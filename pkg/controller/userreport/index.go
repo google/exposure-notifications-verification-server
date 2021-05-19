@@ -17,9 +17,11 @@ package userreport
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"go.opencensus.io/stats"
@@ -56,6 +58,15 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
+
+		now := time.Now().UTC()
+		pastDaysDuration := -1 * c.config.IssueConfig().AllowedSymptomAge
+		displayAllowedDays := fmt.Sprintf("%.0f", c.config.IssueConfig().AllowedSymptomAge.Hours()/24.0)
+		m["maxDate"] = now.Format(project.RFC3339Date)
+		m["minDate"] = now.Add(pastDaysDuration).Format(project.RFC3339Date)
+		m["maxSymptomDays"] = displayAllowedDays
+		m["duration"] = realm.CodeDuration.Duration.String()
+
 		var errorMessages []string
 		// Check the nonce - if it isn't valid, show an error page, but with branding since we know the app.
 		nonce := controller.NonceFromContext(ctx)
