@@ -6,7 +6,7 @@
   These are the security settings for {{$realm.Name}}.
 </p>
 
-<form method="POST" action="/realm/settings#security" class="floating-form">
+<form method="POST" id="security" action="/realm/settings#security" class="floating-form">
   {{ .csrfField }}
   <input type="hidden" name="security" value="1" />
 
@@ -38,7 +38,7 @@
     </small>
   </div>
 
-  <div class="form-group" id="grace-div" {{if ne $realm.MFAMode.String "required"}}style="display:none;"{{end}}>
+  <div id="grace-div" class="form-group {{if ne $realm.MFAMode.String "required"}}d-none{{end}}">
     <label for="mfa-grace-period">Require MFA</label>
     <select name="mfa_grace_period" id="mfa-grace-period" class="form-control custom-select" {{if ne $realm.MFAMode.String "required"}}disabled{{end}}>
       {{$current := $realm.MFARequiredGracePeriod}}
@@ -142,19 +142,20 @@
 
 <script defer type="text/javascript">
   window.addEventListener('load', (event) => {
-    let $grace = $('#mfa-grace-period');
-    let $graceDiv = $('#grace-div');
-    let $mfaMode = $('#mfa-mode');
+    let form = document.querySelector('form#security');
+    let inputGracePeriod = form.querySelector('select#mfa-grace-period');
+    let inputMFAMode = form.querySelector('select#mfa-mode');
+    let divGrace = form.querySelector('div#grace-div');
 
-    $mfaMode.change(function() {
-      if ($mfaMode.val() == 1) {
-        $grace.prop("disabled", false);
-        $graceDiv.show(200);
+    inputMFAMode.addEventListener('change', (event) => {
+      if (event.target.value == 1) {
+        inputGracePeriod.disabled = false;
+        divGrace.classList.remove('d-none');
       } else {
-        $graceDiv.hide(200);
-        $grace.prop("disabled", true);
+        inputGracePeriod.disabled = true;
+        divGrace.classList.add('d-none');
       }
-    });
+    })
   });
 </script>
 

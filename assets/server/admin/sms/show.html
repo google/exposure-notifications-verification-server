@@ -97,59 +97,61 @@
 
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
-      let $container = $('#twilio-from-numbers-container');
-      let $template = $('#twilio-from-number-template');
+      let container = document.querySelector('div#twilio-from-numbers-container');
+      let template = document.querySelector('div#twilio-from-number-template');
       let counter = 0;
 
       function addRow(id, label, value) {
-        let $section = $template.clone();
+        let section = template.cloneNode(true);
 
         if (id) {
-          $('<input>')
-            .attr('type', 'hidden')
-            .attr('id', `twilio-from-number-${counter}-id`)
-            .attr('name', `twilio_from_numbers.${counter}.id`)
-            .attr('value', id)
-            .appendTo($section);
+          let input = document.createElement('input');
+          input.setAttribute('type', 'hidden');
+          input.setAttribute('id', `twilio-from-number-${counter}-id`);
+          input.setAttribute('name', `twilio_from_numbers.${counter}.id`);
+          input.setAttribute('value', id);
+          section.appendChild(input);
         }
 
-        $section.find('input#template-label')
-          .prop('required', true)
-          .attr('id', `twilio-from-number-${counter}-label`)
-          .attr('name', `twilio_from_numbers.${counter}.label`)
-          .attr('value', label);
+        let templateLabel = section.querySelector('input#template-label');
+        templateLabel.setAttribute('id', `twilio-from-number-${counter}-templateLabel`);
+        templateLabel.setAttribute('name', `twilio_from_numbers.${counter}.label`);
+        templateLabel.value = label;
+        templateLabel.required = true;
 
-        $section.find('input#template-from-number')
-          .prop('required', true)
-          .attr('id', `twilio-from-number-${counter}-value`)
-          .attr('name', `twilio_from_numbers.${counter}.value`)
-          .attr('value', value);
+        let templateFromNumber = section.querySelector('input#template-from-number');
+        templateFromNumber.setAttribute('id', `twilio-from-number-${counter}-value`);
+        templateFromNumber.setAttribute('name', `twilio_from_numbers.${counter}.value`);
+        templateFromNumber.value = value;
+        templateFromNumber.required = true;
 
-        $section.find('a').click(function(e) {
-          e.preventDefault();
-          $section.fadeOut(function() {
-            $section.remove();
-          })
+        section.querySelector('a').addEventListener('click', (event) => {
+          event.preventDefault();
+          section.parentNode.removeChild(section);
         });
 
-        $section.appendTo($container);
-        $section.removeClass('d-none');
+        section.classList.remove('d-none');
+        container.appendChild(section);
 
         // Increment counter for next one.
         counter++;
       }
 
-      $('#add-phone-number').click(function(e) {
-        e.preventDefault();
+      let addPhoneBtn = document.querySelector('a#add-phone-number');
+      addPhoneBtn.addEventListener('click', (event) => {
+        event.preventDefault();
         addRow(null, null, null);
-      });
+      })
 
       // Load existing records.
-      $container.empty();
-      let existingRecords = $container.data('twilio-from-numbers');
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      let existingRecords = container.dataset.twilioFromNumbers;
       if (existingRecords) {
         let decoded = atob(existingRecords);
-        $.parseJSON(decoded).forEach(function(record) {
+        let data = JSON.parse(decoded);
+        data.forEach(function(record) {
           addRow(record.id, record.label, record.value);
         });
       }

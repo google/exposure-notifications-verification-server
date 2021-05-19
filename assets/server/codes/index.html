@@ -64,17 +64,19 @@
 
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
-      let $form = $('#form-check-status');
-      let $uuid = $('#uuid');
+      let form = document.querySelector('form#form-check-status');
+      let inputUUID = form.querySelector('input#uuid')
 
-      let allowedChars = new RegExp("[0-9a-fA-F]");
+      let allowedChars = new RegExp('[0-9a-fA-F]');
       let dashLocations = [8, 13, 18, 23];
 
-      $uuid.on('keyup', function() {
-        let s = $uuid.val();
-        let r = "";
+      function addDashes(event) {
+        let s = event.target.value;
+        let r = '';
+
         for (i = 0; i < s.length && i <= 36; i++) {
           let c = s.charAt(i);
+
           if (dashLocations.includes(i)) {
             r += '-';
           }
@@ -83,12 +85,17 @@
             r += c;
           }
         }
-        $uuid.val(r);
-      });
 
-      $form.submit(function(e) {
-        e.preventDefault();
-        window.location.assign("/codes/"+$uuid.val());
+        event.target.value = r;
+      }
+
+      inputUUID.addEventListener('change', addDashes);
+      inputUUID.addEventListener('keyup', addDashes);
+      inputUUID.addEventListener('paste', addDashes);
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        window.location.assign(`/codes/${inputUUID.value}`);
       });
     });
   </script>

@@ -39,8 +39,9 @@
 
               <form method="POST" id="verify-email">
                 {{ .csrfField }}
-                <input type="submit" id="verify-button" class="btn btn-primary btn-block"
-                  value="{{t $.locale "account.verify-email-address"}}" disabled>
+                <button type="submit" id="verify-button" class="btn btn-primary btn-block" disabled>
+                  {{t $.locale "account.verify-email-address"}}
+                </button>
               </form>
             </div>
           </div>
@@ -62,8 +63,8 @@
   {{if .firebase}}
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
-      let $form = $('#verify-email');
-      let $verifyButton = $('#verify-button');
+      let form = document.querySelector('form#verify-email');
+      let btnVerify = document.querySelector('button#verify-button');
 
       firebase.auth().onAuthStateChanged(function(user) {
         if (!user) {
@@ -81,14 +82,14 @@
 
         // Get an ID token and embed it onto the page.
         user.getIdToken().then(idToken => {
-          let $idTokenField = $('<input>');
-          $idTokenField.attr('type', 'hidden');
-          $idTokenField.attr('name', 'idToken');
-          $idTokenField.attr('value', idToken);
-          $form.append($idTokenField);
+          let idTokenField = document.createElement('input');
+          idTokenField.setAttribute('type', 'hidden');
+          idTokenField.setAttribute('name', 'idToken');
+          idTokenField.value = idToken;
+          form.appendChild(idTokenField);
 
           // Now that we have a user, enable the form.
-          $verifyButton.prop('disabled', false);
+          btnVerify.disabled = false;
         });
       });
     });

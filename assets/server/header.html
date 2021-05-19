@@ -148,7 +148,7 @@ aria-expanded="false" aria-label="Toggle navigation">
             </a>
             <a class="dropdown-item {{if .currentPath.IsDir "/realm/sms-keys"}}active{{end}}" href="/realm/sms-keys">
               {{t $.locale "nav.authenticated-sms"}}
-            </a>            
+            </a>
           {{end}}
           {{if $currentMembership.Can rbac.StatsRead}}
             {{$showRealmMenu = true}}

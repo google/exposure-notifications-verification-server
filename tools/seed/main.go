@@ -203,11 +203,9 @@ func realMain(ctx context.Context) error {
 	if err := user.AddToRealm(db, realm2, rbac.LegacyRealmUser, database.System); err != nil {
 		return fmt.Errorf("failed to add user to realm 2: %w", err)
 	}
-
 	if err := createFirebaseUser(ctx, firebaseAuth, user); err != nil {
 		return err
 	}
-	logger.Infow("enabled user", "user", user)
 
 	unverified := &database.User{Email: "unverified@example.com", Name: "Unverified User"}
 	if _, err := db.FindUserByEmail(unverified.Email); database.IsNotFound(err) {
@@ -218,6 +216,9 @@ func realMain(ctx context.Context) error {
 	}
 	if err := unverified.AddToRealm(db, realm1, rbac.LegacyRealmUser, database.System); err != nil {
 		return fmt.Errorf("failed to add user to realm 1: %w", err)
+	}
+	if err := createFirebaseUser(ctx, firebaseAuth, unverified); err != nil {
+		return err
 	}
 
 	admin := &database.User{Email: "admin@example.com", Name: "Admin User"}
@@ -230,11 +231,9 @@ func realMain(ctx context.Context) error {
 	if err := admin.AddToRealm(db, realm1, rbac.LegacyRealmAdmin, database.System); err != nil {
 		return fmt.Errorf("failed to add user to realm 1: %w", err)
 	}
-
 	if err := createFirebaseUser(ctx, firebaseAuth, admin); err != nil {
 		return err
 	}
-	logger.Infow("enabled admin", "admin", admin)
 
 	super := &database.User{Email: "super@example.com", Name: "Super User", SystemAdmin: true}
 	if _, err := db.FindUserByEmail(super.Email); database.IsNotFound(err) {
@@ -243,11 +242,9 @@ func realMain(ctx context.Context) error {
 		}
 		logger.Infow("created super", "super", super)
 	}
-
 	if err := createFirebaseUser(ctx, firebaseAuth, super); err != nil {
 		return err
 	}
-	logger.Infow("enabled super", "super", super)
 
 	// Create device API keys
 	for _, name := range []string{"Corona Capture", "Tracing Tracker"} {
@@ -599,9 +596,12 @@ func createFirebaseUser(ctx context.Context, firebaseAuth *firebaseauth.Client, 
 	// User does not exist
 	create := (&firebaseauth.UserToCreate{}).
 		Email(user.Email).
-		EmailVerified(true).
 		DisplayName(user.Name).
 		Password("password")
+
+	if user.Email != "unverified@example.com" {
+		create = create.EmailVerified(true)
+	}
 
 	if _, err := firebaseAuth.CreateUser(ctx, create); err != nil {
 		return fmt.Errorf("failed to create user %v: %w", user.Email, err)
