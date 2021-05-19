@@ -8,9 +8,18 @@
   {{template "report/header" .}}
 </head>
 
-<body class="tab-content">
+<body class="my-4 g-4">
   <main role="main" class="container">
-    <div class="alert alert-success" role="alert">{{t $.locale "user-report.code-issued"}}</div>
+    <h1 class="mb-3">{{t $.locale "user-report.request-code-from"}} {{.realm.Name}}</h1>
+
+    <div class="alert alert-success d-flex align-items-center" role="alert">
+      <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" aria-label="Success:">
+        <use xlink:href="/static/icons.svg#check-circle-fill"/>
+      </svg>
+      <div>
+        {{t $.locale "user-report.code-issued"}}
+      </div>
+    </div>
 
     <p>{{t $.locale "user-report.check-mobile-device"}}</p>
   </main>
@@ -18,13 +27,12 @@
 
 
 {{if .webkitClose}}
-<script>
-window.webkit.messageHandlers.progressObserver.postMessage ({
-          "userDidSubmit": true
+<script defer type="text/javascript">
+window.webkit.messageHandlers.progressObserver.postMessage({
+  "userDidSubmit": true,
 });
 </script>
 {{end}}
-  
 
 </html>
 {{end}}

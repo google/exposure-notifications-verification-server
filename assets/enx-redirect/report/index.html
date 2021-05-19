@@ -8,18 +8,25 @@
   {{template "report/header" .}}
 </head>
 
-<body class="tab-content">
+<body class="my-4 g-4">
   <main role="main" class="container">
     {{if $currentRealm.AgencyImage}}
     <div id="logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
-      <img src="{{$currentRealm.AgencyImage}}" style="width: 80vw; max-width: 720px;" />
+      <img src="{{$currentRealm.AgencyImage}}" style="width:80vw; max-width:720px; content-visibility:auto;"
+        loading="lazy" decoding="async"
+        alt="{{$currentRealm.Name}} logo" />
     </div>
     {{end}}
 
-    <h1>{{t $.locale "user-report.request-code-from"}} {{.realm.Name}}</h1>
+    <h1 class="mb-3">{{t $.locale "user-report.request-code-from"}} {{.realm.Name}}</h1>
 
     {{if not .skipForm}}
-    <div class="alert alert-info" role="alert">{{t $.locale "user-report.instructions"}}</div>
+    <div class="alert alert-primary d-flex align-items-center" role="alert">
+      <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" aria-label="Info:">
+        <use xlink:href="/static/icons.svg#info-circle-fill"/>
+      </svg>
+      <div>{{t $.locale "user-report.instructions"}}</div>
+    </div>
     {{end}}
 
     {{if .error}}
@@ -36,58 +43,56 @@
     <form method="POST" action="/report/issue" class="floating-form">
       {{ .csrfField }}
 
-      <div id="form-area">
-
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "user-report.enter-date-instructions"}}</div>
-          <div class="card-body">
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}} value="{{.date}}"/>
-                {{if .dateError}}<div class="invalid-feedback">{{.dateError}}</div>{{end}}
-              </div>
-            </div>
+      <div class="row mb-4">
+        <div class="col">
+          <div class="form-floating">
+            <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}}
+              placeholder="{{t $.locale "codes.issue.testing-date-label"}}" value="{{.date}}"/>
+            <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
+          </div>
+          {{if .dateError}}
+            <div class="invalid-feedback">{{.dateError}}</div>
+          {{end}}
+          <div class="form-text">
+            {{t $.locale "user-report.enter-date-instructions"}}
           </div>
         </div>
+      </div>
 
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "user-report.phone-number-header"}}</div>
-          <div class="card-body">            
-            <div class="form-row">
-              <label for="phone">
-                {{t $.locale "user-report.phone-number-instructions"}}
-              </label>
-            </div>
-            <div class="form-row">
-              <div class="input-group">
-                <input type="tel" id="phone" name="phone" class="form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" class="d-block" value="{{.phoneNumber}}" />
-                {{if .phoneError}}<div class="invalid-feedback">{{.phoneError}}</div>{{end}}
-              </div>              
-            </div>
+      <div class="row mb-4">
+        <div class="col">
+          <div class="form-floating">
+            <input type="tel" id="phone" name="phone" class="form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" required
+              placeholder="{{t $.locale "user-report.phone-number-header"}}" value="{{.phoneNumber}}" />
+            <label for="phone">{{t $.locale "user-report.phone-number-header"}}</label>
+          </div>
+          {{if .phoneError}}
+            <div class="invalid-feedback">{{.phoneError}}</div>
+          {{end}}
+          <div class="form-text">
+            {{t $.locale "user-report.phone-number-instructions"}}
           </div>
         </div>
+      </div>
 
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "user-report.agreement-header"}}</div>
-          <div class="card-body">            
-            <div class="form-row">
-              <div class="form-check mb-3">                
-                 <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" {{if .agreement}}checked{{end}} />
-                 <label for="agreement" class="form-check-label">
-                   {{t $.locale "user-report.agreement"}}
-                 </label>              
-                 {{if .termsError}}<div class="invalid-feedback">{{.termsError}}</div>{{end}}
-              </div>
-            </div>
+      <div class="row mb-4">
+        <div class="col">
+          <div class="form-check">
+            <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" required {{if .agreement}}checked{{end}} />
+            <label for="agreement" class="form-check-label">
+              {{t $.locale "user-report.agreement"}}
+            </label>
           </div>
+          {{if .termsError}}
+            <div class="invalid-feedback">{{.termsError}}</div>
+          {{end}}
         </div>
+      </div>
 
-        <div class="row mb-3">
-          <div class="col">
-            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "user-report.request-button"}}</button>
-          </div>
-        </div>
+      <div class="d-grid">
+        <button id="submit" type="submit" class="btn btn-primary">
+          {{t $.locale "user-report.request-button"}}
+        </button>
       </div>
     </form>
     {{end}}

@@ -5,12 +5,15 @@
   {{template "head" .}}
 </head>
 
-<body>
-  <main role="main" class="container mt-5">
+<body id="internal-server-error" class="my-4 g-4">
+  <main role="main" class="container">
     <h1>Internal server error</h1>
     <p>
       {{.error}}
     </p>
+    <div class="d-flex justify-content-center">
+      <a href="https://g.co/ens" class="small text-decoration-none text-muted">{{t $.locale "login.about-exposure-notifications"}}</a>
+    </div>
   </main>
 </body>
 </html>
