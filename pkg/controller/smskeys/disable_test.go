@@ -40,7 +40,7 @@ func TestHandleDisable(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
-	handler := c.HandleDisable()
+	handler := harness.WithCommonMiddlewares(c.HandleDisable())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

@@ -37,7 +37,7 @@ func TestHandleExport(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := c.HandleExport()
+	handler := harness.WithCommonMiddlewares(c.HandleExport())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

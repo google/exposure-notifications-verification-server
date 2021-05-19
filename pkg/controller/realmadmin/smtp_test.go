@@ -22,7 +22,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -41,7 +40,7 @@ func TestHandleSettings_Email(t *testing.T) {
 	}
 
 	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer, harness.Cacher)
-	handler := middleware.InjectCurrentPath()(c.HandleSettings())
+	handler := harness.WithCommonMiddlewares(c.HandleSettings())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

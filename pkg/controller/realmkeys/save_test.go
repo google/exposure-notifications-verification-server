@@ -40,7 +40,7 @@ func TestRealmKeys_SubmitSave(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-	handler := c.HandleSave()
+	handler := harness.WithCommonMiddlewares(c.HandleSave())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

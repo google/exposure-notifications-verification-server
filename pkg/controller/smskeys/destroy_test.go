@@ -42,7 +42,7 @@ func TestHandleDestroy(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
-	handler := c.HandleDestroy()
+	handler := harness.WithCommonMiddlewares(c.HandleDestroy())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

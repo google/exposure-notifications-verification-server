@@ -43,7 +43,7 @@ func TestHandleActivate(t *testing.T) {
 	}
 
 	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
-	handler := c.HandleActivate()
+	handler := harness.WithCommonMiddlewares(c.HandleActivate())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

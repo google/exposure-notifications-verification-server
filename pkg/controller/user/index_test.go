@@ -37,7 +37,7 @@ func TestHandleIndex(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := middleware.InjectCurrentPath()(c.HandleIndex())
+	handler := harness.WithCommonMiddlewares(c.HandleIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

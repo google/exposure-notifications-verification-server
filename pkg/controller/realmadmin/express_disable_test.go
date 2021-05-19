@@ -35,7 +35,7 @@ func TestHandleDisableExpress(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := realmadmin.New(harness.Config, harness.Database, harness.RateLimiter, harness.Renderer, harness.Cacher)
-	handler := c.HandleDisableExpress()
+	handler := harness.WithCommonMiddlewares(c.HandleDisableExpress())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

@@ -37,7 +37,7 @@ func TestHandleBulkPermissions(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := c.HandleBulkPermissions(database.BulkPermissionActionAdd)
+	handler := harness.WithCommonMiddlewares(c.HandleBulkPermissions(database.BulkPermissionActionAdd))
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()
