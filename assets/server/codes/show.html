@@ -75,16 +75,16 @@
   {{if not .code.Claimed}}
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
-      let $buttonInvalidate = $('button#invalidate');
+      let btnInvalidate = document.querySelector('button#invalidate');
       let expires = {{ .code.Expires }};
       let longExpires = {{ .code.LongExpires }};
 
-      let $codeExpiresAt = $('#code-expires-at');
-      countdown($codeExpiresAt, expires);
+      let codeExpiresAt = document.querySelector('span#code-expires-at');
+      countdown(codeExpiresAt, expires);
 
       {{if .code.HasLongExpires}}
-      let $longCodeExpiresAt = $('#long-code-expires-at');
-      countdown($longCodeExpiresAt, longExpires);
+        let longCodeExpiresAt = document.querySelector('span#long-code-expires-at');
+        countdown(longCodeExpiresAt, longExpires);
       {{end}}
     });
   </script>

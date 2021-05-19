@@ -130,7 +130,9 @@
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
       var chartData = [];
-      $(() => redrawCharts(chartData, 300));
+      window.addEventListener('load', (event) => {
+        redrawCharts(chartData, 300);
+      });
 
       let $div = $('#user_stats_chart');
       let userID = $div.data('userId');

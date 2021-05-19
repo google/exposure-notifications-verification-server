@@ -12,7 +12,7 @@
 <form method="POST" id="user-form" action="/realm/users/{{$user.ID}}">
   <input type="hidden" name="_method" value="PATCH">
   {{else}}
-  <form method="POST" action="/realm/users">
+  <form method="POST" id="user-form" action="/realm/users">
     {{end}}
 
     {{ .csrfField }}
@@ -124,22 +124,27 @@
 
   <script defer type="text/javascript">
     window.addEventListener('load', (event) => {
-      let $permissionImpliedWarning = $('#permission-implied-warning');
+      let permissionImpliedWarning = document.querySelector('span#permission-implied-warning');
 
-      $('input[name=permissions]')
-        .each(toggleState)
-        .change(toggleState);
+      let form = document.querySelector('form#user-form');
+      let inputPermissions = form.querySelectorAll('input[name=permissions]');
 
-      function toggleState() {
-        let $this = $(this);
+      inputPermissions.forEach((input) => {
+        toggleState(input);
 
+        input.addEventListener('change', (event) => {
+          toggleState(event.target);
+        });
+      });
+
+      function toggleState(input) {
         // Do nothing if disabled
-        if($this.prop('disabled')) {
+        if(input.disabled) {
           return;
         }
 
-        let permissionName = $this.data('permissionName');
-        let impliedPermissions = ($this.data('impliedPermissions') || '').split(',');
+        let permissionName = input.dataset.permissionName;
+        let impliedPermissions = (input.dataset.impliedPermissions || '').split(',');
 
         let impliedPermissionsList = [];
         for(i = 0; i < impliedPermissions.length; i++) {
@@ -156,22 +161,40 @@
           return `label#permission-${permission}-label`;
         }).join(',');
 
-        if($this.prop('checked')) {
-          $(inputs)
-            .prop('checked', true)
-            .prop('disabled', true);
+        if (input.checked) {
+          if (inputs) {
+            form.querySelectorAll(inputs).forEach((implied) => {
+              implied.checked = true;
+              implied.disabled = true;
+            });
+          }
 
-          let $warning = $permissionImpliedWarning.clone()
-            .removeClass('d-none')
-            .attr('title', `Implied by ${permissionName}`)
-            .tooltip();
+          let warning = permissionImpliedWarning.cloneNode(true);
+          warning.classList.remove('d-none');
+          warning.setAttribute('title', `Implied by ${permissionName}`);
+          $(warning).tooltip(); // TODO(sethvargo): drop jquery dependency
 
-          $(labels).find('small.form-text').before($warning);
+          if (labels) {
+            form.querySelectorAll(labels).forEach((label) => {
+              label.querySelectorAll('small.form-text').forEach((helpText) => {
+                helpText.insertAdjacentElement('beforeBegin', warning);
+              })
+            });
+          }
         } else {
-          $(inputs)
-            .prop('disabled', false)
+          if (inputs) {
+            form.querySelectorAll(inputs).forEach((implied) => {
+              implied.disabled = false;
+            });
+          }
 
-          $(labels).find('span.oi').remove();
+          if (labels) {
+            form.querySelectorAll(labels).forEach((label) => {
+              label.querySelectorAll('span.oi').forEach((icon) => {
+                icon.parentNode.removeChild(icon);
+              });
+            });
+          }
         }
       }
     });

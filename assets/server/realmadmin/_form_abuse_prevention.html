@@ -4,7 +4,7 @@
 {{$quotaRemaining := .quotaRemaining}}
 {{$quotaLimit := .quotaLimit}}
 
-<form method="POST" action="/realm/settings#abuse-prevention" class="floating-form">
+<form method="POST" id="abuse-prevention" action="/realm/settings#abuse-prevention" class="floating-form">
   {{ .csrfField }}
   <input type="hidden" name="abuse_prevention" value="1" />
 
@@ -99,20 +99,23 @@
 
 <script defer type="text/javascript">
   window.addEventListener('load', (event) => {
-    let $abusePreventionLimit = $('#abuse-prevention-limit');
-    let $abusePreventionLimitFactor = $('#abuse-prevention-limit-factor');
-    let $abusePreventionEffectiveLimit = $('#abuse-prevention-effective-limit');
+    let form = document.querySelector('form#abuse-prevention');
+    let inputLimit = form.querySelector('input#abuse-prevention-limit');
+    let inputLimitFactor = form.querySelector('input#abuse-prevention-limit-factor');
+    let inputEffectiveLimit = form.querySelector('input#abuse-prevention-effective-limit');
 
-    $abusePreventionLimitFactor.keyup(function(e){
-      let $this = $(e.currentTarget);
-      let current = $this.val();
-
+    function recalculate(event) {
+      let current = event.target.value;
       if (current && current.length) {
-        let effective = parseFloat(current) * parseFloat($abusePreventionLimit.val());
+        let effective = parseFloat(current) * parseFloat(inputLimit.value);
         effective = Math.ceil(effective);
-        $abusePreventionEffectiveLimit.val(effective);
+        inputEffectiveLimit.value = effective;
       }
-    });
+    }
+
+    inputLimitFactor.addEventListener('change', recalculate);
+    inputLimitFactor.addEventListener('keyup', recalculate);
+    inputLimitFactor.addEventListener('paste', recalculate);
   });
 </script>
 

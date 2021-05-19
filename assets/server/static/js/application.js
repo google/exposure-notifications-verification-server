@@ -631,8 +631,8 @@ function getUrlVars() {
   return vars;
 }
 
-// element is expected to be a jquery element or dom query selector, ts is
-// the number of seconds since epoch, UTC.
+// element is expected to be a dom query selector, ts is the number of seconds
+// since epoch, UTC.
 function countdown(element, ts, expiredCallback) {
   if (typeof (ts) === 'undefined') {
     return;
