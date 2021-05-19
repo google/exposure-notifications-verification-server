@@ -388,6 +388,12 @@ msgstr "そのリソースは存在しません。"
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications コードを利用するには、モバイルデバイスのリンクにアクセスしてください。"
 
+msgid "static.unauthorized"
+msgstr "許可されていない"
+
+msgid "static.unauthorized-message"
+msgstr "そのアクションを実行する権限がありません。"
+
 
 #
 # User report webview

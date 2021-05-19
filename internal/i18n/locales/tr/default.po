@@ -388,6 +388,12 @@ msgstr "Bu kaynak mevcut değil."
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications kodunu kullanmak için mobil cihazınızdaki bağlantıyı ziyaret edin."
 
+msgid "static.unauthorized"
+msgstr "Yetkisiz"
+
+msgid "static.unauthorized-message"
+msgstr "Bu eylemi gerçekleştirme yetkiniz yok."
+
 
 #
 # User report webview

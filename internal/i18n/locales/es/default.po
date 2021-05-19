@@ -387,6 +387,12 @@ msgstr "Ese recurso no existe."
 msgid "static.redirect-not-found"
 msgstr "Para canjear un código Exposure Notifications, visite el vínculo en su dispositivo móvil."
 
+msgid "static.unauthorized"
+msgstr "No autorizado"
+
+msgid "static.unauthorized-message"
+msgstr "No está autorizado para realizar esa acción."
+
 
 #
 # User report webview

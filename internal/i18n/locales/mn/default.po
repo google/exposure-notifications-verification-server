@@ -388,6 +388,12 @@ msgstr "Тэр нөөц байхгүй."
 msgid "static.redirect-not-found"
 msgstr "Exposure Notifications кодыг зарцуулахын тулд мобайл төхөөрөмж дээрх холбоосоор зочилно уу."
 
+msgid "static.unauthorized"
+msgstr "Зөвшөөрөлгүй"
+
+msgid "static.unauthorized-message"
+msgstr "Та энэ үйлдлийг хийх эрхгүй байна."
+
 #
 # User report webview
 # ----------

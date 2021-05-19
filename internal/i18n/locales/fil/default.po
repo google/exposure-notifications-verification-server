@@ -388,6 +388,12 @@ msgstr "Wala ang mapagkukunang iyon."
 msgid "static.redirect-not-found"
 msgstr "Upang makuha ang isang Exposure Notifications code, bisitahin ang link sa iyong mobile device."
 
+msgid "static.unauthorized"
+msgstr "Hindi pinahintulutan"
+
+msgid "static.unauthorized-message"
+msgstr "Hindi ka pinahintulutan na gawin ang aksyon na iyon."
+
 
 #
 # User report webview

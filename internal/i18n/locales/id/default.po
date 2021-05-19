@@ -388,6 +388,12 @@ msgstr "Sumber daya itu tidak ada."
 msgid "static.redirect-not-found"
 msgstr "Untuk menukarkan kode Exposure Notifications, kunjungi tautan di perangkat seluler Anda."
 
+msgid "static.unauthorized"
+msgstr "Tidak resmi"
+
+msgid "static.unauthorized-message"
+msgstr "Anda tidak diizinkan melakukan tindakan itu."
+
 
 #
 # User report webview
