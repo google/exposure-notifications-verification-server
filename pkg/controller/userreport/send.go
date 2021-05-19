@@ -177,7 +177,7 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 
 		// Compile and send the payload to the webhook URL.
-		if realm.UserReportWebhookURL != "" {
+		if realm.UserReportWebhookURL != "" && result.HTTPCode == http.StatusOK {
 			if err := sendWebhookRequest(ctx, c.httpClient, realm, result); err != nil {
 				stats.Record(ctx, mWebhookError.M(1))
 				logger.Errorw("failed to send webhook request", "error", err)
