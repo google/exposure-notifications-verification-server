@@ -387,6 +387,12 @@ msgstr "هذا المورد غير موجود."
 msgid "static.redirect-not-found"
 msgstr "لاسترداد رمز Exposure Notifications ، قم بزيارة الرابط الموجود على جهازك المحمول."
 
+msgid "static.unauthorized"
+msgstr "غير مصرح"
+
+msgid "static.unauthorized-message"
+msgstr "أنت غير مخول للقيام بهذا الإجراء."
+
 
 #
 # User report webview
@@ -429,7 +435,7 @@ msgid "user-report.check-mobile-device"
 msgstr "يرجى التحقق من رسائلك النصية على جهازك المحمول."
 
 msgid "user-report.invalid-request"
-msgstr "طلب غير صالح ، يرجى بدء التشغيل من تطبيق Exposure Notifications على جهازك المحمول." 
+msgstr "طلب غير صالح ، يرجى بدء التشغيل من تطبيق Exposure Notifications على جهازك المحمول."
 
 msgid "user-report.not-available"
 msgstr "لا تقبل هيئة الصحة المحلية الخاصة بك التقارير التي بدأها المستخدم في الوقت الحالي."

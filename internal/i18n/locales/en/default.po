@@ -388,6 +388,12 @@ msgstr "That resource does not exist."
 msgid "static.redirect-not-found"
 msgstr "To redeem an Exposure Notifications code, visit the link on your mobile device."
 
+msgid "static.unauthorized"
+msgstr "Unauthorized"
+
+msgid "static.unauthorized-message"
+msgstr "You are not authorized to perform that action."
+
 
 #
 # User report webview
@@ -430,7 +436,7 @@ msgid "user-report.check-mobile-device"
 msgstr "Please check your text messages on your mobile device."
 
 msgid "user-report.invalid-request"
-msgstr "Invalid request, please launch from your Exposure Notifications application on your mobile device." 
+msgstr "Invalid request, please launch from your Exposure Notifications application on your mobile device."
 
 msgid "user-report.not-available"
 msgstr "Your local health authority is not accepting user initiated reports at this time."

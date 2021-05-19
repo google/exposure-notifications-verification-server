@@ -40,7 +40,7 @@ func TestHandleIndex(t *testing.T) {
 	}
 
 	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-	handler := c.HandleIndex()
+	handler := harness.WithCommonMiddlewares(c.HandleIndex())
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()

@@ -41,7 +41,7 @@ func TestRealmKeys_SubmitDestroy(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-	handler := c.HandleDestroy()
+	handler := harness.WithCommonMiddlewares(c.HandleDestroy())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

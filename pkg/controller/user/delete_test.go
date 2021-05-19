@@ -37,7 +37,7 @@ func TestHandleDelete(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := c.HandleDelete()
+	handler := harness.WithCommonMiddlewares(c.HandleDelete())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

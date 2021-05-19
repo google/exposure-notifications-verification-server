@@ -388,6 +388,12 @@ msgstr "Quella risorsa non esiste."
 msgid "static.redirect-not-found"
 msgstr "Per riscattare un codice Exposure Notifications, visita il link sul tuo dispositivo mobile."
 
+msgid "static.unauthorized"
+msgstr "Non autorizzato"
+
+msgid "static.unauthorized-message"
+msgstr "Non sei autorizzato a eseguire tale azione."
+
 
 #
 # User report webview

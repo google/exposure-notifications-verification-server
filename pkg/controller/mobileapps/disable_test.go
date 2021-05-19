@@ -36,7 +36,7 @@ func TestHandleDisable(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := mobileapps.New(harness.Database, harness.Renderer)
-	handler := c.HandleDisable()
+	handler := harness.WithCommonMiddlewares(c.HandleDisable())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

@@ -40,7 +40,7 @@ func TestHandleAutomaticRotate(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := realmkeys.New(harness.Config, harness.Database, harness.KeyManager, publicKeyCache, harness.Renderer)
-	handler := c.HandleAutomaticRotate()
+	handler := harness.WithCommonMiddlewares(c.HandleAutomaticRotate())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

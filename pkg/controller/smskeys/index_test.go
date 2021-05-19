@@ -40,7 +40,7 @@ func TestHandleIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := smskeys.New(harness.Config, harness.Database, publicKeyCache, harness.Renderer)
-	handler := c.HandleIndex()
+	handler := harness.WithCommonMiddlewares(c.HandleIndex())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

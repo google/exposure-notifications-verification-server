@@ -34,7 +34,7 @@ func TestHandleImport(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := c.HandleImport()
+	handler := harness.WithCommonMiddlewares(c.HandleImport())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

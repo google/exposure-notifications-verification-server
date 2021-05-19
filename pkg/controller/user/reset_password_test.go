@@ -36,7 +36,7 @@ func TestHandleResetPassword(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := user.New(harness.AuthProvider, harness.Cacher, harness.Database, harness.Renderer)
-	handler := c.HandleResetPassword()
+	handler := harness.WithCommonMiddlewares(c.HandleResetPassword())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

@@ -36,7 +36,7 @@ func TestHandleShow(t *testing.T) {
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
 	c := mobileapps.New(harness.Database, harness.Renderer)
-	handler := c.HandleShow()
+	handler := harness.WithCommonMiddlewares(c.HandleShow())
 
 	t.Run("middleware", func(t *testing.T) {
 		t.Parallel()

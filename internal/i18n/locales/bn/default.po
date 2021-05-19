@@ -388,6 +388,12 @@ msgstr "সেই সংস্থান নেই"
 msgid "static.redirect-not-found"
 msgstr "একটি এক্সপোজার বিজ্ঞপ্তি কোড রিডিম করতে, আপনার মোবাইল ডিভাইসের লিঙ্কটি দেখুন।"
 
+msgid "static.unauthorized"
+msgstr "অননুমোদিত"
+
+msgid "static.unauthorized-message"
+msgstr "আপনি এই ক্রিয়াটি সম্পাদনের জন্য অনুমোদিত নন।"
+
 
 #
 # User report webview
@@ -430,7 +436,7 @@ msgid "user-report.check-mobile-device"
 msgstr "আপনার মোবাইল ডিভাইসে আপনার পাঠ্য বার্তাগুলি পরীক্ষা করুন।"
 
 msgid "user-report.invalid-request"
-msgstr "অবৈধ অনুরোধ, আপনার মোবাইল ডিভাইসে আপনার এক্সপোজার বিজ্ঞপ্তি অ্যাপ্লিকেশন থেকে লঞ্চ করুন।" 
+msgstr "অবৈধ অনুরোধ, আপনার মোবাইল ডিভাইসে আপনার এক্সপোজার বিজ্ঞপ্তি অ্যাপ্লিকেশন থেকে লঞ্চ করুন।"
 
 msgid "user-report.not-available"
 msgstr "আপনার স্থানীয় স্বাস্থ্য কর্তৃপক্ষ এই মুহুর্তে ব্যবহারকারী সূচিত প্রতিবেদনগুলি গ্রহণ করছে না।"
