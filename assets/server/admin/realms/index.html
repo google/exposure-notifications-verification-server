@@ -45,17 +45,20 @@
           <thead>
             <tr>
               <th scope="col" width="50" class="text-center">ID</th>
-              <th scope="col">Name</th>
-              <th scope="col" width="90" class="text-center">User Report</th>
-              <th scope="col" width="75" class="text-center">Chaff</th>
               <th scope="col" width="100" class="text-center">Region</th>
-              <th scope="col" width="120" class="text-center">Signing key</th>
+              <th scope="col">Name</th>
+              <th scope="col" width="75" class="text-center d-none d-md-table-cell">Chaff (7d)</th>                          
+              <th scope="col" width="100" class="text-center d-none d-md-table-cell">Abuse Modeling</th> 
+              <th scope="col" width="75" class="text-center d-none d-md-table-cell">Auth SMS</th>
+              <th scope="col" width="90" class="text-center d-none d-md-table-cell">User Report</th>
+              <th scope="col" width="90" class="text-center d-none d-md-table-cell">Signing key</th>
             </tr>
           </thead>
           <tbody>
           {{range $realms}}
             <tr>
               <td class="text-center">{{.ID}}</td>
+              <td class="text-center">{{.RegionCode}}</td>
               <td>
                 <a href="/admin/realms/{{.ID}}/edit">
                   {{.Name}}
@@ -65,16 +68,7 @@
                     data-toggle="tooltip" title="You have permissions on this realm"></span>
                 {{end}}
               </td>
-              <td class="text-center">
-                {{if .AllowsUserReport}}
-                  <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
-                    data-toggle="tooltip" title="User report is enabled"></span>
-                {{else}}
-                  <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
-                    data-toggle="tooltip" title="User report is not enabled"></span>
-                {{end}}
-              </td>
-              <td class="text-center">
+              <td class="text-center d-none d-md-table-cell">
                 {{if (index $realmChaffEvents .ID)}}
                   <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
                     data-toggle="tooltip" title="Chaff requests in the past 7 days"></span>
@@ -83,8 +77,34 @@
                     data-toggle="tooltip" title="NO sent a chaff requests in the past 7 days"></span>
                 {{end}}
               </td>
-              <td class="text-center">{{.RegionCode}}</td>
-              <td class="text-center">
+              <td class="text-center d-none d-md-table-cell">
+                {{if .AbusePreventionEnabled}}
+                  <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="Abuse prevention is enabled"></span>
+                {{else}}
+                  <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="Abuse prevention is not enabled"></span>
+                {{end}}
+              </td>
+              <td class="text-center d-none d-md-table-cell">
+                {{if .UseAuthenticatedSMS}}
+                  <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="Authenticated SMS is enabled"></span>
+                {{else}}
+                  <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="Authenticated SMS is not enabled"></span>
+                {{end}}
+              </td>
+              <td class="text-center d-none d-md-table-cell">
+                {{if .AllowsUserReport}}
+                  <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="User report is enabled"></span>
+                {{else}}
+                  <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="User report is not enabled"></span>
+                {{end}}
+              </td>
+              <td class="text-center d-none d-md-table-cell">
                 {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
               </td>
             </tr>

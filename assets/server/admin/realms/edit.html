@@ -76,6 +76,37 @@
             </label>
           </div>
 
+          <hr/>
+          <h6 class="mb-3">Enabled Features</h6>
+          <ul>
+            <li>Abuse Prevention:
+              {{if $realm.AbusePreventionEnabled}}
+                <span class="text-success">Enabled</span>
+                <ul>
+                  <li>Calculated limit: <span class="text-monospace">{{.quotaLimit}}</span></li>
+                  <li>Remaining: <span class="text-monospace">{{.quotaRemaining}}</span></li>
+                </ul>
+              {{else}}
+                <span class="text-secondary">Disabled</span>
+              {{end}}
+            </li>
+            <li>User Report:
+              {{if $realm.AllowsUserReport}}
+                <span class="text-success">Enabled</span>
+              {{else}}
+                <span class="text-secondary">Disabled</span>
+              {{end}}
+            </li>
+            <li>Authenticated SMS:
+              {{if $realm.UseAuthenticatedSMS}}
+                <span class="text-success">Enabled</span>
+              {{else}}
+                <span class="text-secondary">Disabled</span>
+              {{end}}
+            </li>
+          </ul>
+        
+
           {{if .supportsPerRealmSigning}}
           <hr>
           <h6 class="mb-3">Certificate</h6>
@@ -165,19 +196,10 @@
           </table>
 
           <hr>
-          <h6 class="mb-2">Abuse prevention</h6>
-          {{if $realm.AbusePreventionEnabled}}
-          <div class="text-success">Enabled</div>
-          <div>Calculated limit: <span class="text-monospace">{{.quotaLimit}}</span></div>
-          <div>Remaining: <span class="text-monospace">{{.quotaRemaining}}</span></div>
-          {{else}}
-          <div class="text-secondary">Disabled</div>
-          {{end}}
-
-          <hr>
           <h6 class="mb-2">View</h6>
           <a class="cared-link pr-2" href="/admin/events?realm_id={{$realm.ID}}">Events &rarr;</a>
           <a class="cared-link" href="/admin/mobile-apps?q={{$realm.Name}}">Mobile apps &rarr;</a>
+
           <hr>
           <button type="submit" class="btn btn-primary btn-block">Update realm</button>
         </form>
