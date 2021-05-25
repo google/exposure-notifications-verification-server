@@ -18,7 +18,11 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 
 // FeatureConfig represents features that are introduced as off by default allowing
 // for server operators to control their release.
-type FeatureConfig struct { // Currently, there are no feature flags.
+type FeatureConfig struct {
+	// EnableUserReportWeb hosts a public page on the enx-redirect service under a
+	// realm's domain for users to self-report. Even if enabled, realm's must
+	// still opt into self-report for the page to be displayed.
+	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=false"`
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known
