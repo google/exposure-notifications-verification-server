@@ -56,7 +56,7 @@ type AppsResponse struct {
 }
 
 type Translation struct {
-	Langauge string `json:"lang"`
+	Language string `json:"lang"`
 	Message  string `json:"message"`
 }
 
