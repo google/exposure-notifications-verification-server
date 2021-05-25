@@ -39,7 +39,12 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		realm := controller.RealmFromContext(ctx)
+		if realm == nil {
+			controller.MissingMembership(w, r, c.h)
+			return
+		}
 		if !realm.AllowsUserReport() {
+			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			controller.NotFound(w, r, c.h)
 			return
 		}

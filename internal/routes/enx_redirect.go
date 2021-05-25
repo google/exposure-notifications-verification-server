@@ -96,23 +96,24 @@ func ENXRedirect(
 	// Handle health.
 	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
 
-	{ // User report web-view configuration.
-		// Share static assets with server.
-		{
-			staticFS := assets.ServerStaticFS()
-			fs := http.FileServer(http.FS(staticFS))
+	// Share static assets with server.
+	{
+		staticFS := assets.ServerStaticFS()
+		fs := http.FileServer(http.FS(staticFS))
 
-			// Static assets.
-			r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
+		// Static assets.
+		r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
-			// Browers and devices seem to always hit this - serve it to keep our logs
-			// cleaner.
-			r.Path("/favicon.ico").Handler(fs)
+		// Browers and devices seem to always hit this - serve it to keep our logs
+		// cleaner.
+		r.Path("/favicon.ico").Handler(fs)
 
-			// Install robots.txt serving here to prevent indexing.
-			r.Path("/robots.txt").Handler(fs)
-		}
+		// Install robots.txt serving here to prevent indexing.
+		r.Path("/robots.txt").Handler(fs)
+	}
 
+	// User report web-view configuration.
+	if cfg.Features.EnableUserReportWeb {
 		// Setup sessions
 		sessionOpts := &sessions.Options{
 			Domain:   cfg.Issue.ENExpressRedirectDomain,
@@ -137,16 +138,20 @@ func ENXRedirect(
 		if err != nil {
 			return nil, fmt.Errorf("failed to create code request controller: %w", err)
 		}
+
 		// Only allow this on the top level redirect domain
 		allowedHostHeaders := []string{cfg.Issue.ENExpressRedirectDomain}
 		hostHeaderCheck := middleware.RequireHostHeader(allowedHostHeaders, h, cfg.DevMode)
+
 		// Using a different name, makes it so cookies don't interfer in local dev.
 		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", h)
+
 		// Load localization
 		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup i18n: %w", err)
 		}
+
 		// Process localization parameters.
 		processLocale := middleware.ProcessLocale(locales)
 
