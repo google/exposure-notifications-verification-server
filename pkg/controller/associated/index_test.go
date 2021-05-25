@@ -41,7 +41,9 @@ func TestIndex(t *testing.T) {
 			"empty": "aa",
 			"okay":  "bb",
 		},
-		Features: config.FeatureConfig{},
+		Features: config.FeatureConfig{
+			EnableUserReportWeb: true,
+		},
 	}
 
 	// Set realm to resolve.
