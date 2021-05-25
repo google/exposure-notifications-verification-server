@@ -140,8 +140,24 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
-					AgencyColor: "#AABBCC",
-					AgencyImage: "https://example.com/logo.png",
+					AgencyColor:   "#AABBCC",
+					AgencyImage:   "https://example.com/logo.png",
+					DefaultLocale: "EN_US",
+					Localizations: []clients.Localization{
+						{
+							MessageID: "agencyRegionName",
+							Translations: []clients.Translation{
+								{
+									Language: "EN_US",
+									Message:  "WA State Dept. of Health",
+								},
+								{
+									Language: "ES_US",
+									Message:  "Departamento de Salud del estado de Washington",
+								},
+							},
+						},
+					},
 				},
 			},
 		}
