@@ -54,85 +54,96 @@
 
 <script defer type="text/javascript">
   window.addEventListener('load', (event) => {
-    let $div = $('#per_user_table');
+    let containerChart = document.querySelector('div#per_user_table');
 
-    $.ajax({
-      url: '/stats/realm/users.json',
-      data: { scope: 'user' },
-      dataType: 'json',
-    })
-    .done(function(data, status, xhr) {
+    let request = new XMLHttpRequest();
+    request.open('GET', '/stats/realm/users.json?scope=user');
+    request.overrideMimeType('application/json');
+
+    request.onload = (event) => {
+      let pContainer = containerChart.querySelector('p');
+
+      let data = JSON.parse(request.response);
       if (!data.statistics) {
-        $div.find('p').text('There is no per-user data yet.')
+        pContainer.innerText = 'There is no external issuing data yet.';
         return;
       }
 
-      $div.empty();
+      while(containerChart.firstChild) {
+        containerChart.removeChild(containerChart.firstChild);
+      }
 
-      let $listGroup = $('<div>');
-        $listGroup.addClass('list-group');
-        $listGroup.addClass('list-group-flush');
-      $div.append($listGroup);
+      let containerListGroup = document.createElement('div');
+      containerListGroup.classList.add('list-group', 'list-group-flush');
+      containerChart.appendChild(containerListGroup);
 
       data.statistics.forEach(function(row) {
         let date = utcDate(row.date);
         let id = `collapse-user-${date.getTime()}`;
 
-        let $dateRow = $('<div>');
-          $dateRow.addClass('list-group-item');
-          $dateRow.addClass('list-group-item-action');
-          $dateRow.attr('data-toggle', 'collapse');
-          $dateRow.attr('data-target', `#${id}`);
-          $dateRow.attr('aria-expanded', false);
-          $dateRow.attr('aria-controls', id);
-          $dateRow.text(date.toLocaleDateString());
-        $listGroup.append($dateRow);
+        let containerDateRow = document.createElement('div');
+        containerDateRow.classList.add('list-group-item', 'list-group-item-action');
+        containerDateRow.setAttribute('data-toggle', 'collapse');
+        containerDateRow.setAttribute('data-target', `#${id}`);
+        containerDateRow.setAttribute('aria-expanded', false);
+        containerDateRow.setAttribute('aria-controls', id);
+        containerDateRow.innerText = date.toLocaleDateString();
+        containerListGroup.appendChild(containerDateRow);
 
-        let $issuerData = $('<div>');
-          $issuerData.attr('id', id);
-          $issuerData.addClass('collapse');
-          $issuerData.addClass('list-group-item');
-          $issuerData.addClass('p-0 pl-3');
-          $issuerData.data('parent', '#per_user_table');
-        $listGroup.append($issuerData);
+        let containerIssuerData = document.createElement('div');
+        containerIssuerData.id = id;
+        containerIssuerData.classList.add('collapse', 'list-group-item', 'p-0', 'pl-3');
+        containerIssuerData.setAttribute('data-parent', '#per_user_table');
+        containerListGroup.appendChild(containerIssuerData);
 
-        let $table = $('<table>');
-          $table.addClass('table');
-          $table.addClass('table-bordered');
-          $table.addClass('table-striped');
-          $table.addClass('table-fixed');
-          $table.addClass('table-inner-border-only');
-          $table.addClass('border-left');
-          $table.addClass('mb-0');
-        $issuerData.append($table);
+        let table = document.createElement('table');
+        table.classList.add('table', 'table-bordered', 'table-striped', 'table-fixed', 'table-inner-border-only', 'border-left', 'mb-0');
+        containerIssuerData.appendChild(table);
 
-        let $thead = $('<thead>');
-        $table.append($thead)
+        let thead = document.createElement('thead');
+        table.appendChild(thead);
 
-        let $trhead = $('<tr>');
-          $trhead.append(
-            $('<th>').text('Name'),
-            $('<th>').text('Email'),
-            $('<th width="80">').text('Issued'));
-        $thead.append($trhead);
+        let trhead = document.createElement('tr');
+        table.appendChild(trhead);
 
-        let $tbody = $('<tbody>');
-        $table.append($tbody);
+        let thID = document.createElement('th');
+        thID.innerText = 'ID';
+        trhead.appendChild(thID);
+
+        let thIssued = document.createElement('th');
+        thIssued.width = '80';
+        thIssued.innerText = 'Issued';
+        trhead.appendChild(thIssued);
+
+        let tbody = document.createElement('tbody');
+        table.appendChild(tbody);
 
         row.issuer_data.forEach(function(issuer) {
-          let $name = $('<td>').text(issuer.name);
-          let $email = $('<td>').text(issuer.email);
-          let $codes_issued = $('<td align="right">').text(issuer.codes_issued);
+          let tr = document.createElement('tr');
+          tbody.appendChild(tr);
 
-          let $tr = $('<tr>');
-            $tr.append($name, $email, $codes_issued);
-            $tbody.append($tr);
+          let tdName = document.createElement('td');
+          tdName.innerText = issuer.name;
+          tr.appendChild(tdName);
+
+          let tdEmail = document.createElement('td');
+          tdEmail.innerText = issuer.email;
+          tr.appendChild(tdEmail);
+
+          let tdCodesIssued = document.createElement('td');
+          tdCodesIssued.align = 'right';
+          tdCodesIssued.innerText = issuer.codes_issued;
+          tr.appendChild(tdCodesIssued);
         });
       });
-    })
-    .fail(function(xhr, status, err) {
+    };
+
+    request.onerror = (event) => {
+      console.error('error from response: ' + request.response);
       flash.error('Failed to render user stats: ' + err);
-    });
+    }
+
+    request.send();
   });
 </script>
 
