@@ -148,11 +148,11 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 							MessageID: "agencyRegionName",
 							Translations: []clients.Translation{
 								{
-									Langauge: "EN_US",
+									Language: "EN_US",
 									Message:  "WA State Dept. of Health",
 								},
 								{
-									Langauge: "ES_US",
+									Language: "ES_US",
 									Message:  "Departamento de Salud del estado de Washington",
 								},
 							},
