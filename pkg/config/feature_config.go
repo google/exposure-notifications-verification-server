@@ -21,9 +21,8 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 type FeatureConfig struct {
 	// EnableUserReportWeb hosts a public page on the enx-redirect service under a
 	// realm's domain for users to self-report. Even if enabled, realm's must
-	// still opt into self-report for the page to be displayed. Disabling this
-	// completely disables the web view, regardless of per-realm status.
-	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=true"`
+	// still opt into self-report for the page to be displayed.
+	EnableUserReportWeb bool `env:"ENABLE_USER_REPORT_WEB, default=false"`
 }
 
 // AddToTemplate takes TemplateMap and writes the status of all known
