@@ -114,14 +114,13 @@
           javascript, but we do server-side validation to prevent actual data
           mutation without permission.
 
-          We specifically do this before changing tabs to reduce the FOUT.
-
         */}}
-        $('body').find('input, button, select, textarea, a.btn')
-          .addClass('disabled')
-          .addClass('readonly')
-          .prop('disabled', true)
-          .prop('readonly', true);
+        document.querySelectorAll('input, button, select, textarea, a.btn').forEach((element) => {
+          element.classList.add('disabled');
+          element.classList.add('readonly');
+          element.disabled = true;
+          element.readonly = true;
+        });
       {{end}}
 
       changeTab(window.location.hash);

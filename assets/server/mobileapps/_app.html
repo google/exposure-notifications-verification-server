@@ -2,12 +2,6 @@
 
 {{$app := .app}}
 
-<style>
-  .d-android-only, .d-app-none, .d-ios-only {
-    display: none;
-  }
-</style>
-
 <div class="form-label-group">
   <input type="text" name="name" id="name" class="form-control{{if $app.ErrorsFor "name"}} is-invalid{{end}}" value="{{$app.Name}}"
     placeholder="Application name" autofocus>
@@ -32,27 +26,6 @@
   </small>
 </div>
 
-<div class="custom-control custom-switch mb-3">
-  <input type="checkbox" name="enable_redirect" id="enable-redirect"
-    class="custom-control-input" {{checkedIf (not $app.DisableRedirect)}}
-    {{if $app.ErrorsFor "disable_redirect"}}is-invalid{{end}}>
-  <label class="custom-control-label" for="enable-redirect">Enable AppStore redirects</label>
-  {{template "errorable" $app.ErrorsFor "disable_redirect"}}
-  <small class="form-text text-muted">
-    If a patient clicks on a verification link when they do not have the app
-    installed, the system will redirect them to the appropriate store to install
-    the application. We recommend keeping this option enabled to help increase
-    app adoption.
-
-    <div class="alert alert-warning d-ios-only" role="alert">
-      If you have a custom application and iOS EN Express in the same jurisdiction,
-      then AppStore redirect should be disabled.
-    </div>
-  </small>
-</div>
-
-<hr>
-
 <div class="form-group">
   <select name="os" id="os" class="form-control custom-select{{if $app.ErrorsFor "os"}} is-invalid{{end}}">
     <option selected disabled>Choose platform...</option>
@@ -60,22 +33,25 @@
     <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android EN Express or custom app</option>
   </select>
   {{template "errorable" $app.ErrorsFor "os"}}
+  <small class="form-text text-muted">
+    This is the target mobile platform.
+  </small>
 </div>
 
-<div id="app-id-group" class="form-label-group d-app-none">
+<div id="app-id-group" class="form-label-group d-none">
   <input type="text" name="app_id" id="app-id" class="form-control text-monospace{{if $app.ErrorsFor "app_id"}} is-invalid{{end}}" value="{{$app.AppID}}">
   <label for="app-id" id="app-id-label"></label>
   {{template "errorable" $app.ErrorsFor "app_id"}}
-  <small class="form-text text-muted d-ios-only">
+  <small class="form-text text-muted d-ios-only d-none">
     The Application ID should be either a team ID or app ID prefix followed by
     the bundle ID (e.g. <code>ABCD1234.com.my.app</code>).
   </small>
-  <small class="form-text text-muted d-android-only">
+  <small class="form-text text-muted d-android-only d-none">
     The Package Name is the registered Android package name (e.g. <code>com.example.my.app</code>)
   </small>
 </div>
 
-<div id="sha-group" class="form-label-group d-android-only">
+<div id="sha-group" class="form-label-group d-android-only d-none">
   <textarea name="sha" id="sha" class="form-control text-monospace{{if $app.ErrorsFor "sha"}} is-invalid{{end}}"
     placeholder="SHA256s (one per line)" rows="5">{{$app.SHA}}</textarea>
   <label for="sha">SHA256 from the app signing certificate (one per line) </label>
@@ -90,33 +66,58 @@
   </small>
 </div>
 
+<hr>
+
+<div class="custom-control custom-switch mb-3">
+  <input type="checkbox" name="enable_redirect" id="enable-redirect"
+    class="custom-control-input" {{checkedIf (not $app.DisableRedirect)}}
+    {{if $app.ErrorsFor "disable_redirect"}}is-invalid{{end}}>
+  <label class="custom-control-label" for="enable-redirect">Enable AppStore redirects</label>
+  {{template "errorable" $app.ErrorsFor "disable_redirect"}}
+  <small class="form-text text-muted">
+    If a patient clicks on a verification link when they do not have the app
+    installed, the system will redirect them to the appropriate store to install
+    the application. We recommend keeping this option enabled to help increase
+    app adoption.
+
+    <div class="text-danger d-ios-only d-none mt-3 mb-4">
+      If you have a custom application and iOS EN Express in the same jurisdiction,
+      then AppStore redirect should be disabled.
+    </div>
+  </small>
+</div>
+
 <script defer type="text/javascript">
   window.addEventListener('load', (event) => {
-    let $selectOS = $('select#os');
-    let $appIDGroup = $('#app-id-group');
-    let $appIDInput = $('#app-id');
-    let $appIDLabel = $('#app-id-label');
+    let inputOS = document.querySelector('select#os');
+    let divAppID = document.querySelector('div#app-id-group');
+    let inputAppID = divAppID.querySelector('input#app-id');
+    let labelAppID = divAppID.querySelector('label#app-id-label');
+
+    let itemsAndroidOnly = document.querySelectorAll('.d-android-only');
+    let itemsIOSOnly = document.querySelectorAll('.d-ios-only');
 
     function processChange() {
-      $appIDGroup.hide();
+      inputAppID.classList.add('d-none');
 
-      let val = $selectOS.children('option:selected').val();
+      let val = inputOS.options[inputOS.selectedIndex].value;
       if (val === '{{.iOS}}') {
-        $appIDInput.attr('placeholder', 'Application ID');
-        $appIDLabel.html('Application ID');
-        $('.d-android-only').hide();
-        $('.d-ios-only').show();
-        $appIDGroup.show();
+        inputAppID.placeholder = 'Application ID';
+        labelAppID.innerText = 'Application ID';
+
+        itemsAndroidOnly.forEach((item) => { item.classList.add('d-none'); })
+        itemsIOSOnly.forEach((item) => { item.classList.remove('d-none'); })
+        inputAppID.classList.remove('d-none');
       } else if (val === '{{.android}}') {
-        $appIDInput.attr('placeholder', 'Package name');
-        $appIDLabel.html('Package name');
-        $('.d-android-only').show();
-        $('.d-ios-only').hide();
-        $appIDGroup.show();
+        inputAppID.placeholder = 'Package name';
+        labelAppID.innerText = 'Package name';
+        itemsAndroidOnly.forEach((item) => { item.classList.remove('d-none'); })
+        itemsIOSOnly.forEach((item) => { item.classList.add('d-none'); })
+        inputAppID.classList.remove('d-none');
       }
     }
 
-    $selectOS.change(processChange);
+    inputOS.addEventListener('change', processChange);
     processChange();
   });
 </script>

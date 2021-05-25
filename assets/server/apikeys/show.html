@@ -149,8 +149,8 @@
         redrawCharts(chartData, 300);
       });
 
-      let $div = $('#apikey_stats_chart');
-      let apiKeyID = $div.data('apikeyId');
+      let containerChart = document.querySelector('div#apikey_stats_chart');
+      let apiKeyID = containerChart.dataset.apikeyId;
 
       google.charts.load('current', {
         packages: ['corechart'],
@@ -163,8 +163,10 @@
           dataType: 'json',
         })
         .done(function(data, status, xhr) {
+          let pContainer = containerChart.querySelector('p');
+
           if (!data.statistics) {
-            $div.find('p').text('No data yet.');
+            pContainer.innerText = 'No data yet.';
             return;
           }
 
@@ -176,10 +178,10 @@
               drawDeviceStats(data);
               break;
             case 'stats':
-              $div.find('p').text('Statistics API keys do not produce statistics.');
+              pContainer.innerText = 'Statistics API keys do not produce statistics.';
               break;
             default:
-              $div.find('p').text('Unknown API key type');
+              pContainer.innertText = 'Unknown API key type';
               break;
           }
         })
@@ -216,7 +218,7 @@
           legend: { position: 'top' },
         };
 
-        let chart = new google.visualization.LineChart($div.get(0));
+        let chart = new google.visualization.LineChart(containerChart);
         chart.draw(dataTable, options);
         chartData.push({
           chart: chart,
@@ -256,7 +258,7 @@
           legend: { position: 'top' },
         };
 
-        let chart = new google.visualization.LineChart($div.get(0));
+        let chart = new google.visualization.LineChart(containerChart);
         chart.draw(dataTable, options);
       }
     });
