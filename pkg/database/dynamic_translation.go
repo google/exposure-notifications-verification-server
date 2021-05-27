@@ -31,7 +31,7 @@ type DynamicTranslation struct {
 	// ID is an auto-increment primary key
 	ID uint
 
-	// RelamID, MessageID, Locale is a unique index on this table.
+	// RealmID, MessageID, Locale is a unique index on this table.
 
 	// RealmID realm that this translation belongs to.
 	RealmID uint
@@ -56,12 +56,13 @@ func translationKey(realmID uint, locale string, msgID string) string {
 	return fmt.Sprintf("%d-%s-%s", realmID, locale, msgID)
 }
 
-// LoadDynamicTranslations returns all of the dynamic translations for all realms.
+// ListDynamicTranslations returns all of the dynamic translations for all realms.
 // The result of this read should be cached for some period of time.
-func (db *Database) LoadDynamicTranslations() ([]*DynamicTranslation, error) {
+func (db *Database) ListDynamicTranslations() ([]*DynamicTranslation, error) {
 	var translations []*DynamicTranslation
 	if err := db.db.
 		Model(&DynamicTranslation{}).
+		Order("realm_id ASC, locale ASC, message_id ASC").
 		Find(&translations).
 		Error; err != nil {
 		return nil, err
@@ -79,16 +80,14 @@ func localeToLanguage(l string) string {
 	return l[0:2]
 }
 
-type TranslatcionSyncResult struct {
+type TranslationSyncResult struct {
 	Added   int
 	Updated int
 	Deleted int
 }
 
-func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.Localization) (*TranslatcionSyncResult, error) {
+func (db *Database) SyncRealmTranslations(realmID uint, localizations []*appsync.Localization) (*TranslationSyncResult, error) {
 	// load all translations for a realm
-	existingTranslations := make(map[string]*DynamicTranslation)
-
 	var translations []*DynamicTranslation
 	if err := db.db.
 		Model(&DynamicTranslation{}).
@@ -98,13 +97,19 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 		return nil, err
 	}
 
+	existingTranslations := make(map[string]*DynamicTranslation, len(translations))
 	for _, t := range translations {
 		existingTranslations[t.Key()] = t
 	}
 
 	// Load the incoming translations into a map for ease.
 	// This also ensures any de-duplication.
-	incomingTranslations := make(map[string]string)
+	sizeEst := len(localizations)
+	if sizeEst > 0 {
+		// unroll, assumption that all message IDs contains the same # of localizations.
+		sizeEst *= len(localizations[0].Translations)
+	}
+	incomingTranslations := make(map[string]string, sizeEst)
 	for _, l := range localizations {
 		msgID := l.MessageID
 		for _, t := range l.Translations {
@@ -113,7 +118,7 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 		}
 	}
 
-	var errors *multierror.Error = nil
+	var merr *multierror.Error
 
 	// calculate diff set
 	// anything left in existing translations at the end of this is considered "toDelete"
@@ -132,8 +137,7 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 		} else {
 			keyParts := strings.Split(key, "-")
 			if len(keyParts) != 3 {
-				errors = multierror.Append(errors,
-					fmt.Errorf("invalid message key: %q", key))
+				merr = multierror.Append(merr, fmt.Errorf("invalid message key: %q", key))
 				continue
 			}
 			// the key was not found
@@ -146,11 +150,11 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 		}
 	}
 
-	results := &TranslatcionSyncResult{}
+	results := &TranslationSyncResult{}
 	// add new translations
 	for k, add := range toAdd {
 		if err := db.db.Create(add).Error; err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("failed to add %q: %w", k, err))
+			merr = multierror.Append(merr, fmt.Errorf("failed to add %q: %w", k, err))
 			continue
 		}
 		results.Added++
@@ -159,7 +163,7 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 	// update existing translations
 	for k, update := range toUpdate {
 		if err := db.db.Save(update).Error; err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("failed to update %q: %w", k, err))
+			merr = multierror.Append(merr, fmt.Errorf("failed to update %q: %w", k, err))
 			continue
 		}
 		results.Updated++
@@ -168,11 +172,11 @@ func (db *Database) SyncRealmTranslations(realmID uint, localizations []appsync.
 	// delete translations that we no longer have a reference to.
 	for k, del := range existingTranslations {
 		if err := db.db.Delete(del).Error; err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("failed to delete %q: %w", k, err))
+			merr = multierror.Append(merr, fmt.Errorf("failed to delete %q: %w", k, err))
 			continue
 		}
 		results.Deleted++
 	}
 
-	return results, errors.ErrorOrNil()
+	return results, merr.ErrorOrNil()
 }

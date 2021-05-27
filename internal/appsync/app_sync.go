@@ -29,8 +29,8 @@ type Translation struct {
 
 // Localization represents all known translations of a specific message ID
 type Localization struct {
-	MessageID    string        `json:"msgid"`
-	Translations []Translation `json:"translations"`
+	MessageID    string         `json:"msgid"`
+	Translations []*Translation `json:"translations"`
 }
 
 // App represents single app for the AppResponse body.
@@ -38,10 +38,10 @@ type App struct {
 	Region        string `json:"region"`
 	IsEnx         bool   `json:"is_enx,omitempty"`
 	AndroidTarget `json:"android_target"`
-	AgencyColor   string         `json:"agency_color"`
-	AgencyImage   string         `json:"agency_image"`
-	DefaultLocale string         `json:"default_locale"`
-	Localizations []Localization `json:"localizations"`
+	AgencyColor   string          `json:"agency_color"`
+	AgencyImage   string          `json:"agency_image"`
+	DefaultLocale string          `json:"default_locale"`
+	Localizations []*Localization `json:"localizations"`
 }
 
 // AndroidTarget holds the android metadata for an App of AppResponse.

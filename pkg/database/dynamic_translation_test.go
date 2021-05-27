@@ -42,10 +42,10 @@ func TestDynamicTranslations(t *testing.T) {
 	}
 
 	{ // Add some initial translations
-		localizations := []appsync.Localization{
+		localizations := []*appsync.Localization{
 			{
 				MessageID: "greeting",
-				Translations: []appsync.Translation{
+				Translations: []*appsync.Translation{
 					{
 						Language: "en_US",
 						Message:  "Hello, world!",
@@ -58,7 +58,7 @@ func TestDynamicTranslations(t *testing.T) {
 			},
 			{
 				MessageID: "direction",
-				Translations: []appsync.Translation{
+				Translations: []*appsync.Translation{
 					{
 						Language: "en_US",
 						Message:  "on the right",
@@ -76,7 +76,7 @@ func TestDynamicTranslations(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantSyncResult := TranslatcionSyncResult{
+		wantSyncResult := TranslationSyncResult{
 			Added:   4,
 			Updated: 0,
 			Deleted: 0,
@@ -85,7 +85,7 @@ func TestDynamicTranslations(t *testing.T) {
 			t.Fatalf("mismatch (-want, +got):\n%s", diff)
 		}
 
-		got, err := db.LoadDynamicTranslations()
+		got, err := db.ListDynamicTranslations()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,10 +123,10 @@ func TestDynamicTranslations(t *testing.T) {
 	}
 
 	{ // Add, modify, and delete
-		localizations := []appsync.Localization{
+		localizations := []*appsync.Localization{
 			{
 				MessageID: "greeting",
-				Translations: []appsync.Translation{
+				Translations: []*appsync.Translation{
 					{
 						Language: "en_US",
 						Message:  "Hello",
@@ -148,7 +148,7 @@ func TestDynamicTranslations(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wantSyncResult := TranslatcionSyncResult{
+		wantSyncResult := TranslationSyncResult{
 			Added:   1,
 			Updated: 1,
 			Deleted: 2,
@@ -157,7 +157,7 @@ func TestDynamicTranslations(t *testing.T) {
 			t.Fatalf("mismatch (-want, +got):\n%s", diff)
 		}
 
-		got, err := db.LoadDynamicTranslations()
+		got, err := db.ListDynamicTranslations()
 		if err != nil {
 			t.Fatal(err)
 		}

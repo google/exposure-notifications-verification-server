@@ -2341,7 +2341,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						ADD COLUMN IF NOT EXISTS default_locale TEXT`,
 					`CREATE TABLE dynamic_translations (
 						id BIGSERIAL PRIMARY KEY,
-						realm_id INTEGER NOT NULL REFERENCES realms(id), 
+						realm_id INTEGER NOT NULL REFERENCES realms(id) ON DELETE CASCADE, 
 						message_id TEXT NOT NULL,
 						locale TEXT NOT NULL,
 						message TEXT NOT NULL,

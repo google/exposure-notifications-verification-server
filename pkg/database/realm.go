@@ -119,6 +119,8 @@ const (
 	DefaultLongCodeExpirationHours    = 24
 	DefaultMaxShortCodeMinutes        = 60
 	maxLongCodeDuration               = 24 * time.Hour
+	DefaultSMSRegion                  = "us"
+	DefaultLanguage                   = "en"
 
 	SMSRegion        = "[region]"
 	SMSCode          = "[code]"
@@ -340,11 +342,11 @@ func NewRealmWithDefaults(name string) *Realm {
 		LongCodeDuration:    FromDuration(DefaultLongCodeExpirationHours * time.Hour),
 		ShortCodeMaxMinutes: DefaultMaxShortCodeMinutes,
 		SMSTextTemplate:     DefaultSMSTextTemplate,
-		SMSCountry:          "us",
+		SMSCountry:          DefaultSMSRegion,
 		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
-		DefaultLocale:       "en",
+		DefaultLocale:       DefaultLanguage,
 	}
 }
 
@@ -390,7 +392,7 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.UserReportWebhookSecret = stringValue(r.UserReportWebhookSecretPtr)
 	r.DefaultLocale = stringValue(r.DefaultLocalePtr)
 	if r.DefaultLocale == "" {
-		r.DefaultLocale = "en"
+		r.DefaultLocale = DefaultLanguage
 	}
 
 	return nil

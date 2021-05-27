@@ -143,10 +143,10 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 					AgencyColor:   "#AABBCC",
 					AgencyImage:   "https://example.com/logo.png",
 					DefaultLocale: "EN_US",
-					Localizations: []appsync.Localization{
+					Localizations: []*appsync.Localization{
 						{
 							MessageID: "agencyRegionName",
-							Translations: []appsync.Translation{
+							Translations: []*appsync.Translation{
 								{
 									Language: "EN_US",
 									Message:  "WA State Dept. of Health",
