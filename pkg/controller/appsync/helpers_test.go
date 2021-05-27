@@ -17,7 +17,7 @@ package appsync
 import (
 	"testing"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/appsync"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -55,12 +55,12 @@ func Test_syncApps(t *testing.T) {
 		agencyColor := "#000000"
 		agencyImage := "https://example.com/logo.png"
 
-		resp := &clients.AppsResponse{
-			Apps: []clients.App{
+		resp := &appsync.AppsResponse{
+			Apps: []appsync.App{
 				{
 					Region: "US-WA",
 					IsEnx:  true,
-					AndroidTarget: clients.AndroidTarget{
+					AndroidTarget: appsync.AndroidTarget{
 						Namespace:              "android_app",
 						PackageName:            "testAppID-butDifferent",
 						SHA256CertFingerprints: "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
@@ -68,7 +68,7 @@ func Test_syncApps(t *testing.T) {
 				}, {
 					Region: "US-WA",
 					IsEnx:  true,
-					AndroidTarget: clients.AndroidTarget{
+					AndroidTarget: appsync.AndroidTarget{
 						Namespace:              "android_app",
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",

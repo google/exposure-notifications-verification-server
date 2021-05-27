@@ -169,12 +169,14 @@ type Realm struct {
 	WelcomeMessage    string  `gorm:"-"`
 	WelcomeMessagePtr *string `gorm:"column:welcome_message; type:text;"`
 
-	// AgencyBackgroundColor and AgencyImage are synced from the Google
+	// AgencyBackgroundColor, AgencyImage, DefaultLocale are synced from the Google
 	// ENX-Express sync source
 	AgencyBackgroundColor    string  `gorm:"-"`
 	AgencyBackgroundColorPtr *string `gorm:"column:agency_background_color; type:text;"`
 	AgencyImage              string  `gorm:"-"`
 	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
+	DefaultLocale            string  `gorm:"-"`
+	DefaultLocalePtr         *string `gorm:"column:default_locale; type:text;"`
 
 	// UserReportWebhookURL and UserReportWebhookSecret are used as callbacks for
 	// user reports.
@@ -342,6 +344,7 @@ func NewRealmWithDefaults(name string) *Realm {
 		AllowedTestTypes:    TestTypeConfirmed | TestTypeLikely | TestTypeNegative,
 		CertificateDuration: FromDuration(15 * time.Minute),
 		RequireDate:         true, // Having dates is really important to risk scoring, encourage this by default true.
+		DefaultLocale:       "en",
 	}
 }
 
@@ -385,6 +388,10 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	r.AgencyImage = stringValue(r.AgencyImagePtr)
 	r.UserReportWebhookURL = stringValue(r.UserReportWebhookURLPtr)
 	r.UserReportWebhookSecret = stringValue(r.UserReportWebhookSecretPtr)
+	r.DefaultLocale = stringValue(r.DefaultLocalePtr)
+	if r.DefaultLocale == "" {
+		r.DefaultLocale = "en"
+	}
 
 	return nil
 }
@@ -430,6 +437,8 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		}
 	}
 	r.UserReportWebhookURLPtr = stringPtr(r.UserReportWebhookURL)
+
+	r.DefaultLocalePtr = stringPtr(r.DefaultLocale)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
