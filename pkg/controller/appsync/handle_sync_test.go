@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/appsync"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -122,12 +122,12 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 	tb.Helper()
 
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		result := &clients.AppsResponse{
-			Apps: []clients.App{
+		result := &appsync.AppsResponse{
+			Apps: []appsync.App{
 				{
 					Region: "US-WA",
 					IsEnx:  true,
-					AndroidTarget: clients.AndroidTarget{
+					AndroidTarget: appsync.AndroidTarget{
 						Namespace:              "android_app",
 						PackageName:            "testAppID-butDifferent",
 						SHA256CertFingerprints: "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
@@ -135,7 +135,7 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 				}, {
 					Region: "US-WA",
 					IsEnx:  true,
-					AndroidTarget: clients.AndroidTarget{
+					AndroidTarget: appsync.AndroidTarget{
 						Namespace:              "android_app",
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
@@ -143,10 +143,10 @@ func testAppSyncServer(tb testing.TB) *httptest.Server {
 					AgencyColor:   "#AABBCC",
 					AgencyImage:   "https://example.com/logo.png",
 					DefaultLocale: "EN_US",
-					Localizations: []clients.Localization{
+					Localizations: []*appsync.Localization{
 						{
 							MessageID: "agencyRegionName",
-							Translations: []clients.Translation{
+							Translations: []*appsync.Translation{
 								{
 									Language: "EN_US",
 									Message:  "WA State Dept. of Health",

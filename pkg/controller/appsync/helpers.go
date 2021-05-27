@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 
-	"github.com/google/exposure-notifications-verification-server/internal/clients"
+	"github.com/google/exposure-notifications-verification-server/internal/appsync"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
@@ -32,7 +32,7 @@ import (
 // syncApps looks up the realm and associated list of MobileApps for each entry
 // of AppsResponse. Then it checks to see if there exists an app with the
 // AppResponse SHA hash, if not it creates a new MobileApp.
-func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *multierror.Error {
+func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *multierror.Error {
 	logger := logging.FromContext(ctx).Named("appsync.syncApps")
 	var merr *multierror.Error
 
@@ -54,9 +54,17 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 
 		realm.AgencyBackgroundColor = strings.ToLower(app.AgencyColor)
 		realm.AgencyImage = app.AgencyImage
+		realm.DefaultLocale = app.DefaultLocale
 		if err := c.db.SaveRealm(realm, database.System); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("unable to update agency information: %w", err))
 			continue
+		}
+
+		if res, err := c.db.SyncRealmTranslations(realm.ID, app.Localizations); err != nil {
+			merr = multierror.Append(merr, fmt.Errorf("unable to sync localizations, realm: %d: %w", realm.ID, err))
+			// don't skip the rest, still try and sync apps
+		} else {
+			logger.Infow("synced tranlations", "realm", realm.ID, "result", res)
 		}
 
 		realmApps, err := c.findAppsForRealm(realm.ID, appsByRealm)
@@ -114,7 +122,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *clients.AppsResponse) *
 }
 
 func (c *Controller) findRealmForApp(
-	app clients.App, realms map[string]*database.Realm) (*database.Realm, error) {
+	app appsync.App, realms map[string]*database.Realm) (*database.Realm, error) {
 	var err error
 	realm, has := realms[app.Region]
 	if !has { // Find this apps region and cache it in our realms map
@@ -141,7 +149,7 @@ func (c *Controller) findAppsForRealm(
 	return realmApps, nil
 }
 
-func generateAppName(app clients.App) string {
+func generateAppName(app appsync.App) string {
 	if app.AppName != "" {
 		return app.AppName
 	}

@@ -2333,6 +2333,32 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS user_report_webhook_secret`)
 			},
 		},
+		{
+			ID: "00108-AddDynamicTranslations",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS default_locale TEXT`,
+					`CREATE TABLE dynamic_translations (
+						id BIGSERIAL PRIMARY KEY,
+						realm_id INTEGER NOT NULL REFERENCES realms(id) ON DELETE CASCADE, 
+						message_id TEXT NOT NULL,
+						locale TEXT NOT NULL,
+						message TEXT NOT NULL,
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+					)`,
+					`CREATE UNIQUE INDEX uix_dynamic_translations ON dynamic_translations(realm_id, message_id, locale)`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS default_locale`,
+					`DROP TABLE dynamic_translatioms`,
+				)
+			},
+		},
 	}
 }
 
