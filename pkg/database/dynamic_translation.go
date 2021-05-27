@@ -69,7 +69,7 @@ func (db *Database) LoadDynamicTranslations() ([]*DynamicTranslation, error) {
 	return translations, nil
 }
 
-// localeToLangauge convers things like "en_US" to just "en" to match
+// localeToLangauge covers things like "en_US" to just "en" to match
 // this applications localization strategy.
 func localeToLanguage(l string) string {
 	l = strings.ToLower(l)
