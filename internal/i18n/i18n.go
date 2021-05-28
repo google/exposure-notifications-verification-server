@@ -105,7 +105,7 @@ func (l *LocaleMap) SetDynamicTranslations(incoming []*database.DynamicTranslati
 
 	// Parse the completed files into gotext.Translator
 	next := make(map[uint]map[string]gotext.Translator, len(poFiles))
-	for realmId, realmLocales := range poFiles {
+	for realmID, realmLocales := range poFiles {
 		parsed := make(map[string]gotext.Translator, len(realmLocales))
 
 		for locale, poContent := range realmLocales {
@@ -114,7 +114,7 @@ func (l *LocaleMap) SetDynamicTranslations(incoming []*database.DynamicTranslati
 			parsed[locale] = translator
 		}
 
-		next[realmId] = parsed
+		next[realmID] = parsed
 	}
 
 	// Under a lock, replace the current translation map.
