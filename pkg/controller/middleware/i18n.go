@@ -15,6 +15,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -54,13 +55,13 @@ type translationReloader struct {
 }
 
 // reload will see if we are due for a refresh, otherwise exit quickly.
-func (tr *translationReloader) reload(ctx context.Context) {
+func (tr *translationReloader) reload(ctx context.Context) error {
 	// Check and see if we need to reload.
 	now := time.Now().UTC()
 	tr.mu.RLock()
 	if tr.lastUpdate.Add(tr.period).After(now) {
 		tr.mu.RUnlock()
-		return
+		return nil
 	}
 	tr.mu.RUnlock()
 
@@ -70,7 +71,7 @@ func (tr *translationReloader) reload(ctx context.Context) {
 
 	// This thread lost the race to actually do the refresh, shucks.
 	if tr.lastUpdate.Add(tr.period).After(now) {
-		return
+		return nil
 	}
 
 	logger := logging.FromContext(ctx)
@@ -79,13 +80,15 @@ func (tr *translationReloader) reload(ctx context.Context) {
 	translations, err := tr.db.ListDynamicTranslationsCached(ctx, tr.cacher)
 	if err != nil {
 		logger.Errorw("unable to read dynamic_translations", "error", err)
+		return fmt.Errorf("unable to load realm translations: %w", err)
 	}
 
 	tr.locales.SetDynamicTranslations(translations)
 	tr.lastUpdate = now
+	return nil
 }
 
-func LoadDynamicTranslations(locales *i18n.LocaleMap, db *database.Database, cacher cache.Cacher, period time.Duration) mux.MiddlewareFunc {
+func LoadDynamicTranslations(locales *i18n.LocaleMap, db *database.Database, cacher cache.Cacher, period time.Duration) (mux.MiddlewareFunc, error) {
 	state := &translationReloader{
 		locales: locales,
 		db:      db,
@@ -94,14 +97,18 @@ func LoadDynamicTranslations(locales *i18n.LocaleMap, db *database.Database, cac
 		// default lastUpdate to time.Zero
 	}
 	ctx := context.Background()
-	state.reload(ctx)
+	if err := state.reload(ctx); err != nil {
+		return nil, err
+	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			state.reload(r.Context())
+			if err := state.reload(r.Context()); err != nil {
+				logging.FromContext(r.Context()).Errorw("failed to refresh translations, could be stale", "error", err)
+			}
 			next.ServeHTTP(w, r)
 		})
-	}
+	}, nil
 }
 
 // ProcessLocale extracts the locale from the various possible locations and

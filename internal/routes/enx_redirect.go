@@ -168,7 +168,11 @@ func ENXRedirect(
 
 		{ // handler for the /report path - requires API KEY and NONCE headers.
 			sub := r.Path("/report").Subrouter()
-			sub.Use(middleware.LoadDynamicTranslations(locales, db, cacher, cfg.TranslationRefreshPeriod))
+			loadTranslations, err := middleware.LoadDynamicTranslations(locales, db, cacher, cfg.TranslationRefreshPeriod)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load initial set of translations: %w", err)
+			}
+			sub.Use(loadTranslations)
 			sub.Use(hostHeaderCheck)
 			sub.Use(requireSession)
 			sub.Use(httplimiter.Handle)
