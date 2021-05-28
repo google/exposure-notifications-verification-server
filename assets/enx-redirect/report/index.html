@@ -18,7 +18,8 @@
     </div>
     {{end}}
 
-    <h1 class="mb-3">{{t $.locale "user-report.request-code-from"}} {{.realm.Name}}</h1>
+    <h1 class="mb-3">{{t $.locale "user-report.request-code-from"}}
+      {{tDefault $.realmLocale .realm.Name "agencyDisplayName"}}</h1>
 
     {{if not .skipForm}}
     <div class="alert alert-primary d-flex align-items-center" role="alert">

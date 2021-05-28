@@ -134,7 +134,16 @@ func ENXRedirect(
 			return nil, fmt.Errorf("failed to create limiter middleware: %w", err)
 		}
 
-		userReportController, err := userreport.New(cacher, cfg, db, limiterStore, smsSigner, h)
+		// Load localization
+		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup i18n: %w", err)
+		}
+
+		// Process localization parameters.
+		processLocale := middleware.ProcessLocale(locales)
+
+		userReportController, err := userreport.New(locales, cacher, cfg, db, limiterStore, smsSigner, h)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create code request controller: %w", err)
 		}
@@ -145,15 +154,6 @@ func ENXRedirect(
 
 		// Using a different name, makes it so cookies don't interfer in local dev.
 		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", h)
-
-		// Load localization
-		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
-		if err != nil {
-			return nil, fmt.Errorf("failed to setup i18n: %w", err)
-		}
-
-		// Process localization parameters.
-		processLocale := middleware.ProcessLocale(locales)
 
 		{ // handler for /report/issue, required values must be in the established session.
 			sub := r.Path("/report/issue").Subrouter()
@@ -168,6 +168,11 @@ func ENXRedirect(
 
 		{ // handler for the /report path - requires API KEY and NONCE headers.
 			sub := r.Path("/report").Subrouter()
+			loadTranslations, err := middleware.LoadDynamicTranslations(locales, db, cacher, cfg.TranslationRefreshPeriod)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load initial set of translations: %w", err)
+			}
+			sub.Use(loadTranslations)
 			sub.Use(hostHeaderCheck)
 			sub.Use(requireSession)
 			sub.Use(httplimiter.Handle)

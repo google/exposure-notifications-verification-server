@@ -15,11 +15,13 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/appsync"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -54,6 +56,25 @@ func (d *DynamicTranslation) Key() string {
 
 func translationKey(realmID uint, locale string, msgID string) string {
 	return fmt.Sprintf("%d-%s-%s", realmID, locale, msgID)
+}
+
+// ListDynamicTranslationsCached is ListDynamicTranslations, but cached.
+func (db *Database) ListDynamicTranslationsCached(ctx context.Context, cacher cache.Cacher) ([]*DynamicTranslation, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var translations []*DynamicTranslation
+	cacheKey := &cache.Key{
+		Namespace: "translations:dynamic",
+		Key:       "all",
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &translations, 10*time.Minute, func() (interface{}, error) {
+		return db.ListDynamicTranslations()
+	}); err != nil {
+		return nil, err
+	}
+	return translations, nil
 }
 
 // ListDynamicTranslations returns all of the dynamic translations for all realms.

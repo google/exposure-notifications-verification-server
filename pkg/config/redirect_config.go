@@ -48,6 +48,8 @@ type RedirectConfig struct {
 	SessionDuration    time.Duration `env:"SESSION_DURATION, default=1h"`
 	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
 
+	TranslationRefreshPeriod time.Duration `env:"TRANSLATION_REFRESH_PERIOD, default=30m"`
+
 	// Issue config is pulled in for the ENX_REDIRECT_DOMAIN
 	Issue IssueAPIVars
 

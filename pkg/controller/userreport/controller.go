@@ -20,8 +20,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -33,6 +35,7 @@ import (
 )
 
 type Controller struct {
+	locales          *i18n.LocaleMap
 	cacher           cache.Cacher
 	config           *config.RedirectConfig
 	db               *database.Database
@@ -47,7 +50,7 @@ type Controller struct {
 }
 
 // New creates a new login controller.
-func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
+func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	cfgMap, err := cfg.HostnameToRegion()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -62,6 +65,7 @@ func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database,
 	}
 
 	return &Controller{
+		locales:          locales,
 		cacher:           cacher,
 		config:           cfg,
 		db:               db,
@@ -73,6 +77,13 @@ func New(cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database,
 		hostnameToRegion: cfgMap,
 		issueController:  issueController,
 	}, nil
+}
+
+func (c *Controller) addDynamicTranslations(realmID uint, m controller.TemplateMap) controller.TemplateMap {
+	accept := m["acceptLanguage"].([]string)
+	locale := c.locales.LookupDynamic(realmID, accept...)
+	m["realmLocale"] = locale
+	return m
 }
 
 func addError(message string, errors []string) []string {

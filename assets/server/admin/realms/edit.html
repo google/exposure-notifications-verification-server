@@ -240,6 +240,33 @@
         </div>
       </div>
     {{end}}
+
+    {{if $.translations}}
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">Synced Localizations</div>
+      <div class="card-body">
+        <p>
+          These localizations are synced to this server through the appsync service.
+        </p>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th scope="col" width="75">Locale</th>
+              <th scope="col" width="150">Message ID</th>
+              <th scope="col" >Message</th>
+            </tr>
+            {{range $.translations}}
+            <tr>                        
+                <td class="text-left">{{.Locale}}</td>
+                <td class="text-left">{{.MessageID}}</td>                
+                <td class="text-left"><code>{{.Message}}</code></td>              
+            </tr>
+            {{end}}
+          </thead>
+        </table>
+      </div>
+    </div>
+    {{end}}
   </main>
 </body>
 </html>

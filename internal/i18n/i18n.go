@@ -21,9 +21,11 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/leonelquinteros/gotext"
 	"golang.org/x/text/language"
 )
@@ -49,6 +51,9 @@ type LocaleMap struct {
 	data    map[string]gotext.Translator
 	matcher language.Matcher
 
+	dynamic     map[uint]map[string]gotext.Translator
+	dynamicLock sync.Mutex
+
 	reload     bool
 	reloadLock sync.Mutex
 }
@@ -59,6 +64,89 @@ func TranslatorLanguage(l gotext.Translator) string {
 		return ""
 	}
 	return typ.Language
+}
+
+// poHeader is used when constructing new po file buffers in memory.
+const poHeader = `msgid ""
+msgstr ""
+"Language: %s\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+`
+
+// SetDynamicTranslations creates realm specific locals with translations
+// based on what's in the database.
+func (l *LocaleMap) SetDynamicTranslations(incoming []*database.DynamicTranslation) {
+	poFiles := make(map[uint]map[string]string)
+
+	// Convert incoming tranlations into PO files, grouped by realm, Language
+	for _, dt := range incoming {
+		realm, ok := poFiles[dt.RealmID]
+		if !ok {
+			realm = make(map[string]string)
+			poFiles[dt.RealmID] = realm
+		}
+
+		locale := strings.ToLower(dt.Locale)
+		curFile, ok := realm[locale]
+		if !ok {
+			// build a new file with the po header fields.
+			curFile = fmt.Sprintf(poHeader, locale)
+		}
+
+		addOn := fmt.Sprintf("msgid \"%s\"\nmsgstr \"%s\"\n\n", dt.MessageID, dt.Message)
+		curFile = curFile + addOn
+
+		realm[locale] = curFile
+	}
+
+	// Parse the completed files into gotext.Translator
+	next := make(map[uint]map[string]gotext.Translator, len(poFiles))
+	for realmID, realmLocales := range poFiles {
+		parsed := make(map[string]gotext.Translator, len(realmLocales))
+
+		for locale, poContent := range realmLocales {
+			translator := gotext.NewPoTranslator()
+			translator.Parse([]byte(poContent))
+			parsed[locale] = translator
+		}
+
+		next[realmID] = parsed
+	}
+
+	// Under a lock, replace the current translation map.
+	l.dynamicLock.Lock()
+	defer l.dynamicLock.Unlock()
+	l.dynamic = next
+}
+
+// LookupDynamic finds the best locale for the given ids.
+func (l *LocaleMap) LookupDynamic(realmID uint, ids ...string) gotext.Translator {
+	// Pull a realm's translations out of the map under a lock to avoid data races.
+	l.dynamicLock.Lock()
+	data := l.dynamic[realmID]
+	l.dynamicLock.Unlock()
+
+	for _, id := range ids {
+		// Convert the id to the "canonical" form.
+		canonical, err := l.Canonicalize(id)
+		if err != nil {
+			continue
+		}
+		locale, ok := data[canonical]
+		if !ok {
+			continue
+		}
+		return locale
+	}
+
+	if def, ok := l.data[defaultLocale]; ok {
+		return def
+	}
+	return gotext.NewPoTranslator()
 }
 
 // Lookup finds the best locale for the given ids. If none exists, the default
