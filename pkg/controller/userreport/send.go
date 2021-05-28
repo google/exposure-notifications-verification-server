@@ -65,6 +65,9 @@ func (c *Controller) HandleSend() http.Handler {
 		}
 		ctx = controller.WithRealm(ctx, realm)
 
+		m := controller.TemplateMapFromContext(ctx)
+		m = c.addDynamicTranslations(realm.ID, m)
+
 		if !realm.AllowsUserReport() {
 			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			controller.NotFound(w, r, c.h)
@@ -77,7 +80,6 @@ func (c *Controller) HandleSend() http.Handler {
 			return
 		}
 
-		m := controller.TemplateMapFromContext(ctx)
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Warn("error binding form", "error", err)

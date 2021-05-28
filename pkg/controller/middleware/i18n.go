@@ -16,9 +16,15 @@ package middleware
 
 import (
 	"net/http"
+	"sync"
+	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
+	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"golang.org/x/net/context"
 
 	"github.com/gorilla/mux"
 )
@@ -33,6 +39,69 @@ const (
 
 var rightAlignLanguages = map[string]struct{}{
 	"ar": {},
+}
+
+// translationReloader maintains a pointer to the LocaleMap
+// and will manage refreshing translations from the database
+// on the configured interval.
+type translationReloader struct {
+	locales    *i18n.LocaleMap
+	db         *database.Database
+	cacher     cache.Cacher
+	lastUpdate time.Time
+	period     time.Duration
+	mu         sync.RWMutex
+}
+
+// reload will see if we are due for a refresh, otherwise exit quickly.
+func (tr *translationReloader) reload(ctx context.Context) {
+	// Check and see if we need to reload.
+	now := time.Now().UTC()
+	tr.mu.RLock()
+	if tr.lastUpdate.Add(tr.period).After(now) {
+		tr.mu.RUnlock()
+		return
+	}
+	tr.mu.RUnlock()
+
+	// Needs refresh.
+	tr.mu.Lock()
+	defer tr.mu.Unlock()
+
+	// This thread lost the race to actually do the refresh, shucks.
+	if tr.lastUpdate.Add(tr.period).After(now) {
+		return
+	}
+
+	logger := logging.FromContext(ctx)
+
+	// Read the translations.
+	translations, err := tr.db.ListDynamicTranslationsCached(ctx, tr.cacher)
+	if err != nil {
+		logger.Errorw("unable to read dynamic_translations", "error", err)
+	}
+
+	tr.locales.SetDynamicTranslations(translations)
+	tr.lastUpdate = now
+}
+
+func LoadDynamicTranslations(locales *i18n.LocaleMap, db *database.Database, cacher cache.Cacher, period time.Duration) mux.MiddlewareFunc {
+	state := &translationReloader{
+		locales: locales,
+		db:      db,
+		cacher:  cacher,
+		period:  period,
+		// default lastUpdate to time.Zero
+	}
+	ctx := context.Background()
+	state.reload(ctx)
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			state.reload(r.Context())
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // ProcessLocale extracts the locale from the various possible locations and
@@ -52,6 +121,7 @@ func ProcessLocale(locales *i18n.LocaleMap) mux.MiddlewareFunc {
 			m := controller.TemplateMapFromContext(ctx)
 			locale := locales.Lookup(param, header)
 			m["locale"] = locale
+			m["acceptLanguage"] = []string{param, header}
 
 			ctx = controller.WithLocale(ctx, locale)
 

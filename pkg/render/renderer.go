@@ -216,6 +216,20 @@ func disabledIf(v bool) htmltemplate.HTMLAttr {
 	return ""
 }
 
+// translateWithFallback accepts a message printer and prints the translation,
+// and also accepts a fallback string if the key isn't known.
+func translateWithFallback(t gotext.Translator, fallback string, key string, vars ...interface{}) string {
+	if t == nil {
+		return fmt.Sprintf(fallback, vars...)
+	}
+
+	v := t.Get(key, vars...)
+	if v == "" || v == key {
+		return fmt.Sprintf(fallback, vars...)
+	}
+	return v
+}
+
 // translate accepts a message printer (populated by middleware) and prints the
 // translated text for the given key. If the printer is nil, an error is
 // returned.
@@ -342,6 +356,7 @@ func templateFuncs() htmltemplate.FuncMap {
 		"readonlyIf":       readonlyIf,
 		"disabledIf":       disabledIf,
 		"t":                translate,
+		"tDefault":         translateWithFallback,
 		"passwordSentinel": pwdSentinel,
 		"hasOne":           hasOne,
 		"hasMany":          hasMany,

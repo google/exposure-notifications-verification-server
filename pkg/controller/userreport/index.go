@@ -49,6 +49,9 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
+		m := controller.TemplateMapFromContext(ctx)
+		m = c.addDynamicTranslations(realm.ID, m)
+
 		session := controller.SessionFromContext(ctx)
 		if session == nil {
 			controller.MissingSession(w, r, c.h)
@@ -61,8 +64,6 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.InternalError(w, r, c.h, fmt.Errorf("internal error, please try again"))
 			return
 		}
-
-		m := controller.TemplateMapFromContext(ctx)
 
 		now := time.Now().UTC()
 		pastDaysDuration := -1 * c.config.IssueConfig().AllowedSymptomAge

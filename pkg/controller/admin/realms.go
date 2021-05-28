@@ -254,16 +254,27 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 			}
 		}
 
+		allTranslations, err := c.db.ListDynamicTranslationsCached(ctx, c.cacher)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+		}
+		realmTranslations := make([]*database.DynamicTranslation, 0, len(allTranslations))
+		for _, t := range allTranslations {
+			if t.RealmID == realm.ID {
+				realmTranslations = append(realmTranslations, t)
+			}
+		}
+
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining, realmTranslations)
 			return
 		}
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
-			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
+			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining, realmTranslations)
 			return
 		}
 
@@ -275,7 +286,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining)
+				c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining, realmTranslations)
 				return
 			}
 
@@ -291,7 +302,8 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	realm *database.Realm, membership *database.Membership, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
 	chaffEvents []*database.RealmChaffEvent,
-	quotaLimit, quotaRemaining uint64) {
+	quotaLimit, quotaRemaining uint64,
+	translations []*database.DynamicTranslation) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm: %s - System Admin", realm.Name)
 	m["realm"] = realm
@@ -302,6 +314,7 @@ func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	m["supportsPerRealmSigning"] = c.db.SupportsPerRealmSigning()
 	m["quotaLimit"] = quotaLimit
 	m["quotaRemaining"] = quotaRemaining
+	m["translations"] = translations
 	c.h.RenderHTML(w, "admin/realms/edit", m)
 }
 
