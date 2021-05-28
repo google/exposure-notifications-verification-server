@@ -257,6 +257,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		allTranslations, err := c.db.ListDynamicTranslationsCached(ctx, c.cacher)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 		realmTranslations := make([]*database.DynamicTranslation, 0, len(allTranslations))
 		for _, t := range allTranslations {
