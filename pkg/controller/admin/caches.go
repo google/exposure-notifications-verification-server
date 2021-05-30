@@ -36,8 +36,8 @@ var caches = map[string]*cacheItem{
 	"realms:":             {"Realms", "All realm data"},
 	"stats:":              {"Statistics", "API key, user, and realm statistics"},
 	"token_signing_keys:": {"Token signing keys", "All token signing keys, including currently active"},
-	"users:":              {"Users", "All user data"},
 	"translations:":       {"Translations", "Realm specific tranlations for the user report webview"},
+	"users:":              {"Users", "All user data"},
 }
 
 // HandleCachesIndex shows the caches page.
