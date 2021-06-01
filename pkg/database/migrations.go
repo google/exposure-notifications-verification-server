@@ -2359,6 +2359,34 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00109-MakeWebViewARealmSetting",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS allow_user_report_web_view BOOLEAN`,
+					`ALTER TABLE realms
+						ALTER COLUMN allow_user_report_web_view SET DEFAULT false`,
+					`ALTER TABLE realms
+						ALTER COLUMN allow_user_report_web_view SET NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS allow_user_report_web_view`)
+			},
+		},
+		{
+			ID: "00110-SetDefaultOnAllowAdminUserReport",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ALTER COLUMN allow_admin_user_report SET DEFAULT false`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	}
 }
 

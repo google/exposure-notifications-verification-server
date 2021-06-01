@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package routes
 
-import "github.com/google/exposure-notifications-verification-server/pkg/controller"
+import (
+	"testing"
 
-// FeatureConfig represents features that are introduced as off by default allowing
-// for server operators to control their release.
-type FeatureConfig struct { // None at the moment.
-}
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
+)
 
-// AddToTemplate takes TemplateMap and writes the status of all known
-// feature flags for use in HTML templates.
-func (f *FeatureConfig) AddToTemplate(m controller.TemplateMap) controller.TemplateMap {
-	m["features"] = f
-	return m
+var testDatabaseInstance *database.TestInstance
+
+func TestMain(m *testing.M) {
+	testDatabaseInstance = database.MustTestInstance()
+	defer testDatabaseInstance.MustClose()
+	m.Run()
 }

@@ -103,26 +103,42 @@
           receiving a verification code from this health authority.
           By enabling this feature, this server may temporarily phone numbers of users
           who request verification codes to prevent abuse.
-          <strong>Before enabling:
+          <div class="alert alert-info" role="alert">
+            <strong>Before enabling:</strong>
             Ensure that your application is prepared and that your risk scoring correctly handles
             the <code>SELF_REPORT</code> report type. If you are an Exposure Notifications Express
             customer, please work with Apple and Google before enabling this feature.
-          </strong>
+          </div>
         </small>
       </label>
     </div>
 
     <div class="form-check mb-3">
-      <input type="checkbox" name="allow_admin_user_report" id="allow-admin-user-report" class="form-check-input" value="true" {{checkedIf ($realm.AllowAdminUserReport)}} />
-      <label for="allow-admin-user-report" class="form-check-label">
-        Admin API can issue user-report codes
-        <small class="form-text text-muted mb-3">
-          If <code>Allow user initiated report</code> is enabled, this setting allows the admin code issue
-          API to utilize the <code>user-report</code> report type. Doing so, allows for user-report codes to
-          be claimed without the normally required <code>nonce</code>. This setting should only be
-          enabled after consultation with Apple and Google.
-        </small>
-      </label>
+      <input type="checkbox" name="allow_user_report_web_view" id="allow-user-report-web-view" class="form-check-input{{if $realm.ErrorsFor "allowUserReportWebView"}} is-invalid{{end}}" value="true" {{checkedIf ($realm.AllowUserReportWebView)}} />      
+      <label for="allow-user-report-web-view" class="form-check-label">
+        Enable user report webview</label>
+      {{template "errorable" $realm.ErrorsFor "allowUserReportWebView"}}
+      <small class="form-text text-muted mb-3">
+        If user report is enabled, this allows you to serve a Webview from this server.
+        <div class="alert alert-info" role="alert"><strong>Before enabling:</strong> Confirm with Apple that you are ready to launch
+            user report for iOS EN Express.
+        </div>
+        <div class="alert alert-warning" role="alert">
+          Custom Exposure Notifications applications should not enable this setting and should use the user-report API instead.
+        </div>
+      </small>      
+    </div>
+
+    <div class="form-check mb-3">
+      <input type="checkbox" name="allow_admin_user_report" id="allow-admin-user-report" class="form-check-input{{if $realm.ErrorsFor "allowAdminUserReport"}} is-invalid{{end}}" value="true" {{checkedIf ($realm.AllowAdminUserReport)}} />
+      <label for="allow-admin-user-report" class="form-check-label">Admin API can issue user-report codes</label>
+      {{template "errorable" $realm.ErrorsFor "allowAdminUserReport"}}
+      <small class="form-text text-muted mb-3">
+         If <code>Allow user initiated report</code> is enabled, this setting allows the admin code issue
+         API to utilize the <code>user-report</code> report type. Doing so, allows for user-report codes to
+         be claimed without the normally required <code>nonce</code>. This setting should only be
+         enabled after consultation with Apple and Google.
+      </small>
     </div>
 
     {{if $realm.AllowGeneratedSMS}}

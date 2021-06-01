@@ -113,7 +113,7 @@ func ENXRedirect(
 	}
 
 	// User report web-view configuration.
-	if cfg.Features.EnableUserReportWeb {
+	{
 		// Setup sessions
 		sessionOpts := &sessions.Options{
 			Domain:   cfg.Issue.ENExpressRedirectDomain,
