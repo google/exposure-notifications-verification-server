@@ -239,10 +239,10 @@ func (c *Controller) HandleSettings() http.Handler {
 
 			if form.AllowUserReport {
 				currentRealm.AddUserReportToAllowedTestTypes()
-				currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
-			} else {
-				currentRealm.AllowAdminUserReport = false
 			}
+			// These are outside the conditional so that we can provide error feedback to the user for invalid settings combinations.
+			// The enforcements of theses as at the data model layer.
+			currentRealm.AllowAdminUserReport = form.AllowAdminUserReport
 			currentRealm.AllowUserReportWebView = form.AllowUserReportWebView
 
 			// These fields can only be set if ENX is disabled
