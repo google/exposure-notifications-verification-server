@@ -21,7 +21,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/sethvargo/go-limiter/memorystore"
 )
 
@@ -31,7 +30,7 @@ func TestENXRedirect(t *testing.T) {
 	ctx := project.TestContext(t)
 
 	cfg := &config.RedirectConfig{}
-	db := &database.Database{}
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 	cacher, err := cache.NewNoop()
 	if err != nil {
 		t.Fatal(err)
