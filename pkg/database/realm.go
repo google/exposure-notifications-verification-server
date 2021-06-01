@@ -288,6 +288,10 @@ type Realm struct {
 	// value is to allow all test types.
 	AllowedTestTypes TestType `gorm:"type:smallint; not null; default: 14;"`
 
+	// AllowUserReportWebView - if enabled, will use the user report web view
+	// on the redirect server for this realm. If disabled, it will 404.
+	AllowUserReportWebView bool
+
 	// AllowAdminUserReport - is the adminapi:/api/issue allowed to use the user-report
 	// test type if enabled on the realm.
 	AllowAdminUserReport bool
@@ -501,6 +505,10 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 			}
 			r.SMSTextAlternateTemplates[UserReportTemplateLabel] = &newText
 		}
+	}
+
+	if r.AllowUserReportWebView && !r.AllowsUserReport() {
+		r.AddError("allowUserReportWebView", "cannot be enabled unless user report is enabled")
 	}
 
 	if r.SMSTextAlternateTemplates != nil {

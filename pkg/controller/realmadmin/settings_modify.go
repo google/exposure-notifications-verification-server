@@ -64,6 +64,7 @@ type formData struct {
 	Codes                   bool              `form:"codes"`
 	AllowedTestTypes        database.TestType `form:"allowed_test_types"`
 	AllowUserReport         bool              `form:"allow_user_report"`
+	AllowUserReportWebView  bool              `form:"allow_user_report_web_view"`
 	AllowAdminUserReport    bool              `form:"allow_admin_user_report"`
 	UserReportWebhookURL    string            `form:"user_report_webhook_url"`
 	UserReportWebhookSecret string            `form:"user_report_webhook_secret"`
@@ -242,6 +243,7 @@ func (c *Controller) HandleSettings() http.Handler {
 			} else {
 				currentRealm.AllowAdminUserReport = false
 			}
+			currentRealm.AllowUserReportWebView = form.AllowUserReportWebView
 
 			// These fields can only be set if ENX is disabled
 			if !currentRealm.EnableENExpress {
