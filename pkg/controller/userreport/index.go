@@ -43,7 +43,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !realm.AllowsUserReport() {
+		if !(realm.AllowsUserReport() && realm.AllowUserReportWebView) {
 			stats.Record(ctx, mUserReportNotAllowed.M(1))
 			controller.NotFound(w, r, c.h)
 			return
