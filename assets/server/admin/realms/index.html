@@ -52,6 +52,7 @@
               <th scope="col" width="75" class="text-center d-none d-md-table-cell">Auth SMS</th>
               <th scope="col" width="110" class="text-center d-none d-md-table-cell">Generated SMS</th>
               <th scope="col" width="90" class="text-center d-none d-md-table-cell">User Report</th>
+              <th scope="col" width="90" class="text-center d-none d-md-table-cell">User Report Web</th>
               <th scope="col" width="90" class="text-center d-none d-md-table-cell">Signing key</th>
             </tr>
           </thead>
@@ -112,6 +113,15 @@
                 {{else}}
                   <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
                     data-toggle="tooltip" title="User report is not enabled"></span>
+                {{end}}
+              </td>
+              <td class="text-center d-none d-md-table-cell">
+                {{if .AllowUserReportWebView}}
+                  <span class="small oi oi-circle-check text-success px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="User report web view is enabled"></span>
+                {{else}}
+                  <span class="small oi oi-circle-x text-danger px-2" aria-hidden="true"
+                    data-toggle="tooltip" title="User report web view is not enabled"></span>
                 {{end}}
               </td>
               <td class="text-center d-none d-md-table-cell">
