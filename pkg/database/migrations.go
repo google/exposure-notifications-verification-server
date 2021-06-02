@@ -2364,11 +2364,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realms
-						ADD COLUMN IF NOT EXISTS allow_user_report_web_view BOOLEAN`,
-					`ALTER TABLE realms
-						ALTER COLUMN allow_user_report_web_view SET DEFAULT false`,
-					`ALTER TABLE realms
-						ALTER COLUMN allow_user_report_web_view SET NOT NULL`)
+						ADD COLUMN IF NOT EXISTS allow_user_report_web_view BOOL NOT NULL DEFAULT FALSE`)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
