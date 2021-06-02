@@ -97,6 +97,13 @@
                 <span class="text-secondary">Disabled</span>
               {{end}}
             </li>
+            <li>User Report Web View:
+              {{if $realm.AllowUserReportWebView}}
+                <span class="text-success">Enabled</span>
+              {{else}}
+                <span class="text-secondary">Disabled</span>
+              {{end}}
+            </li>
             <li>Authenticated SMS:
               {{if $realm.UseAuthenticatedSMS}}
                 <span class="text-success">Enabled</span>
