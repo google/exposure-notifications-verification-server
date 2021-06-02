@@ -54,6 +54,7 @@ func TestIndex(t *testing.T) {
 	}
 	realm.RegionCode = "us-wa"
 	realm.AddUserReportToAllowedTestTypes()
+	realm.AllowUserReportWebView = true
 	realm.AllowAdminUserReport = true
 	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
 		t.Fatal(err)
