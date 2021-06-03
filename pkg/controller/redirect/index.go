@@ -44,7 +44,20 @@ func (c *Controller) HandleIndex() http.Handler {
 				break
 			}
 		}
+
 		if hostRegion == "" {
+			// If this is a mobile device, redirect into the OS specific picker as a
+			// best effort.
+			userAgent := r.UserAgent()
+			if isAndroid(userAgent) {
+				http.Redirect(w, r, androidOnboardingRedirect, http.StatusSeeOther)
+				return
+			}
+			if isIOS(userAgent) {
+				http.Redirect(w, r, iosOnboardingRedirect, http.StatusSeeOther)
+				return
+			}
+
 			controller.NotFound(w, r, c.h)
 			return
 		}

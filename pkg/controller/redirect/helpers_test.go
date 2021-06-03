@@ -261,6 +261,11 @@ func TestDecideRedirect(t *testing.T) {
 		AndroidAppID: "gov.moosylvania.app",
 		IOSURL:       "https://ios.example.com/store/moosylvania",
 	}
+	pureHeadlessEnx := AppStoreData{
+		AndroidURL:      "https://android.example.com/store/pizza",
+		AndroidAppID:    "pizza.enx",
+		AndroidHeadless: true,
+	}
 	appLinkNeither := AppStoreData{
 		AndroidURL:   "",
 		AndroidAppID: "",
@@ -308,15 +313,25 @@ func TestDecideRedirect(t *testing.T) {
 			enxEnabled:   true,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
-			expected:     "ens://v?c=123456&r=US-MOO",
+			expected:     "ensonboarding://picker",
 		},
 		{
+			// In this case, there is no app registered, so the link hit the server
+			// send them to built in android onboarding.
 			name:         "android_no_applink",
 			url:          "https://moosylvania.gov/v?c=123456",
 			enxEnabled:   false,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
-			expected:     "",
+			expected:     "ensonboarding://picker",
+		},
+		{
+			name:         "android_headless_onboarding",
+			url:          "https://pizza.gov/onboarding",
+			enxEnabled:   true,
+			userAgent:    userAgentAndroid,
+			appStoreData: &pureHeadlessEnx,
+			expected:     "ensonboarding://picker/us-moo",
 		},
 
 		// iOS

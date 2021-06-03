@@ -76,6 +76,10 @@ type MobileApp struct {
 	// OS is the type of the application we're using (eg, iOS, Android).
 	OS OSType `gorm:"column:os; type:int;"`
 
+	// Headless indicates that this an and android EN Express headless app.
+	// This is only settable through the app sync service.
+	Headless bool `gorm:"column:headless; type:bool; default:false; not null"`
+
 	// AppID is a unique string representing the app.
 	//
 	// For iOS this should include the team ID or app ID prefix followed by

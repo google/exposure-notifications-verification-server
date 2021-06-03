@@ -2383,6 +2383,19 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 		},
+		{
+			ID: "00111-AddMobileAppHeadless",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE mobile_apps
+						ADD COLUMN IF NOT EXISTS headless BOOL NOT NULL DEFAULT FALSE`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE mobile_apps
+						DROP COLUMN IF EXISTS headless`)
+			},
+		},
 	}
 }
 

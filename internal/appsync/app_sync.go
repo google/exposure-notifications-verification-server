@@ -42,6 +42,7 @@ type App struct {
 	AgencyImage   string          `json:"agency_image"`
 	DefaultLocale string          `json:"default_locale"`
 	Localizations []*Localization `json:"localizations"`
+	Headless      bool            `json:"headless"`
 }
 
 // AndroidTarget holds the android metadata for an App of AppResponse.

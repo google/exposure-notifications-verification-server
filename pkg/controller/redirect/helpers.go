@@ -15,6 +15,7 @@
 package redirect
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -30,6 +31,7 @@ func isIOS(userAgent string) bool {
 }
 
 // decideRedirect selects where to redirect based on several signals.
+// Returns are the URI to redirect to as a string and success/failure boolean.
 func decideRedirect(region, userAgent string, u *url.URL, enxEnabled bool, appStoreData AppStoreData) (string, bool) {
 	// Canonicalize path as lowercase.
 	path := strings.ToLower(u.Path)
@@ -47,38 +49,49 @@ func decideRedirect(region, userAgent string, u *url.URL, enxEnabled bool, appSt
 	// is set up.
 	if onAndroid {
 		if noQuery {
+			// Is it headless ENX, special case w/ internal protocol.
+			if appStoreData.AndroidHeadless {
+				return fmt.Sprintf(androidHeadlessOnboarding, strings.ToLower(region)), true
+			}
+
+			// Is it an app that redirects to the play store.
 			if v := appStoreData.AndroidURL; v != "" {
 				return v, true
 			}
+
+			// Generic onboarding, this is a play store search redirect.
 			return androidOnboardingRedirect, true
 		}
 
+		// There is an app for this host, build an intent into that app, passing the path and query params.
 		if appStoreData.AndroidAppID != "" && appStoreData.AndroidURL != "" {
 			intent := buildIntentURL(path, query, region, appStoreData.AndroidAppID, appStoreData.AndroidURL)
 			return intent, true
 		}
 
-		if enxEnabled {
-			return buildEnsURL(path, query, region), true
-		}
-
-		return "", false
+		// we know it's android so generic onboarding
+		return androidOnboardingRedirect, true
 	}
 
-	// On iOS redirect to App Store if App Link doesn't trigger and an a link is
-	// set up.
+	// On iOS redirect to App Store if App Link doesn't trigger and an a link is set up.
 	if onIOS {
 		if noQuery {
+			// Custom app registered, redirect to App Store.
 			if v := appStoreData.IOSURL; v != "" {
 				return v, true
 			}
+			// Redirect into the iOS EN Express onboarding.
 			return iosOnboardingRedirect, true
 		}
 
+		// Send to app store, we don't build any kind of query path.
+		// We assume if we got here, the app isn't properly registered to
+		// handle the redirect service URL.
 		if appStoreData.IOSURL != "" {
 			return appStoreData.IOSURL, true
 		}
 
+		// Pass the path and query to the ens:// protocol.
 		if enxEnabled {
 			return buildEnsURL(path, query, region), true
 		}

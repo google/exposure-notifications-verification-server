@@ -59,6 +59,11 @@
 
             <dt>SHA</dt>
             <dd id="mobileapps-sha" class="text-monospace">{{$app.SHA}}</dd>
+
+            {{if $app.Headless}}
+            <dt>Headless</dt>
+            <dd id="mobileapps-headless" class="text-monospace">EN Express Headless / Settings Based App</dd>
+            {{end}}
           {{end}}
         </dl>
       </div>

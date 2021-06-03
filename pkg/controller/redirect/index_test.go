@@ -300,7 +300,7 @@ func TestIndex(t *testing.T) {
 		}
 	})
 
-	// Android redirect where enx is enabled
+	// Android redirect where enx is enabled, but no app, so we redirect to picker.
 	t.Run("android_redirect_enx", func(t *testing.T) {
 		t.Parallel()
 
@@ -324,7 +324,7 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 
-		if got, want := resp.Header.Get("Location"), "ens://app?c=123456&r=CC"; got != want {
+		if got, want := resp.Header.Get("Location"), "ensonboarding://picker"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
