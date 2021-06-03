@@ -51,8 +51,9 @@ type LocaleMap struct {
 	data    map[string]gotext.Translator
 	matcher language.Matcher
 
-	dynamic     map[uint]map[string]gotext.Translator
-	dynamicLock sync.Mutex
+	dynamic        map[uint]map[string]gotext.Translator
+	dynamicMatcher map[uint]language.Matcher
+	dynamicLock    sync.Mutex
 
 	reload     bool
 	reloadLock sync.Mutex
@@ -105,34 +106,41 @@ func (l *LocaleMap) SetDynamicTranslations(incoming []*database.DynamicTranslati
 
 	// Parse the completed files into gotext.Translator
 	next := make(map[uint]map[string]gotext.Translator, len(poFiles))
+	nextMatcher := make(map[uint]language.Matcher, len(poFiles))
 	for realmID, realmLocales := range poFiles {
 		parsed := make(map[string]gotext.Translator, len(realmLocales))
 
+		names := make([]language.Tag, 0, len(realmLocales))
 		for locale, poContent := range realmLocales {
 			translator := gotext.NewPoTranslator()
 			translator.Parse([]byte(poContent))
 			parsed[locale] = translator
+
+			names = append(names, language.Make(locale))
 		}
 
 		next[realmID] = parsed
+		nextMatcher[realmID] = language.NewMatcher(names)
 	}
 
 	// Under a lock, replace the current translation map.
 	l.dynamicLock.Lock()
 	defer l.dynamicLock.Unlock()
 	l.dynamic = next
+	l.dynamicMatcher = nextMatcher
 }
 
 // LookupDynamic finds the best locale for the given ids.
-func (l *LocaleMap) LookupDynamic(realmID uint, ids ...string) gotext.Translator {
+func (l *LocaleMap) LookupDynamic(realmID uint, realmDefaultLocale string, ids ...string) gotext.Translator {
 	// Pull a realm's translations out of the map under a lock to avoid data races.
 	l.dynamicLock.Lock()
 	data := l.dynamic[realmID]
+	matcher := l.dynamicMatcher[realmID]
 	l.dynamicLock.Unlock()
 
 	for _, id := range ids {
 		// Convert the id to the "canonical" form.
-		canonical, err := l.Canonicalize(id)
+		canonical, err := l.Canonicalize(id, matcher)
 		if err != nil {
 			continue
 		}
@@ -143,7 +151,7 @@ func (l *LocaleMap) LookupDynamic(realmID uint, ids ...string) gotext.Translator
 		return locale
 	}
 
-	if def, ok := l.data[defaultLocale]; ok {
+	if def, ok := data[realmDefaultLocale]; ok {
 		return def
 	}
 	return gotext.NewPoTranslator()
@@ -167,7 +175,7 @@ func (l *LocaleMap) Lookup(ids ...string) gotext.Translator {
 
 	for _, id := range ids {
 		// Convert the id to the "canonical" form.
-		canonical, err := l.Canonicalize(id)
+		canonical, err := l.Canonicalize(id, l.matcher)
 		if err != nil {
 			continue
 		}
@@ -182,7 +190,7 @@ func (l *LocaleMap) Lookup(ids ...string) gotext.Translator {
 }
 
 // Canonicalize converts the given ID to the expected name.
-func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
+func (l *LocaleMap) Canonicalize(id string, matcher language.Matcher) (result string, retErr error) {
 	// go/text panics when given an invalid language. These are often supplied by
 	// users or browsers: https://github.com/golang/text/pull/17
 	defer func() {
@@ -197,7 +205,7 @@ func (l *LocaleMap) Canonicalize(id string) (result string, retErr error) {
 		retErr = err
 		return
 	}
-	if tag, _, conf := l.matcher.Match(desired...); conf != language.No {
+	if tag, _, conf := matcher.Match(desired...); conf != language.No {
 		raw, _, _ := tag.Raw()
 		result = raw.String()
 		return

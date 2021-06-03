@@ -79,9 +79,9 @@ func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfi
 	}, nil
 }
 
-func (c *Controller) addDynamicTranslations(realmID uint, m controller.TemplateMap) controller.TemplateMap {
+func (c *Controller) addDynamicTranslations(realm *database.Realm, m controller.TemplateMap) controller.TemplateMap {
 	accept := m["acceptLanguage"].([]string)
-	locale := c.locales.LookupDynamic(realmID, accept...)
+	locale := c.locales.LookupDynamic(realm.ID, realm.DefaultLocale, accept...)
 	m["realmLocale"] = locale
 	return m
 }

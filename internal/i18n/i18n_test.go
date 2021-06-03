@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/leonelquinteros/gotext"
 )
@@ -155,7 +156,7 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 		t.Run(tc.in, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := localeMap.Canonicalize(tc.in)
+			result, err := localeMap.Canonicalize(tc.in, localeMap.matcher)
 			if (err != nil) != tc.err {
 				t.Fatal(err)
 			}
@@ -164,5 +165,40 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
+	}
+}
+
+func TestDynamicTranslations(t *testing.T) {
+	t.Parallel()
+
+	defaultLocale := "en"
+	translations := []*database.DynamicTranslation{
+		{
+			RealmID:   1,
+			MessageID: "greeting",
+			Locale:    "en",
+			Message:   "hello",
+		},
+		{
+			RealmID:   1,
+			MessageID: "greeting",
+			Locale:    "es",
+			Message:   "hola",
+		},
+	}
+
+	l := &LocaleMap{}
+	l.SetDynamicTranslations(translations)
+
+	translator := l.LookupDynamic(1, defaultLocale, "en")
+
+	if res := translator.Get("greeting"); res != "hello" {
+		t.Fatalf("wrong translation, got %q want %q", res, "hello")
+	}
+
+	translator = l.LookupDynamic(1, defaultLocale, "fr")
+	// Should get the default
+	if res := translator.Get("greeting"); res != "hello" {
+		t.Fatalf("wrong translation, got %q want %q", res, "hello")
 	}
 }

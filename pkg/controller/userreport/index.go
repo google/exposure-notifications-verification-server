@@ -50,7 +50,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		}
 
 		m := controller.TemplateMapFromContext(ctx)
-		m = c.addDynamicTranslations(realm.ID, m)
+		m = c.addDynamicTranslations(realm, m)
 
 		session := controller.SessionFromContext(ctx)
 		if session == nil {

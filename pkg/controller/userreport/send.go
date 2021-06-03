@@ -66,7 +66,7 @@ func (c *Controller) HandleSend() http.Handler {
 		ctx = controller.WithRealm(ctx, realm)
 
 		m := controller.TemplateMapFromContext(ctx)
-		m = c.addDynamicTranslations(realm.ID, m)
+		m = c.addDynamicTranslations(realm, m)
 
 		if !realm.AllowsUserReport() {
 			stats.Record(ctx, mUserReportNotAllowed.M(1))
