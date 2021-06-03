@@ -169,6 +169,8 @@ func TestLocaleMap_Canonicalize(t *testing.T) {
 }
 
 func TestDynamicTranslations(t *testing.T) {
+	t.Parallel()
+
 	defaultLocale := "en"
 	translations := []*database.DynamicTranslation{
 		{
