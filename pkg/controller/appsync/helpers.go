@@ -105,12 +105,13 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 			}
 
 			newApp := &database.MobileApp{
-				Name:    name,
-				RealmID: realm.ID,
-				URL:     playStoreURL.String(),
-				OS:      database.OSTypeAndroid,
-				SHA:     app.SHA256CertFingerprints,
-				AppID:   app.PackageName,
+				Name:     name,
+				RealmID:  realm.ID,
+				URL:      playStoreURL.String(),
+				OS:       database.OSTypeAndroid,
+				SHA:      app.SHA256CertFingerprints,
+				AppID:    app.PackageName,
+				Headless: app.Headless,
 			}
 			if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %w", err))

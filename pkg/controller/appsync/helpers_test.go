@@ -78,6 +78,7 @@ func Test_syncApps(t *testing.T) {
 					AgencyColor:   agencyColor,
 					AgencyImage:   agencyImage,
 					DefaultLocale: "en_US",
+					Headless:      true,
 					Localizations: []*appsync.Localization{
 						{
 							MessageID: "greeting",

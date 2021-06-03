@@ -28,7 +28,8 @@ import (
 const (
 	// androidOnboardingRedirect and iosOnboardingRedirect are the URLs to
 	// redirect to for onboarding.
-	androidOnboardingRedirect = "market://search?q=exposure%20notifications"
+	androidOnboardingRedirect = "ensonboarding://picker"
+	androidHeadlessOnboarding = "ensonboarding://picker/%s" // Region is the substitute.
 	iosOnboardingRedirect     = "ens://onboarding"
 	genericOnboardingRedirect = "https://www.google.com/covid19/exposurenotifications/"
 )
