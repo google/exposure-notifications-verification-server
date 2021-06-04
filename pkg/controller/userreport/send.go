@@ -169,7 +169,7 @@ func (c *Controller) HandleSend() http.Handler {
 			}
 
 			if !suppressError {
-				logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", result.ErrorReturn.Error)
+				logger.Errorw("unable to issue user-report code", "status", result.HTTPCode, "error", issueapi.ScrubPhoneNumbers(result.ErrorReturn.Error))
 				// The error returned isn't something the user can easily fix, show internal error, but hide form.
 				m["error"] = []string{locale.Get("user-report.internal-error")}
 				m["skipForm"] = true
