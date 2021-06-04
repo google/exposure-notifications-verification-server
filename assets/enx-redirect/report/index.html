@@ -48,8 +48,8 @@
         <div class="col">
           <div class="form-floating">
             <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}}
-              placeholder="{{t $.locale "codes.issue.testing-date-label"}}" value="{{.date}}"/>
-            <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
+              value="{{.date}}"/>
+            <label for="test-date">{{t $.locale "codes.issue.testing-date-label"}}</label>
           </div>
           {{if .dateError}}
             <div class="invalid-feedback">{{.dateError}}</div>
