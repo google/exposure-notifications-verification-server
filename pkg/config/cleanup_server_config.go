@@ -47,9 +47,11 @@ type CleanupConfig struct {
 	AuditEntryMaxAge    time.Duration `env:"AUDIT_ENTRY_MAX_AGE, default=720h"`
 	AuthorizedAppMaxAge time.Duration `env:"AUTHORIZED_APP_MAX_AGE, default=336h"`
 	CleanupMinPeriod    time.Duration `env:"CLEANUP_MIN_PERIOD, default=5m"`
-	// KeyServerStatsMaxAge is the maximum amount of time to retain key-server stats.
-	KeyServerStatsMaxAge time.Duration `env:"KEY_SERVER_STATS_MAX_AGE, default=720h"`
-	MobileAppMaxAge      time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
+	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
+
+	// StatsMaxAge is the maximum amount of time to retain statistics. The default
+	// value is 30d. It can be extended up to 60d and cannot be less than 7 days.
+	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=720h"`
 
 	// RealmChaffEventMaxAge is the maximum amount of time to store whether a
 	// realm had received a chaff request.
@@ -99,6 +101,7 @@ func (c *CleanupConfig) Validate() error {
 		{c.VerificationCodeStatusMaxAge, "VERIFICATION_CODE_STATUS_MAX_AGE"},
 		{c.VerificationTokenMaxAge, "VERIFICATION_TOKEN_MAX_AGE"},
 		{c.AuditEntryMaxAge, "AUDIT_ENTRY_MAX_AGE"},
+		{c.StatsMaxAge, "STATS_MAX_AGE"},
 	}
 
 	for _, f := range fields {
@@ -115,6 +118,14 @@ func (c *CleanupConfig) Validate() error {
 	if c.VerificationCodeStatusMaxAge < c.VerificationCodeMaxAge {
 		return fmt.Errorf("the code status %q is expected to live longer than the life of the code %q",
 			c.VerificationCodeStatusMaxAge.String(), c.VerificationCodeMaxAge.String())
+	}
+
+	// Stats must be valid for at least 7 days, but no more than 60 days.
+	if min := 7; c.StatsMaxAge < time.Duration(min)*24*time.Hour {
+		return fmt.Errorf("STATS_MAX_AGE must be at least %d days", min)
+	}
+	if max := 60; c.StatsMaxAge > time.Duration(max)*24*time.Hour {
+		return fmt.Errorf("STATS_MAX_AGE must be less than %d days", max)
 	}
 
 	return nil
