@@ -175,11 +175,50 @@ func (c *Controller) HandleCleanup() http.Handler {
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "KEY_SERVER_STATS")
-			if count, err := c.db.DeleteOldKeyServerStatsDays(c.config.KeyServerStatsMaxAge); err != nil {
+			if count, err := c.db.DeleteOldKeyServerStatsDays(c.config.StatsMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge key-server stats: %w", err))
 				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged key-server stats", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// Authorized app stats
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "AUTHORIZED_APP_STATS")
+			if count, err := c.db.PurgeAuthorizedAppStats(c.config.StatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge authorized app stats: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged authorized app stats", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// External issuer stats
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "EXTERNAL_ISSUER_STATS")
+			if count, err := c.db.PurgeExternalIssuerStats(c.config.StatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge external issuer stats: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged external issuer stats", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// Realm stats
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "REALM_STATS")
+			if count, err := c.db.PurgeRealmStats(c.config.StatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge realm stats: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged realm stats", "count", count)
 				result = enobs.ResultOK
 			}
 		}()
@@ -206,6 +245,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 				result = enobs.ResultError("FAILED")
 			} else {
 				logger.Infow("purged unclaimed user reports", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
+		// User stats
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "USER_STATS")
+			if count, err := c.db.PurgeUserStats(c.config.StatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge user stats: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged user stats", "count", count)
 				result = enobs.ResultOK
 			}
 		}()

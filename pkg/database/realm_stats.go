@@ -283,3 +283,18 @@ func (r *Realm) HistoricalCodesIssued(db *Database, limit uint64) ([]uint64, err
 	}
 	return stats, nil
 }
+
+// PurgeRealmStats will delete stats that were created longer than
+// maxAge ago.
+func (db *Database) PurgeRealmStats(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	createdBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("date < ?", createdBefore).
+		Delete(&RealmStat{})
+	return result.RowsAffected, result.Error
+}

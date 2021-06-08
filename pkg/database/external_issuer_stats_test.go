@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -104,5 +105,33 @@ func TestExternalIssuerStats_MarshalCSV(t *testing.T) {
 				t.Errorf("bad json, expected \n%s\nto be\n%s\n", got, want)
 			}
 		})
+	}
+}
+
+func TestDatabase_PurgeExternalIssuerStats(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	for i := 1; i < 10; i++ {
+		ts := timeutils.UTCMidnight(time.Now().UTC()).Add(-24 * time.Hour * time.Duration(i))
+		if err := db.RawDB().Create(&ExternalIssuerStat{
+			Date: ts,
+		}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := db.PurgeExternalIssuerStats(0); err != nil {
+		t.Fatal(err)
+	}
+
+	var entries []*ExternalIssuerStat
+	if err := db.RawDB().Model(&ExternalIssuerStat{}).Find(&entries).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := len(entries), 0; got != want {
+		t.Errorf("expected %d entries, got %d: %#v", want, got, entries)
 	}
 }

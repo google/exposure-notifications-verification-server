@@ -168,3 +168,18 @@ func (db *Database) SaveUserStat(u *UserStat) error {
 		return nil
 	})
 }
+
+// PurgeUserStats will delete stats that were created longer than
+// maxAge ago.
+func (db *Database) PurgeUserStats(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	createdBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("date < ?", createdBefore).
+		Delete(&UserStat{})
+	return result.RowsAffected, result.Error
+}

@@ -154,3 +154,18 @@ func (s *ExternalIssuerStats) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
+
+// PurgeExternalIssuerStats will delete stats that were created longer than
+// maxAge ago.
+func (db *Database) PurgeExternalIssuerStats(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	createdBefore := time.Now().UTC().Add(maxAge)
+
+	result := db.db.
+		Unscoped().
+		Where("date < ?", createdBefore).
+		Delete(&ExternalIssuerStat{})
+	return result.RowsAffected, result.Error
+}

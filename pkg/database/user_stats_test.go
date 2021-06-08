@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -110,5 +111,33 @@ func TestUserStats_MarshalCSV(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestDatabase_PurgeUserStats(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	for i := 1; i < 10; i++ {
+		ts := timeutils.UTCMidnight(time.Now().UTC()).Add(-24 * time.Hour * time.Duration(i))
+		if err := db.RawDB().Create(&UserStat{
+			Date: ts,
+		}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := db.PurgeUserStats(0); err != nil {
+		t.Fatal(err)
+	}
+
+	var entries []*UserStat
+	if err := db.RawDB().Model(&UserStat{}).Find(&entries).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := len(entries), 0; got != want {
+		t.Errorf("expected %d entries, got %d: %#v", want, got, entries)
 	}
 }
