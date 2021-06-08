@@ -50,8 +50,9 @@ type CleanupConfig struct {
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
 	// StatsMaxAge is the maximum amount of time to retain statistics. The default
-	// value is 30d. It can be extended up to 60d and cannot be less than 7 days.
-	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=720h"`
+	// value is 31d. It can be extended up to 90 days and cannot be less than 30
+	// days.
+	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=744h"`
 
 	// RealmChaffEventMaxAge is the maximum amount of time to store whether a
 	// realm had received a chaff request.
@@ -120,11 +121,11 @@ func (c *CleanupConfig) Validate() error {
 			c.VerificationCodeStatusMaxAge.String(), c.VerificationCodeMaxAge.String())
 	}
 
-	// Stats must be valid for at least 7 days, but no more than 60 days.
-	if min := 7; c.StatsMaxAge < time.Duration(min)*24*time.Hour {
+	// Stats must be valid for at least 30 days, but no more than 60 days.
+	if min := 30; c.StatsMaxAge < time.Duration(min)*24*time.Hour {
 		return fmt.Errorf("STATS_MAX_AGE must be at least %d days", min)
 	}
-	if max := 60; c.StatsMaxAge > time.Duration(max)*24*time.Hour {
+	if max := 90; c.StatsMaxAge > time.Duration(max)*24*time.Hour {
 		return fmt.Errorf("STATS_MAX_AGE must be less than %d days", max)
 	}
 
