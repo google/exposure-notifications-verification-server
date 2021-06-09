@@ -58,7 +58,8 @@ func ProcessChaff(db *database.Database, t *chaff.Tracker, det chaff.Detector) m
 			ctx := r.Context()
 
 			if v := r.Header.Get(ChaffHeader); v != "" {
-				go recordChaffEvent(ctx, controller.RealmFromContext(ctx), db)
+				now := timeutils.UTCMidnight(time.Now().UTC())
+				go recordChaffEvent(ctx, now, controller.RealmFromContext(ctx), db)
 			}
 
 			// Process normal chaff tracking
@@ -67,18 +68,16 @@ func ProcessChaff(db *database.Database, t *chaff.Tracker, det chaff.Detector) m
 	}
 }
 
-// recordChaff event annotates that the realm received a chaff request on
-// today's UTC date.
-func recordChaffEvent(ctx context.Context, realm *database.Realm, db *database.Database) {
+// recordChaff event annotates that the realm received a chaff request on the
+// provided date.
+func recordChaffEvent(ctx context.Context, t time.Time, realm *database.Realm, db *database.Database) {
 	if realm == nil || db == nil {
 		return
 	}
 
-	now := timeutils.UTCMidnight(time.Now().UTC())
-
-	key := fmt.Sprintf("%s:%d", now.Format("2006-01-02"), realm.ID)
+	key := fmt.Sprintf("%s:%d", t.Format("2006-01-02"), realm.ID)
 	if _, err := localChaffCache.WriteThruLookup(key, func() (interface{}, error) {
-		if err := realm.RecordChaffEvent(db, now); err != nil {
+		if err := realm.RecordChaffEvent(db, t); err != nil {
 			return nil, err
 		}
 		return &struct{}{}, nil
