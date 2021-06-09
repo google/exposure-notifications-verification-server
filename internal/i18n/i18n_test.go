@@ -17,7 +17,6 @@ package i18n
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -46,7 +45,7 @@ func TestI18n_matching(t *testing.T) {
 			return nil
 		}
 
-		po := new(gotext.Po)
+		po := gotext.NewPo()
 		po.ParseFile(pth)
 		pos = append(pos, po)
 
@@ -55,22 +54,17 @@ func TestI18n_matching(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// This will almost certainly come back to bite me, but the only way to access
-	// the actual "list" of translations is to access a private field with
-	// reflect. Please don't try this at home kids.
 	translations := make(map[string]struct{})
 	translationsByLocale := make(map[string]map[string]struct{})
 	for _, po := range pos {
-		keys := reflect.ValueOf(po).Elem().FieldByName("translations").MapKeys()
-		for _, v := range keys {
-			if s := v.String(); s != "" {
-				translations[s] = struct{}{}
+		keys := po.GetDomain().GetTranslations()
+		for k := range keys {
+			translations[k] = struct{}{}
 
-				if translationsByLocale[po.Language] == nil {
-					translationsByLocale[po.Language] = make(map[string]struct{})
-				}
-				translationsByLocale[po.Language][s] = struct{}{}
+			if translationsByLocale[po.Language] == nil {
+				translationsByLocale[po.Language] = make(map[string]struct{})
 			}
+			translationsByLocale[po.Language][k] = struct{}{}
 		}
 	}
 
