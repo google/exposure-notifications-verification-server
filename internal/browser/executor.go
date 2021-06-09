@@ -102,7 +102,7 @@ func NewFromOptions(tb testing.TB, opts []chromedp.ExecAllocatorOption) context.
 // screenshot bytes in PNG format when the runner finishes.
 func Screenshot(dst *[]byte) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		_, _, contentSize, err := page.GetLayoutMetrics().Do(ctx)
+		_, _, contentSize, _, _, _, err := page.GetLayoutMetrics().Do(ctx)
 		if err != nil {
 			return err
 		}

@@ -112,7 +112,7 @@ func (l *LocaleMap) SetDynamicTranslations(incoming []*database.DynamicTranslati
 
 		names := make([]language.Tag, 0, len(realmLocales))
 		for locale, poContent := range realmLocales {
-			translator := gotext.NewPoTranslator()
+			translator := gotext.NewPo()
 			translator.Parse([]byte(poContent))
 			parsed[locale] = translator
 
@@ -154,7 +154,7 @@ func (l *LocaleMap) LookupDynamic(realmID uint, realmDefaultLocale string, ids .
 	if def, ok := data[realmDefaultLocale]; ok {
 		return def
 	}
-	return gotext.NewPoTranslator()
+	return gotext.NewPo()
 }
 
 // Lookup finds the best locale for the given ids. If none exists, the default
@@ -236,7 +236,7 @@ func (l *LocaleMap) load() error {
 			return fmt.Errorf("failed to read %q: %w", name, err)
 		}
 
-		po := gotext.NewPoTranslator()
+		po := gotext.NewPo()
 		po.Parse(b)
 		data[name] = po
 	}
