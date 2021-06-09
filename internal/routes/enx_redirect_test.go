@@ -43,7 +43,8 @@ func TestENXRedirect(t *testing.T) {
 
 	signer := keys.TestKeyManager(t)
 
-	mux, err := ENXRedirect(ctx, cfg, db, cacher, signer, limiterStore)
+	mux, closer, err := ENXRedirect(ctx, cfg, db, cacher, signer, limiterStore)
+	t.Cleanup(closer)
 	if err != nil {
 		t.Fatal(err)
 	}

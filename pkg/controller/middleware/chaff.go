@@ -46,12 +46,8 @@ func ChaffHeaderDetector() chaff.Detector {
 // error here.
 var localChaffCache, _ = cache.New(48 * time.Hour)
 
-// ProcessChaff injects the chaff processing middleware. If chaff requests send
-// a value of "daily" (case-insensitive), they will be counted toward the
-// realm's total active users and return a chaff response. Any other values will
-// only return a chaff response.
-//
-// This must come after RequireAPIKey.
+// ProcessChaff injects the chaff processing middleware. This must come after
+// RequireAPIKey.
 func ProcessChaff(db *database.Database, t *chaff.Tracker, det chaff.Detector) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

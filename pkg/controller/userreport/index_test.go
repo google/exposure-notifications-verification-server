@@ -78,7 +78,8 @@ func TestIndex(t *testing.T) {
 	}
 
 	// Build routes.
-	mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher, harness.KeyManager, harness.RateLimiter)
+	mux, closer, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher, harness.KeyManager, harness.RateLimiter)
+	t.Cleanup(closer)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -32,6 +32,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/mikehelmick/go-chaff"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -50,7 +51,9 @@ func ENXRedirect(
 	cacher cache.Cacher,
 	smsSigner keys.KeyManager,
 	limiterStore limiter.Store,
-) (http.Handler, error) {
+) (http.Handler, func(), error) {
+	closer := func() {}
+
 	// Create the router
 	r := mux.NewRouter()
 
@@ -61,7 +64,7 @@ func ENXRedirect(
 	// Load localization
 	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup i18n: %w", err)
+		return nil, closer, fmt.Errorf("failed to setup i18n: %w", err)
 	}
 
 	// Process localization parameters.
@@ -71,7 +74,7 @@ func ENXRedirect(
 	// Create the renderer
 	h, err := render.New(ctx, assets.ENXRedirectFS(), cfg.DevMode)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create renderer: %w", err)
+		return nil, closer, fmt.Errorf("failed to create renderer: %w", err)
 	}
 
 	// Request ID injection
@@ -131,13 +134,13 @@ func ENXRedirect(
 			limitware.IPAddressKeyFunc(ctx, "redirect:ratelimit:", cfg.RateLimit.HMACKey),
 			limitware.AllowOnError(false))
 		if err != nil {
-			return nil, fmt.Errorf("failed to create limiter middleware: %w", err)
+			return nil, closer, fmt.Errorf("failed to create limiter middleware: %w", err)
 		}
 
 		// Load localization
 		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
 		if err != nil {
-			return nil, fmt.Errorf("failed to setup i18n: %w", err)
+			return nil, closer, fmt.Errorf("failed to setup i18n: %w", err)
 		}
 
 		// Process localization parameters.
@@ -145,7 +148,7 @@ func ENXRedirect(
 
 		userReportController, err := userreport.New(locales, cacher, cfg, db, limiterStore, smsSigner, h)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create code request controller: %w", err)
+			return nil, closer, fmt.Errorf("failed to create code request controller: %w", err)
 		}
 
 		// Only allow this on the top level redirect domain
@@ -155,10 +158,22 @@ func ENXRedirect(
 		// Using a different name, makes it so cookies don't interfer in local dev.
 		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", h)
 
-		{ // handler for /report/issue, required values must be in the established session.
+		// Setup chaffers
+		issueReportTracker := chaff.New()
+		showReportTracker := chaff.New()
+		closer = func() {
+			issueReportTracker.Close()
+			showReportTracker.Close()
+		}
+
+		{
+			// handler for /report/issue, required values must be in the established session.
 			sub := r.Path("/report/issue").Subrouter()
 			sub.Use(hostHeaderCheck)
 			sub.Use(requireSession)
+			sub.Use(func(next http.Handler) http.Handler {
+				return issueReportTracker.HandleTrack(middleware.ChaffHeaderDetector(), next)
+			})
 			sub.Use(httplimiter.Handle)
 			sub.Use(processLocale)
 			sub.Use(middleware.AddOperatingSystemFromUserAgent())
@@ -166,24 +181,30 @@ func ENXRedirect(
 			sub.Handle("", userReportController.HandleSend()).Methods(http.MethodPost)
 		}
 
-		{ // handler for the /report path - requires API KEY and NONCE headers.
+		{
+			// handler for the /report path - requires API KEY and NONCE headers.
 			sub := r.Path("/report").Subrouter()
-			loadTranslations, err := middleware.LoadDynamicTranslations(locales, db, cacher, cfg.TranslationRefreshPeriod)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load initial set of translations: %w", err)
-			}
-			sub.Use(loadTranslations)
-			sub.Use(hostHeaderCheck)
-			sub.Use(requireSession)
-			sub.Use(httplimiter.Handle)
-			sub.Use(processLocale)
 
 			// This allows developers to send GET requests in a browser with query params
 			// to test the UI. Normally this is required to be initiated via POST and headers.
 			if cfg.DevMode || cfg.AllowUserReportGet {
+				sub.Use(middleware.QueryHeaderInjection(middleware.ChaffHeader, "chaff"))
 				sub.Use(middleware.QueryHeaderInjection(middleware.APIKeyHeader, "apikey"))
 				sub.Use(middleware.QueryHeaderInjection(middleware.NonceHeader, "nonce"))
 			}
+
+			loadTranslations, err := middleware.LoadDynamicTranslations(locales, db, cacher, cfg.TranslationRefreshPeriod)
+			if err != nil {
+				return nil, closer, fmt.Errorf("failed to load initial set of translations: %w", err)
+			}
+			sub.Use(loadTranslations)
+			sub.Use(hostHeaderCheck)
+			sub.Use(requireSession)
+			sub.Use(func(next http.Handler) http.Handler {
+				return showReportTracker.HandleTrack(middleware.ChaffHeaderDetector(), next)
+			})
+			sub.Use(httplimiter.Handle)
+			sub.Use(processLocale)
 
 			requireAPIKey := middleware.RequireAPIKey(cacher, db, h, []database.APIKeyType{
 				database.APIKeyTypeDevice,
@@ -218,7 +239,7 @@ func ENXRedirect(
 		// Enable the iOS and Android redirect handler.
 		assocController, err := associated.New(cfg, db, cacher, h)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create associated links controller: %w", err)
+			return nil, closer, fmt.Errorf("failed to create associated links controller: %w", err)
 		}
 		wk.PathPrefix("/apple-app-site-association").Handler(assocController.HandleIos()).Methods(http.MethodGet)
 		wk.PathPrefix("/assetlinks.json").Handler(assocController.HandleAndroid()).Methods(http.MethodGet)
@@ -227,7 +248,7 @@ func ENXRedirect(
 	// Handle redirects.
 	redirectController, err := redirect.New(db, cfg, cacher, h)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create redirect controller: %w", err)
+		return nil, closer, fmt.Errorf("failed to create redirect controller: %w", err)
 	}
 	r.PathPrefix("/").Handler(redirectController.HandleIndex()).Methods(http.MethodGet)
 
@@ -242,5 +263,5 @@ func ENXRedirect(
 	// middleware.
 	mux := http.NewServeMux()
 	mux.Handle("/", middleware.MutateMethod()(r))
-	return mux, nil
+	return mux, closer, nil
 }

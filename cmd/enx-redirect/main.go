@@ -110,7 +110,8 @@ func realMain(ctx context.Context) error {
 	}
 
 	// Setup routes
-	mux, err := routes.ENXRedirect(ctx, cfg, db, cacher, smsSigner, limiterStore)
+	mux, closer, err := routes.ENXRedirect(ctx, cfg, db, cacher, smsSigner, limiterStore)
+	defer closer()
 	if err != nil {
 		return fmt.Errorf("failed to setup routes: %w", err)
 	}

@@ -111,7 +111,8 @@ func NewENXRedirectServerConfig(tb testing.TB, testDatabaseInstance *database.Te
 // NewServer creates a new server.
 func (r *ENXRedirectServerConfigResponse) NewServer(tb testing.TB) *ENXRedirectServerResponse {
 	ctx := context.Background()
-	mux, err := routes.ENXRedirect(ctx, r.Config, r.Database, r.Cacher, r.KeyManager, r.RateLimiter)
+	mux, closer, err := routes.ENXRedirect(ctx, r.Config, r.Database, r.Cacher, r.KeyManager, r.RateLimiter)
+	tb.Cleanup(closer)
 	if err != nil {
 		tb.Fatal(err)
 	}
