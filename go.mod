@@ -10,9 +10,9 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/chromedp/cdproto v0.0.0-20210526005521-9e51b9051fd0
 	github.com/chromedp/chromedp v0.7.3
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/structs v1.1.0
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/gonum/blas v0.0.0-20181208220705-f22b278b28ac // indirect
 	github.com/gonum/floats v0.0.0-20181209220543-c233463c7e82 // indirect

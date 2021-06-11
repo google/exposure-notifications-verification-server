@@ -26,7 +26,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 // TODO(mikehelmick): Add ValidateJWT, accepting a serialized token + signer.
