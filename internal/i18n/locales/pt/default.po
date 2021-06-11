@@ -458,3 +458,9 @@ msgstr "Seu número de telefone não está atualmente qualificado para relatóri
 
 msgid "user-report.internal-error"
 msgstr "Ocorreu um erro interno. Um código de verificação não pode ser solicitado neste momento."
+
+msgid "user-report.unable-to-issue"
+msgstr "Não foi possível enviar-lhe um código de verificação."
+
+msgid "user-report.code-device-throttled"
+msgstr "Você solicitou um código muitas vezes. Entre em contato com a Autoridade de Saúde se ainda precisar de um código."

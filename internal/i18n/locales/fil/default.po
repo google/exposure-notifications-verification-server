@@ -458,3 +458,9 @@ msgstr "Ang numero ng iyong telepono na kasalukuyang hindi karapat-dapat para sa
 
 msgid "user-report.internal-error"
 msgstr "Nagkaroon ng panloob na error. Ang isang verification code ay hindi maaaring hilingin sa ngayon."
+
+msgid "user-report.unable-to-issue"
+msgstr "Hindi namin napadalhan ka ng isang verification code."
+
+msgid "user-report.code-device-throttled"
+msgstr "Humiling ka ng isang code nang maraming beses. Mangyaring makipag-ugnay sa iyong Awtoridad sa Kalusugan kung kailangan mo pa rin ng isang code."

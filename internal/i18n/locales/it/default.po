@@ -458,3 +458,9 @@ msgstr "Il tuo numero di telefono non è attualmente idoneo per il rapporto uten
 
 msgid "user-report.internal-error"
 msgstr "Si è verificato un errore interno. Impossibile richiedere un codice di verifica in questo momento."
+
+msgid "user-report.unable-to-issue"
+msgstr "Non siamo stati in grado di inviarti un codice di verifica."
+
+msgid "user-report.code-device-throttled"
+msgstr "Hai richiesto un codice troppe volte. Contatta la tua autorità sanitaria se hai ancora bisogno di un codice."

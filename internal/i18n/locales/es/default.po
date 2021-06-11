@@ -457,3 +457,9 @@ msgstr "Su número de teléfono no es actualmente apto para el informe de usuari
 
 msgid "user-report.internal-error"
 msgstr "Hubo un error interno. No se puede solicitar un código de verificación en este momento"
+
+msgid "user-report.unable-to-issue"
+msgstr "No pudimos enviarle un código de verificación"
+
+msgid "user-report.code-device-throttled"
+msgstr "Ha solicitado un código demasiadas veces. Comuníquese con su Autoridad de Salud si aún necesita un código"

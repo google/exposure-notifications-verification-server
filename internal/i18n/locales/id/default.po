@@ -458,3 +458,9 @@ msgstr "Nomor telepon Anda saat ini tidak memenuhi syarat untuk laporan pengguna
 
 msgid "user-report.internal-error"
 msgstr "Ada kesalahan internal. Kode verifikasi tidak dapat diminta saat ini."
+
+msgid "user-report.unable-to-issue"
+msgstr "Kami tidak dapat mengirimi Anda kode verifikasi."
+
+msgid "user-report.code-device-throttled"
+msgstr "Anda sudah terlalu sering meminta kode. Silakan hubungi Otoritas Kesehatan Anda jika Anda masih membutuhkan kode."

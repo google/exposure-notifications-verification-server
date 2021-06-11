@@ -458,3 +458,9 @@ msgstr "หมายเลขโทรศัพท์ของคุณไม่
 
 msgid "user-report.internal-error"
 msgstr "เกิดข้อผิดพลาดภายในไม่สามารถขอรหัสยืนยันได้ในขณะนี้"
+
+msgid "user-report.unable-to-issue"
+msgstr "เราไม่สามารถส่งรหัสยืนยันให้คุณได้"
+
+msgid "user-report.code-device-throttled"
+msgstr "คุณขอรหัสหลายครั้งเกินไป โปรดติดต่อหน่วยงานด้านสุขภาพของคุณ หากคุณยังต้องการรหัส"

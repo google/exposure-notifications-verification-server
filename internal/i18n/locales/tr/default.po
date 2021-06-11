@@ -458,3 +458,9 @@ msgstr "Telefon numaranız şu anda kullanıcı raporu için uygun değil"
 
 msgid "user-report.internal-error"
 msgstr "Dahili bir hata oluştu. Şu anda doğrulama kodu istenemez."
+
+msgid "user-report.unable-to-issue"
+msgstr "Size bir doğrulama kodu gönderemedik."
+
+msgid "user-report.code-device-throttled"
+msgstr "Bir çok kez kod istediniz. Hala bir koda ihtiyacınız varsa lütfen Sağlık Otoritenizle iletişime geçin."

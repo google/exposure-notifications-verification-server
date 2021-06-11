@@ -76,6 +76,12 @@ func (c *Controller) HandleIndex() http.Handler {
 		var errorMessages []string
 		// Check the nonce - if it isn't valid, show an error page, but with branding since we know the app.
 		nonce := controller.NonceFromContext(ctx)
+		if len(nonce) == 0 {
+			stats.Record(ctx, mMissingNonce.M(1))
+			m["realm"] = realm
+			c.h.RenderHTML(w, "report/invalid", m)
+			return
+		}
 		if decoded, err := base64util.DecodeString(nonce); err != nil || len(decoded) != database.NonceLength {
 			stats.Record(ctx, mInvalidNonce.M(1))
 			logger.Warnw("invalid nonce on webview load", "error", err, "nonce-length", len(decoded))

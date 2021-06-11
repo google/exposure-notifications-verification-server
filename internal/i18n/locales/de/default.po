@@ -457,3 +457,9 @@ msgstr "Ihre Telefonnummer ist derzeit nicht für den Benutzerbericht geeignet"
 
 msgid "user-report.internal-error"
 msgstr "Es ist ein interner Fehler aufgetreten. Ein Bestätigungscode kann derzeit nicht angefordert werden."
+
+msgid "user-report.unable-to-issue"
+msgstr "Wir konnten Ihnen keinen Bestätigungscode senden."
+
+msgid "user-report.code-device-throttled"
+msgstr "Sie haben zu oft einen Code angefordert. Bitte wenden Sie sich an Ihr Gesundheitsamt, wenn Sie noch einen Code benötigen."

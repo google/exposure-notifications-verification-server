@@ -1,4 +1,4 @@
-{{define "report/issue"}}
+{{define "report/invalid"}}
 
 {{$currentRealm := .realm}}
 
@@ -17,29 +17,24 @@
         alt="{{$currentRealm.Name}} logo" />
     </div>
     {{end}}
-    <h1 class="mb-3">{{t $.locale "user-report.request-code-from"}} {{tDefault $.realmLocale .realm.Name "agencyDisplayName"}}</h1>
+    <h1 class="mb-3">{{tDefault $.realmLocale .realm.Name "agencyDisplayName"}}</h1>
 
-    <div class="alert alert-success d-flex align-items-center" role="alert">
+    <div class="alert alert-danger d-flex align-items-center" role="alert">
       <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" aria-label="Success:">
-        <use xlink:href="/static/icons.svg#check-circle-fill"/>
+        <use xlink:href="/static/icons.svg#x-circle-fill"/>
       </svg>
       <div>
-        {{t $.locale "user-report.code-issued"}}
+        <p>{{t $.locale "user-report.unable-to-issue"}}</p>
+        <ul>
+            <li><strong>
+                {{t $.locale "user-report.code-device-throttled"}}
+            </strong></li>
+        </ul>
       </div>
     </div>
 
-    <p>{{t $.locale "user-report.check-mobile-device"}}</p>
   </main>
 </body>
-
-
-{{if .webkitClose}}
-<script defer type="text/javascript">
-window.webkit.messageHandlers.progressObserver.postMessage({
-  "userDidSubmit": true,
-});
-</script>
-{{end}}
 
 </html>
 {{end}}

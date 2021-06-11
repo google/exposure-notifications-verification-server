@@ -458,3 +458,9 @@ msgstr "Your phone number not currently eligible for user report"
 
 msgid "user-report.internal-error"
 msgstr "There was an internal error. A verification code cannot be requested at this time."
+
+msgid "user-report.unable-to-issue"
+msgstr "We were unable to send you a verification code."
+
+msgid "user-report.code-device-throttled"
+msgstr "You've requested a code too many times. Please contact your Health Authority if you still need a code."
