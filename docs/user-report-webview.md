@@ -3,6 +3,7 @@
 - [Experimental Notice](#experimental-notice)
 - [Access](#access)
 - [Initiate](#initiate)
+- [Client side throttling](#client-side-throttling)
 - [Validate](#validate)
 
 <!-- /TOC -->
@@ -32,6 +33,12 @@ Pass in these required headers:
 This will establish a session with the server and render a form for the user to fill out.
 
 The verification code / link will be sent to the user's mobile phone number.
+
+# Client side throttling
+
+If the client has determined that this particular device has requested user-report codes
+too frequently, the client has the option to pass the `X-Nonce` header with no value.
+In this case, the server will render an appropriate error.
 
 # Validate
 

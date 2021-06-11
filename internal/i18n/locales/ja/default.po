@@ -458,3 +458,9 @@ msgstr "あなたの電話番号は現在ユーザーレポートの対象では
 
 msgid "user-report.internal-error"
 msgstr "内部エラーが発生しました。現時点では確認コードをリクエストできません。"
+
+msgid "user-report.unable-to-issue"
+msgstr "確認コードを送信できませんでした。"
+
+msgid "user-report.code-device-throttled"
+msgstr "コードを何度もリクエストしました。それでもコードが必要な場合は、保健当局に連絡してください。"

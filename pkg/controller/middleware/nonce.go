@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
@@ -30,22 +29,15 @@ const (
 	NonceHeader = "X-Nonce"
 )
 
-// RequireNonce reads the X-Nonce header and stores it in the context.
-func RequireNonce(h *render.Renderer) mux.MiddlewareFunc {
+// ProcessNonce reads the X-Nonce header and stores it in the context.
+func ProcessNonce(h *render.Renderer) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			logger := logging.FromContext(ctx).Named("middleware.RequireNonce")
-
 			nonce := strings.TrimSpace(r.Header.Get(NonceHeader))
-			if nonce == "" {
-				logger.Debugw("missing nonce in request")
-				controller.Unauthorized(w, r, h)
-				return
-			}
 
-			// Save the authorized app on the context.
+			// Save the authorized app on the context, it may be empty.
 			ctx = controller.WithNonce(ctx, nonce)
 			r = r.Clone(ctx)
 

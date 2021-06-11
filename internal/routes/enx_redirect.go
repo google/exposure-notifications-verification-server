@@ -189,7 +189,7 @@ func ENXRedirect(
 				database.APIKeyTypeDevice,
 			})
 			sub.Use(requireAPIKey)
-			sub.Use(middleware.RequireNonce(h))
+			sub.Use(middleware.ProcessNonce(h))
 
 			indexMethods := []string{http.MethodPost}
 			if cfg.DevMode || cfg.AllowUserReportGet {

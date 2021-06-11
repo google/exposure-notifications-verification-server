@@ -458,3 +458,9 @@ msgstr "Votre numéro de téléphone n'est actuellement pas éligible pour le ra
 
 msgid "user-report.internal-error"
 msgstr "Une erreur interne s'est produite. Un code de vérification ne peut pas être demandé pour le moment."
+
+msgid "user-report.unable-to-issue"
+msgstr "Nous n'avons pas pu vous envoyer de code de vérification."
+
+msgid "user-report.code-device-throttled"
+msgstr "Vous avez demandé un code trop de fois. Veuillez contacter votre autorité sanitaire si vous avez encore besoin d'un code."

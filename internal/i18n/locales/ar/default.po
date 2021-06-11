@@ -457,3 +457,9 @@ msgstr "رقم هاتفك غير مؤهل حاليًا لتقرير المستخ
 
 msgid "user-report.internal-error"
 msgstr "كان هناك خطأ داخلي. لا يمكن طلب رمز التحقق في هذا الوقت."
+
+msgid "user-report.unable-to-issue"
+msgstr "لم نتمكن من إرسال رمز التحقق إليك."
+
+msgid "user-report.code-device-throttled"
+msgstr "لقد طلبت رمزًا مرات عديدة. يرجى الاتصال بهيئة الصحة إذا كنت لا تزال بحاجة إلى رمز."
