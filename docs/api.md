@@ -2,20 +2,20 @@
 
 - [API access](#api-access)
 - [API usage](#api-usage)
-  - [Authenticating](#authenticating)
-  - [Error reporting](#error-reporting)
+    - [Authenticating](#authenticating)
+    - [Error reporting](#error-reporting)
 - [API Methods](#api-methods)
-  - [`/api/verify`](#apiverify)
-  - [`/api/certificate`](#apicertificate)
-  - [`/api/user-report`](#apiuser-report)
+    - [`/api/verify`](#apiverify)
+    - [`/api/certificate`](#apicertificate)
+    - [`/api/user-report`](#apiuser-report)
 - [Admin APIs](#admin-apis)
-  - [`/api/issue`](#apiissue)
-    - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
-  - [`/api/batch-issue`](#apibatch-issue)
-    - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
-  - [`/api/checkcodestatus`](#apicheckcodestatus)
-  - [`/api/expirecode`](#apiexpirecode)
-  - [`/api/stats/*`](#apistats)
+    - [`/api/issue`](#apiissue)
+        - [Client provided UUID to prevent duplicate SMS](#client-provided-uuid-to-prevent-duplicate-sms)
+    - [`/api/batch-issue`](#apibatch-issue)
+        - [Handling batch partial success/failure](#handling-batch-partial-successfailure)
+    - [`/api/checkcodestatus`](#apicheckcodestatus)
+    - [`/api/expirecode`](#apiexpirecode)
+    - [`/api/stats/*`](#apistats)
 - [User report webhooks](#user-report-webhooks)
 - [Chaffing requests](#chaffing-requests)
 - [Response codes overview](#response-codes-overview)
@@ -128,7 +128,7 @@ Possible error code responses. New error codes may be added in future releases.
 | ErrorCode             | HTTP Status | Retry | Meaning                                                                                      |
 | --------------------- | ----------- | ----- | -------------------------------------------------------------------------------------------- |
 | `unparsable_request`  | 400         | No    | Client sent an request the sever cannot parse                                                |
-| `code_invalid`        | 400         | No    | Code invalid or used, user may need to obtain a new code.                                    |
+| `code_invalid`        | 400         | No    | Code invalid or used, user may need to obtain a new code. For user reports, this error is also returned if the nonce doesn't match the code. |
 | `code_expired`        | 400         | No    | Code has expired, user may need to obtain a new code.                                        |
 | `code_not_found`      | 400         | No    | The server has no record of that code.                                                       |
 | `invalid_test_type`   | 400         | No    | The client sent an accept of an unrecognized test type                                       |
