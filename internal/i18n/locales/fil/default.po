@@ -400,13 +400,13 @@ msgstr "Hindi ka pinahintulutan na gawin ang aksyon na iyon."
 # ----------
 
 msgid "user-report.title"
-msgstr "Humiling ng isang verification code"
+msgstr "Kumuha ng isang verification code"
 
 msgid "user-report.navbar"
 msgstr "Humiling ng code sa pag-verify ng Mga Abiso sa Exposure"
 
 msgid "user-report.request-code-from"
-msgstr "Humiling ng isang code mula sa"
+msgstr "Kumuha ng isang verification code"
 
 msgid "user-report.instructions"
 msgstr "Kung sumubok ka ng positibo para sa COVID-19 ngunit hindi nakatanggap ng isang code mula sa iyong Health Authority sa pamamagitan ng text o tawag sa telepono, maaari kang humiling ng isa rito."
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Ipasok ang petsa ng iyong pagsubok sa COVID-19"
 
 msgid "user-report.phone-number-header"
-msgstr "Numero ng telepono"
+msgstr "Ang iyong numero ng Mobile Phone"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Numero ng mobile phone (upang makatanggap ng verification code)"
+msgstr "Pinapayagan ka ng isang verification code na ibahagi ang iyong mga resulta sa pagsubok. Ipapadala ang iyong code sa numerong ibibigay mo."
 
 msgid "user-report.agreement-header"
 msgstr "Kasunduan"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Dapat kang sumang-ayon sa mga tuntunin upang humiling ng isang verification code"
 
 msgid "user-report.error-invalid-date"
-msgstr "Ang petsa ng pagsubok ay dapat na nasa pagitan ng 14 araw na ang nakakaraan at ngayon."
+msgstr "COVID-19 test date invalid."
 
 msgid "user-report.error-missing-phone"
 msgstr "Kinakailangan ang numero ng mobile phone."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Ang numero ng mobile phone ay hindi wasto."
 
 msgid "user-report.quota-exceeded"
 msgstr "Pansamantalang hindi makapag-isyu ng mga verification code, mangyaring subukang muli sa ibang pagkakataon."
@@ -464,3 +467,12 @@ msgstr "Hindi namin napadalhan ka ng isang verification code."
 
 msgid "user-report.code-device-throttled"
 msgstr "Humiling ka ng isang code nang maraming beses. Mangyaring makipag-ugnay sa iyong Awtoridad sa Kalusugan kung kailangan mo pa rin ng isang code."
+
+msgid "user-report.testing-date-label"
+msgstr "Petsa ng Iyong Pagsubok sa COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Upang maiwasan ang mga tao na magsumite ng higit sa isang resulta, ang iyong numero ng telepono ay maaaring pansamantalang maiimbak ng iyong awtoridad sa kalusugan sa publiko."
+
+msgid "user-report.learn-more"
+msgstr "Matuto nang higit pa ..."

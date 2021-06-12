@@ -399,13 +399,13 @@ msgstr "أنت غير مخول للقيام بهذا الإجراء."
 # ----------
 
 msgid "user-report.title"
-msgstr "اطلب رمز التحقق"
+msgstr "احصل على رمز التحقق"
 
 msgid "user-report.navbar"
 msgstr "طلب رمز التحقق من إخطارات التعرض"
 
 msgid "user-report.request-code-from"
-msgstr "اطلب رمزًا من"
+msgstr "احصل على رمز التحقق"
 
 msgid "user-report.instructions"
 msgstr "اطلب رمزًا من إذا كانت نتيجة اختبار COVID-19 إيجابية ولكنك لم تتلق رمزًا من هيئة الصحة الخاصة بك عن طريق رسالة نصية أو مكالمة هاتفية ، فيمكنك طلب رمز هنا."
@@ -414,10 +414,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "أدخل تاريخ اختبار COVID-19 الخاص بك"
 
 msgid "user-report.phone-number-header"
-msgstr "رقم الهاتف"
+msgstr "رقم الهاتف المحمول"
 
 msgid "user-report.phone-number-instructions"
-msgstr "رقم الهاتف المحمول (لتلقي رمز التحقق)"
+msgstr "يسمح لك رمز التحقق بمشاركة نتائج الاختبار الخاصة بك. سيتم إرسال الرمز الخاص بك إلى الرقم الذي تقدمه."
 
 msgid "user-report.agreement-header"
 msgstr "اتفاق"
@@ -444,10 +444,13 @@ msgid "user-report.missing-agreement"
 msgstr "يجب أن توافق على الشروط لطلب رمز التحقق"
 
 msgid "user-report.error-invalid-date"
-msgstr "يجب أن يكون تاريخ الاختبار بين 14 يومًا واليوم."
+msgstr "تاريخ اختبار COVID-19 غير صالح."
 
 msgid "user-report.error-missing-phone"
 msgstr "رقم الهاتف المحمول مطلوب."
+
+msgid "user-report.error-invalid-phone"
+msgstr "رقم الهاتف المحمول غير صالح."
 
 msgid "user-report.quota-exceeded"
 msgstr "غير قادر مؤقتًا على إصدار رموز التحقق ، يرجى المحاولة مرة أخرى لاحقًا."
@@ -463,3 +466,12 @@ msgstr "لم نتمكن من إرسال رمز التحقق إليك."
 
 msgid "user-report.code-device-throttled"
 msgstr "لقد طلبت رمزًا مرات عديدة. يرجى الاتصال بهيئة الصحة إذا كنت لا تزال بحاجة إلى رمز."
+
+msgid "user-report.testing-date-label"
+msgstr "تاريخ اختبار COVID-19 الخاص بك"
+
+msgid "user-report.phone-storage"
+msgstr "لمنع الأشخاص من إرسال أكثر من نتيجة واحدة ، قد يتم تخزين رقم هاتفك مؤقتًا بواسطة هيئة الصحة العامة الخاصة بك."
+
+msgid "user-report.learn-more"
+msgstr "يتعلم أكثر..."

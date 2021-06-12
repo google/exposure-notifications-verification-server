@@ -132,6 +132,13 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 
 	// Send the message
 	if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
+		// Delete the user report record.
+		if result.VerCode.UserReportID != nil {
+			if err := c.db.DeleteUserReport(request.Phone); err != nil {
+				logger.Errorw("failed to delete the user report record", "error", err)
+			}
+		}
+
 		// Delete the token
 		if err := c.db.DeleteVerificationCode(result.VerCode.Code); err != nil {
 			logger.Errorw("failed to delete verification code", "error", err)

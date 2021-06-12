@@ -2396,6 +2396,21 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS headless`)
 			},
 		},
+		{
+			ID: "00112-AddUserReportLearnMore",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS user_report_learn_more TEXT`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS user_report_learn_more`,
+				)
+			},
+		},
 	}
 }
 

@@ -400,16 +400,16 @@ msgstr "Vous n'êtes pas autorisé à effectuer cette action."
 # ----------
 
 msgid "user-report.title"
-msgstr "Demander un code de vérification"
+msgstr "Obtenez un code de vérification"
 
 msgid "user-report.navbar"
 msgstr "Demander le code de vérification des notifications d'exposition"
 
 msgid "user-report.request-code-from"
-msgstr "Demander un code à"
+msgstr "Obtenez un code de vérification"
 
 msgid "user-report.instructions"
-msgstr "Si vous avez été testé positif au COVID-19 mais que vous n'avez pas reçu de code de votre autorité sanitaire par SMS ou appel téléphonique, vous pouvez en demander un ici."
+msgstr "Un code de vérification vous permet de partager vos résultats de test. Votre code sera envoyé au numéro que vous fournissez."
 
 msgid "user-report.enter-date-instructions"
 msgstr "Entrez la date de votre test COVID-19"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Vous devez accepter les conditions pour demander un code de vérification"
 
 msgid "user-report.error-invalid-date"
-msgstr "La date du test doit être comprise entre 14 jours et aujourd'hui."
+msgstr "COVID-19 test date invalid."
 
 msgid "user-report.error-missing-phone"
 msgstr "Le numéro de téléphone portable est requis."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Le numéro de téléphone portable n'est pas valide."
 
 msgid "user-report.quota-exceeded"
 msgstr "Impossible d'émettre temporairement des codes de vérification, veuillez réessayer plus tard."
@@ -464,3 +467,12 @@ msgstr "Nous n'avons pas pu vous envoyer de code de vérification."
 
 msgid "user-report.code-device-throttled"
 msgstr "Vous avez demandé un code trop de fois. Veuillez contacter votre autorité sanitaire si vous avez encore besoin d'un code."
+
+msgid "user-report.testing-date-label"
+msgstr "Date de votre test COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Pour empêcher les gens de soumettre plus d'un résultat, votre numéro de téléphone peut être temporairement stocké par votre autorité de santé publique."
+
+msgid "user-report.learn-more"
+msgstr "En savoir plus..."

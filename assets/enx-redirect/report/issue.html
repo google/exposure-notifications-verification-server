@@ -24,7 +24,7 @@
         <use xlink:href="/static/icons.svg#check-circle-fill"/>
       </svg>
       <div>
-        {{t $.locale "user-report.code-issued"}}
+        {{tDefault $.realmLocale (t $.locale "user-report.code-issued") "webReportSuccessMessage"}}
       </div>
     </div>
 

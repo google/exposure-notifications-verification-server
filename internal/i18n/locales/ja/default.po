@@ -400,13 +400,13 @@ msgstr "そのアクションを実行する権限がありません。"
 # ----------
 
 msgid "user-report.title"
-msgstr "確認コードをリクエストしてください"
+msgstr "確認コードを取得する"
 
 msgid "user-report.navbar"
 msgstr "接触通知の要求確認コード"
 
 msgid "user-report.request-code-from"
-msgstr "からコードをリクエストする"
+msgstr "確認コードを取得する"
 
 msgid "user-report.instructions"
 msgstr "COVID-19の検査で陽性であったが、テキストまたは電話で保健当局からコードを受け取っていない場合は、ここでコードをリクエストできます。"
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "COVID-19テストの日付を入力してください"
 
 msgid "user-report.phone-number-header"
-msgstr "電話番号"
+msgstr "あなたの携帯電話番号"
 
 msgid "user-report.phone-number-instructions"
-msgstr "携帯電話番号（確認コードを受け取るため）"
+msgstr "検証コードを使用すると、テスト結果を共有できます。 あなたのコードはあなたが提供した番号に送られます。"
 
 msgid "user-report.agreement-header"
 msgstr "合意"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "確認コードをリクエストするには規約に同意する必要があります"
 
 msgid "user-report.error-invalid-date"
-msgstr "テスト日は14日前から今日まででなければなりません。"
+msgstr "COVID-19テスト日が無効です。"
 
 msgid "user-report.error-missing-phone"
 msgstr "携帯電話番号が必要です。"
+
+msgid "user-report.error-invalid-phone"
+msgstr "携帯電話番号が無効です。"
 
 msgid "user-report.quota-exceeded"
 msgstr "一時的に確認コードを発行できません。しばらくしてからもう一度お試しください。"
@@ -464,3 +467,12 @@ msgstr "確認コードを送信できませんでした。"
 
 msgid "user-report.code-device-throttled"
 msgstr "コードを何度もリクエストしました。それでもコードが必要な場合は、保健当局に連絡してください。"
+
+msgid "user-report.testing-date-label"
+msgstr "COVID-19テストの日付"
+
+msgid "user-report.phone-storage"
+msgstr "他の人が複数の結果を送信するのを防ぐために、あなたの電話番号はあなたの公衆衛生当局によって一時的に保存されるかもしれません。"
+
+msgid "user-report.learn-more"
+msgstr "詳細..."

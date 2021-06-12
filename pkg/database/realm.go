@@ -179,6 +179,8 @@ type Realm struct {
 	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
 	DefaultLocale            string  `gorm:"-"`
 	DefaultLocalePtr         *string `gorm:"column:default_locale; type:text;"`
+	UserReportLearnMore      string  `gorm:"-"`
+	UserReportLearnMorePtr   *string `gorm:"column:user_report_learn_more; type:text;"`
 
 	// UserReportWebhookURL and UserReportWebhookSecret are used as callbacks for
 	// user reports.
@@ -398,6 +400,7 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	if r.DefaultLocale == "" {
 		r.DefaultLocale = DefaultLanguage
 	}
+	r.UserReportLearnMore = stringValue(r.UserReportLearnMorePtr)
 
 	return nil
 }
@@ -445,6 +448,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.UserReportWebhookURLPtr = stringPtr(r.UserReportWebhookURL)
 
 	r.DefaultLocalePtr = stringPtr(r.DefaultLocale)
+	r.UserReportLearnMorePtr = stringPtr(r.UserReportLearnMore)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")
