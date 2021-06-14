@@ -207,7 +207,6 @@ corresponds to the export report type of `SELF_REPORT`.
   "testDate": "YYYY-MM-DD",
   "tzOffset": 0,
   "phone": "+CC Phone number",
-  "platform": "ios|android",
   "nonce": "256 random bytes, base64 encoded",
   "padding": "<bytes>"
 }
