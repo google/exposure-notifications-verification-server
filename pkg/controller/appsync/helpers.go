@@ -55,6 +55,7 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 		realm.AgencyBackgroundColor = strings.ToLower(app.AgencyColor)
 		realm.AgencyImage = app.AgencyImage
 		realm.DefaultLocale = app.DefaultLocale
+		realm.UserReportLearnMoreURL = app.WebReportLearnMoreURL
 		if err := c.db.SaveRealm(realm, database.System); err != nil {
 			merr = multierror.Append(merr, fmt.Errorf("unable to update agency information: %w", err))
 			continue
