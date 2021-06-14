@@ -35,14 +35,15 @@ type Localization struct {
 
 // App represents single app for the AppResponse body.
 type App struct {
-	Region        string `json:"region"`
-	IsEnx         bool   `json:"is_enx,omitempty"`
-	AndroidTarget `json:"android_target"`
-	AgencyColor   string          `json:"agency_color"`
-	AgencyImage   string          `json:"agency_image"`
-	DefaultLocale string          `json:"default_locale"`
-	Localizations []*Localization `json:"localizations"`
-	Headless      bool            `json:"headless"`
+	Region                string `json:"region"`
+	IsEnx                 bool   `json:"is_enx,omitempty"`
+	AndroidTarget         `json:"android_target"`
+	AgencyColor           string          `json:"agency_color"`
+	AgencyImage           string          `json:"agency_image"`
+	DefaultLocale         string          `json:"default_locale"`
+	WebReportLearnMoreURL string          `json:"web_report_learn_more_url"`
+	Localizations         []*Localization `json:"localizations"`
+	Headless              bool            `json:"headless"`
 }
 
 // AndroidTarget holds the android metadata for an App of AppResponse.

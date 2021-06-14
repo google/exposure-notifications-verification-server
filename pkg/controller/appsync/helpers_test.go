@@ -75,10 +75,11 @@ func Test_syncApps(t *testing.T) {
 						PackageName:            "testAppId2",
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
-					AgencyColor:   agencyColor,
-					AgencyImage:   agencyImage,
-					DefaultLocale: "en_US",
-					Headless:      true,
+					AgencyColor:           agencyColor,
+					AgencyImage:           agencyImage,
+					DefaultLocale:         "en_US",
+					WebReportLearnMoreURL: "https://g.co/ens",
+					Headless:              true,
 					Localizations: []*appsync.Localization{
 						{
 							MessageID: "greeting",
