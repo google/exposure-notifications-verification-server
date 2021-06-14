@@ -157,6 +157,13 @@ func (c *Controller) HandleSend() http.Handler {
 				c.renderIndex(w, realm, m)
 				return
 			}
+			if result.ErrorReturn.ErrorCode == api.ErrSMSFailure {
+				msg := locale.Get("user-report.error-invalid-phone")
+				m["error"] = []string{msg}
+				m["phoneError"] = msg
+				c.renderIndex(w, realm, m)
+				return
+			}
 			if result.ErrorReturn.ErrorCode == api.ErrQuotaExceeded {
 				m["error"] = []string{locale.Get("user-report.quota-exceeded")}
 				c.renderIndex(w, realm, m)

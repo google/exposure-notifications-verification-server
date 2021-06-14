@@ -400,13 +400,13 @@ msgstr "คุณไม่ได้รับอนุญาตให้ดำเ
 # ----------
 
 msgid "user-report.title"
-msgstr "ขอรหัสยืนยัน"
+msgstr "รับรหัสยืนยัน"
 
 msgid "user-report.navbar"
 msgstr "ขอรหัสยืนยันการแจ้งเตือนการเปิดเผย"
 
 msgid "user-report.request-code-from"
-msgstr "ขอรหัสจาก"
+msgstr "รับรหัสยืนยัน"
 
 msgid "user-report.instructions"
 msgstr "หากคุณได้รับการทดสอบเชิงบวกสำหรับ COVID-19 แต่ยังไม่ได้รับรหัสจากหน่วยงานด้านสุขภาพของคุณทางข้อความหรือทางโทรศัพท์คุณสามารถขอรหัสได้ที่นี่"
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "ป้อนวันที่ของการทดสอบ COVID-19 ของคุณ"
 
 msgid "user-report.phone-number-header"
-msgstr "หมายเลขโทรศัพท์"
+msgstr "หมายเลขโทรศัพท์มือถือของคุณ"
 
 msgid "user-report.phone-number-instructions"
-msgstr "หมายเลขโทรศัพท์มือถือ (เพื่อรับรหัสยืนยัน)"
+msgstr "รหัสยืนยันช่วยให้คุณแชร์ผลการทดสอบได้ รหัสของคุณจะถูกส่งไปยังหมายเลขที่คุณระบุ"
 
 msgid "user-report.agreement-header"
 msgstr "ข้อตกลง"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "คุณต้องยอมรับเงื่อนไขเพื่อขอรหัสยืนยัน"
 
 msgid "user-report.error-invalid-date"
-msgstr "วันที่ทดสอบต้องอยู่ระหว่าง 14 วันที่แล้วถึงวันนี้"
+msgstr "วันที่ตรวจโควิด-19 ไม่ถูกต้อง"
 
 msgid "user-report.error-missing-phone"
 msgstr "ต้องระบุหมายเลขโทรศัพท์มือถือ"
+
+msgid "user-report.error-invalid-phone"
+msgstr "หมายเลขโทรศัพท์มือถือไม่ถูกต้อง"
 
 msgid "user-report.quota-exceeded"
 msgstr "ไม่สามารถออกรหัสยืนยันได้ชั่วคราวโปรดลองอีกครั้งในภายหลัง"
@@ -464,3 +467,12 @@ msgstr "เราไม่สามารถส่งรหัสยืนยั
 
 msgid "user-report.code-device-throttled"
 msgstr "คุณขอรหัสหลายครั้งเกินไป โปรดติดต่อหน่วยงานด้านสุขภาพของคุณ หากคุณยังต้องการรหัส"
+
+msgid "user-report.testing-date-label"
+msgstr "วันที่คุณตรวจโควิด-19"
+
+msgid "user-report.phone-storage"
+msgstr "เพื่อป้องกันไม่ให้ผู้อื่นส่งผลลัพธ์มากกว่าหนึ่งรายการ หมายเลขโทรศัพท์ของคุณอาจถูกจัดเก็บไว้ชั่วคราวโดยหน่วยงานด้านสาธารณสุขของคุณ"
+
+msgid "user-report.learn-more"
+msgstr "เรียนรู้เพิ่มเติม..."

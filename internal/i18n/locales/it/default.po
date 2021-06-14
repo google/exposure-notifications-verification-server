@@ -400,13 +400,13 @@ msgstr "Non sei autorizzato a eseguire tale azione."
 # ----------
 
 msgid "user-report.title"
-msgstr "Richiedi un codice di verifica"
+msgstr "Ottieni un codice di verifica"
 
 msgid "user-report.navbar"
 msgstr "Richiedi codice di verifica notifiche esposizione"
 
 msgid "user-report.request-code-from"
-msgstr "Richiedi un codice da"
+msgstr "Ottieni un codice di verifica"
 
 msgid "user-report.instructions"
 msgstr "Se sei risultato positivo al COVID-19 ma non hai ricevuto un codice dalla tua autorità sanitaria tramite SMS o telefonata, puoi richiederne uno qui."
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Inserisci la data del tuo test COVID-19"
 
 msgid "user-report.phone-number-header"
-msgstr "Numero di telefono"
+msgstr "Il tuo numero di cellulare"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Numero di cellulare (per ricevere il codice di verifica)"
+msgstr "Un codice di verifica ti consente di condividere i risultati del test. Il tuo codice verrà inviato al numero da te fornito."
 
 msgid "user-report.agreement-header"
 msgstr "Accordo"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Devi accettare i termini per richiedere un codice di verifica"
 
 msgid "user-report.error-invalid-date"
-msgstr "La data del test deve essere compresa tra 14 giorni fa e oggi."
+msgstr "Data del test COVID-19 non valida."
 
 msgid "user-report.error-missing-phone"
 msgstr "Il numero di cellulare è obbligatorio."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Il numero di cellulare non è valido."
 
 msgid "user-report.quota-exceeded"
 msgstr "Temporaneamente impossibile emettere codici di verifica, riprova più tardi."
@@ -464,3 +467,12 @@ msgstr "Non siamo stati in grado di inviarti un codice di verifica."
 
 msgid "user-report.code-device-throttled"
 msgstr "Hai richiesto un codice troppe volte. Contatta la tua autorità sanitaria se hai ancora bisogno di un codice."
+
+msgid "user-report.testing-date-label"
+msgstr "Data del tuo test COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Per impedire alle persone di inviare più di un risultato, il tuo numero di telefono potrebbe essere temporaneamente memorizzato dalla tua autorità sanitaria pubblica."
+
+msgid "user-report.learn-more"
+msgstr "Ulteriori informazioni..."

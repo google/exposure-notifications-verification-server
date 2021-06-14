@@ -400,13 +400,13 @@ msgstr "You are not authorized to perform that action."
 # ----------
 
 msgid "user-report.title"
-msgstr "Request a verification code"
+msgstr "Get a verification code"
 
 msgid "user-report.navbar"
 msgstr "Request Exposure Notifications verification code"
 
 msgid "user-report.request-code-from"
-msgstr "Request a code from"
+msgstr "Get a verification code"
 
 msgid "user-report.instructions"
 msgstr "If you have tested positive for COVID-19 but have not received a code from your Health Authority by text or phone call, you may request one here."
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Enter the date of your COVID-19 test"
 
 msgid "user-report.phone-number-header"
-msgstr "Phone number"
+msgstr "Your Mobile Phone number"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Mobile phone number (to receive verification code)"
+msgstr "A verification code allows you to share your test results. Your code will be sent to the number you provide."
 
 msgid "user-report.agreement-header"
 msgstr "Agreement"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "You must agree to the terms to request a verification code"
 
 msgid "user-report.error-invalid-date"
-msgstr "Test date must be between 14 days ago and today."
+msgstr "COVID-19 test date invalid."
 
 msgid "user-report.error-missing-phone"
 msgstr "Mobile phone number is required."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Mobile phone number is invalid."
 
 msgid "user-report.quota-exceeded"
 msgstr "Temporarily unable to issue verification codes, please try again later."
@@ -464,3 +467,12 @@ msgstr "We were unable to send you a verification code."
 
 msgid "user-report.code-device-throttled"
 msgstr "You've requested a code too many times. Please contact your Health Authority if you still need a code."
+
+msgid "user-report.testing-date-label"
+msgstr "Date of Your COVID-19 Test"
+
+msgid "user-report.phone-storage"
+msgstr "To prevent people from submitting more than one result, your phone number may be temporarily stored by your public health authority."
+
+msgid "user-report.learn-more"
+msgstr "Learn more..."

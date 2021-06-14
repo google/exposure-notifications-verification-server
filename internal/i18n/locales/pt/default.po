@@ -400,13 +400,13 @@ msgstr "Você não está autorizado a realizar essa ação."
 # ----------
 
 msgid "user-report.title"
-msgstr "Solicite um código de verificação"
+msgstr "Obtenha um código de verificação"
 
 msgid "user-report.navbar"
 msgstr "Solicitar código de verificação de notificações de exposição"
 
 msgid "user-report.request-code-from"
-msgstr "Solicite um código de"
+msgstr "Obtenha um código de verificação"
 
 msgid "user-report.instructions"
 msgstr "Se você testou positivo para COVID-19, mas não recebeu um código da Autoridade de Saúde por mensagem de texto ou telefone, você pode solicitar um aqui."
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Insira a data do seu teste COVID-19"
 
 msgid "user-report.phone-number-header"
-msgstr "Número de telefone"
+msgstr "Seu número de celular"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Número do celular (para receber o código de verificação)"
+msgstr "Um código de verificação permite que você compartilhe os resultados do seu teste. Seu código será enviado para o número que você fornecer."
 
 msgid "user-report.agreement-header"
 msgstr "Acordo"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Você deve concordar com os termos para solicitar um código de verificação"
 
 msgid "user-report.error-invalid-date"
-msgstr "A data do teste deve ser entre 14 dias atrás e hoje."
+msgstr "Data do teste COVID-19 inválida"
 
 msgid "user-report.error-missing-phone"
 msgstr "O número do celular é obrigatório."
+
+msgid "user-report.error-invalid-phone"
+msgstr "O número do celular é inválido."
 
 msgid "user-report.quota-exceeded"
 msgstr "Temporariamente impossibilitado de emitir códigos de verificação, tente novamente mais tarde."
@@ -464,3 +467,12 @@ msgstr "Não foi possível enviar-lhe um código de verificação."
 
 msgid "user-report.code-device-throttled"
 msgstr "Você solicitou um código muitas vezes. Entre em contato com a Autoridade de Saúde se ainda precisar de um código."
+
+msgid "user-report.testing-date-label"
+msgstr "Data do seu teste COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Para evitar que as pessoas enviem mais de um resultado, seu número de telefone pode ser armazenado temporariamente pela autoridade de saúde pública."
+
+msgid "user-report.learn-more"
+msgstr "Saiba mais ..."

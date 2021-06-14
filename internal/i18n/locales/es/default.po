@@ -399,13 +399,13 @@ msgstr "No está autorizado para realizar esa acción."
 # ----------
 
 msgid "user-report.title"
-msgstr "Solicitar un código de verificación"
+msgstr "Obtén un código de verificación"
 
 msgid "user-report.navbar"
 msgstr "Solicitar código de verificación de notificaciones de exposición"
 
 msgid "user-report.request-code-from"
-msgstr "Solicitar un código de"
+msgstr "Obtén un código de verificación"
 
 msgid "user-report.instructions"
 msgstr "Si ha dado positivo por COVID-19 pero no ha recibido un código de su Autoridad de Salud por mensaje de texto o llamada telefónica, puede solicitar uno aquí"
@@ -414,10 +414,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Ingrese la fecha de su prueba COVID-19"
 
 msgid "user-report.phone-number-header"
-msgstr "Número de teléfono"
+msgstr "Your Mobile Phone number"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Número de teléfono móvil (para recibir el código de verificación)"
+msgstr "Un código de verificación le permite compartir los resultados de su prueba. Su código se enviará al número que proporcione."
 
 msgid "user-report.agreement-header"
 msgstr "Acuerdo"
@@ -444,10 +444,13 @@ msgid "user-report.missing-agreement"
 msgstr "Debe aceptar los términos para solicitar un código de verificación"
 
 msgid "user-report.error-invalid-date"
-msgstr "La fecha de la prueba debe estar entre hace 14 días y hoy"
+msgstr "La fecha de la prueba COVID-19 no es válida."
 
 msgid "user-report.error-missing-phone"
 msgstr "Se requiere el número de teléfono móvil"
+
+msgid "user-report.error-invalid-phone"
+msgstr "El número de teléfono móvil no es válido".
 
 msgid "user-report.quota-exceeded"
 msgstr "No se pueden emitir códigos de verificación temporalmente. Vuelve a intentarlo más tarde"
@@ -463,3 +466,12 @@ msgstr "No pudimos enviarle un código de verificación"
 
 msgid "user-report.code-device-throttled"
 msgstr "Ha solicitado un código demasiadas veces. Comuníquese con su Autoridad de Salud si aún necesita un código"
+
+msgid "user-report.testing-date-label"
+msgstr "Fecha de su prueba COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Para evitar que las personas envíen más de un resultado, su número de teléfono puede ser almacenado temporalmente por su autoridad de salud pública."
+
+msgid "user-report.learn-more"
+msgstr "Más información ..."

@@ -400,13 +400,13 @@ msgstr "Anda tidak diizinkan melakukan tindakan itu."
 # ----------
 
 msgid "user-report.title"
-msgstr "Minta kode verifikasi"
+msgstr "Dapatkan kode verifikasi"
 
 msgid "user-report.navbar"
 msgstr "Minta kode verifikasi Pemberitahuan Pemaparan"
 
 msgid "user-report.request-code-from"
-msgstr "Minta kode dari"
+msgstr "Dapatkan kode verifikasi"
 
 msgid "user-report.instructions"
 msgstr "Jika Anda telah dites positif COVID-19 tetapi belum menerima kode dari Otoritas Kesehatan Anda melalui teks atau panggilan telepon, Anda dapat memintanya di sini."
@@ -415,10 +415,10 @@ msgid "user-report.enter-date-instructions"
 msgstr "Masukkan tanggal tes COVID-19 Anda"
 
 msgid "user-report.phone-number-header"
-msgstr "Nomor telepon"
+msgstr "Nomor Ponsel Anda"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Nomor ponsel (untuk menerima kode verifikasi)"
+msgstr "Kode verifikasi memungkinkan Anda untuk membagikan hasil pengujian Anda. Kode Anda akan dikirim ke nomor yang Anda berikan."
 
 msgid "user-report.agreement-header"
 msgstr "Perjanjian"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Anda harus menyetujui persyaratan untuk meminta kode verifikasi"
 
 msgid "user-report.error-invalid-date"
-msgstr "Tanggal tes harus antara 14 hari yang lalu dan hari ini."
+msgstr "Tanggal tes COVID-19 tidak valid."
 
 msgid "user-report.error-missing-phone"
 msgstr "Diperlukan nomor ponsel."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Nomor ponsel tidak valid."
 
 msgid "user-report.quota-exceeded"
 msgstr "Untuk sementara tidak dapat mengeluarkan kode verifikasi, coba lagi nanti."
@@ -464,3 +467,12 @@ msgstr "Kami tidak dapat mengirimi Anda kode verifikasi."
 
 msgid "user-report.code-device-throttled"
 msgstr "Anda sudah terlalu sering meminta kode. Silakan hubungi Otoritas Kesehatan Anda jika Anda masih membutuhkan kode."
+
+msgid "user-report.testing-date-label"
+msgstr "Tanggal Tes COVID-19 Anda"
+
+msgid "user-report.phone-storage"
+msgstr "Untuk mencegah orang mengirimkan lebih dari satu hasil, nomor telepon Anda mungkin disimpan sementara oleh otoritas kesehatan masyarakat Anda."
+
+msgid "user-report.learn-more"
+msgstr "Pelajari lebih lanjut..."

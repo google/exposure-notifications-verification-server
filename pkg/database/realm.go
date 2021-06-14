@@ -173,12 +173,14 @@ type Realm struct {
 
 	// AgencyBackgroundColor, AgencyImage, DefaultLocale are synced from the Google
 	// ENX-Express sync source
-	AgencyBackgroundColor    string  `gorm:"-"`
-	AgencyBackgroundColorPtr *string `gorm:"column:agency_background_color; type:text;"`
-	AgencyImage              string  `gorm:"-"`
-	AgencyImagePtr           *string `gorm:"column:agency_image; type:text;"`
-	DefaultLocale            string  `gorm:"-"`
-	DefaultLocalePtr         *string `gorm:"column:default_locale; type:text;"`
+	AgencyBackgroundColor     string  `gorm:"-"`
+	AgencyBackgroundColorPtr  *string `gorm:"column:agency_background_color; type:text;"`
+	AgencyImage               string  `gorm:"-"`
+	AgencyImagePtr            *string `gorm:"column:agency_image; type:text;"`
+	DefaultLocale             string  `gorm:"-"`
+	DefaultLocalePtr          *string `gorm:"column:default_locale; type:text;"`
+	UserReportLearnMoreURL    string  `gorm:"-"`
+	UserReportLearnMoreURLPtr *string `gorm:"column:user_report_learn_more_url; type:text;"`
 
 	// UserReportWebhookURL and UserReportWebhookSecret are used as callbacks for
 	// user reports.
@@ -398,6 +400,7 @@ func (r *Realm) AfterFind(tx *gorm.DB) error {
 	if r.DefaultLocale == "" {
 		r.DefaultLocale = DefaultLanguage
 	}
+	r.UserReportLearnMoreURL = stringValue(r.UserReportLearnMoreURLPtr)
 
 	return nil
 }
@@ -445,6 +448,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	r.UserReportWebhookURLPtr = stringPtr(r.UserReportWebhookURL)
 
 	r.DefaultLocalePtr = stringPtr(r.DefaultLocale)
+	r.UserReportLearnMoreURLPtr = stringPtr(r.UserReportLearnMoreURL)
 
 	if r.UseSystemSMSConfig && !r.CanUseSystemSMSConfig {
 		r.AddError("useSystemSMSConfig", "is not allowed on this realm")

@@ -400,25 +400,25 @@ msgstr "Bu eylemi gerçekleştirme yetkiniz yok."
 # ----------
 
 msgid "user-report.title"
-msgstr "Doğrulama kodu isteyin"
+msgstr "Barlag koduny alyň"
 
 msgid "user-report.navbar"
 msgstr "Karşılaşma Bildirimleri doğrulama kodunu isteyin"
 
 msgid "user-report.request-code-from"
-msgstr "Bir kod isteyin"
+msgstr "Barlag koduny alyň"
 
 msgid "user-report.instructions"
-msgstr "COVID-19 için pozitif test ettiyseniz ancak Sağlık Otoritenizden metin veya telefon görüşmesi yoluyla bir kod almadıysanız, buradan bir kod isteyebilirsiniz.
+msgstr "COVID-19 için pozitif test ettiyseniz ancak Sağlık Otoritenizden metin veya telefon görüşmesi yoluyla bir kod almadıysanız, buradan bir kod isteyebilirsiniz."
 
 msgid "user-report.enter-date-instructions"
 msgstr "COVID-19 testinizin tarihini girin"
 
 msgid "user-report.phone-number-header"
-msgstr "Telefon numarası"
+msgstr "Jübi telefonyňyzyň belgisi"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Cep telefonu numarası (doğrulama kodunu almak için)"
+msgstr "A verification code allows you to share your test results. Your code will be sent to the number you provide."
 
 msgid "user-report.agreement-header"
 msgstr "Sözleşme"
@@ -445,10 +445,13 @@ msgid "user-report.missing-agreement"
 msgstr "Doğrulama kodu istemek için şartları kabul etmelisiniz"
 
 msgid "user-report.error-invalid-date"
-msgstr "Test tarihi 14 gün öncesi ile bugün arasında olmalıdır."
+msgstr "COVID-19 synag senesi nädogry."
 
 msgid "user-report.error-missing-phone"
 msgstr "Cep telefonu numarası gereklidir."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Jübi telefonynyň belgisi nädogry"
 
 msgid "user-report.quota-exceeded"
 msgstr "Doğrulama kodlarını geçici olarak veremiyorum, lütfen daha sonra tekrar deneyin."
@@ -464,3 +467,12 @@ msgstr "Size bir doğrulama kodu gönderemedik."
 
 msgid "user-report.code-device-throttled"
 msgstr "Bir çok kez kod istediniz. Hala bir koda ihtiyacınız varsa lütfen Sağlık Otoritenizle iletişime geçin."
+
+msgid "user-report.testing-date-label"
+msgstr "COVID-19 synagyňyzyň senesi"
+
+msgid "user-report.phone-storage"
+msgstr "Adamlaryň birden köp netije bermeginiň öňüni almak üçin telefon belgiňiz wagtlaýyn saglygy goraýyş edarasy tarapyndan saklanyp bilner."
+
+msgid "user-report.learn-more"
+msgstr "Has giňişleýin öwren ..."
