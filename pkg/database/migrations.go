@@ -2401,7 +2401,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realms
-						ADD COLUMN IF NOT EXISTS user_report_learn_more TEXT`,
+						ADD COLUMN IF NOT EXISTS user_report_learn_more_url TEXT`,
 				)
 			},
 			Rollback: func(tx *gorm.DB) error {
