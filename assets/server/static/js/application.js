@@ -946,10 +946,10 @@ function uploadBatchIssue(data, lines) {
     headers: { 'X-CSRF-Token': getCSRFToken() },
     data: JSON.stringify(req),
     success: function(result) {
-      if (!result.responseJSON || !result.responseJSON.codes) {
+      if (!result || !result.codes) {
         return;
       }
-      readCodesBatch(data, lines, result.responseJSON.codes);
+      readCodesBatch(data, lines, result.codes);
     },
     error: function(xhr, resp, text) {
       if (!xhr || !xhr.responseJSON) {
@@ -985,8 +985,7 @@ function showErroredCode(request, code, line) {
   if (code.errorCode != "success") {
     totalErrs++;
   }
-  $receiptFailure.text(totalErrs);
-  if (totalErrs == 1) {
+  if (totalErrs > 0) {
     $receiptDiv.removeClass('d-none');
     $errorDiv.removeClass('d-none');
   }
@@ -995,6 +994,7 @@ function showErroredCode(request, code, line) {
     $errorTable.addClass('d-none');
     $errorTooMany.removeClass('d-none');
   }
+  $receiptFailure.text(totalErrs);
   $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},${request["testType"]},,,${request["uuid"]},${code.errorCode},${code.error}\n`);
   if (totalErrs > showMaxResults) {
     return;
@@ -1010,8 +1010,7 @@ function showErroredCode(request, code, line) {
 
 function showSuccessfulCode(request, code, line) {
   total++;
-  $receiptSuccess.text(total);
-  if (total == 1) {
+  if (total > 0) {
     $receiptDiv.removeClass('d-none');
     $successDiv.removeClass('d-none');
     $successTable.removeClass('d-none');
@@ -1021,6 +1020,7 @@ function showSuccessfulCode(request, code, line) {
     $successTable.addClass('d-none');
     $successTooMany.removeClass('d-none');
   }
+  $receiptSuccess.text(total);
   $save.attr("href", `${$save.attr("href")}${request["phone"]},${request["testDate"]},${request["symptomDate"]},${request["testType"]},,,${code.uuid},success\n`);
   if (total > showMaxResults) {
     return;
