@@ -855,7 +855,6 @@ function readBulkUploadCSVFile() {
 
     $import.prop('disabled', false);
     $cancel.addClass('d-none');
-    $receiptDiv.removeClass('d-none');
     $table.addClass('d-none');
     $tableBody.empty();
   };
@@ -947,7 +946,7 @@ function uploadBatchIssue(data, lines) {
     headers: { 'X-CSRF-Token': getCSRFToken() },
     data: JSON.stringify(req),
     success: function(result) {
-      if (!result.codes || !result.codes) {
+      if (!result || !result.codes) {
         return;
       }
       readCodesBatch(data, lines, result.codes);
