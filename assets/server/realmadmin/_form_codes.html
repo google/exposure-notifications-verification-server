@@ -101,7 +101,7 @@
         <small class="form-text text-muted mb-3">
           Allow users to initiate a COVID-19 diagnosis from their mobile application before
           receiving a verification code from this health authority.
-          By enabling this feature, this server may temporarily phone numbers of users
+          By enabling this feature, this server may temporarily store phone numbers of users
           who request verification codes to prevent abuse.
           <div class="alert alert-info" role="alert">
             <strong>Before enabling:</strong>
@@ -114,7 +114,7 @@
     </div>
 
     <div class="form-check mb-3">
-      <input type="checkbox" name="allow_user_report_web_view" id="allow-user-report-web-view" class="form-check-input{{if $realm.ErrorsFor "allowUserReportWebView"}} is-invalid{{end}}" value="true" {{checkedIf ($realm.AllowUserReportWebView)}} />      
+      <input type="checkbox" name="allow_user_report_web_view" id="allow-user-report-web-view" class="form-check-input{{if $realm.ErrorsFor "allowUserReportWebView"}} is-invalid{{end}}" value="true" {{checkedIf ($realm.AllowUserReportWebView)}} />
       <label for="allow-user-report-web-view" class="form-check-label">
         Enable user report webview</label>
       {{template "errorable" $realm.ErrorsFor "allowUserReportWebView"}}
@@ -126,7 +126,7 @@
         <div class="alert alert-warning" role="alert">
           Custom Exposure Notifications applications should not enable this setting and should use the user-report API instead.
         </div>
-      </small>      
+      </small>
     </div>
 
     <div class="form-check mb-3">
