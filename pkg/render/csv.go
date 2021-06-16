@@ -34,6 +34,8 @@ func (r *Renderer) RenderCSV(w http.ResponseWriter, code int, filename string, d
 	// Create CSV.
 	b, err := data.MarshalCSV()
 	if err != nil {
+		r.logger.Errorw("failed to marshal csv", "error", err)
+
 		msg := "An internal error occurred."
 		if r.debug {
 			msg = err.Error()

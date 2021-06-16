@@ -54,6 +54,8 @@ func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 
 	if r.debug {
 		if err := r.loadTemplates(); err != nil {
+			r.logger.Errorw("failed to reload templates in renderer", "error", err)
+
 			msg := html.EscapeString(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, htmlErrTmpl, msg)
@@ -68,6 +70,8 @@ func (r *Renderer) RenderHTMLStatus(w http.ResponseWriter, code int, tmpl string
 
 	// Render into the renderer
 	if err := r.executeHTMLTemplate(b, tmpl, data); err != nil {
+		r.logger.Errorw("failed to execute html template", "error", err)
+
 		msg := "An internal error occurred."
 		if r.debug {
 			msg = err.Error()
