@@ -65,13 +65,23 @@ steps:
 #
 # Minify static assets
 #
-- id: 'minify'
+- id: 'minify-css'
   name: 'tdewolff/minify:latest'
-  dir: 'assets/server'
+  dir: 'assets/server/static/css'
   entrypoint: '/bin/sh'
   args:
   - '-c'
-  - 'minify --recursive --output=./static ./static/css/*.css ./static/js/*.js'
+  - 'mkdir /tmp/css && mv *.css /tmp/css && minify -brvo ./application.css /tmp/css/*.css && rm -rf /tmp/css'
+  waitFor:
+  - '-'
+
+- id: 'minify-js'
+  name: 'tdewolff/minify:latest'
+  dir: 'assets/server/static/js'
+  entrypoint: '/bin/sh'
+  args:
+  - '-c'
+  - 'mkdir /tmp/js && mv *.js /tmp/js && minify -brvo ./application.js /tmp/js/*.js && rm -rf /tmp/js'
   waitFor:
   - '-'
 
@@ -84,6 +94,8 @@ steps:
   args:
   - 'mkdir'
   - 'bin'
+  waitFor:
+  - '-'
 
 - id: 'build'
   name: 'golang:1.16'
@@ -98,7 +110,8 @@ steps:
   waitFor:
   - 'restore-cache'
   - 'mkdir-bin'
-  - 'minify'
+  - 'minify-css'
+  - 'minify-js'
 
 - id: 'save-cache'
   name: 'us-docker.pkg.dev/vargolabs/gcs-cacher/gcs-cacher:0.1'

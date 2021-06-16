@@ -139,10 +139,10 @@ func (r *Renderer) loadTemplates() error {
 
 	htmltmpl := htmltemplate.New("").
 		Option("missingkey=zero").
-		Funcs(templateFuncs())
+		Funcs(r.templateFuncs())
 
 	texttmpl := texttemplate.New("").
-		Funcs(textFuncs())
+		Funcs(r.textFuncs())
 
 	if err := loadTemplates(r.fs, htmltmpl, texttmpl); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
@@ -339,8 +339,11 @@ func toSentence(i interface{}, joiner string) (string, error) {
 	}
 }
 
-func templateFuncs() htmltemplate.FuncMap {
+func (r *Renderer) templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
+		"jsIncludeTag":  assetIncludeTag(r.fs, "static/js", jsIncludeTmpl, &jsIncludeTagCache, r.debug),
+		"cssIncludeTag": assetIncludeTag(r.fs, "static/css", cssIncludeTmpl, &cssIncludeTagCache, r.debug),
+
 		"joinStrings":      joinStrings,
 		"toSentence":       toSentence,
 		"trimSpace":        project.TrimSpace,
@@ -392,7 +395,7 @@ func pwdSentinel() string {
 	return project.PasswordSentinel
 }
 
-func textFuncs() texttemplate.FuncMap {
+func (r *Renderer) textFuncs() texttemplate.FuncMap {
 	return map[string]interface{}{
 		"trimSpace": project.TrimSpace,
 	}
