@@ -96,6 +96,8 @@ func (r *Renderer) RenderJSON(w http.ResponseWriter, code int, data interface{})
 
 	// Render into the renderer
 	if err := json.NewEncoder(b).Encode(data); err != nil {
+		r.logger.Errorw("failed to marshal json", "error", err)
+
 		msg := "An internal error occurred."
 		if r.debug {
 			msg = err.Error()
