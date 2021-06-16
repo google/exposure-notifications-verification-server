@@ -1,7 +1,8 @@
 {{define "head"}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta data-build-id="{{.buildID}}" data-build-tag="{{.buildTag}}">
+<meta name="build-id" content="{{.buildID}}">
+<meta name="build-tag" content="{{.buildTag}}">
 
 <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?{{.buildID}}">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png?{{.buildID}}">
@@ -50,7 +51,7 @@
 
   {{if $currentMembership}}
     {{$currentRealm := $currentMembership.Realm}}
-    <div href="/" class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
+    <div class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
       {{$currentRealm.Name}}{{if $currentRealm.RegionCode}} - {{$currentRealm.RegionCode}}{{end}}
     </div>
   {{end}}
