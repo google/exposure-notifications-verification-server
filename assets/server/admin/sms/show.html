@@ -144,9 +144,7 @@
       })
 
       // Load existing records.
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
+      clearChildren(container)
       let existingRecords = container.dataset.twilioFromNumbers;
       if (existingRecords) {
         let decoded = atob(existingRecords);
