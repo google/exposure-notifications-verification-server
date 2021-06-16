@@ -113,7 +113,9 @@
       }
     }
 
-    addEventListeners(inputLimitFactor, 'change keyup paste', recalculate);
+    inputLimitFactor.addEventListener('change', recalculate);
+    inputLimitFactor.addEventListener('keyup', recalculate);
+    inputLimitFactor.addEventListener('paste', recalculate);
   });
 </script>
 

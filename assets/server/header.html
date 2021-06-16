@@ -16,11 +16,14 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
   integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
   integrity="sha384-wWci3BOzr88l+HNsAtr3+e5bk9qh5KfjU6gl/rbzfTYdsAVHBEbxB33veLYmFg/a" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/css/intlTelInput.min.css"
+<link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/css/intlTelInput.min.css"
   integrity="sha384-+0L34NtZQE8CdqKYXA1psEH5gRnPhYm5Yrfl6+zHBC9rK+SuCkyS99e/a4wRIf3B" crossorigin="anonymous">
-{{ cssIncludeTag }}
+<link rel="stylesheet"
+  href="/static/css/application.css?{{.buildID}}" crossorigin="anonymous" />
 
 <script defer src="https://code.jquery.com/jquery-3.5.1.min.js"
   integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
@@ -30,7 +33,7 @@
   integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/js/intlTelInput.min.js"
   integrity="sha384-lZ7BQV5Pg5PjeG4uM5qkYztFBL5dtUWhiAtkcz6j/vj1tjZFA+3zhwsiGUmsqulm" crossorigin="anonymous"></script>
-{{ jsIncludeTag }}
+<script defer src="/static/js/application.js?{{.buildID}}" crossorigin="anonymous"></script>
 
 <title>{{if .title}}{{.title}}{{else}}Exposure Notifications Verification Server{{end}}</title>
 {{end}}
