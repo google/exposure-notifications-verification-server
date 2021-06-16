@@ -59,7 +59,7 @@
             <p>{{tDefault $.realmLocale (t $.locale "user-report.phone-number-instructions") "webReportPhoneNumberMessage"}}</p>
             <p>{{t $.locale "user-report.phone-storage"}}
             {{if $currentRealm.UserReportLearnMoreURL}}
-              <a href="{{$currentRealm.UserReportLearnMoreURL}}" target="_PARENT">{{t $.locale "user-report.learn-more"}}</a>
+              <a href="{{$currentRealm.UserReportLearnMoreURL}}" target="_blank">{{t $.locale "user-report.learn-more"}}</a>
             {{end}}
             </p>
           </div>
