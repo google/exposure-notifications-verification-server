@@ -105,12 +105,12 @@
           <div class="card-body">
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label for="testDate">{{t $.locale "codes.issue.testing-date-label"}}</label>
+                <label for="test-date">{{t $.locale "codes.issue.testing-date-label"}}</label>
                 <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
               </div>
 
               <div class="form-group col-md-6">
-                <label for="symptomDate">{{t $.locale "codes.issue.symptoms-date-label"}}</label>
+                <label for="symptom-date">{{t $.locale "codes.issue.symptoms-date-label"}}</label>
                 <div class="input-group">
                   <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
                 </div>
@@ -145,7 +145,7 @@
               <label for="phone" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-text-message-label"}}</label>
               <div class="col-sm-6 col-md-8 col-lg-9">
                 <div class="input-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" autocomplete="off" class="w-100" />
+                  <input type="tel" id="phone" name="phone" class="form-control w-100" autocomplete="off" />
                 </div>
                 <small class="form-text text-muted">
                   {{t $.locale "codes.issue.sms-text-message-detail"}}

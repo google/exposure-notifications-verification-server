@@ -38,7 +38,7 @@ const (
 
 	// CSRFMetaTagName is the meta tag name (used by Javascript).
 	CSRFMetaTagName     = "csrf-token"
-	CSRFMetaTagTemplate = `<meta name="%s" content="%s" />`
+	CSRFMetaTagTemplate = `<meta name="%s" content="%s">`
 
 	// TokenLength is the length of the token (in bytes).
 	TokenLength = 64
