@@ -24,11 +24,7 @@ import (
 )
 
 //go:embed server server/**/*
-var _serverFS embed.FS
-
-// This gets around an inconsistency where the embed is rooted at server/, but
-// the os.DirFS is rooted after server/.
-var serverFS, _ = fs.Sub(_serverFS, "server")
+var serverFS embed.FS
 
 // ServerFS returns the file system for the server assets.
 func ServerFS() fs.FS {
@@ -39,7 +35,7 @@ func ServerFS() fs.FS {
 	return serverFS
 }
 
-var serverStaticFS, _ = fs.Sub(serverFS, "static")
+var serverStaticFS, _ = fs.Sub(serverFS, "server/static")
 
 // ServerStaticFS returns the file system for the server static assets, rooted
 // at static/.
