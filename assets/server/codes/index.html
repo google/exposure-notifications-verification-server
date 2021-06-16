@@ -89,11 +89,8 @@
         event.target.value = r;
       }
 
-      inputUUID.addEventListener('change', addDashes);
-      inputUUID.addEventListener('keyup', addDashes);
-      inputUUID.addEventListener('paste', addDashes);
-
-      form.addEventListener('submit', (event) => {
+      addEventListeners(inputUUID, 'change keyup paste', addDashes);
+      addEventListeners(form, 'submit', (event) => {
         event.preventDefault();
         window.location.assign(`/codes/${inputUUID.value}`);
       });

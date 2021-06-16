@@ -35,7 +35,7 @@ func ServerFS() fs.FS {
 	return serverFS
 }
 
-var serverStaticFS, _ = fs.Sub(serverFS, "server/static")
+var serverStaticFS, _ = fs.Sub(serverFS, "static")
 
 // ServerStaticFS returns the file system for the server static assets, rooted
 // at static/.

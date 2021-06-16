@@ -75,9 +75,7 @@
         return;
       }
 
-      while(containerChart.firstChild) {
-        containerChart.removeChild(containerChart.firstChild);
-      }
+      clearChildren(containerChart)
 
       let containerListGroup = document.createElement('div');
       containerListGroup.classList.add('list-group', 'list-group-flush');
