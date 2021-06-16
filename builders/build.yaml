@@ -71,7 +71,7 @@ steps:
   entrypoint: '/bin/sh'
   args:
   - '-c'
-  - 'mv *.css /tmp/ && minify --output ./application.css /tmp/*.css'
+  - 'mkdir /tmp/css && mv *.css /tmp/css && minify -brvo ./application.css /tmp/css/*.css && rm -rf /tmp/css'
   waitFor:
   - '-'
 
@@ -81,7 +81,7 @@ steps:
   entrypoint: '/bin/sh'
   args:
   - '-c'
-  - 'mv *.js /tmp/ && minify --output ./application.js /tmp/*.js'
+  - 'mkdir /tmp/js && mv *.js /tmp/js && minify -brvo ./application.js /tmp/js/*.js && rm -rf /tmp/js'
   waitFor:
   - '-'
 

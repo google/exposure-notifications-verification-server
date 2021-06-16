@@ -23,8 +23,12 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
-//go:embed server server/**/*
-var serverFS embed.FS
+//go:embed server server/**/* server/**/**/*
+var _serverFS embed.FS
+
+// This gets around an inconsistency where the embed is rooted at server/, but
+// the os.DirFS is rooted after server/.
+var serverFS, _ = fs.Sub(_serverFS, "server")
 
 // ServerFS returns the file system for the server assets.
 func ServerFS() fs.FS {
