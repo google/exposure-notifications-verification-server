@@ -1,48 +1,41 @@
 {{define "flash"}}
-<div id="alerts-container">
-  {{- if .flash}}
-  {{range $msg := .flash.Errors}}
-    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
-      <div class="toast-header text-danger">
-        <span class="oi oi-circle-x mr-2" aria-hidden="true"></span>
-        <strong class="mr-auto">Error</strong>
-        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="toast-body">
-        {{$msg}}
+
+{{if .flash}}
+  <div id="alerts-container">
+    <div id="alert-template" class="alert d-none" role="alert">
+      <div class="d-flex align-items-center">
+        <span class="oi mr-3" aria-hidden="true"></span>
+        <span class="alert-message"></span>
       </div>
     </div>
-  {{end}}
-  {{range $msg := .flash.Warnings}}
-    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
-      <div class="toast-header text-warning">
-        <span class="oi oi-warning mr-2" aria-hidden="true"></span>
-        <strong class="mr-auto">Warning</strong>
-        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+
+    {{range $message := .flash.Errors}}
+      <div class="alert alert-danger" role="alert">
+        <div class="d-flex align-items-center">
+          <span class="oi oi-warning mr-3" aria-hidden="true"></span>
+          <span class="alert-message">{{$message}}</span>
+        </div>
       </div>
-      <div class="toast-body">
-        {{$msg}}
+    {{end}}
+
+    {{range $message := .flash.Warnings}}
+      <div class="alert alert-warning" role="alert">
+        <div class="d-flex align-items-center">
+          <span class="oi oi-warning mr-3" aria-hidden="true"></span>
+          <span class="alert-message">{{$message}}</span>
+        </div>
       </div>
-    </div>
-  {{end}}
-  {{range $msg := .flash.Alerts}}
-    <div class="toast bg-white" role="alert" aria-live="assertive" aria-atomic="true" data-delay="10000" data-autohide="true">
-      <div class="toast-header text-info">
-        <span class="oi oi-info mr-2" aria-hidden="true"></span>
-        <strong class="mr-auto">Notice</strong>
-        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+    {{end}}
+
+    {{range $message := .flash.Alerts}}
+      <div class="alert alert-success" role="alert">
+        <div class="d-flex align-items-center">
+          <span class="oi oi-check mr-3" aria-hidden="true"></span>
+          <span class="alert-message">{{$message}}</span>
+        </div>
       </div>
-      <div class="toast-body">
-        {{$msg}}
-      </div>
-    </div>
-  {{end}}
-  {{end}}
-</div>
+    {{end}}
+  </div>
+{{end}}
+
 {{end}}

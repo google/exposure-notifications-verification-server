@@ -56,10 +56,18 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
+		if !hasSMSConfig {
+			t := controller.LocaleFromContext(ctx)
+			if t == nil {
+				controller.MissingLocale(w, r, c.h)
+				return
+			}
+			flash.Error(t.Get("codes.bulk-issue.no-sms-provider"))
+		}
 
 		m := controller.TemplateMapFromContext(ctx)
 		m["hasSMSConfig"] = hasSMSConfig
 		m.Title("Bulk issue codes")
-		c.h.RenderHTML(w, "codes/issue-bulk", m)
+		c.h.RenderHTML(w, "codes/bulk-issue", m)
 	})
 }
