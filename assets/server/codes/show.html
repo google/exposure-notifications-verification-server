@@ -73,7 +73,7 @@
   </main>
 
   {{if not .code.Claimed}}
-  <script defer type="text/javascript">
+  <script type="text/javascript">
     window.addEventListener('load', (event) => {
       let btnInvalidate = document.querySelector('button#invalidate');
       let expires = {{ .code.Expires }};
