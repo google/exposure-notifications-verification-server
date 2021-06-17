@@ -1,4 +1,4 @@
-{{define "codes/issue-bulk"}}
+{{define "codes/bulk-issue"}}
 
 {{$currentMembership := .currentMembership}}
 {{$currentRealm := $currentMembership.Realm}}
@@ -24,17 +24,10 @@
     <div class="card mb-3 shadow-sm">
       <div class="card-header">{{t $.locale "codes.bulk-issue.header"}}</div>
       <div class="card-body">
-        {{if not $hasSMSConfig}}
-          <div class="alert alert-danger">
-            <span class="oi oi-warning"></span>
-            {{t $.locale "codes.bulk-issue.no-sms-provider"}}
-          </div>
-        {{end}}
-
         <form id="form">
           <div class="form-group">
             <div class="custom-file">
-              <input type="file" class="custom-file-input" id="csv" accept=".csv" disabled required>
+              <input type="file" class="custom-file-input" id="csv" accept=".csv" required {{disabledIf (not $hasSMSConfig)}}>
               <label class="custom-file-label" for="csv" id="file-label">{{t $.locale "codes.bulk-issue.select-csv"}}</label>
             </div>
             <small class="form-text text-muted">
@@ -216,13 +209,9 @@
       $retryCode.val(randomString);
       let upload = readBulkUploadCSVFile();
 
-      {{if $hasSMSConfig}}
       if (typeof (FileReader) === "undefined") {
         flash.error('Please update to a browser which supports the HTML5 file reader API.');
-      } else {
-        $csv.prop('disabled', false);
       }
-      {{end}}
 
       $csv.change(function(file) {
         let fileName = file.target.files[0].name;

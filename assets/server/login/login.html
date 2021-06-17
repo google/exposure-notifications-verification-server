@@ -12,8 +12,6 @@
 
 <body id="login" class="tab-content">
   <main role="main" class="container">
-    {{template "flash" .}}
-
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center align-self-center">
         <div class="login-container">
@@ -23,6 +21,8 @@
             </div>
 
             <div class="card-body">
+              {{template "flash" .}}
+
               <form id="login-form" class="floating-form" action="/" method="POST">
                 <div class="form-label-group">
                   <input type="email" id="email" name="email" class="form-control" placeholder="{{t $.locale "login.email-address"}}"

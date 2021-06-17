@@ -33,6 +33,7 @@ var (
 	apiErrorMissingRealm = api.Errorf("missing realm")
 
 	errMissingAuthorizedApp = fmt.Errorf("authorized app missing in request context")
+	errMissingLocale        = fmt.Errorf("locale missing in request context")
 	errMissingSession       = fmt.Errorf("session missing in request context")
 	errMissingUser          = fmt.Errorf("user missing in request context")
 )
@@ -176,6 +177,12 @@ func MissingMembership(w http.ResponseWriter, r *http.Request, h *render.Rendere
 // not exist.
 func MissingAuthorizedApp(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
 	InternalError(w, r, h, errMissingAuthorizedApp)
+	return
+}
+
+// MissingLocale returns an internal error when the locale does not exist.
+func MissingLocale(w http.ResponseWriter, r *http.Request, h *render.Renderer) {
+	InternalError(w, r, h, errMissingLocale)
 	return
 }
 
