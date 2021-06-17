@@ -414,7 +414,7 @@ msgid "user-report.enter-date-instructions"
 msgstr "Ingrese la fecha de su prueba COVID-19"
 
 msgid "user-report.phone-number-header"
-msgstr "Your Mobile Phone number"
+msgstr "Tu número de teléfono"
 
 msgid "user-report.phone-number-instructions"
 msgstr "Un código de verificación le permite compartir los resultados de su prueba. Su código se enviará al número que proporcione."
