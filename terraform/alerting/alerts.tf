@@ -436,3 +436,44 @@ resource "google_monitoring_alert_policy" "UserReportWebhookError" {
     null_resource.manual-step-to-enable-workspace,
   ]
 }
+
+resource "google_monitoring_alert_policy" "CloudRunBreakglass" {
+  count = var.alert_on_cloud_run_breakglass ? 1 : 0
+
+  project      = var.project
+  display_name = "CloudRunBreakglass"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "A service was deployed that bypassed Binary Authorization"
+
+    condition_monitoring_query_language {
+      duration = "0s"
+
+      query = <<-EOT
+      fetch global
+      | metric 'logging.googleapis.com/user/${google_logging_metric.cloud_run_breakglass.name}'
+      | align rate(5m)
+      | every 1m
+      | group_by [resource.project_id],
+          [val: aggregate(value.cloud_run_breakglass)]
+      | condition val > 0
+      EOT
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/CloudRunBreakglass.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}

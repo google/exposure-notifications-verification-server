@@ -103,7 +103,6 @@ EOT
   }
 }
 
-
 resource "google_logging_metric" "human_decrypted_value" {
   name    = "human_decrypted_value"
   project = var.project
@@ -135,5 +134,32 @@ EOT
   label_extractors = {
     "email" = "EXTRACT(protoPayload.authenticationInfo.principalEmail)"
     "key"   = "EXTRACT(protoPayload.resourceName)"
+  }
+}
+
+resource "google_logging_metric" "cloud_run_breakglass" {
+  name    = "cloud_run_breakglass"
+  project = var.project
+
+  filter = <<EOT
+protoPayload.@type="type.googleapis.com/google.cloud.audit.AuditLog"
+protoPayload.serviceName="run.googleapis.com"
+protoPayload.status.message:"breakglass"
+resource.labels.revision_name!=""
+EOT
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+
+    labels {
+      key         = "revision"
+      value_type  = "STRING"
+      description = "Name of the revision which was deployed with breakglass"
+    }
+  }
+
+  label_extractors = {
+    "revision" = "EXTRACT(resource.labels.revision_name)"
   }
 }
