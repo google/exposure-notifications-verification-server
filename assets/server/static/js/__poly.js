@@ -19,9 +19,7 @@
 const addEventListeners = (givenElements, givenEvents, fn) => {
   const elements = flattenArray(givenElements);
   const events = flattenArray(
-    typeof givenEvents === "string"
-      ? givenEvents.split(" ").map((s) => s.trim())
-      : givenEvents
+    typeof givenEvents === 'string' ? givenEvents.split(' ').map((s) => s.trim()) : givenEvents
   );
 
   elements.forEach((element) => {
