@@ -93,13 +93,12 @@
           <button class="btn btn-primary btn-block" type="submit" id="import" disabled>{{t $.locale "codes.bulk-issue.issue-codes"}}</button>
           <button class="btn btn-danger btn-block d-none" id="cancel" disabled>{{t $.locale "codes.bulk-issue.cancel"}}</button>
         </form>
-      </div>
 
-      <div class="card-body">
-        <div class="progress d-none" id="progress-div">
-          <div id="progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+        <div class="progress mt-3 d-none" id="progress-div">
+          <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0"
             aria-valuemax="100"></div>
         </div>
+
         <table class="table table-bordered d-none" id="csv-table">
           <thead>
             <tr>
@@ -160,93 +159,6 @@
       </div>
     </div>
   </main>
-
-  <script type="text/javascript">
-    let total = 0;
-    let totalErrs = 0;
-
-    let $form;
-    let $csv;
-    let $fileLabel;
-    let $import;
-    let $cancel;
-    let $table;
-    let $tableBody;
-    let $progressDiv;
-    let $progress;
-    let $retryCode;
-    let $rememberCode;
-    let $inputSMSTemplate;
-    let $newCode;
-    let $startAt;
-
-    let $receiptDiv;
-    let $save;
-    let $receiptSuccess;
-    let $receiptFailure;
-
-    let $errorDiv;
-    let $errorTable;
-    let $errorTableBody;
-    let $errorTooMany;
-
-    let $successDiv;
-    let $successTable;
-    let $successTableBody;
-    let $successTooMany;
-
-    let tzOffset = new Date().getTimezoneOffset();
-
-    window.addEventListener('load', (event) => {
-      initBulkUploadUI();
-
-      let randomString = getCookie("retryCode");
-      if (randomString == "") {
-        randomString = genRandomString(12);
-      } else {
-        $rememberCode.prop("checked", true);
-      }
-      $retryCode.val(randomString);
-      let upload = readBulkUploadCSVFile();
-
-      if (typeof (FileReader) === "undefined") {
-        flash.error('Please update to a browser which supports the HTML5 file reader API.');
-      }
-
-      $csv.change(function(file) {
-        let fileName = file.target.files[0].name;
-        $fileLabel.html(fileName);
-        $startAt.val(1);
-        $import.prop('disabled', false);
-      });
-
-      $cancel.on('click', function(event) {
-        event.preventDefault();
-        upload.cancel();
-        flash.error('Canceled batch upload.');
-      });
-
-      $newCode.on('click', function(event) {
-        event.preventDefault();
-        $retryCode.val(genRandomString(12));
-      });
-
-      $form.on('submit', function(event) {
-        event.preventDefault();
-        resetBulkUploadUI();
-
-        if ($rememberCode.is(':checked')) {
-          setCookie('retryCode',$retryCode.val(),1);
-        } else {
-          setCookie('retryCode','',-1);
-        }
-
-        let reader = new FileReader();
-        reader.onload = upload.start;
-        reader.readAsText($csv[0].files[0]);
-      });
-    });
-  </script>
 </body>
 
 </html>

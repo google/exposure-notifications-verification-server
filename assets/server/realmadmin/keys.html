@@ -80,7 +80,7 @@
   {{template "head" .}}
 </head>
 
-<body id="keys" class="tab-content">
+<body id="keys" class="tab-content {{if not $canWrite}}disabled-controls{{end}}">
   {{template "navbar" .}}
 
   <main role="main" class="container">
@@ -336,26 +336,6 @@ Failure to do so in advance will prevent your application users from sharing tem
       </p>
     {{end}}
   </main>
-
-  <script type="text/javascript">
-    window.addEventListener('load', (event) => {
-      {{if not $canWrite}}
-        {{/*
-
-          This is a little bit hacky, since technically the user could disable
-          javascript, but we do server-side validation to prevent actual data
-          mutation without permission.
-
-        */}}
-        document.querySelectorAll('input, button, select, textarea, a.btn').forEach((element) => {
-          element.classList.add('disabled');
-          element.classList.add('readonly');
-          element.disabled = true;
-          element.readonly = true;
-        });
-      {{end}}
-    });
-  </script>
 </body>
 </html>
 {{end}}
