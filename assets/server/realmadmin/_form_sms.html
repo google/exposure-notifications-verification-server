@@ -414,7 +414,7 @@
       if (errors.length > 0) {
         $("#sms-preview-errors").removeClass("d-none");
         $("#sms-preview-errors").empty();   
-        let msg = $('<ul>');
+        let msg = $('<ul class="mb-0">>');
         for (i = 0; i < errors.length; i++) {
           item = ($('<li>').html(errors[i]));
           msg.append(item);
