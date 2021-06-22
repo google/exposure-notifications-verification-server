@@ -9,10 +9,10 @@
 {{$currentMembership := .currentMembership}}
 
 {{if $user.ID}}
-<form method="POST" id="user-form" action="/realm/users/{{$user.ID}}">
+<form method="POST" id="users-form" action="/realm/users/{{$user.ID}}">
   <input type="hidden" name="_method" value="PATCH">
   {{else}}
-  <form method="POST" id="user-form" action="/realm/users">
+  <form method="POST" id="users-form" action="/realm/users">
     {{end}}
 
     {{ .csrfField }}
@@ -121,82 +121,4 @@
       {{end}}
     </button>
   </form>
-
-  <script type="text/javascript">
-    window.addEventListener('load', (event) => {
-      let permissionImpliedWarning = document.querySelector('span#permission-implied-warning');
-
-      let form = document.querySelector('form#user-form');
-      let inputPermissions = form.querySelectorAll('input[name=permissions]');
-
-      inputPermissions.forEach((input) => {
-        toggleState(input);
-
-        input.addEventListener('change', (event) => {
-          toggleState(event.target);
-        });
-      });
-
-      function toggleState(input) {
-        // Do nothing if disabled
-        if(input.disabled) {
-          return;
-        }
-
-        let permissionName = input.dataset.permissionName;
-        let impliedPermissions = (input.dataset.impliedPermissions || '').split(',');
-
-        let impliedPermissionsList = [];
-        for(i = 0; i < impliedPermissions.length; i++) {
-          let permission = impliedPermissions[i].trim();
-          if(permission) {
-            impliedPermissionsList.push(permission);
-          }
-        }
-
-        let inputs = impliedPermissionsList.map(function(permission) {
-          return `input[data-permission-name="${permission}"]`;
-        }).join(',');
-        let labels = impliedPermissionsList.map(function(permission) {
-          return `label#permission-${permission}-label`;
-        }).join(',');
-
-        if (input.checked) {
-          if (inputs) {
-            form.querySelectorAll(inputs).forEach((implied) => {
-              implied.checked = true;
-              implied.disabled = true;
-            });
-          }
-
-          let warning = permissionImpliedWarning.cloneNode(true);
-          warning.classList.remove('d-none');
-          warning.setAttribute('title', `Implied by ${permissionName}`);
-          $(warning).tooltip(); // TODO(sethvargo): drop jquery dependency
-
-          if (labels) {
-            form.querySelectorAll(labels).forEach((label) => {
-              label.querySelectorAll('small.form-text').forEach((helpText) => {
-                helpText.insertAdjacentElement('beforeBegin', warning);
-              })
-            });
-          }
-        } else {
-          if (inputs) {
-            form.querySelectorAll(inputs).forEach((implied) => {
-              implied.disabled = false;
-            });
-          }
-
-          if (labels) {
-            form.querySelectorAll(labels).forEach((label) => {
-              label.querySelectorAll('span.oi').forEach((icon) => {
-                icon.parentNode.removeChild(icon);
-              });
-            });
-          }
-        }
-      }
-    });
-  </script>
 {{end}}

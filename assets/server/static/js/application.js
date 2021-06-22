@@ -5,120 +5,124 @@ window.addEventListener('load', (event) => {
   // Add data-submit-form properties to a link to have it act as a submit
   // button. You can also add a data-confirm attribute with a confirmation
   // prompt.
-  $("a[data-submit-form]").click(function(e) {
+  $('a[data-submit-form]').click(function (e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
-    let confirm = $this.data("confirm");
-    if (typeof confirm !== "undefined") {
+    let confirm = $this.data('confirm');
+    if (typeof confirm !== 'undefined') {
       if (window.confirm(confirm) !== true) {
         return;
       }
     }
 
-    $this.closest("form").submit();
+    $this.closest('form').submit();
   });
 
   // Add data-method to a link and make the resulting href submit as that
   // method. You can also add a data-confirm attribute with a confirmation
   // prompt.
-  $("a[data-method]").click(function(e) {
+  $('a[data-method]').click(function (e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
-    let confirm = $this.data("confirm");
+    let confirm = $this.data('confirm');
 
-    if (typeof confirm !== "undefined") {
+    if (typeof confirm !== 'undefined') {
       if (window.confirm(confirm) !== true) {
         return;
       }
     }
 
     let csrfToken = getCSRFToken();
-    let $csrfField = $("<input>")
-      .attr("type", "hidden")
-      .attr("name", "csrf_token")
-      .attr("value", csrfToken);
+    let $csrfField = $('<input>').attr('type', 'hidden').attr('name', 'csrf_token').attr('value', csrfToken);
 
-    let $inputField = $("<input>")
-      .attr("type", "hidden")
-      .attr("name", "_method")
-      .attr("value", $this.data("method"));
+    let $inputField = $('<input>').attr('type', 'hidden').attr('name', '_method').attr('value', $this.data('method'));
 
-    let $form = $("<form>")
-      .attr("method", "POST")
-      .attr("action", $this.attr("href"));
+    let $form = $('<form>').attr('method', 'POST').attr('action', $this.attr('href'));
 
     $form.append($csrfField);
     $form.append($inputField);
 
-    $form.appendTo("body").submit();
+    $form.appendTo('body').submit();
   });
 
   // Add data-toggle-password to an element with the value pointing to the id
   // of an input[type="password"]. It will toggle/untoggle the value.
-  $("a[data-toggle-password]").click(function(e) {
+  $('a[data-toggle-password]').click(function (e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
-    let selector = $this.data("togglePassword");
-    let $input = $("#" + selector);
-    let $icon = $this.find("span.oi");
+    let selector = $this.data('togglePassword');
+    let $input = $('#' + selector);
+    let $icon = $this.find('span.oi');
 
-    if ($input.attr("type") == "password") {
-      $input.attr("type", "text");
-      $icon.addClass("oi-lock-unlocked");
-      $icon.removeClass("oi-lock-locked");
-    } else if ($input.attr("type") == "text") {
-      $input.attr("type", "password");
-      $icon.addClass("oi-lock-locked");
-      $icon.removeClass("oi-lock-unlocked");
+    if ($input.attr('type') == 'password') {
+      $input.attr('type', 'text');
+      $icon.addClass('oi-lock-unlocked');
+      $icon.removeClass('oi-lock-locked');
+    } else if ($input.attr('type') == 'text') {
+      $input.attr('type', 'password');
+      $icon.addClass('oi-lock-locked');
+      $icon.removeClass('oi-lock-unlocked');
     }
   });
 
-  $("a[data-fill-target]").click(function(e) {
+  $('a[data-fill-target]').click(function (e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
-    let selector = $this.data("fillTarget");
+    let selector = $this.data('fillTarget');
 
-    let value = $this.data("fillValue");
-    let $target = $("#" + selector);
+    let value = $this.data('fillValue');
+    let $target = $('#' + selector);
     $target.val(value);
   });
 
-  $("a[data-copy]").click(function(e) {
+  $('a[data-copy]').click(function (e) {
     e.preventDefault();
 
     let $this = $(e.currentTarget);
-    let selector = $this.data("copyTarget");
-    let $target = $("#" + selector);
+    let selector = $this.data('copyTarget');
+    let $target = $('#' + selector);
 
     $target[0].focus();
     $target[0].setSelectionRange(0, 99999);
 
-    document.execCommand("copy");
-    $this.tooltip("hide");
+    document.execCommand('copy');
+    $this.tooltip('hide');
     document.getSelection().removeAllRanges();
   });
 
-  $("[data-timestamp]").each(function(i, e) {
+  $('[data-timestamp]').each(function (i, e) {
     let $this = $(e);
-    let date = new Date($this.data("timestamp"));
+    let date = new Date($this.data('timestamp'));
     $this.tooltip({
-      placement: "top",
+      placement: 'top',
       title: date.toISOString(),
     });
     $this.text(date.toLocaleString());
   });
 
   // Disable propagation on links in menus if they are marked as such.
-  $(document).on('click', 'div.dropdown-menu .keep-open', function(e) {
+  $(document).on('click', 'div.dropdown-menu .keep-open', function (e) {
     e.stopPropagation();
   });
 
   // Toast shows alerts/flash messages.
-  $(".toast").toast("show");
+  $('.toast').toast('show');
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Disable all interactive elements if the page is disabled.
+  if (document.querySelector('body.disabled-controls') !== null) {
+    document.querySelectorAll('input, button, select, textarea, a.btn').forEach(async (element) => {
+      element.classList.add('disabled');
+      element.classList.add('readonly');
+      element.disabled = true;
+      element.readonly = true;
+    });
+  }
 });
 
 function getCSRFToken() {
@@ -127,13 +131,13 @@ function getCSRFToken() {
 
 function setCookie(cname, cvalue, exdays) {
   let d = new Date();
-  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-  let expires = "expires=" + d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires;
+  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+  let expires = 'expires=' + d.toUTCString();
+  document.cookie = cname + '=' + cvalue + ';' + expires;
 }
 
 function getCookie(cname) {
-  let name = cname + "=";
+  let name = cname + '=';
   let ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
@@ -144,7 +148,7 @@ function getCookie(cname) {
       return c.substring(name.length, c.length);
     }
   }
-  return "";
+  return '';
 }
 
 function checkPasswordValid(pwd, retype, requirements) {
@@ -215,15 +219,15 @@ function checkPasswordValid(pwd, retype, requirements) {
   return valid;
 }
 
-const errClass = "oi-circle-x text-danger";
-const checkClass = "oi-circle-check text-success";
+const errClass = 'oi-circle-x text-danger';
+const checkClass = 'oi-circle-check text-success';
 
 function decorateInvalid($element) {
-  $element.find(".oi").removeClass(checkClass).addClass(errClass);
+  $element.find('.oi').removeClass(checkClass).addClass(errClass);
 }
 
 function decorateValid($element) {
-  $element.find(".oi").removeClass(errClass).addClass(checkClass);
+  $element.find('.oi').removeClass(errClass).addClass(checkClass);
 }
 
 function loginScripts(hasCurrentUser, onLoginSuccess) {
@@ -245,26 +249,25 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   let $registeredDiv = $('#registered-div');
   let $factors = $('#factors');
 
-  let verId = "";
+  let verId = '';
   let selectedFactorIndex = 0;
 
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-    'recaptcha-container', {
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     'size': 'invisible',
-    'expired-callback': e => {
+    'expired-callback': (e) => {
       window.recaptchaVerifier.reset();
     },
-    'error-callback': e => {
+    'error-callback': (e) => {
       window.recaptchaVerifier.reset();
     },
   });
 
-  $loginForm.on('submit', function(event) {
+  $loginForm.on('submit', function (event) {
     event.preventDefault();
     onSignInSubmit();
   });
 
-  $pinForm.on('submit', function(event) {
+  $pinForm.on('submit', function (event) {
     event.preventDefault();
 
     // Disable the submit button so we only attempt once.
@@ -274,10 +277,12 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
     let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
     // Complete sign-in.
-    resolver.resolveSignIn(multiFactorAssertion)
-      .then(function(userCredential) {
+    resolver
+      .resolveSignIn(multiFactorAssertion)
+      .then(function (userCredential) {
         onLoginSuccess();
-      }).catch(function(err) {
+      })
+      .catch(function (err) {
         flash.clear();
         flash.error(err.message);
         window.recaptchaVerifier.reset();
@@ -285,7 +290,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       });
   });
 
-  $pinClose.on('click', function(event) {
+  $pinClose.on('click', function (event) {
     event.preventDefault();
     $submit.prop('disabled', false);
     $factors.empty();
@@ -293,12 +298,12 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     $pinDiv.addClass('d-none');
   });
 
-  $resendPin.on('click', function(event) {
+  $resendPin.on('click', function (event) {
     event.preventDefault();
     resendPin();
   });
 
-  $smsChange.on('click', function(event) {
+  $smsChange.on('click', function (event) {
     event.preventDefault();
     $pinDiv.addClass('d-none');
     $registeredDiv.removeClass('d-none');
@@ -316,66 +321,76 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       signInPromise = firebase.auth().signInWithEmailAndPassword($email.val(), $password.val());
     }
 
-    signInPromise.then(function(userCredential) {
-      onLoginSuccess();
-    }).catch(function(error) {
-      if (error.code == 'auth/multi-factor-auth-required') {
-        window.recaptchaVerifier.render();
-        resolver = error.resolver;
-        populatePinText(resolver.hints);
-        populateFactors(resolver.hints);
-        if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
-          let phoneInfoOptions = {
-            multiFactorHint: resolver.hints[selectedFactorIndex],
-            session: resolver.session
-          };
-          let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-          let appVerifier = window.recaptchaVerifier;
-          return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
-            .then(function(verificationId) {
-              verId = verificationId;
-              setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
-              $submitPin.prop('disabled', false);
-              $loginDiv.hide();
-              $pinDiv.removeClass('d-none');
-            }).catch(function(error) {
-              window.recaptchaVerifier.reset();
-              flash.clear();
-              flash.error(error);
-              $submit.prop('disabled', false);
-            });
-        } else {
+    signInPromise
+      .then(function (userCredential) {
+        onLoginSuccess();
+      })
+      .catch(function (error) {
+        if (error.code == 'auth/multi-factor-auth-required') {
+          window.recaptchaVerifier.render();
+          resolver = error.resolver;
+          populatePinText(resolver.hints);
+          populateFactors(resolver.hints);
+          if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+            let phoneInfoOptions = {
+              multiFactorHint: resolver.hints[selectedFactorIndex],
+              session: resolver.session,
+            };
+            let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+            let appVerifier = window.recaptchaVerifier;
+            return phoneAuthProvider
+              .verifyPhoneNumber(phoneInfoOptions, appVerifier)
+              .then(function (verificationId) {
+                verId = verificationId;
+                setTimeout(function () {
+                  $resendPin.removeClass('disabled');
+                }, 15000);
+                $submitPin.prop('disabled', false);
+                $loginDiv.hide();
+                $pinDiv.removeClass('d-none');
+              })
+              .catch(function (error) {
+                window.recaptchaVerifier.reset();
+                flash.clear();
+                flash.error(error);
+                $submit.prop('disabled', false);
+              });
+          } else {
+            flash.clear();
+            flash.error('Unsupported 2nd factor authentication type.');
+          }
+        } else if (error.code == 'auth/too-many-requests') {
           flash.clear();
-          flash.error('Unsupported 2nd factor authentication type.');
+          flash.error(error.message);
+          $submit.prop('disabled', false);
+        } else {
+          console.error(error);
+          flash.clear();
+          flash.error('Sign-in failed. Please try again.');
+          $submit.prop('disabled', false);
         }
-      } else if (error.code == 'auth/too-many-requests') {
-        flash.clear();
-        flash.error(error.message);
-        $submit.prop('disabled', false);
-      } else {
-        console.error(error);
-        flash.clear();
-        flash.error("Sign-in failed. Please try again.");
-        $submit.prop('disabled', false);
-      }
-    });
+      });
   }
 
   function resendPin() {
     $resendPin.addClass('disabled');
-    setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
+    setTimeout(function () {
+      $resendPin.removeClass('disabled');
+    }, 15000);
 
     let phoneInfoOptions = {
       multiFactorHint: resolver.hints[selectedFactorIndex],
-      session: resolver.session
+      session: resolver.session,
     };
     populatePinText(resolver.hints);
     let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
     let appVerifier = window.recaptchaVerifier;
-    phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, appVerifier)
-      .then(function(verificationId) {
+    phoneAuthProvider
+      .verifyPhoneNumber(phoneInfoOptions, appVerifier)
+      .then(function (verificationId) {
         verId = verificationId;
-      }).catch(function(error) {
+      })
+      .catch(function (error) {
         window.recaptchaVerifier.reset();
         flash.clear();
         flash.error(error.message);
@@ -400,7 +415,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       }
     }
     if (hints.length > 1) {
-      $smsChange.removeClass("d-none");
+      $smsChange.removeClass('d-none');
     }
   }
 
@@ -424,7 +439,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     $time.text(`Phone number: ${factor.phoneNumber}`);
     $row.append($time);
 
-    $li.on('click', function(event) {
+    $li.on('click', function (event) {
       $registeredDiv.addClass('d-none');
       $pinDiv.removeClass('d-none');
       if (selectedFactorIndex == i) {
@@ -445,12 +460,14 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
 // generates a random alphanumeric code
 function genRandomString(len) {
   let i = len;
-  let s = "";
+  let s = '';
   for (; i >= 6; i -= 6) {
     s += Math.random().toString(36).substr(2, 8);
   }
   if (i > 0) {
-    s += Math.random().toString(36).substr(2, 2 + i);
+    s += Math.random()
+      .toString(36)
+      .substr(2, 2 + i);
   }
   return s;
 }
@@ -470,14 +487,14 @@ function getUrlVars() {
 // element is expected to be a dom query selector, ts is the number of seconds
 // since epoch, UTC.
 function countdown(element, ts, expiredCallback) {
-  if (typeof (ts) === 'undefined') {
+  if (typeof ts === 'undefined') {
     return;
   }
 
   let $element = $(element);
   let date = new Date(ts * 1000).getTime();
 
-  const formattedTime = function() {
+  const formattedTime = function () {
     let now = new Date().getTime();
     let diff = date - now;
 
@@ -519,7 +536,7 @@ function countdown(element, ts, expiredCallback) {
   setTimeOrExpired($element, formattedTime(), expiredCallback);
 
   // Set timer.
-  const fn = setInterval(function() {
+  const fn = setInterval(function () {
     let time = formattedTime();
     if (!time) {
       clearInterval(fn);
@@ -538,14 +555,14 @@ function setTimeOrExpired(element, time, expiredCallback) {
       expiredCallback();
     }
 
-    let expiredText = $element.data("countdownExpired");
+    let expiredText = $element.data('countdownExpired');
     if (!expiredText) {
       expiredText = 'EXPIRED';
     }
     return element.html(expiredText);
   }
 
-  let prefix = $element.data("countdownPrefix");
+  let prefix = $element.data('countdownPrefix');
   if (!prefix) {
     prefix = '';
   }
@@ -563,7 +580,7 @@ function utcDate(str) {
 function redrawCharts(chartsData, timeout) {
   let redrawPending = false;
   let windowWidth = 0;
-  $(window).resize(function() {
+  $(window).resize(function () {
     let w = $(window).width();
     if (w != windowWidth) {
       windowWidth = w;
@@ -573,7 +590,7 @@ function redrawCharts(chartsData, timeout) {
 
     if (!redrawPending) {
       redrawPending = true;
-      setTimeout(function() {
+      setTimeout(function () {
         redraw();
         redrawPending = false;
       }, timeout);
