@@ -20,7 +20,7 @@ PROGNAME="$(basename $0)"
 ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 
 DOCKER_CMD="$(command -v docker || true)"
-DB_CONTAINER_IMAGE="registry.hub.docker.com/library/postgres:13-alpine"
+DB_CONTAINER_IMAGE="postgres:13.3-alpine"
 
 KEY_MANAGER="IN_MEMORY"
 
@@ -113,7 +113,7 @@ function start() {
 
   gencerts
 
-  docker pull --quiet "${DB_CONTAINER_IMAGE}" > /dev/null
+  docker pull "${DB_CONTAINER_IMAGE}" 
   docker run \
     --name "${DB_NAME}" \
     --env "LANG=C" \
@@ -130,7 +130,7 @@ function start() {
       -c "ssl=on" \
       -c "ssl_cert_file=/var/lib/postgresql/server.crt" \
       -c "ssl_key_file=/var/lib/postgresql/server.key" \
-      > /dev/null
+
 
   echo "Database started (OK)"
 }
