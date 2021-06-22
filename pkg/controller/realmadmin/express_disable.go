@@ -54,7 +54,8 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		}
 
 		currentRealm.EnableENExpress = false
-		currentRealm.SMSTextTemplate = database.DefaultSMSTextTemplate
+		currentRealm.ResetSMSTextTemplates()
+
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)

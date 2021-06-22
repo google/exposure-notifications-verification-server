@@ -163,22 +163,16 @@
           For the <strong>User Report</strong> template it is strongly recommended that you
           indicate that the user should not use the code if they did not request it.
         </div>
-
-        <div class="alert alert-info" role="alert">
-          The <strong>User Report</strong> template:
-          <ul>
-            <li>MUST have the <code>[code]</code> expansion (short code) for auto fill in the operating system / application.</li>
-            <li>SHOULD also contain [enxlink] if you are using Exposure Notifications Express</li>
-          </ul>
-          Other fields can be included.
-        </div>
       {{end}}
-      {{if or (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
+      {{if and (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
       <button class="btn btn-danger mb-3 {{if eq $i 0}}d-none{{end}}" type="button" {{if ne $i 0}}onClick="removeTemplate('sms-template-{{$i}}');"{{end}}>Delete template</button>
       {{end}}
     </div>
     {{end}}
     <span id="templates-end"></span>
+
+    <div id="sms-preview-errors" class="d-none alert alert-danger">
+    </div>
 
     <div id="sms-preview">
       <p>
@@ -344,6 +338,7 @@
     const shortExpires = {{$realm.GetCodeDurationMinutes}};
     const longCode = randLongCode({{$realm.LongCodeLength}});
     const longExpires = {{$realm.GetLongCodeDurationHours}};
+    const enxEnabled = {{$realm.EnableENExpress}};
     const ensLink = buildENSLink(longCode);
     const $messageBubbles = $('div#message-bubbles');
     const $messageBubble = $('<div class="alert alert-secondary" role="alert"></div>');
@@ -375,13 +370,59 @@
         return;
       }
 
+      let errors = new Array();
       let val = ($(target).val() || '').trim();
-      val = val.replace(/\[region\]/g, region);
+
+      if (val.length > {{$realm.SMSTemplateMaxLength}}) {
+        errors.push('SMS Templates must be <= {{$realm.SMSTemplateMaxLength}} characters, currently ' + val.length + ' characters.');
+      }
+
+      // Provide live feedback on errors in the SMS Template construction.
+      if (enxEnabled) {
+        if (!val.includes("[enslink]")) {
+          errors.push("SMS template must contains [enslink]");
+        }
+        if (val.includes("[region]")) {
+          errors.push("cannot contain `[region]`, this is automatically included in [enslink]");
+        }
+        if (val.includes("[longcode]")) {
+          errors.push("cannot contain `[longcode]`, this is automatically included in [enslink]");
+        }
+        val = val.replace(/\[enslink\]/g, ensLink);      
+      } else {
+        if (val.includes("[enslink]")) {
+          errors.push("`[enslink]` is not allowed when Exposure Notifications Express is not enabled.");
+        }
+
+        hasSC = val.includes("[code]");
+        hasLC = val.includes("[longcode]");
+        if (!(hasSC || hasLC) || (hasSC && hasLC)) {
+          errors.push('must contain exactly one of `[code]` or `[longcode]`');
+        }
+
+        val = val.replace(/\[region\]/g, region);
+        val = val.replace(/\[longcode\]/g, longCode);
+      }    
       val = val.replace(/\[code\]/g, shortCode);
-      val = val.replace(/\[expires\]/g, shortExpires);
-      val = val.replace(/\[longcode\]/g, longCode);
+      val = val.replace(/\[expires\]/g, shortExpires);      
       val = val.replace(/\[longexpires\]/g, longExpires);
-      val = val.replace(/\[enslink\]/g, ensLink);
+
+      if (val.length > {{$realm.SMSTemplateExpansionMax}}) {
+        errors.push('Fully expanded SMS Templates must be at most {{$realm.SMSTemplateExpansionMax}} characters, currently ' + val.length + ' characters.');
+      }
+
+      if (errors.length > 0) {
+        $("#sms-preview-errors").removeClass("d-none");
+        $("#sms-preview-errors").empty();   
+        let msg = $('<ul class="mb-0">>');
+        for (i = 0; i < errors.length; i++) {
+          item = ($('<li>').html(errors[i]));
+          msg.append(item);
+        }
+        $("#sms-preview-errors").append(msg);
+      } else {
+        $("#sms-preview-errors").addClass("d-none");
+      }
 
       let parts = val.match(smsSplitter);
       if(!parts) {
@@ -503,7 +544,7 @@
 
       let $textArea = $newNode.find('textarea');
       $textArea.attr('name', `sms_text_template_${next}`);
-      $textArea.val('Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)');
+      $textArea.val('{{$realm.DefaultSMSTextTemplate}}');
 
       let $deleteButton = $newNode.find('button');
       $deleteButton.click(() => removeTemplate(`sms-template-${next}`));
