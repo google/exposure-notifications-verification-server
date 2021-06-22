@@ -60,7 +60,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		currentRealm.CodeDuration = enxSettings.CodeDuration
 		currentRealm.LongCodeLength = enxSettings.LongCodeLength
 		currentRealm.LongCodeDuration = enxSettings.LongCodeDuration
-		currentRealm.SMSTextTemplate = "Your Exposure Notifications verification link: [enslink] Expires in [longexpires] hours (click for mobile device only)"
+		currentRealm.SMSTextTemplate = database.DefaultENXSMSTextTemplate
 		// If there is a UserReport - upgrade that message as well
 		if _, ok := currentRealm.SMSTextAlternateTemplates[database.UserReportTemplateLabel]; ok {
 			m := database.UserReportDefaultENXText
