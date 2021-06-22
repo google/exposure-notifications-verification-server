@@ -408,7 +408,7 @@
       val = val.replace(/\[longexpires\]/g, longExpires);
 
       if (val.length > {{$realm.SMSTemplateExpansionMax}}) {
-        errors.push('Fully expanded SMS Templates must be <= {{$realm.SMSTemplateExpansionMax}} characters, currently ' + val.length + ' characters.');
+        errors.push('Fully expanded SMS Templates must be at most {{$realm.SMSTemplateExpansionMax}} characters, currently ' + val.length + ' characters.');
       }
 
       if (errors.length > 0) {
@@ -544,11 +544,7 @@
 
       let $textArea = $newNode.find('textarea');
       $textArea.attr('name', `sms_text_template_${next}`);
-      if (enxEnabled) {
-        $textArea.val('{{$realm.DefaultENXSMSTextTemplate}}');
-      } else {
-        $textArea.val('{{$realm.DefaultSMSTextTemplate}}');
-      }
+      $textArea.val('{{$realm.DefaultSMSTextTemplate}}');
 
       let $deleteButton = $newNode.find('button');
       $deleteButton.click(() => removeTemplate(`sms-template-${next}`));

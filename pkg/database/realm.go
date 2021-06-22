@@ -357,26 +357,49 @@ func NewRealmWithDefaults(name string) *Realm {
 	}
 }
 
-// DefaultSMSTextTemplate returns database.DefaultSMSTextTemplate.
-// Convenance for unitizing in HTML templates.
+// DefaultSMSTextTemplate returns correct default SMS Template for the realm.
 func (r *Realm) DefaultSMSTextTemplate() string {
+	if r.EnableENExpress {
+		return DefaultENXSMSTextTemplate
+	}
 	return DefaultSMSTextTemplate
 }
 
-// DefaultENXSMSTextTemplate returns database.DefaultENXSMSTextTemplate.
-// Convenance for unitizing in HTML templates.
-func (r *Realm) DefaultENXSMSTextTemplate() string {
-	return DefaultENXSMSTextTemplate
+// DefaultUserReportSMSTextTemplate returns the correct default User Report
+// template for the realm.
+func (r *Realm) DefaultUserReportSMSTextTemplate() string {
+	if r.EnableENExpress {
+		return UserReportDefaultENXText
+	}
+	return UserReportDefaultText
+}
+
+// ResetSMSTextTemplates will update all of the templates based on the
+// ENX Redirect setting
+func (r *Realm) ResetSMSTextTemplates() {
+	r.SMSTextTemplate = r.DefaultSMSTextTemplate()
+	// If there is a UserReport - upgrade that message as well
+	if _, ok := r.SMSTextAlternateTemplates[UserReportTemplateLabel]; ok {
+		m := r.DefaultUserReportSMSTextTemplate()
+		r.SMSTextAlternateTemplates[UserReportTemplateLabel] = &m
+	}
+	// Upgrade other messages
+	for k, v := range r.SMSTextAlternateTemplates {
+		if !strings.Contains(*v, SMSENExpressLink) {
+			m := r.DefaultSMSTextTemplate()
+			r.SMSTextAlternateTemplates[k] = &m
+		}
+	}
 }
 
 // SMSTemplateMaxLength returns database.SMSTemplateMaxLength.
-// Convenance for unitizing in HTML templates.
+// Convenance for utilizing in HTML templates.
 func (r *Realm) SMSTemplateMaxLength() int {
 	return SMSTemplateMaxLength
 }
 
 // SMSTemplateExpansionMax returns database.SMSTemplateExpansionMax.
-// Convenance for unitizing in HTML templates.
+// Convenance for utilizing in HTML templates.
 func (r *Realm) SMSTemplateExpansionMax() int {
 	return SMSTemplateExpansionMax
 }

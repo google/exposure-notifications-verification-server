@@ -17,7 +17,6 @@ package realmadmin
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -55,19 +54,7 @@ func (c *Controller) HandleDisableExpress() http.Handler {
 		}
 
 		currentRealm.EnableENExpress = false
-		currentRealm.SMSTextTemplate = database.DefaultSMSTextTemplate
-		// If there is a UserReport - upgrade that message as well
-		if _, ok := currentRealm.SMSTextAlternateTemplates[database.UserReportTemplateLabel]; ok {
-			m := database.UserReportDefaultText
-			currentRealm.SMSTextAlternateTemplates[database.UserReportTemplateLabel] = &m
-		}
-		// For other SMS templates, rewrite them as necessary.
-		for k, v := range currentRealm.SMSTextAlternateTemplates {
-			if strings.Contains(*v, database.SMSENExpressLink) {
-				m := database.DefaultSMSTextTemplate
-				currentRealm.SMSTextAlternateTemplates[k] = &m
-			}
-		}
+		currentRealm.ResetSMSTextTemplates()
 
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
 			if database.IsValidationError(err) {

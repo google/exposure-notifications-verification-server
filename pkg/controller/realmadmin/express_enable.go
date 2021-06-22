@@ -17,7 +17,6 @@ package realmadmin
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -61,19 +60,7 @@ func (c *Controller) HandleEnableExpress() http.Handler {
 		currentRealm.CodeDuration = enxSettings.CodeDuration
 		currentRealm.LongCodeLength = enxSettings.LongCodeLength
 		currentRealm.LongCodeDuration = enxSettings.LongCodeDuration
-		currentRealm.SMSTextTemplate = database.DefaultENXSMSTextTemplate
-		// If there is a UserReport - upgrade that message as well
-		if _, ok := currentRealm.SMSTextAlternateTemplates[database.UserReportTemplateLabel]; ok {
-			m := database.UserReportDefaultENXText
-			currentRealm.SMSTextAlternateTemplates[database.UserReportTemplateLabel] = &m
-		}
-		// Upgrade other messages
-		for k, v := range currentRealm.SMSTextAlternateTemplates {
-			if !strings.Contains(*v, database.SMSENExpressLink) {
-				m := database.DefaultENXSMSTextTemplate
-				currentRealm.SMSTextAlternateTemplates[k] = &m
-			}
-		}
+		currentRealm.ResetSMSTextTemplates()
 
 		// Confirmed is the only allowed test type for EN Express.
 		currentRealm.AllowedTestTypes = database.TestTypeConfirmed
