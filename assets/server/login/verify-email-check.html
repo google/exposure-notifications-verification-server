@@ -15,10 +15,10 @@
 
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-9">
+        <div class="login-container">
           <div class="card shadow-sm">
             <div class="card-header">
-              <span id="icon" class="oi oi-envelope-closed mr-2 ml-n1" aria-hidden="true"></span>
+              <i class="bi bi-envelope me-2"></i>
               {{t $.locale "account.verify-email-address"}}
             </div>
             <div class="card-body">
@@ -26,7 +26,7 @@
                 {{t $.locale "account.verifying-email-address"}}
               </span>
               <span id="verify-error" class="d-none text-danger">
-                <span id="icon" class="oi oi-circle-x small pr-1" aria-hidden="true"></span>
+                <i class="bi bi-x-circle-fill small pe-1"></i>
                 {{t $.locale "account.verify-email-address-error"}}
               </span>
             </div>

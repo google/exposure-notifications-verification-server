@@ -18,261 +18,312 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Edit {{$realm.Name}}</h1>
-    <p>
-      Use the form below to edit the realm.
-    </p>
+    <form method="POST" action="/admin/realms/{{$realm.ID}}">
+      {{ .csrfField }}
+      <input type="hidden" name="_method" value="PATCH" />
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
-        {{template "errorSummary" $realm}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-house-door"></i>
+          Edit realm {{$realm.Name}}
+        </div>
 
-        <form method="POST" action="/admin/realms/{{$realm.ID}}">
-          {{ .csrfField }}
-          <input type="hidden" name="_method" value="PATCH" />
+        <div class="card-body">
+          {{template "errorSummary" $realm}}
 
-          <h6 class="mb-3">Name</h6>
-          <div class="form-label-group">
-            <input type="text" class="form-control" value="{{$realm.Name}}" disabled />
-            <label for="name">Realm name</label>
+          <div class="bg-light border rounded p-3 mb-3">
+            <h5 class="mb-3">Name</h5>
+
+            <div class="row g-3">
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <input type="text" class="form-control" value="{{$realm.Name}}" disabled />
+                  <label for="name">Realm name</label>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <input type="text" class="form-control" value="{{$realm.RegionCode}} " disabled />
+                  <label for="code">Region code</label>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="form-label-group">
-            <input type="text" class="form-control" value="{{$realm.RegionCode}} " disabled />
-            <label for="code">Region code</label>
+          <div class="bg-light border rounded p-3 mb-3">
+            <h5 class="mb-3">Verification code settings</h5>
+
+            <div class="row g-3">
+              <div class="col-lg-12">
+                <div class="form-floating input-group">
+                  <input name="short_code_max_minutes" id="short-code-max-minutes" type="text" class="form-control" value="{{$realm.ShortCodeMaxMinutes}}"  />
+                  <label for="short-code-max-minutes">Short code max duration</label>
+                  <span class="input-group-text bg-transparent border-start-0">minutes</span>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-check mb-3">
+                  <input type="checkbox" name="enx_code_expiration_configurable" id="enx-code-expiration-configurable" class="form-check-input" value="true" {{checkedIf ($realm.ENXCodeExpirationConfigurable)}} />
+                  <label for="enx-code-expiration-configurable" class="form-check-label">
+                    <div>Allow realm short code configuration</div>
+                    <div class="small text-muted">
+                      If EN Express is enabled, the short code expiration time is normally
+                      fixed at 15 minutes. By enabling this setting, a realm admin can customize
+                      their short code expiration time even with EN Express enabled.
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-check mb-3">
+                  <input type="checkbox" name="allow_generated_sms" id="allow-generated-sms" class="form-check-input" value="true" {{checkedIf ($realm.AllowGeneratedSMS)}} />
+                  <label for="allow-generated-sms" class="form-check-label">
+                    <div>Allow generated SMS</div>
+                    <div class="small text-muted">
+                      Permit this realm to request full generated SMS messages be
+                      returned via the API. This must be enabled for realms to use
+                      their own SMS gateway for sending messages.
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <h6 class="mb-3">Verification code settings</h6>
-          <div class="form-label-group input-group">
-            <input name="short_code_max_minutes" id="short-code-max-minutes" type="text" class="form-control" value="{{$realm.ShortCodeMaxMinutes}}"  />
-            <label for="short-code-max-minutes">Short code max duration</label>
-            <span class="input-group-append">
-              <span class="input-group-text bg-transparent border-left-0">minutes</span>
-            </span>
+          <div class="bg-light border rounded p-3 mb-3">
+            <h5 class="mb-3">Enabled features</h5>
+            <ul class="mb-0">
+              <li>Abuse Prevention:
+                {{if $realm.AbusePreventionEnabled}}
+                  <span class="text-success">Enabled</span>
+                  <ul>
+                    <li>Calculated limit: <span class="font-monospace">{{.quotaLimit}}</span></li>
+                    <li>Remaining: <span class="font-monospace">{{.quotaRemaining}}</span></li>
+                  </ul>
+                {{else}}
+                  <span class="text-secondary">Disabled</span>
+                {{end}}
+              </li>
+              <li>User Report:
+                {{if $realm.AllowsUserReport}}
+                  <span class="text-success">Enabled</span>
+                {{else}}
+                  <span class="text-secondary">Disabled</span>
+                {{end}}
+              </li>
+              <li>User Report Web View:
+                {{if $realm.AllowUserReportWebView}}
+                  <span class="text-success">Enabled</span>
+                {{else}}
+                  <span class="text-secondary">Disabled</span>
+                {{end}}
+              </li>
+              <li>Authenticated SMS:
+                {{if $realm.UseAuthenticatedSMS}}
+                  <span class="text-success">Enabled</span>
+                {{else}}
+                  <span class="text-secondary">Disabled</span>
+                {{end}}
+              </li>
+            </ul>
           </div>
-
-          <div class="form-check mb-3">
-            <input type="checkbox" name="enx_code_expiration_configurable" id="enx-code-expiration-configurable" class="form-check-input" value="true" {{checkedIf ($realm.ENXCodeExpirationConfigurable)}} />
-            <label for="enx-code-expiration-configurable" class="form-check-label">
-              Allow realm short code configuration
-              <small class="form-text text-muted mb-3">
-                If EN Express is enabled, the short code expiration time is normally
-                fixed at 15 minutes. By enabling this setting, a realm admin can customize
-                their short code expiration time even with EN Express enabled.
-              </small>
-            </label>
-          </div>
-
-          <div class="form-check mb-3">
-            <input type="checkbox" name="allow_generated_sms" id="allow-generated-sms" class="form-check-input" value="true" {{checkedIf ($realm.AllowGeneratedSMS)}} />
-            <label for="allow-generated-sms" class="form-check-label">
-              Allow generated SMS
-              <small class="form-text text-muted mb-3">
-                Permit this realm to request full generated SMS messages be
-                returned via the API. This must be enabled for realms to use
-                their own SMS gateway for sending messages.
-              </small>
-            </label>
-          </div>
-
-          <hr/>
-          <h6 class="mb-3">Enabled Features</h6>
-          <ul>
-            <li>Abuse Prevention:
-              {{if $realm.AbusePreventionEnabled}}
-                <span class="text-success">Enabled</span>
-                <ul>
-                  <li>Calculated limit: <span class="text-monospace">{{.quotaLimit}}</span></li>
-                  <li>Remaining: <span class="text-monospace">{{.quotaRemaining}}</span></li>
-                </ul>
-              {{else}}
-                <span class="text-secondary">Disabled</span>
-              {{end}}
-            </li>
-            <li>User Report:
-              {{if $realm.AllowsUserReport}}
-                <span class="text-success">Enabled</span>
-              {{else}}
-                <span class="text-secondary">Disabled</span>
-              {{end}}
-            </li>
-            <li>User Report Web View:
-              {{if $realm.AllowUserReportWebView}}
-                <span class="text-success">Enabled</span>
-              {{else}}
-                <span class="text-secondary">Disabled</span>
-              {{end}}
-            </li>
-            <li>Authenticated SMS:
-              {{if $realm.UseAuthenticatedSMS}}
-                <span class="text-success">Enabled</span>
-              {{else}}
-                <span class="text-secondary">Disabled</span>
-              {{end}}
-            </li>
-          </ul>
-        
 
           {{if .supportsPerRealmSigning}}
-          <hr>
-          <h6 class="mb-3">Certificate</h6>
-          <div class="form-group">
-            <select class="form-control custom-select" disabled>
-              <option selected>
-                {{if $realm.UseRealmCertificateKey}}
-                  Create realm-specific signing key
-                {{else}}
-                  Use system signing key
-                {{end}}
-              </option>
-            </select>
-          </div>
+            <div class="bg-light border rounded p-3 mb-3">
+              <h5 class="mb-3">Certificates</h5>
 
-          <div class="form-label-group">
-            <input type="text" class="form-control" value="{{$realm.CertificateIssuer}} " disabled />
-            <label for="iss">Issuer (iss)</label>
-          </div>
+              <div class="row g-3">
+                <div class="col-lg-12">
+                  <div class="form-group">
+                    <select class="form-control form-select" disabled>
+                      <option selected>
+                        {{if $realm.UseRealmCertificateKey}}
+                          Create realm-specific signing key
+                        {{else}}
+                          Use system signing key
+                        {{end}}
+                      </option>
+                    </select>
+                  </div>
+                </div>
 
-          <div class="form-label-group">
-            <input type="text" class="form-control" value="{{$realm.CertificateAudience}} " disabled />
-            <label for="aud">Audience (aud)</label>
-          </div>
+                <div class="col-lg-12">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" value="{{$realm.CertificateIssuer}} " disabled />
+                    <label for="iss">Issuer (iss)</label>
+                  </div>
+                </div>
+
+                <div class="col-lg-12">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" value="{{$realm.CertificateAudience}} " disabled />
+                    <label for="aud">Audience (aud)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
           {{end}}
 
           {{if $systemSMSConfig}}
-          <hr>
-          <h6 class="mb-3">SMS configuration</h6>
-          <div class="form-group form-check">
-            <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
-            <label class="form-check-label" for="can-use-system-sms-config">
-              Share system SMS configuration
-            </label>
-            <small class="form-text text-muted">
-              Allow this realm to consume the system SMS credentials. If
-              enabled, the realm will not see the credentials, but they will be
-              able to send SMS messages using them. This could incur unexpected
-              costs for the credential owner.
-            </small>
-          </div>
+            <div class="bg-light border rounded p-3 mb-3">
+              <h5 class="mb-3">SMS configuration</h5>
+              <div class="form-group form-check">
+                <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
+                <label class="form-check-label" for="can-use-system-sms-config">
+                  <div>Share system SMS configuration</div>
+                  <div class="small text-muted">
+                    Allow this realm to consume the system SMS credentials. If
+                    enabled, the realm will not see the credentials, but they will be
+                    able to send SMS messages using them. This could incur unexpected
+                    costs for the credential owner.
+                  </div>
+                </label>
+              </div>
+            </div>
           {{end}}
 
           {{if $systemEmailConfig}}
-          <hr>
-          <h6 class="mb-3">Email configuration</h6>
-          <div class="form-group form-check">
-            <input type="checkbox" name="can_use_system_email_config" id="can-use-system-email-config" class="form-check-input" value="1" {{if $realm.CanUseSystemEmailConfig}} checked{{end}}>
-            <label class="form-check-label" for="can-use-system-email-config">
-              Share system email configuration
-            </label>
-            <small class="form-text text-muted">
-              Allow this realm to consume the system email credentials. If
-              enabled, the realm will not see the credentials, but they will be
-              able to send email messages using them. This could incur
-              unexpected costs for the credential owner.
-            </small>
-          </div>
+            <div class="bg-light border rounded p-3 mb-3">
+              <h5 class="mb-3">Email configuration</h5>
+              <div class="form-group form-check">
+                <input type="checkbox" name="can_use_system_email_config" id="can-use-system-email-config" class="form-check-input" value="1" {{if $realm.CanUseSystemEmailConfig}} checked{{end}}>
+                <label class="form-check-label" for="can-use-system-email-config">
+                  <div>Share system email configuration</div>
+                  <div class="small text-muted">
+                    Allow this realm to consume the system email credentials. If
+                    enabled, the realm will not see the credentials, but they will be
+                    able to send email messages using them. This could incur
+                    unexpected costs for the credential owner.
+                  </div>
+                </label>
+              </div>
+            </div>
           {{end}}
 
-          <hr>
-          <h6 class="mb-2">Chaff usage</h6>
-          <p>Dates are in UTC</p>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th scope="col" width="150"></th>
-                {{range .chaffEvents}}
-                  <th scope="col" class="text-center">{{.Date.Format "01/02"}}</th>
-                {{end}}
-              </tr>
-              <tr>
-                <th scope="row">Used chaff</th>
-                {{range .chaffEvents}}
-                  {{if .Present}}
-                    <td class="text-center">
-                      <span class="oi oi-circle-check text-success"></span>
-                    </td>
-                  {{else}}
-                    <td class="text-center">
-                      <span class="oi oi-circle-x text-danger"></span>
-                    </td>
+          <div class="bg-light border rounded p-3">
+            <div class="d-flex justify-content-between">
+              <h5 class="mb-3">Chaff usage</h5>
+              <em class="small">Dates are in UTC</em>
+            </div>
+            <table class="table table-bordered bg-white">
+              <thead>
+                <tr>
+                  <th scope="col" width="150"></th>
+                  {{range .chaffEvents}}
+                    <th scope="col" class="text-center">{{.Date.Format "01/02"}}</th>
                   {{end}}
-                {{end}}
-              </tr>
-            </thead>
-          </table>
+                </tr>
+                <tr>
+                  <th scope="row">Used chaff</th>
+                  {{range .chaffEvents}}
+                    {{if .Present}}
+                      <td class="text-center">
+                        <i class="bi bi-check-square-fill text-success"></i>
+                      </td>
+                    {{else}}
+                      <td class="text-center">
+                        <i class="bi bi-x-square-fill text-danger"></i>
+                      </td>
+                    {{end}}
+                  {{end}}
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
 
-          <hr>
-          <h6 class="mb-2">View</h6>
-          <a class="cared-link pr-2" href="/admin/events?realm_id={{$realm.ID}}">Events &rarr;</a>
-          <a class="cared-link" href="/admin/mobile-apps?q={{$realm.Name}}">Mobile apps &rarr;</a>
-
-          <hr>
-          <button type="submit" class="btn btn-primary btn-block">Update realm</button>
-        </form>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" class="btn btn-primary">Update realm</button>
+          </div>
+          <div class="d-grid d-lg-inline mt-2 mt-lg-0">
+            <a href="/admin/realms" class="btn btn-danger">Cancel</a>
+          </div>
+        </div>
       </div>
-    </div>
+    </form>
 
     {{if $membership.Can rbac.SettingsWrite}}
       <div class="card mb-3 shadow-sm">
-        <div class="card-header">Leave realm</div>
+        <div class="card-header">
+          <i class="bi bi-box-arrow-left me-2"></i>
+          Leave realm
+        </div>
         <div class="card-body">
-          <p>
+          <p class="mb-0">
             You are currently a member of this realm. Click the button to leave.
           </p>
-          <a href="/admin/realms/{{$realm.ID}}/remove/{{$currentUser.ID}}" class="btn btn-block btn-danger"
-            id="leave"
-            data-method="PATCH"
-            data-confirm="Are you sure you want to leave this realm? This event will be logged and audited.">
-            Leave realm
-          </a>
+        </div>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <a href="/admin/realms/{{$realm.ID}}/remove/{{$currentUser.ID}}" class="btn btn-danger"
+              id="leave"
+              data-method="PATCH"
+              data-confirm="Are you sure you want to leave this realm? This event will be logged and audited.">
+              Leave realm
+            </a>
+          </div>
         </div>
       </div>
     {{else}}
       <div class="card mb-3 shadow-sm">
-        <div class="card-header">Join realm</div>
+        <div class="card-header">
+          <i class="bi bi-box-arrow-in-right me-2"></i>
+          Join realm
+        </div>
         <div class="card-body">
-          <p>
+          <p class="mb-0">
             Click the button below to join the realm to debug or support the
             realm. This will also set {{$realm.Name}} as your current active
             realm. Only do this after gaining permission from the realm
             administrator.
           </p>
-          <a href="/admin/realms/{{$realm.ID}}/add/{{$currentUser.ID}}" class="btn btn-block btn-danger"
-            id="join"
-            data-method="PATCH"
-            data-confirm="Are you sure you want to join this realm? This event will be logged and audited.">
-            Join realm
-          </a>
+        </div>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <a href="/admin/realms/{{$realm.ID}}/add/{{$currentUser.ID}}" class="btn btn-danger"
+              id="join"
+              data-method="PATCH"
+              data-confirm="Are you sure you want to join this realm? This event will be logged and audited.">
+              Join realm
+            </a>
+          </div>
         </div>
       </div>
     {{end}}
 
     {{if $.translations}}
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Synced Localizations</div>
-      <div class="card-body">
-        <p>
-          These localizations are synced to this server through the appsync service.
-        </p>
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th scope="col" width="75">Locale</th>
-              <th scope="col" width="150">Message ID</th>
-              <th scope="col" >Message</th>
-            </tr>
-            {{range $.translations}}
-            <tr>                        
-                <td class="text-left">{{.Locale}}</td>
-                <td class="text-left">{{.MessageID}}</td>                
-                <td class="text-left"><code>{{.Message}}</code></td>              
-            </tr>
-            {{end}}
-          </thead>
-        </table>
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-arrow-repeat me-2"></i>
+          Synced localizations
+        </div>
+
+        <div class="card-body">
+          <p>
+            These localizations are synced to this server through the appsync service.
+          </p>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th scope="col" width="75">Locale</th>
+                <th scope="col" width="150">Message ID</th>
+                <th scope="col" >Message</th>
+              </tr>
+              {{range $.translations}}
+              <tr>
+                  <td class="text-start">{{.Locale}}</td>
+                  <td class="text-start">{{.MessageID}}</td>
+                  <td class="text-start"><code>{{.Message}}</code></td>
+              </tr>
+              {{end}}
+            </thead>
+          </table>
+        </div>
       </div>
-    </div>
     {{end}}
   </main>
 </body>

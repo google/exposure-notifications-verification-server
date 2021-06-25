@@ -15,13 +15,12 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>{{$user.Name}}</h1>
-    <p>
-      Here is information about the user.
-    </p>
-
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
+      <div class="card-header">
+        <i class="bi bi-person me-2"></i>
+        Details
+      </div>
+
       <div class="card-body">
         <h6 class="mb-2">Name</h6>
         <div id="user-name" class="form-group">
@@ -49,7 +48,11 @@
     </div>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Member of realms</div>
+      <div class="card-header">
+        <i class="bi bi-house-door me-2"></i>
+        Member of realms
+      </div>
+
       {{if $memberships}}
         <ul class="list-group list-group-flush">
           {{range $membership := $memberships}}
@@ -59,9 +62,9 @@
               <span>{{$realm.Name}}</span>
 
               <a href="/admin/realms/{{$realm.ID}}/remove/{{$user.ID}}" class="text-danger"
-                data-toggle="tooltip" title="Remove from realm"
+                data-bs-toggle="tooltip" title="Remove from realm"
                 data-method="PATCH" data-confirm="Are you sure you want to remove {{$membership.User.Name}} from {{$realm.Name}}?">
-                <span class="oi oi-x" aria-hidden="true"></span>
+                <i class="bi bi-trash"></i>
               </a>
             </li>
           {{end}}
@@ -72,8 +75,6 @@
         </p>
       {{end}}
     </div>
-
-    <a class="card-link" href="/admin/users">&larr; All users</a>
   </main>
 </body>
 </html>

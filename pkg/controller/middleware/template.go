@@ -37,7 +37,6 @@ func PopulateTemplateVariables(config *config.ServerConfig) mux.MiddlewareFunc {
 			m["title"] = config.ServerName
 			m["buildID"] = buildinfo.BuildID
 			m["buildTag"] = buildinfo.BuildTag
-			m["maintenanceMode"] = config.MaintenanceMode
 			m["devMode"] = config.DevMode
 			m["systemNotice"] = config.ParsedSystemNotice()
 

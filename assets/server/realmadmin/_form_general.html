@@ -8,92 +8,116 @@
   These are common settings that apply to all of {{$realm.Name}}.
 </p>
 
-<form method="POST" action="/realm/settings#general" class="floating-form">
+<form method="POST" action="/realm/settings#general">
   {{ .csrfField }}
   <input type="hidden" name="general" value="1" />
 
-  <div class="form-label-group">
-    <input type="text" name="name" id="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}"
-      value="{{$realm.Name}}" placeholder="Name" required autofocus />
-    <label for="name">Name</label>
-    {{template "errorable" $realm.ErrorsFor "name"}}
-    <small class="form-text text-muted">
-      The realm name is displayed on the realm selection page and in the header
-      when selected. Choose a descriptive name that your team will recognize.
-      This value must be globally unique in the system.
-    </small>
-  </div>
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">Realm</h5>
 
-  <div class="form-label-group">
-    <input type="text" name="region_code" id="region-code" class="form-control text-uppercase{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
-      value="{{$realm.RegionCode}}" placeholder="Region code" />
-    <label for="region-code">Region code</label>
-    {{template "errorable" $realm.ErrorsFor "regionCode"}}
-    <small class="form-text text-muted">
-      The region code is displayed on the realm selection page and in the header
-      when selection. It is also used when the creating deep link SMS for
-      multi-health authority apps. Region should be
-      <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO
-      3166-1 country codes and ISO 3166-2 subdivision codes</a> where
-      applicable. For example, Washington state would be <code>US-WA</code>.
-      This value must globally unique in the system.
-      {{if $realm.EnableENExpress}}<strong>This value is required for EN Express and
-        must match the region code as configured with Apple and Google.</strong>
-      {{end}}
-    </small>
-  </div>
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="name" id="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}"
+            value="{{$realm.Name}}" placeholder="Name" required autofocus />
+          <label for="name">Name</label>
+          {{template "errorable" $realm.ErrorsFor "name"}}
+          <small class="form-text text-muted">
+            The realm name is displayed on the realm selection page and in the header
+            when selected. Choose a descriptive name that your team will recognize.
+            This value must be globally unique in the system.
+          </small>
+        </div>
+      </div>
 
-  <div class="form-label-group">
-    <textarea name="welcome_message" id="welcome-message" class="form-control text-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}"
-      rows="5" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
-    <label for="welcome-message">Welcome message</label>
-    {{template "errorable" $realm.ErrorsFor "welcomeMessage"}}
-    <small class="form-text text-muted">
-      The welcome message is displayed to your team after selecting this realm.
-      This field supports the common <a
-      href="https://daringfireball.net/projects/markdown/syntax">markdown</a>
-      standard.
-    </small>
-  </div>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="region_code" id="region-code" class="form-control text-uppercase{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}"
+            value="{{$realm.RegionCode}}" placeholder="Region code" />
+          <label for="region-code">Region code</label>
+          {{template "errorable" $realm.ErrorsFor "regionCode"}}
+          <small class="form-text text-muted">
+            The region code is displayed on the realm selection page and in the header
+            when selection. It is also used when the creating deep link SMS for
+            multi-health authority apps. Region should be
+            <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO
+            3166-1 country codes and ISO 3166-2 subdivision codes</a> where
+            applicable. For example, Washington state would be <code>US-WA</code>.
+            This value must globally unique in the system.
+            {{if $realm.EnableENExpress}}<strong>This value is required for EN Express and
+              must match the region code as configured with Apple and Google.</strong>
+            {{end}}
+          </small>
+        </div>
+      </div>
 
-  <hr>
-  <div class="form-group">
-    <div class="form-check">
-      <input type="checkbox" name="allow_key_server_stats" id="allow-key-server-stats" class="form-check-input"
-        value="true" {{checkedIf (ne $statsConfig.RealmID 0)}} />
-      <label for="allow-bulk-true" class="form-check-label">
-        Enable key-server statistics
-        <small class="form-text text-muted mb-3">
-          Checking this box will allow this realm to collect statistics from the key-server about codes
-          that this realm has issued. This may need to be disclosed your applications privacy policy.
-        </small>
-      </label>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <textarea name="welcome_message" id="welcome-message" class="form-control font-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}"
+            rows="5" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
+          <label for="welcome-message">Welcome message</label>
+          {{template "errorable" $realm.ErrorsFor "welcomeMessage"}}
+          <small class="form-text text-muted">
+            The welcome message is displayed to your team after selecting this realm.
+            This field supports the common <a
+            href="https://daringfireball.net/projects/markdown/syntax">markdown</a>
+            standard.
+          </small>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="form-label-group">
-    <input type="text" name="key_server_url" id="key-server-url" class="form-control{{if $statsConfig.ErrorsFor "keyServerURLOverride"}} is-invalid{{end}}"
-      value="{{$statsConfig.KeyServerURLOverride}}" placeholder="Key server"/>
-    <label for="name">Key-server URL override</label>
-    {{template "errorable" $statsConfig.ErrorsFor "keyServerURLOverride"}}
-    <small class="form-text text-muted">
-      A key-server url to gather statistics from. This overrides the default value of the server and should be left empty to use the default.
-    </small>
+  <div class="bg-light border rounded p-3">
+    <h5 class="mb-3">Key server statistics</h5>
+
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-group">
+          <div class="form-check">
+            <input type="checkbox" name="allow_key_server_stats" id="allow-key-server-stats" class="form-check-input"
+              value="true" {{checkedIf (ne $statsConfig.RealmID 0)}} />
+            <label for="allow-key-server-stats" class="form-check-label">
+              <div>Enable key-server statistics</div>
+              <div class="small text-muted">
+                Checking this box will allow this realm to collect statistics from the key-server about codes
+                that this realm has issued. This may need to be disclosed your applications privacy policy.
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="key_server_url" id="key-server-url" class="form-control{{if $statsConfig.ErrorsFor "keyServerURLOverride"}} is-invalid{{end}}"
+            value="{{$statsConfig.KeyServerURLOverride}}" placeholder="Key server"/>
+          <label for="name">Key-server URL override</label>
+          {{template "errorable" $statsConfig.ErrorsFor "keyServerURLOverride"}}
+          <small class="form-text text-muted">
+            A key-server url to gather statistics from. This overrides the default value of the server and should be left empty to use the default.
+          </small>
+        </div>
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="key_server_audience" id="key-server-audience" class="form-control{{if $statsConfig.ErrorsFor "keyServerAudienceOverride"}} is-invalid{{end}}"
+            value="{{$statsConfig.KeyServerAudienceOverride}}" placeholder="Audience"/>
+          <label for="name">Audience override</label>
+          {{template "errorable" $statsConfig.ErrorsFor "keyServerAudienceOverride"}}
+          <small class="form-text text-muted">
+            The key-server audience. This overrides the default value of the server and should be left empty to use the default.
+          </small>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-label-group">
-    <input type="text" name="key_server_audience" id="key-server-audience" class="form-control{{if $statsConfig.ErrorsFor "keyServerAudienceOverride"}} is-invalid{{end}}"
-      value="{{$statsConfig.KeyServerAudienceOverride}}" placeholder="Audience"/>
-    <label for="name">Audience override</label>
-    {{template "errorable" $statsConfig.ErrorsFor "keyServerAudienceOverride"}}
-    <small class="form-text text-muted">
-      The key-server audience. This overrides the default value of the server and should be left empty to use the default.
-    </small>
-  </div>
-
-
-  <div class="mt-4">
-    <input type="submit" class="btn btn-primary btn-block" value="Update general settings" />
+  <div class="card-footer cheating-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+    <button type="submit" class="btn btn-primary">
+      Update general settings
+    </button>
   </div>
 </form>
 

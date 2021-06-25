@@ -19,11 +19,11 @@
 
     <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
-        <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-key me-2"></i>
         API keys
         {{if $canWrite}}
-          <a href="/realm/apikeys/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New API key">
-            <span class="oi oi-plus small" aria-hidden="true"></span>
+          <a href="/realm/apikeys/new" class="float-end link-secondary" data-bs-toggle="tooltip" title="New API key">
+            <i class="bi bi-plus-square-fill"></i>
           </a>
         {{end}}
       </div>
@@ -33,12 +33,10 @@
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
         </form>
       </div>
@@ -47,14 +45,13 @@
         <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
-              <th scope="col" width="40"></th>
               <th scope="col">App</th>
               <th scope="col" width="90" class="d-none d-md-table-cell">Key</th>
               <th scope="col" width="90" class="d-none d-md-table-cell">Type</th>
               <th scope="col" width="150" class="d-none d-md-table-cell">
                 Last used
-                <span class="oi oi-bell small pl-1 mt-n3" aria-hidden="true"
-                  data-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
+                <span class="bi-stopwatch small ps-1 mt-n3"
+                  data-bs-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
               </th>
               {{if $canWrite}}
                 <th scope="col" width="40"></th>
@@ -64,25 +61,25 @@
           <tbody>
           {{range .apps}}
             <tr id="apikey-{{.ID}}">
-              <td class="text-center">
+              <td>
                 {{if .DeletedAt}}
-                  <span class="oi oi-circle-x text-danger"
-                    data-toggle="tooltip" title="API key is disabled - it will be deleted in a few days"></span>
+                  <span class="bi bi-x-square-fill text-danger me-1"
+                    data-bs-toggle="tooltip" title="API key is disabled - it will be deleted in a few days"></span>
                 {{else}}
-                  <span class="oi oi-circle-check text-success"
-                    data-toggle="tooltip" title="API key is enabled"></span>
+                  <span class="bi bi-check-square-fill text-success me-1"
+                    data-bs-toggle="tooltip" title="API key is enabled"></span>
                 {{end}}
+                <span class="text-truncate">
+                  <a href="/realm/apikeys/{{.ID}}">{{.Name}}</a>
+                </span>
               </td>
-              <td class="text-truncate">
-                <a href="/realm/apikeys/{{.ID}}">{{.Name}}</a>
-              </td>
-              <td class="text-center text-monospace d-none d-md-table-cell">
+              <td class="text-center font-monospace d-none d-md-table-cell">
                 {{.APIKeyPreview}}
               </td>
               <td class="text-center d-none d-md-table-cell">
-                {{if .IsAdminType}}<span class="badge badge-pill badge-primary" data-toggle="tooltip" title="For issuing verification codes">Admin</span>{{end}}
-                {{if .IsDeviceType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
-                {{if .IsStatsType}}<span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="For retrieving realm statistics">Stats</span>{{end}}
+                {{if .IsAdminType}}<span class="badge rounded-pill bg-primary" data-bs-toggle="tooltip" title="For issuing verification codes">Admin</span>{{end}}
+                {{if .IsDeviceType}}<span class="badge rounded-pill bg-secondary" data-bs-toggle="tooltip" title="For use in mobile apps to verify codes and get certificates">Device</span>{{end}}
+                {{if .IsStatsType}}<span class="badge rounded-pill bg-secondary" data-bs-toggle="tooltip" title="For retrieving realm statistics">Stats</span>{{end}}
               </td>
               <td class="d-none d-md-table-cell">
                 {{.LastUsedAt | humanizeTime}}
@@ -94,18 +91,18 @@
                     class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to restore '{{.Name}}'?"
-                    data-toggle="tooltip"
+                    data-bs-toggle="tooltip"
                     title="Restore this API key">
-                    <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                    <i class="bi bi-recycle"></i>
                   </a>
                   {{else}}
                   <a href="/realm/apikeys/{{.ID}}/disable" id="disable-apikey-{{.ID}}"
                     class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                    data-toggle="tooltip"
+                    data-bs-toggle="tooltip"
                     title="Disable this API key">
-                    <span class="oi oi-trash" aria-hidden="true"></span>
+                    <i class="bi bi-trash"></i>
                   </a>
                   {{end}}
                 </td>

@@ -16,74 +16,85 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Import users</h1>
-    <p>Bulk import a list of users to <strong>{{$currentMembership.Realm.Name}}</strong>.</p>
+    <form id="form">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-upload me-2"></i>
+          Import
+        </div>
+
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-square-fill"></i>
+            Work with a system admin to temporarily raise quota before importing batches of users >100.
+          </div>
+
+          <p>
+            Use this form to import a list of users. The server will create them
+            in batches. The users will be imported with permissions to issue and
+            lookup codes. You can promote individual users to administrators in
+            the UI after uploading.
+          </p>
+
+          <p>Example file contents:</p>
+
+          <pre class="border rounded bg-light p-3 user-select-none"><code>email@example.com, Anne
+  another@example.com, Bob</code></pre>
+
+          <div class="mb-3">
+            <label class="form-label" for="csv" id="fileLabel">Select a CSV file</label>
+            <input type="file" class="form-control" id="csv" accept=".csv" required>
+          </div>
+
+          <div class="form-check mb-3">
+            <input type="checkbox" class="form-check-input" name="sendInvites" id="sendInvites" checked>
+            <label class="form-check-label" for="sendInvites">Send email invitations</label>
+          </div>
+
+          <div class="progress mt-3 d-none" id="progress-div" style="display:none;">
+            <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+              aria-valuemax="100"></div>
+          </div>
+
+          <table class="table table-bordered" id="csv-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody id="csv-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button class="btn btn-primary" type="submit" id="import" disabled>Import users</button>
+          </div>
+          <div class="d-grid d-lg-inline mt-2 mt-lg-0">
+            <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </form>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-data-transfer-upload mr-2 ml-n1" aria-hidden="true"></span>
-        Import
-      </div>
-      <div class="card-body">
-        <div class="alert alert-warning">
-          <span class="oi oi-warning"></span>
-          Work with a system admin to temporarily raise quota before importing batches of users >100.
-        </div>
-
-        <p>
-          Use this form to import a list of users. The server will create them
-          in batches. The users will be imported with permissions to issue and
-          lookup codes. You can promote individual users to administrators in
-          the UI after uploading.
-        </p>
-
-        <p>Example file contents:</p>
-
-        <pre class="border rounded bg-light p-3 user-select-none"><code>email@example.com, Anne
-another@example.com, Bob</code></pre>
-
-        <form id="form">
-          <div class="custom-file mb-3">
-            <input type="file" class="custom-file-input" id="csv" accept=".csv" required>
-            <label class="custom-file-label" for="csv" id="fileLabel">Select a CSV file</label>
-          </div>
-
-          <div class="custom-control custom-checkbox mb-3">
-            <input type="checkbox" class="custom-control-input" name="sendInvites" id="sendInvites" checked>
-            <label class="custom-control-label" for="sendInvites">Send email invitations</label>
-          </div>
-
-          <button class="btn btn-primary" type="submit" id="import" disabled>Import users</button>
-          <button class="btn btn-danger" id="cancel" disabled>Cancel</button>
-        </form>
-
-        <div class="progress mt-3 d-none" id="progress-div" style="display:none;">
-          <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0"
-            aria-valuemax="100"></div>
-        </div>
-
-        <table class="table table-bordered" id="csv-table">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Name</th>
-            </tr>
-          </thead>
-          <tbody id="csv-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">
-        <span class="oi oi-data-transfer-download mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-data-transfer-download me-2"></i>
         Export
       </div>
       <div class="card-body">
-        <p>
+        <p class="mb-0">
           Use the following link to export a list of users.
         </p>
-        <a class="card=link" href="/realm/users/export.csv" target="_blank">export.csv</a>
+      </div>
+      <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+        <div class="d-grid d-lg-inline">
+          <a href="/realm/users/export.csv" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download me-2"></i>
+            export.csv
+          </a>
+        </div>
       </div>
     </div>
   </main>

@@ -18,17 +18,13 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>{{$app.Name}}</h1>
-    <p>
-      Here is information about the mobile app.
-    </p>
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        Details
+        <i class="bi bi-window-sidebar me-2"></i>
+        Mobile app details
         {{if $canWrite}}
-          <a href="/realm/mobile-apps/{{$app.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this mobile app">
-            <span class="oi oi-pencil" aria-hidden="true"></span>
+          <a href="/realm/mobile-apps/{{$app.ID}}/edit" class="float-end text-body" id="edit" data-bs-toggle="tooltip" title="Edit this mobile app">
+            <i class="bi bi-pencil-fill"></i>
           </a>
         {{end}}
       </div>
@@ -50,26 +46,24 @@
 
           {{if (eq $app.OS .iOS)}}
             <dt>Application ID</dt>
-            <dd id="mobileapps-app-id" class="text-monospace">{{$app.AppID}}</dd>
+            <dd id="mobileapps-app-id" class="font-monospace">{{$app.AppID}}</dd>
           {{end}}
 
           {{if (eq $app.OS .android)}}
             <dt>Package name</dt>
-            <dd id="mobileapps-package-name" class="text-monospace">{{$app.AppID}}</dd>
+            <dd id="mobileapps-package-name" class="font-monospace">{{$app.AppID}}</dd>
 
             <dt>SHA</dt>
-            <dd id="mobileapps-sha" class="text-monospace">{{$app.SHA}}</dd>
+            <dd id="mobileapps-sha" class="font-monospace">{{$app.SHA}}</dd>
 
             {{if $app.Headless}}
             <dt>Headless</dt>
-            <dd id="mobileapps-headless" class="text-monospace">EN Express headless (settings-based app)</dd>
+            <dd id="mobileapps-headless" class="font-monospace">EN Express headless (settings-based app)</dd>
             {{end}}
           {{end}}
         </dl>
       </div>
     </div>
-
-    <a href="/realm/mobile-apps">&larr; Back to all mobile apps</a>
   </main>
 </body>
 

@@ -25,7 +25,6 @@
 
     let $form = $('#form');
     let $csv = $('#csv');
-    let $fileLabel = $('#file-label');
     let $import = $('#import');
     let $cancel = $('#cancel');
     let $table = $('#csv-table');
@@ -69,10 +68,7 @@
     }
 
     $csv.change(function (file) {
-      let fileName = file.target.files[0].name;
-      $fileLabel.html(fileName);
       $startAt.val(1);
-      $import.prop('disabled', false);
     });
 
     $cancel.on('click', function (event) {
@@ -102,7 +98,6 @@
     });
 
     function resetBulkUploadUI() {
-      $import.prop('disabled', true);
       $cancel.removeClass('d-none');
 
       $table.removeClass('d-none');
@@ -192,7 +187,6 @@
           flash.error(`Received errors for ${totalErrs} entries. See error table for details.`);
         }
 
-        $import.prop('disabled', false);
         $cancel.addClass('d-none');
         $table.addClass('d-none');
         $tableBody.empty();

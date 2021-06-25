@@ -15,7 +15,10 @@
     {{template "flash" .}}
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Caches</div>
+      <div class="card-header">
+        <i class="bi bi-slash-circle me-2"></i>
+        Caches
+      </div>
       <ul class="list-group list-group-flush">
         {{range $k, $cache := $caches}}
           <li class="list-group-item d-flex justify-content-between align-items-center">

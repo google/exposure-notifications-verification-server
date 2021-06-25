@@ -16,7 +16,7 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-phone me-2"></i>
         Mobile apps
       </div>
 
@@ -25,12 +25,10 @@
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
         </form>
       </div>
@@ -39,7 +37,6 @@
         <table id="results-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
-              <th scope="col" width="40"></th>
               <th scope="col">Mobile app</th>
               <th scope="col" width="120">Realm</th>
             </tr>
@@ -47,17 +44,14 @@
           <tbody>
           {{range .apps}}
             <tr>
-              <td class="text-center">
-                {{if .MobileApp.DeletedAt}}
-                  <span class="oi oi-circle-x text-danger"
-                    data-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
-                {{else}}
-                  <span class="oi oi-circle-check text-success"
-                    data-toggle="tooltip" title="Mobile app is enabled"></span>
-                {{end}}
-              </td>
-
               <td>
+                {{if .MobileApp.DeletedAt}}
+                  <span class="bi bi-x-square-fill text-danger me-1"
+                    data-bs-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
+                {{else}}
+                  <span class="bi bi-check-square-fill text-success me-1"
+                    data-bs-toggle="tooltip" title="Mobile app is enabled"></span>
+                {{end}}
                 <a href="/realm/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
               </td>
 

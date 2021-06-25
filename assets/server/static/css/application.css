@@ -2,18 +2,20 @@ div.admin-header {
   background-color: #d66402;
 }
 
-a.input-group-text:hover {
-  cursor: pointer;
+a {
   text-decoration: none;
-}
-
-a.disabled {
-  color: lightgray;
-  pointer-events: none;
 }
 
 main.container[role="main"] {
   position: relative;
+}
+
+.alert p:last-child {
+  margin-bottom: 0;
+}
+
+a.nav-link.active {
+  border-bottom: 1px solid var(--bs-primary);
 }
 
 .login-container {
@@ -22,15 +24,26 @@ main.container[role="main"] {
   max-width: 466px;
 }
 
-.floating-form {
+.table-fixed {
+  table-layout: fixed;
+}
+
+.table-inner-border-only {
+  border-style: hidden;
+}
+
+/* International phone picker */
+.iti {
   width: 100%;
-  height: 100%;
-  margin: auto;
+}
+
+.form-floating input[type=tel],
+.form-floating input[type=file] {
+  height: 3.5rem;
 }
 
 .form-label-group {
   position: relative;
-  margin-bottom: 1rem;
 }
 
 .form-label-group input,
@@ -127,12 +140,6 @@ main.container[role="main"] {
   color: #777;
 }
 
-ul.chart-tooltip {
-  width: 130px;
-  list-style-type: none;
-  padding: 5px;
-}
-
 /* Fallback for Edge
 -------------------------------------------------- */
 @supports (-ms-ime-align: auto) {
@@ -153,23 +160,13 @@ ul.chart-tooltip {
   }
 }
 
-.table-fixed {
-  table-layout: fixed;
+ul.chart-tooltip {
+  width: 130px;
+  list-style-type: none;
+  padding: 5px;
 }
 
-.table-inner-border-only {
-  border-style: hidden;
-}
-
-/* International phone picker */
-.iti {
-  width: 100%;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
+.cheating-footer {
+  width: calc(100% + 2rem);
+  margin: 1rem -1rem -1rem -1rem;
 }

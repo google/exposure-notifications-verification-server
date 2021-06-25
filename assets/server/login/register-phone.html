@@ -2,6 +2,7 @@
 
 {{$currentRealm := .currentRealm}}
 {{$mfaMode := .mfaMode}}
+{{$mfaEnabled := .mfaEnabled}}
 {{$currentMembership := .currentMembership}}
 
 <!doctype html>
@@ -17,66 +18,82 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="d-flex vh-100">
-      <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-9">
-          {{template "login/factorsdiv" .}}
+    <form id="register-form" action="/" method="POST">
+      <div class="card shadow-sm mb-3" id="register-div">
+        <div class="card-header">
+          <i class="bi bi-phone me-2"></i>
+          {{t $.locale "mfa.mfa"}}
+        </div>
 
-          <div class="card shadow-sm" id="register-div">
-            <div class="card-header">{{t $.locale "mfa.mfa"}}</div>
-            <div class="card-body">
-              {{if $mfaMode}}
-                {{if eq $mfaMode.String "required"}}
-                  <div class="alert alert-danger" role="alert">
-                    {{t $.locale "mfa.notice-required" $currentRealm.Name}}
-                  </div>
-                {{else if eq $mfaMode.String "prompt"}}
-                  <div class="alert alert-warning" role="alert">
-                    {{t $.locale "mfa.notice-prompt" $currentRealm.Name}}
-                  </div>
-                {{else}}
-                  <div class="alert alert-info" role="alert">
-                    {{t $.locale "mfa.notice-optional" $currentRealm.Name}}
-                  </div>
-                {{end}}
-              {{end}}
-
-              <form id="register-form" class="floating-form" action="/" method="POST">
-                <div class="form-label-group">
-                  <input type="text" id="display" name="display" class="form-control"
-                    placeholder="{{t $.locale "mfa.phone-display-name"}}" required autofocus />
-                  <label for="display">{{t $.locale "mfa.phone-display-name"}}</label>
-                  <small class="form-text text-muted">{{t $.locale "mfa.phone-display-name-help-text"}}</small>
-                </div>
-
-                <div class="form-group">
-                  <input type="tel" id="phone" name="phone" class="form-control" required />
-                  <small class="form-text text-muted">{{t $.locale "mfa.phone-number-help-text"}}</small>
-               </div>
-
-                <button type="submit" id="submit-register" class="btn btn-primary btn-block">
-                  {{t $.locale "mfa.enable-mfa"}}
-                </button>
-              </form>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="form-floating">
+                <input type="text" id="display" name="display" class="form-control"
+                  placeholder="{{t $.locale "mfa.phone-display-name"}}" required autofocus />
+                <label for="display">{{t $.locale "mfa.phone-display-name"}}</label>
+                <small class="form-text text-muted">{{t $.locale "mfa.phone-display-name-help-text"}}</small>
+              </div>
             </div>
+
+            <div class="col-lg-6">
+              <div class="form-floating">
+                <input type="tel" id="phone" name="phone" class="form-control" required />
+                <small class="form-text text-muted">{{t $.locale "mfa.phone-number-help-text"}}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" id="submit-register" class="btn btn-primary">
+              {{t $.locale "mfa.enable-mfa"}}
+            </button>
+          </div>
+          <div class="text-center text-lg-start mt-3 mt-lg-0">
             {{if $mfaMode}}
               {{if ne $mfaMode.String "required"}}
-                <div class="card-footer text-right">
-                  <small>
-                    <a id="skip" href="/login/post-authenticate" class="text-secondary">
-                      {{t $.locale "mfa.continue-without-mfa"}} &rarr;
-                    </a>
-                  </small>
-                </div>
+                <a id="skip" href="/login/post-authenticate" class="small link-danger">
+                  {{t $.locale "mfa.continue-without-mfa"}}
+                </a>
               {{end}}
             {{end}}
           </div>
-
-          {{template "login/pindiv" .}}
         </div>
       </div>
-    </div>
-  </main>
+    </form>
+
+    {{if $mfaEnabled}}
+      <div class="card shadow-sm" id="registered-div">
+        <div class="card-header">
+          <i class="bi bi-phone me-2"></i>
+          Registered factors
+        </div>
+        <div id="factors" class="list-group list-group-flush">
+          <div id="factor-template" class="d-none list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+            <div>
+              <strong><span class="factor-name"></span></strong>
+              (<span class="factor-number"></span>)
+              <div class="text-muted factor-enrolled"></div>
+            </div>
+            <div>
+              <a href="#" class="bi bi-trash link-danger" data-bs-toggle="tooltip" title="Delete this factor"></a>
+            </div>
+          </div>
+
+          <div id="factors-loading" class="d-flex align-items-center justify-content-center">
+            <div class="my-3 fst-italic">Loading...</div>
+          </div>
+        </div>
+      </div>
+    {{end}}
+
+    {{template "login/pindiv" .}}
+
+    <div id="recaptcha-container" class="center-block"></div>
+  </div>
+</main>
 
   <script type="text/javascript">
     window.addEventListener('load', (event) => {
@@ -88,19 +105,18 @@
       let $skip = $('#skip');
 
       let $pinDiv = $('#sms-code-div');
-      let $pinClose = $('#sms-code-close');
       let $pinForm = $('#sms-code-form');
       let $pin = $('#sms-code');
       let $submitPin = $('#sms-code-submit');
       let $resendPin = $('#sms-code-resend');
 
       let $registeredDiv = $('#registered-div');
-      let $factors = $('#factors');
+      let factorsContainer = document.querySelector('div#factors')
 
       let verId = ""
 
       window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-        'submit-register', {
+        'recaptcha-container', {
           'size': 'invisible',
           'callback': (response) => onSignInSubmit(),
           'expired-callback': e => {
@@ -134,52 +150,39 @@
         }
 
         if (user.multiFactor.enrolledFactors.length > 0) {
-          $skip.text('Account settings');
-          $skip.attr('href', '/account');
-          $skip.removeClass("d-none");
+          $skip.remove();
 
-          for (i = 0; i < user.multiFactor.enrolledFactors.length; i++) {
-            appendAuthFactor(user.multiFactor.enrolledFactors[i], i);
-          }
+          let loading = factorsContainer.querySelector('div#factors-loading');
+          loading.parentElement.removeChild(loading);
+
+          user.multiFactor.enrolledFactors.
+            sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, {'sensitivity': 'base'})).
+            forEach((factor) => appendAuthFactor(factor))
+
           $registeredDiv.removeClass('d-none');
         }
       });
 
-      function appendAuthFactor(factor, i) {
-        let $li = $('<div/>');
-        $li.addClass('list-group-item');
-        $li.attr('id', `factor${factor.uid}`);
+      function appendAuthFactor(factor) {
+        let template = factorsContainer.querySelector('div#factor-template');
+        let item = template.cloneNode(true);
+        item.id = `factor-${factor.uid}`;
+        item.classList.remove('d-none');
 
-        let $row = $('<div/>').text(factor.displayName);
-        $li.append($row);
+        let nameContainer = item.querySelector('.factor-name');
+        nameContainer.textContent = factor.displayName;
 
-        let $icon = $('<span/>');
-        $icon.addClass('oi oi-phone mr-1');
-        $icon.attr('aria-hidden', 'true');
-        $row.prepend($icon);
+        let numberContainer = item.querySelector('.factor-number');
+        numberContainer.textContent = factor.phoneNumber;
 
-        let $unenroll = $('<a/>');
-        $unenroll.addClass('text-danger float-right');
-        $unenroll.attr('href', '#')
-        $unenroll.attr('title', 'Delete this factor');
-        $unenroll.tooltip();
+        let unenrollIcon = item.querySelector('.bi');
+        unenrollIcon.addEventListener('click', () => unenrollFactor(factor));
 
-        $icon = $('<span/>');
-        $icon.addClass('oi oi-delete mr-1');
-        $icon.attr('aria-hidden', 'true');
-        $unenroll.append($icon);
-        $row.append($unenroll);
+        let d = new Date(factor.enrollmentTime);
+        let enrolledContainer = item.querySelector('.factor-enrolled')
+        enrolledContainer.textContent = `Enrolled at ${d.toLocaleString()}`;
 
-        let $time = $('<small/>');
-        $time.addClass('row text-muted ml-1')
-        $time.text(`Enrolled at: ${factor.enrollmentTime}`);
-        $row.append($time);
-
-        $unenroll.on('click', function(event) {
-          unenrollFactor(factor);
-        });
-
-        $factors.append($li);
+        factorsContainer.appendChild(item);
       }
 
       function unenrollFactor(factor) {
@@ -246,13 +249,9 @@
         });
       });
 
-      $pinClose.on('click', function(event) {
-        $submit.prop('disabled', false);
-        $registerDiv.show();
-        $pinDiv.addClass('d-none');
-      });
-
       $resendPin.on('click', function(event) {
+        event.preventDefault();
+
         $resendPin.addClass('disabled');
         setTimeout(function() { $resendPin.removeClass('disabled'); }, 15000);
 

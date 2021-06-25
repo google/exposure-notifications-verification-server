@@ -21,14 +21,13 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>{{$authApp.Name}} API key</h1>
-    <p>
-      Here is information about the API key.
-    </p>
-
     {{if $apiKey}}
       <div class="card mb-3 shadow-sm">
-        <div class="card-header">API key</div>
+        <div class="card-header">
+          <i class="bi bi-key me-2"></i>
+          API key
+        </div>
+
         <div class="card-body">
           <div class="alert alert-danger" role="alert">
             This is your API key - it will only be displayed once. <strong>You
@@ -42,11 +41,11 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-key mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-key me-2"></i>
         Details about {{$authApp.Name}}
         {{if $canWrite}}
-          <a href="/realm/apikeys/{{$authApp.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this API key">
-            <span class="oi oi-pencil" aria-hidden="true"></span>
+          <a href="/realm/apikeys/{{$authApp.ID}}/edit" class="float-end text-body" id="edit" data-bs-toggle="tooltip" title="Edit this API key">
+            <i class="bi bi-pencil-fill"></i>
           </a>
         {{end}}
       </div>
@@ -77,8 +76,8 @@
         <div class="mt-3">
           <strong>
             Last used
-            <span class="oi oi-bell small pl-1 mt-n3" aria-hidden="true"
-              data-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
+            <span class="bi-stopwatch small ps-1 mt-n3"
+              data-bs-toggle="tooltip" data-placement="top" title="15 minute accuracy"></span>
           </strong>
           <div>
             {{$authApp.LastUsedAt | humanizeTime}}
@@ -89,7 +88,7 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        <i class="bi bi-graph-up me-2"></i>
         Statistics
       </div>
       <div id="apikey_stats_chart" class="h-100 w-100" style="min-height:325px;"
@@ -99,24 +98,22 @@
       <small class="card-footer d-flex justify-content-between text-muted">
         <span>
           This data is refreshed every 30 minutes.
-          <a href="#" data-toggle="modal" data-target="#apikey-stats-modal">Learn more</a>
+          <a href="#" data-bs-toggle="modal" data-bs-target="#apikey-stats-modal">Learn more</a>
         </span>
         <span>
-          <span class="mr-1">Export as:</span>
-          <a href="/stats/realm/api-keys/{{$authApp.ID}}.csv" class="mr-1">CSV</a>
+          <span class="me-1">Export as:</span>
+          <a href="/stats/realm/api-keys/{{$authApp.ID}}.csv" class="me-1">CSV</a>
           <a href="/stats/realm/api-keys/{{$authApp.ID}}.json" target="_blank">JSON</a>
         </span>
       </small>
     </div>
 
-    <div class="modal fade" id="apikey-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="apikey-stats-modal" data-backdrop="static" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Statistics for {{$authApp.Name}}</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body mb-n3">
             <p>

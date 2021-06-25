@@ -16,19 +16,15 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Verification code status</h1>
-    <p>
-      Status of a verification code previously shared with your patient.
-    </p>
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
+        <i class="bi bi-clock-history me-2"></i>
         Code status
       </div>
       <div class="list-group list-group-flush">
         <div class="list-group-item">
           <h5 class="mb-1">UUID</h5>
-          <p class="mb-1 text-monospace user-select-all">{{.code.UUID}}</p>
+          <p class="mb-1 font-monospace user-select-all">{{.code.UUID}}</p>
         </div>
         <div class="list-group-item">
           <h5 class="mb-1">{{.code.IssuerType}}</h5>
@@ -58,18 +54,18 @@
             </div>
           {{end}}
         {{end}}
-        {{if and $canWrite .code.Expires}}
-          <div class="list-group-item">
-            <a id="code-expire" href="/codes/{{.code.UUID}}/expire" class="btn btn-danger d-block"
+      </div>
+      {{if and $canWrite .code.Expires}}
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <a id="code-expire" href="/codes/{{.code.UUID}}/expire" class="btn btn-danger"
               data-method="PATCH" data-confirm="Are you sure you want to expire this code?">
               Invalidate code now
             </a>
           </div>
-        {{end}}
-      </div>
+        </div>
+      {{end}}
     </div>
-
-    <a href="/codes/status" class="card-link">&larr; Enter another code</a>
   </main>
 
   {{if not .code.Claimed}}

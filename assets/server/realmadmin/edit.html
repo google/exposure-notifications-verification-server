@@ -20,36 +20,31 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Realm settings</h1>
-    <p>
-      Find or edit the settings for <strong>{{$realm.Name}}</strong> below.
-    </p>
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs" role="tablist">
           {{if not $realm.EnableENExpress}}
             <li class="nav-item" role="presentation">
-              <a class="nav-link" id="express-tab" data-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
+              <a class="nav-link" id="express-tab" data-bs-toggle="tab" href="#express" role="tab" aria-controls="express" aria-selected="true">ENX</a>
             </li>
           {{end}}
           <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
+            <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab" aria-controls="general" aria-selected="true">General</a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="codes-tab" data-toggle="tab" href="#codes" role="tab" aria-controls="codes" aria-selected="false">Codes</a>
+            <a class="nav-link" id="codes-tab" data-bs-toggle="tab" href="#codes" role="tab" aria-controls="codes" aria-selected="false">Codes</a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="sms-tab" data-toggle="tab" href="#sms" role="tab" aria-controls="sms" aria-selected="false">SMS</a>
+            <a class="nav-link" id="sms-tab" data-bs-toggle="tab" href="#sms" role="tab" aria-controls="sms" aria-selected="false">SMS</a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="email-tab" data-toggle="tab" href="#email" role="tab" aria-controls="email" aria-selected="false">Email</a>
+            <a class="nav-link" id="email-tab" data-bs-toggle="tab" href="#email" role="tab" aria-controls="email" aria-selected="false">Email</a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="security-tab" data-toggle="tab" href="#security" role="tab" aria-controls="security" aria-selected="false">Security</a>
+            <a class="nav-link" id="security-tab" data-bs-toggle="tab" href="#security" role="tab" aria-controls="security" aria-selected="false">Security</a>
           </li>
           <li class="nav-item" role="presentation">
-            <a class="nav-link" id="abuse-prevention-tab" data-toggle="tab" href="#abuse-prevention" role="tab" aria-controls="abuse-prevention" aria-selected="false">Abuse prevention</a>
+            <a class="nav-link" id="abuse-prevention-tab" data-bs-toggle="tab" href="#abuse-prevention" role="tab" aria-controls="abuse-prevention" aria-selected="false">Abuse prevention</a>
           </li>
         </ul>
       </div>
@@ -89,7 +84,7 @@
 
     {{if $realm.EnableENExpress}}
       <p class="text-center">
-        <a href="#advanced-settings" class="text-muted small" data-toggle="collapse">
+        <a href="#advanced-settings" class="text-muted small" data-bs-toggle="collapse">
           Advanced settings
         </a>
       </p>

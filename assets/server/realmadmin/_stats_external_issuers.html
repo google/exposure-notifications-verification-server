@@ -2,7 +2,7 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Codes issued by external issuers
   </div>
   <div id="per_external_issuer_table" class="overflow-auto" style="height:400px">
@@ -11,23 +11,21 @@
     </div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#per-external-issuer-table-modal">Learn more about this table</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#per-external-issuer-table-modal">Learn more about this table</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm/external-issuers.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/external-issuers.csv" class="me-1">CSV</a>
       <a href="/stats/realm/external-issuers.json" target="_blank">JSON</a>
     </span>
   </small>
 </div>
 
-<div class="modal fade" id="per-external-issuer-table-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="per-external-issuer-table-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Codes issued by external issuers by day</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -87,7 +85,7 @@
 
         let containerDateRow = document.createElement('div');
         containerDateRow.classList.add('list-group-item', 'list-group-item-action');
-        containerDateRow.setAttribute('data-toggle', 'collapse');
+        containerDateRow.setAttribute('data-bs-toggle', 'collapse');
         containerDateRow.setAttribute('data-target', `#${id}`);
         containerDateRow.setAttribute('aria-expanded', false);
         containerDateRow.setAttribute('aria-controls', id);
@@ -96,12 +94,12 @@
 
         let containerIssuerData = document.createElement('div');
         containerIssuerData.id = id;
-        containerIssuerData.classList.add('collapse', 'list-group-item', 'p-0', 'pl-3');
+        containerIssuerData.classList.add('collapse', 'list-group-item', 'p-0', 'ps-3');
         containerIssuerData.setAttribute('data-parent', '#per_external_issuer_table');
         containerListGroup.appendChild(containerIssuerData);
 
         let table = document.createElement('table');
-        table.classList.add('table', 'table-bordered', 'table-striped', 'table-fixed', 'table-inner-border-only', 'border-left', 'mb-0');
+        table.classList.add('table', 'table-bordered', 'table-striped', 'table-fixed', 'table-inner-border-only', 'border-start', 'mb-0');
         containerIssuerData.appendChild(table);
 
         let thead = document.createElement('thead');

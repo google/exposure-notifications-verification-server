@@ -188,34 +188,6 @@ func safeHTML(s string) htmltemplate.HTML {
 	return htmltemplate.HTML(s)
 }
 
-func selectedIf(v bool) htmltemplate.HTMLAttr {
-	if v {
-		return "selected"
-	}
-	return ""
-}
-
-func readonlyIf(v bool) htmltemplate.HTMLAttr {
-	if v {
-		return "readonly"
-	}
-	return ""
-}
-
-func checkedIf(v bool) htmltemplate.HTMLAttr {
-	if v {
-		return "checked"
-	}
-	return ""
-}
-
-func disabledIf(v bool) htmltemplate.HTMLAttr {
-	if v {
-		return "disabled"
-	}
-	return ""
-}
-
 // translateWithFallback accepts a message printer and prints the translation,
 // and also accepts a fallback string if the key isn't known.
 func translateWithFallback(t gotext.Translator, fallback string, key string, vars ...interface{}) string {
@@ -339,6 +311,34 @@ func toSentence(i interface{}, joiner string) (string, error) {
 	}
 }
 
+func valueIfTruthy(s string) func(i interface{}) htmltemplate.HTMLAttr {
+	return func(i interface{}) htmltemplate.HTMLAttr {
+		if i == nil {
+			return ""
+		}
+
+		v := reflect.ValueOf(i)
+		if !v.IsValid() {
+			return ""
+		}
+
+		//nolint // Complains about non-exhaustive search, but that's intentional
+		switch v.Kind() {
+		case reflect.Bool:
+			if v.Bool() {
+				return htmltemplate.HTMLAttr(s)
+			}
+		case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+			if v.Len() > 0 {
+				return htmltemplate.HTMLAttr(s)
+			}
+		default:
+		}
+
+		return ""
+	}
+}
+
 func (r *Renderer) templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"jsIncludeTag":  assetIncludeTag(r.fs, "static/js", jsIncludeTmpl, &jsIncludeTagCache, r.debug),
@@ -354,10 +354,12 @@ func (r *Renderer) templateFuncs() htmltemplate.FuncMap {
 		"humanizeTime":     humanizeTime,
 		"toBase64":         base64.StdEncoding.EncodeToString,
 		"safeHTML":         safeHTML,
-		"checkedIf":        checkedIf,
-		"selectedIf":       selectedIf,
-		"readonlyIf":       readonlyIf,
-		"disabledIf":       disabledIf,
+		"checkedIf":        valueIfTruthy("checked"),
+		"requiredIf":       valueIfTruthy("required"),
+		"selectedIf":       valueIfTruthy("selected"),
+		"readonlyIf":       valueIfTruthy("readonly"),
+		"disabledIf":       valueIfTruthy("disabled"),
+		"invalidIf":        valueIfTruthy("is-invalid"),
 		"t":                translate,
 		"tDefault":         translateWithFallback,
 		"passwordSentinel": pwdSentinel,

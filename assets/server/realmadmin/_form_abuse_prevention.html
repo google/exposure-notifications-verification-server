@@ -4,7 +4,7 @@
 {{$quotaRemaining := .quotaRemaining}}
 {{$quotaLimit := .quotaLimit}}
 
-<form method="POST" id="abuse-prevention" action="/realm/settings#abuse-prevention" class="floating-form">
+<form method="POST" id="abuse-prevention" action="/realm/settings#abuse-prevention">
   {{ .csrfField }}
   <input type="hidden" name="abuse_prevention" value="1" />
 
@@ -20,10 +20,10 @@
     subsequently upload many fake keys to the system.
   </p>
 
-  <div class="custom-control custom-checkbox mb-3">
-    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="custom-control-input" value="1" {{checkedIf $realm.AbusePreventionEnabled}}
-      data-toggle="collapse" data-target="#abuse-prevention-configuration">
-    <label class="custom-control-label" for="abuse-prevention-enabled">
+  <div class="form-check mb-3">
+    <input type="checkbox" name="abuse_prevention_enabled" id="abuse-prevention-enabled" class="form-check-input" value="1" {{checkedIf $realm.AbusePreventionEnabled}}
+      data-bs-toggle="collapse" data-bs-target="#abuse-prevention-configuration">
+    <label class="form-check-label" for="abuse-prevention-enabled">
       Enable abuse prevention
     </label>
   </div>
@@ -31,7 +31,7 @@
   <div id="abuse-prevention-configuration" class="collapse{{if $realm.AbusePreventionEnabled}} show{{end}}">
     <div class="alert alert-primary" role="alert">
       Your current remaining daily quota is:
-      <small class="text-monospace">{{$quotaRemaining}}/{{$quotaLimit}}</small>.
+      <small class="font-monospace">{{$quotaRemaining}}/{{$quotaLimit}}</small>.
       This value is calculated and reset each day at <strong>11:59:59 UTC</strong>.
     </div>
 
@@ -42,58 +42,69 @@
       </div>
     {{end}}
 
-    <div class="form-label-group">
-      <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control"
-        placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
-      <label for="abuse-prevention-limit">Computed limit</label>
-      <small class="form-text text-muted">
-        This value is computed by the historical daily model and applies
-        for the next 24h block of rolling UTC time.
-      </small>
-    </div>
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="abuse_prevention_limit" id="abuse-prevention-limit" class="form-control"
+            placeholder="Computed limit" value="{{$realm.AbusePreventionLimit}}" readonly />
+          <label for="abuse-prevention-limit">Computed limit</label>
+          <small class="form-text text-muted">
+            This value is computed by the historical daily model and applies
+            for the next 24h block of rolling UTC time.
+          </small>
+        </div>
+      </div>
 
-    <div class="form-label-group">
-      <input type="text" name="abuse_prevention_limit_factor" id="abuse-prevention-limit-factor" class="form-control"
-        placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
-      <label for="abuse-prevention-limit-factor">Limit factor</label>
-      <small class="form-text text-muted">
-        This value is factored against the predicted daily model to
-        determine the total number of codes that {{$realm.Name}} can issue
-        in a day. For example, to enable 25% more codes to be issued than
-        predicted by the model model, set this value to <code>1.25</code>.
-        <span class="text-danger font-weight-bold">
-          Setting this value too low will prevent case workers from issuing
-          codes for legitimate uses!
-        </span>
-      </small>
-    </div>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="abuse_prevention_limit_factor" id="abuse-prevention-limit-factor" class="form-control"
+            placeholder="Limit factor" value="{{printf "%.3f" $realm.AbusePreventionLimitFactor}}" />
+          <label for="abuse-prevention-limit-factor">Limit factor</label>
+          <small class="form-text text-muted">
+            This value is factored against the predicted daily model to
+            determine the total number of codes that {{$realm.Name}} can issue
+            in a day. For example, to enable 25% more codes to be issued than
+            predicted by the model model, set this value to <code>1.25</code>.
+            <span class="text-danger fw-bold">
+              Setting this value too low will prevent case workers from issuing
+              codes for legitimate uses!
+            </span>
+          </small>
+        </div>
+      </div>
 
-    <div class="form-label-group">
-      <input type="text" id="abuse-prevention-effective-limit" class="form-control"
-        placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
-      <label for="abuse-prevention-effective-limit">Effective limit</label>
-      <small class="form-text text-muted">
-        This is the effective daily limit for {{$realm.Name}} after
-        applying your limit factor.
-      </small>
-    </div>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" id="abuse-prevention-effective-limit" class="form-control"
+            placeholder="Effective limit" value="{{$realm.AbusePreventionEffectiveLimit}}" readonly />
+          <label for="abuse-prevention-effective-limit">Effective limit</label>
+          <small class="form-text text-muted">
+            This is the effective daily limit for {{$realm.Name}} after
+            applying your limit factor.
+          </small>
+        </div>
+      </div>
 
-    <div class="form-label-group mb-0">
-      <input type="text" name="abuse_prevention_burst" id="abuse-prevention-burst" class="form-control"
-        placeholder="Temporary burst" value="0" />
-      <label for="abuse-prevention-burst">Temporary burst</label>
-      <small class="form-text text-muted">
-        Set this value to temporarily add quota to your realm. You
-        should only do this when you've exceeded your daily quota and
-        still need to issue new codes. After 00:00 UTC, the quota will
-        reset back to the predicted model automatically.
-      </small>
+      <div class="col-lg-12">
+        <div class="form-floating mb-0">
+          <input type="text" name="abuse_prevention_burst" id="abuse-prevention-burst" class="form-control"
+            placeholder="Temporary burst" value="0" />
+          <label for="abuse-prevention-burst">Temporary burst</label>
+          <small class="form-text text-muted">
+            Set this value to temporarily add quota to your realm. You
+            should only do this when you've exceeded your daily quota and
+            still need to issue new codes. After 00:00 UTC, the quota will
+            reset back to the predicted model automatically.
+          </small>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="mt-4">
-    <input type="submit" class="btn btn-primary btn-block"
-      value="Update abuse prevention settings" />
+  <div class="card-footer cheating-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+    <button type="submit" class="btn btn-primary">
+      Update abuse prevention settings
+    </button>
   </div>
 </form>
 

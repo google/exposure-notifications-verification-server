@@ -4,24 +4,24 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     {{if $realm.AllowsUserReport}}Total codes{{else}}Codes{{end}} issued &amp; usage
   </div>
   <div id="dashboard_div">
     <div id="realm_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#realm-codes-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#realm-codes-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
+      <span class="me-1">Export as:</span>
       {{if .hasKeyServerStats}}
-      <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm/composite.csv" class="me-1">CSV</a>
       <a href="/stats/realm/composite.json" target="_blank">JSON</a>
       {{else}}
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
       {{end}}
     </span>
@@ -30,24 +30,24 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Invalid codes by OS
   </div>
   <div id="invalid_dashboard_div">
     <div id="invalid_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="invalid_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="invalid_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#invalid-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#invalid-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
+      <span class="me-1">Export as:</span>
       {{if .hasKeyServerStats}}
-      <a href="/stats/realm/composite.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm/composite.csv" class="me-1">CSV</a>
       <a href="/stats/realm/composite.json" target="_blank">JSON</a>
       {{else}}
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
       {{end}}
     </span>
@@ -57,19 +57,19 @@
 {{if $realm.AllowsUserReport}}
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     User report codes &amp; usage
   </div>
   <div id="user_issued_dashboard_div">
     <div id="user_issued_realm_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="user_issued_realm_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="user_issued_realm_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#realm-user-codes-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#realm-user-codes-modal">Learn more about this chart</a>
     <span>
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -77,19 +77,19 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Manual / automated code issue &amp; user report
   </div>
   <div id="comparison_dashboard_div">
     <div id="comparison_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="comparison_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="comparison_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#comparison-codes-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#comparison-codes-modal">Learn more about this chart</a>
     <span>
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -98,21 +98,21 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Time until code claimed <span class="sum-title">(7 day sum)</span>
   </div>
   <div id="issue_age_dist_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer pl-5 pr-5">
+  <div class="slidecontainer ps-5 pe-5">
     <input type="range" class="slider w-100" id="issue_age_slider" list="issue_age_ticks">
     <datalist id="issue_age_ticks"></datalist>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#issue-claim-dist-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#issue-claim-dist-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -120,33 +120,31 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Mean time until code claimed
   </div>
   <div id="mean_claim_age_div">
     <div id="mean_claim_age_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="mean_claim_age_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="mean_claim_age_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#issue-claim-mean-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#issue-claim-mean-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
       <a href="/stats/realm.json" target="_blank">JSON</a>
     </span>
   </small>
 </div>
 
-<div class="modal fade" id="realm-user-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="realm-user-codes-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">User report codes &amp; usage</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -178,14 +176,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="invalid-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="invalid-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Invalid codes by OS</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -197,14 +193,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="comparison-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="comparison-codes-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Manual / automated code issue &amp; user report</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -217,14 +211,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="realm-codes-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="realm-codes-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Codes issued &amp; usage</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -309,14 +301,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="issue-claim-dist-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="issue-claim-dist-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Time until code claimed</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>
@@ -328,14 +318,12 @@
   </div>
 </div>
 
-<div class="modal fade" id="issue-claim-mean-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="issue-claim-mean-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Mean time until code claimed</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body mb-n3">
         <p>

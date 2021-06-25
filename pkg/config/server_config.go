@@ -113,9 +113,18 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 		logger.Warnw("CSRF_AUTH_KEY is no longer used, please remove it from your configuration")
 	}
 
+	// Append maintenance mode text to the system notice.
+	if config.MaintenanceMode {
+		existing := config.SystemNotice
+		config.SystemNotice = `The server is undergoing maintenance and is read-only. Requests to issue new codes will fail.`
+		if existing != "" {
+			config.SystemNotice = config.SystemNotice + " " + existing
+		}
+	}
+
 	// Parse system notice - do this once since it's displayed on every page.
 	if v := project.TrimSpace(config.SystemNotice); v != "" {
-		raw := blackfriday.Run([]byte(v))
+		raw := blackfriday.Run([]byte(strings.TrimSpace(v)))
 		config.systemNotice = string(bluemonday.UGCPolicy().SanitizeBytes(raw))
 	}
 

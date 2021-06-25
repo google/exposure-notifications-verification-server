@@ -41,82 +41,95 @@
 {{end}}
 
 {{define "login/pindiv"}}
-<div class="card shadow-sm d-none" id="sms-code-div">
-  <div class="card-header">
-    SMS confirmation code
-    <button type="button" class="close" aria-label="Close" id="sms-code-close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-  <div class="card-body">
-    <form id="sms-code-form" class="floating-form" action="/" method="POST">
-      <div class="form-label-group">
-        <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
-        <label for="sms-code">Code</label>
-        <div class='w-100'>
-          <small class="text-muted">
-            Please enter the numerical code that was sent via SMS.
-          </small>
-        </div>
-        <small class="text-muted" id='code-text'></small>
-      </div>
+<form id="sms-code-form" action="/" method="POST">
+  <div class="card shadow-sm d-none" id="sms-code-div">
+    <div class="card-header">
+      <i class="bi bi-chat-left-dots me-2"></i>
+      SMS confirmation code
+    </div>
 
-      <button type="submit" id="sms-code-submit" class="btn btn-primary btn-block">Confirm code</button>
-      <div class="btn-block">
-        <a id="sms-code-resend" class="card-link disabled" disabled>Resend SMS</a>
-        <a id="sms-change" class="card-link d-none" href="#">Change login factor</a>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <div class="form-floating">
+            <input type="text" id="sms-code" name="sms-code" class="form-control" placeholder="Code" autocomplete="one-time-code" required autofocus />
+            <label for="sms-code">Code</label>
+          </div>
+          <small class="text-muted d-block">
+            Enter the code that was dispatched to <strong id="factor-target"></strong> via SMS.
+            <a href="#" id="sms-code-resend" class="disabled" disabled>Resend SMS.</a>
+          </small>
+          <small class="text-muted d-block" id="code-text"></small>
+        </div>
       </div>
-    </form>
+    </div>
+
+    <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+      <div class="d-grid d-lg-inline">
+        <button type="submit" id="sms-code-submit" class="btn btn-primary">Confirm code</button>
+      </div>
+      <div class="text-center text-lg-start">
+        <a href="#" id="sms-change" class="link-secondary small">
+          <i class="bi bi-arrow-left"></i>
+          Change login factor
+        </a>
+      </div>
+    </div>
   </div>
-</div>
+</form>
 {{end}}
 
 {{define "login/factorsdiv"}}
-<div class="card shadow-sm mb-3 d-none" id="registered-div">
-  <div class="card-header">Registered factors</div>
-  <div class="card-body">
-    <div id="factors" class="list-group list-group-flush">
+<div class="card shadow-sm d-none" id="registered-div">
+  <div class="card-header">
+    <i class="bi bi-phone me-2"></i>
+    Registered factors
+  </div>
+  <div id="factors" class="list-group list-group-flush">
+    <div id="factor-template" class="d-none list-group-item list-group-item-action">
+      <div><strong class="factor-name"></strong></div>
+      <div class="factor-number text-muted"></div>
     </div>
   </div>
 </div>
 {{end}}
 
 {{define "login/pwd-validate"}}
-<div class="text-secondary mb-3">
+<div class="text-secondary">
   {{if .requirements.HasRequirements}}
     {{if gt .requirements.Length 0}}
       <div id="length-req">
-        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
         {{t $.locale "password.requirements-length" .requirements.Length}}
       </div>
     {{end}}
     {{if gt .requirements.Uppercase 0}}
       <div id="upper-req">
-        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
         {{t $.locale "password.requirements-uppercase" .requirements.Uppercase}}
       </div>
     {{end}}
     {{if gt .requirements.Lowercase 0}}
       <div id="lower-req">
-        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
         {{t $.locale "password.requirements-lowercase" .requirements.Lowercase}}
       </div>
     {{end}}
     {{if gt .requirements.Number 0}}
       <div id="num-req">
-        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
         {{t $.locale "password.requirements-number" .requirements.Number}}
       </div>
     {{end}}
     {{if gt .requirements.Special 0}}
       <div id="special-req">
-        <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+        <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
         {{t $.locale "password.requirements-special" .requirements.Special}}
       </div>
     {{end}}
   {{end}}
   <div id="retyped">
-    <span class="oi oi-circle-x pr-1 small" aria-hidden="true"></span>
+    <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i>
     {{t $.locale "password.requirements-match"}}
   </div>
 </div>

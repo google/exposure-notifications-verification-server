@@ -32,6 +32,13 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			controller.MissingSession(w, r, c.h)
 			return
 		}
+		flash := controller.Flash(session)
+
+		locale := controller.LocaleFromContext(ctx)
+		if locale == nil {
+			controller.MissingLocale(w, r, c.h)
+			return
+		}
 
 		// Mark that the user was prompted.
 		controller.StoreSessionMFAPrompted(session, true)
@@ -41,21 +48,38 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 			// The user landed on this page but does not have a realm selected. They
 			// could have navigated here from their profile page, or they could be a
 			// system admin and were redirected here.
-			c.renderRegisterPhone(ctx, w, nil)
+			c.renderRegisterPhone(ctx, w, nil, false)
+			return
+		}
+
+		mfaEnabled, err := c.authProvider.MFAEnabled(ctx, session)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
 		currentRealm := membership.Realm
 		mode := currentRealm.EffectiveMFAMode(membership.CreatedAt)
-		c.renderRegisterPhone(ctx, w, &mode)
+
+		switch mode {
+		case database.MFARequired:
+			flash.Error(locale.Get("mfa.notice-required", currentRealm.Name))
+		case database.MFAOptionalPrompt:
+			flash.Warning(locale.Get("mfa.notice-prompt", currentRealm.Name))
+		case database.MFAOptional:
+			flash.Warning(locale.Get("mfa.notice-optional", currentRealm.Name))
+		}
+
+		c.renderRegisterPhone(ctx, w, &mode, mfaEnabled)
 	})
 }
 
 func (c *Controller) renderRegisterPhone(ctx context.Context, w http.ResponseWriter,
-	mode *database.AuthRequirement) {
+	mode *database.AuthRequirement, mfaEnabled bool) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Multi-factor authentication registration")
 	m["mfaMode"] = mode
+	m["mfaEnabled"] = mfaEnabled
 	m["firebase"] = c.config.Firebase
 	c.h.RenderHTML(w, "login/register-phone", m)
 }
