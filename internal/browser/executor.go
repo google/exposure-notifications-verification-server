@@ -33,6 +33,7 @@ import (
 var defaultOptions = [...]chromedp.ExecAllocatorOption{
 	chromedp.NoFirstRun,
 	chromedp.NoDefaultBrowserCheck,
+	chromedp.WindowSize(1920, 1080),
 
 	// After Puppeteer's default behavior.
 	chromedp.Flag("disable-background-networking", true),
