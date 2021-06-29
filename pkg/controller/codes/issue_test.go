@@ -67,30 +67,37 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	// download, which causes the test to fail. We retry 3 times to try and
 	// mitigate this.
 	for i := 0; i < 3; i++ {
-		browserCtx := browser.New(t)
-		taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
-		defer done()
+		if err := func() error {
+			browserCtx := browser.New(t)
+			taskCtx, done := context.WithTimeout(browserCtx, project.TestTimeout())
+			defer done()
 
-		yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
+			yesterday := time.Now().Add(-24 * time.Hour).Format(project.RFC3339Date)
 
-		if err := chromedp.Run(taskCtx,
-			browser.SetCookie(cookie),
-			chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
-			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-			chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
-			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
+			if err := chromedp.Run(taskCtx,
+				browser.SetCookie(cookie),
+				chromedp.Navigate(`http://`+harness.Server.Addr()+`/codes/issue`),
+				chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+				chromedp.WaitVisible(`body#codes-issue`, chromedp.ByQuery),
+				chromedp.OuterHTML("html", &html, chromedp.ByQuery),
 
-			chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
-			chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
-			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-			chromedp.Click(`#submit`, chromedp.ByQuery),
+				chromedp.SetValue(`input#test-date`, yesterday, chromedp.ByQuery),
+				chromedp.SetValue(`input#symptom-date`, yesterday, chromedp.ByQuery),
+				chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+				chromedp.WaitVisible(`#submit`, chromedp.ByQuery),
+				chromedp.Click(`#submit`, chromedp.ByQuery),
 
-			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-			chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
-			chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
-			chromedp.InnerHTML("html", &html, chromedp.ByQuery),
-		); err != nil {
+				chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+				chromedp.WaitVisible(`#short-code`, chromedp.ByQuery),
+				chromedp.TextContent(`#short-code`, &code, chromedp.ByQuery),
+				chromedp.OuterHTML("html", &html, chromedp.ByQuery),
+			); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
 			lastErr = err
+			continue
 		} else {
 			lastErr = nil
 			break
@@ -98,7 +105,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	}
 
 	if lastErr != nil {
-		t.Fatalf("failed to issue code: %s\nlast html:\n\n%s", err, html)
+		t.Fatalf("failed to issue code: %s\nlast html:\n\n%s", lastErr, html)
 	}
 
 	// Verify code length.
