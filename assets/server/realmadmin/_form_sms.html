@@ -11,7 +11,7 @@
   blank, the system will not send SMS text message verification codes.
 </p>
 
-<form method="POST" action="/realm/settings#sms" class="floating-form">
+<form method="POST" action="/realm/settings#sms">
   {{ .csrfField }}
   <input type="hidden" name="sms" value="1" />
 
@@ -25,143 +25,146 @@
     {{end}}
 
     <div class="form-group form-check">
-      <input type="checkbox" name="use_system_sms_config" id="use-system-sms-config" class="form-check-input" value="1" {{if $realm.UseSystemSMSConfig}} checked{{end}}
-        data-toggle="collapse" data-target=".sms-system-form">
+      <input type="checkbox" name="use_system_sms_config" id="use-system-sms-config" class="form-check-input" value="1"
+        data-bs-toggle="collapse" data-bs-target=".sms-system-form"
+        {{checkedIf $realm.UseSystemSMSConfig}}>
       <label class="form-check-label" for="use-system-sms-config">
         Use system SMS configuration
       </label>
     </div>
   {{end}}
 
-  <div class="sms-system-form collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
-    <div class="form-label-group">
-      <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
-        placeholder="Twilio account" {{if $smsConfig.TwilioAccountSid}}value="{{$smsConfig.TwilioAccountSid}}"{{end}} />
-      <label for="twilio-account-sid">Twilio account</label>
-      {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
-      <small class="form-text text-muted">
-        This is the Twilio Account SID. Get this value from the Twilio console.
-      </small>
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">Credentials</h5>
+
+    <div class="sms-system-form collapse{{if not $realm.UseSystemSMSConfig}} show{{end}}">
+      <div class="form-floating mb-3">
+        <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control font-monospace {{invalidIf ($smsConfig.ErrorsFor "twilioAccountSid")}}"
+          placeholder="Twilio account" value="{{$smsConfig.TwilioAccountSid}}" />
+        <label for="twilio-account-sid">Twilio account</label>
+        {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
+        <small class="form-text text-muted">
+          This is the Twilio Account SID. Get this value from the Twilio console.
+        </small>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control font-monospace {{invalidIf ($smsConfig.ErrorsFor "twilioAuthToken")}}"
+          autocomplete="new-password" placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
+        <label for="twilio-auth-token">Twilio auth token</label>
+        {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
+        <small class="form-text text-muted">
+          This is the Twilio Auth Token. Get this value from the Twilio console.
+        </small>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control font-monospace {{invalidIf ($smsConfig.ErrorsFor "twilioFromNumber")}}"
+        placeholder="Twilio number" value="{{$smsConfig.TwilioFromNumber}}">
+        <label for="twilio-from-number">Twilio number</label>
+        {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
+        <small class="form-text text-muted">
+          This is the Twilio From Number.
+          It should be either a <a href="https://www.twilio.com/docs/glossary/what-e164" rel="noopener noreferrer" target="_blank">E.164</a> formatted phone number or
+          a <a href="https://www.twilio.com/docs/messaging/services" rel="noopener noreferrer" target="_blank">Twilio Messaging Service</a> Sid.
+          Get this value from the Twilio console.
+          If you plan on sending more than 100 codes per day, we <strong>strongly
+          recommend</strong> acquiring a toll free number or SMS short code to
+          reduce the chance that your message will be flagged as spam.
+        </small>
+      </div>
     </div>
 
-    <div class="form-label-group">
-      <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
-      <label for="twilio-auth-token">Twilio auth token</label>
-      {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
-      <small class="form-text text-muted">
-        This is the Twilio Auth Token. Get this value from the Twilio console.
-      </small>
+    <div class="sms-system-form collapse{{if $realm.UseSystemSMSConfig}} show{{end}}">
+      <div class="form-floating mb-3">
+        <select name="sms_from_number_id" id="sms-from-number-id" class="form-control form-select {{invalidIf ($realm.ErrorsFor "smsFromNumber")}}">
+          <option selected disabled>Choose...</option>
+          {{range $smsFromNumber := $smsFromNumbers}}
+            <option value="{{$smsFromNumber.ID}}" {{selectedIf (eq $realm.SMSFromNumberID $smsFromNumber.ID)}}>{{$smsFromNumber.Label}} &nbsp;&bull;&nbsp; {{$smsFromNumber.Value}}</option>
+          {{end}}
+        </select>
+        <label for="sms-from-number-id">SMS from number</label>
+        {{template "errorable" $realm.ErrorsFor "smsFromNumber"}}
+        <small class="form-text text-muted">
+          <p>
+            This is the phone number from which text messages will originate.
+            Since you are using the system SMS configuration, you must choose one
+            of these numbers. To request a new number, contact your system
+            administrator.
+          </p>
+          <p>
+            <strong>Warning!</strong> These phone numbers may be changed if they
+            are reported as spam or repeatedly failing to deliver. The phone
+            number will always correspond to your region, but do not rely on this
+            exact phone number.
+          </p>
+        </small>
+      </div>
     </div>
 
-    <div class="form-label-group">
-      <input type="tel" name="twilio_from_number" id="twilio-from-number" class="form-control text-monospace
-      {{if $smsConfig.ErrorsFor "twilioFromNumber"}} is-invalid{{end}}"
-      {{if $smsConfig.TwilioFromNumber}}value="{{$smsConfig.TwilioFromNumber}}"{{end}}
-      placeholder="Twilio number" autocomplete="new-password"/>
-      <label for="twilio-from-number">Twilio number</label>
-      {{template "errorable" $smsConfig.ErrorsFor "twilioFromNumber"}}
-      <small class="form-text text-muted">
-        This is the Twilio From Number.
-        It should be either a <a href="https://www.twilio.com/docs/glossary/what-e164" rel="noopener noreferrer" target="_blank">E.164</a> formatted phone number or
-        a <a href="https://www.twilio.com/docs/messaging/services" rel="noopener noreferrer" target="_blank">Twilio Messaging Service</a> Sid.
-        Get this value from the Twilio console.
-        If you plan on sending more than 100 codes per day, we <strong>strongly
-        recommend</strong> acquiring a toll free number or SMS short code to
-        reduce the chance that your message will be flagged as spam.
-      </small>
-    </div>
-  </div>
-
-  <div class="sms-system-form collapse{{if $realm.UseSystemSMSConfig}} show{{end}}">
-    <div class="form-label-group">
-      <select name="sms_from_number_id" id="sms-from-number-id" class="form-control custom-select {{if $realm.ErrorsFor "smsFromNumber"}}is-invalid{{end}}">
-        <option selected disabled>From number</option>
-        {{range $smsFromNumber := $smsFromNumbers}}
-          <option value="{{$smsFromNumber.ID}}" {{selectedIf (eq $realm.SMSFromNumberID $smsFromNumber.ID)}}>{{$smsFromNumber.Label}} &nbsp;&bull;&nbsp; {{$smsFromNumber.Value}}</option>
+    <div class="form-floating">
+      <select name="sms_country" id="sms-country" class="form-control form-select {{invalidIf ($realm.ErrorsFor "smsCountry")}}">
+        <option selected disabled>Choose...</option>
+        {{range $name, $value := $countries}}
+          <option value="{{$value}}"{{if eq $realm.SMSCountry $value}} selected{{end}}>{{$name}}</option>
         {{end}}
       </select>
-      {{template "errorable" $realm.ErrorsFor "smsFromNumber"}}
+      <label for="sms-country">SMS country</label>
+      {{template "errorable" $realm.ErrorsFor "smsCountry"}}
       <small class="form-text text-muted">
-        <p>
-          This is the phone number from which text messages will originate.
-          Since you are using the system SMS configuration, you must choose one
-          of these numbers. To request a new number, contact your system
-          administrator.
-        </p>
-        <p>
-          <strong>Warning!</strong> These phone numbers may be changed if they
-          are reported as spam or repeatedly failing to deliver. The phone
-          number will always correspond to your region, but do not rely on this
-          exact phone number.
-        </p>
+        This is the default value for the country code to use for SMS numbers.
+        Case workers will still be able to select a default value, but you should
+        set this to your most common region.
       </small>
     </div>
   </div>
 
-  <div class="form-label-group">
-    <select name="sms_country" id="sms-country" class="form-control custom-select">
-      <option selected disabled>SMS country</option>
-      {{range $name, $value := $countries}}
-        <option value="{{$value}}"{{if eq $realm.SMSCountry $value}} selected{{end}}>{{$name}}</option>
-      {{end}}
-    </select>
-    {{template "errorable" $realm.ErrorsFor "smsCountry"}}
-    <small class="form-text text-muted">
-      This is the default value for the country code to use for SMS numbers.
-      Case workers will still be able to select a default value, but you should
-      set this to your most common region.
-    </small>
-  </div>
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">SMS templates</h5>
 
-  <hr/>
-
-  <div>
     <div class="btn-group dropright pb-2">
-      {{if $realm.ErrorsFor "smsTextTemplate"}}<span class="text-danger oi oi-warning"></span>{{end}}
-      <button type="button" id="sms-template-dropdown-title" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {{if $realm.ErrorsFor "smsTextTemplate"}}<span class="text-danger bi bi-exclamation-square-fill"></span>{{end}}
+      <button type="button" id="sms-template-dropdown-title" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{(index .smsTemplates 0).Label}}
       </button>
       <div class="dropdown-menu" id="sms-template-menu">
         {{range $i, $v := .smsTemplates}}
         <a class="dropdown-item {{if eq $i 0}}active{{end}}" id="sms-template-{{$i}}" href="#">
-          {{if $realm.ErrorsFor $v.Label}}<span class="text-danger oi oi-warning"></span>{{end}}
+          {{if $realm.ErrorsFor $v.Label}}<span class="text-danger bi bi-warning"></span>{{end}}
           {{$v.Label}}
         </a>
         {{end}}
         <div id="sms-template-dropdown-divider" class="dropdown-divider"></div>
         <a class="dropdown-item" id="sms-template-new" href="#">New SMS template</a>
       </div>
-      {{if $realm.AllowsUserReport}}
-        <small class="form-text text-muted">&nbsp;User initiated report is enabled, which always uses the <code>User Report</code> template.</small>
-      {{end}}
     </div>
     {{if $realm.ErrorsFor "smsTextTemplate"}}
-    <div class="invalid-feedback d-block mt-n1 pb-2">
+    <div class="invalid-feedback d-block pb-2">
       Errors found for one or more SMS templates
     </div>
     {{end}}
 
     {{range $i, $v := .smsTemplates}}
     <div id="sms-template-{{$i}}-div" {{if ne $i 0}}class="d-none"{{end}}>
-      <div class="form-label-group">
-        <input type="form-control text-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
+      <div class="form-floating mb-3">
+        <input type="form-control font-monospace" name="sms_text_label_{{$i}}" class="form-control" value="{{$v.Label}}" placeholder="Template label" {{if eq $i 0}}readonly{{end}}/>
         <label for="sms-text-template">Template label</label>
       </div>
-      <div class="form-label-group">
-        <textarea name="sms_text_template_{{$i}}" class="form-control text-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}} sms-text-template"
-          rows="5" placeholder="SMS text template">{{$v.Value}}</textarea>
+      <div class="form-floating mb-3">
+        <textarea name="sms_text_template_{{$i}}" class="form-control font-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}} sms-text-template"
+          placeholder="SMS text template" style="height:150px;">{{$v.Value}}</textarea>
         <label for="sms-text-template">SMS text template</label>
       </div>
       {{if $realm.ErrorsFor $v.Label}}
-      <div class="invalid-feedback d-block mt-n2 mb-3">
+      <div class="invalid-feedback d-block mb-3">
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
       {{end}}
       {{if (eq "User Report" $v.Label)}}
         <div class="alert alert-warning" role="alert">
-          For the <strong>User Report</strong> template it is strongly recommended that you
-          indicate that the user should not use the code if they did not request it.
+          User initiated report always uses the <code>User Report</code>
+          template. Your message should indicate that the user should not use
+          the code if they did not request it.
         </div>
       {{end}}
       {{if and (not $realm.AllowsUserReport) (ne "User Report" $v.Label)}}
@@ -287,8 +290,10 @@
     </small>
   </div>
 
-  <div class="mt-4">
-    <input type="submit" id="update-sms" class="btn btn-primary btn-block" value="Update SMS settings" />
+  <div class="card-footer cheating-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+    <button type="submit" class="btn btn-primary">
+      Update SMS settings
+    </button>
   </div>
 </form>
 
@@ -388,7 +393,7 @@
         if (val.includes("[longcode]")) {
           errors.push("cannot contain `[longcode]`, this is automatically included in [enslink]");
         }
-        val = val.replace(/\[enslink\]/g, ensLink);      
+        val = val.replace(/\[enslink\]/g, ensLink);
       } else {
         if (val.includes("[enslink]")) {
           errors.push("`[enslink]` is not allowed when Exposure Notifications Express is not enabled.");
@@ -402,9 +407,9 @@
 
         val = val.replace(/\[region\]/g, region);
         val = val.replace(/\[longcode\]/g, longCode);
-      }    
+      }
       val = val.replace(/\[code\]/g, shortCode);
-      val = val.replace(/\[expires\]/g, shortExpires);      
+      val = val.replace(/\[expires\]/g, shortExpires);
       val = val.replace(/\[longexpires\]/g, longExpires);
 
       if (val.length > {{$realm.SMSTemplateExpansionMax}}) {
@@ -413,7 +418,7 @@
 
       if (errors.length > 0) {
         $("#sms-preview-errors").removeClass("d-none");
-        $("#sms-preview-errors").empty();   
+        $("#sms-preview-errors").empty();
         let msg = $('<ul class="mb-0">>');
         for (i = 0; i < errors.length; i++) {
           item = ($('<li>').html(errors[i]));

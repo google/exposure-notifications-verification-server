@@ -41,78 +41,86 @@
       {{t $.locale "codes.issue.instructions"}}
     </p>
 
-    {{/* Calculate the column width based on the number of expected choices */}}
-    {{$colWidth := 12}}
-    {{if $currentRealm.ValidTestType "negative"}}
-      {{$colWidth = 4}}
-    {{else if $currentRealm.ValidTestType "likely" }}
-      {{$colWidth = 6}}
-    {{end}}
-
     <form id="issue" action="#">
       <div id="form-area">
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "codes.issue.diagnosis-header"}}</div>
+          <div class="card-header">
+            <i class="bi bi-file-earmark-medical me-2"></i>
+            {{t $.locale "codes.issue.diagnosis-header"}}
+          </div>
           <div class="card-body">
-            <div class="form-row">
+            <div class="row g-3">
               {{if $currentRealm.ValidTestType "confirmed"}}
-              <div class="form-group col-md-{{$colWidth}}">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="testType" id="testType1" value="confirmed" checked />
-                  <label class="form-check-label" for="testType1">
-                    {{t $.locale "codes.issue.confirmed-test"}}
-                    <small class="form-text text-muted">
-                      {{t $.locale "codes.issue.confirmed-test-details"}}
-                    </small>
-                  </label>
+                <div class="col-md">
+                  <div class="form-check h-100 w-100">
+                    <input type="radio" name="testType" id="testType1" class="form-check-input" value="confirmed" checked>
+                    <label class="form-check-label h-100 w-100" for="testType1">
+                      <span class="d-block">
+                        {{t $.locale "codes.issue.confirmed-test"}}
+                      </span>
+                      <small class="d-block text-muted">
+                        {{t $.locale "codes.issue.confirmed-test-details"}}
+                      </small>
+                    </label>
+                  </div>
                 </div>
-              </div>
               {{end}}
 
               {{if $currentRealm.ValidTestType "likely"}}
-              <div class="form-group col-md-{{$colWidth}}">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="testType" id="testType2" value="likely" />
-                  <label class="form-check-label" for="testType2">
-                    {{t $.locale "codes.issue.likely-test"}}
-                    <small class="form-text text-muted">
-                      {{t $.locale "codes.issue.likely-test-details"}}
-                    </small>
-                  </label>
+                <div class="col-md">
+                  <div class="form-check h-100 w-100">
+                    <input type="radio" name="testType" id="testType2" class="form-check-input" value="likely">
+                    <label class="form-check-label h-100 w-100" for="testType2">
+                      <span class="d-block">
+                        {{t $.locale "codes.issue.likely-test"}}
+                      </span>
+                      <small class="d-block text-muted">
+                        {{t $.locale "codes.issue.likely-test-details"}}
+                      </small>
+                    </label>
+                  </div>
                 </div>
-              </div>
               {{end}}
 
               {{if $currentRealm.ValidTestType "negative"}}
-              <div class="form-group col-md-{{$colWidth}}">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="testType" id="testType3" value="negative" />
-                  <label class="form-check-label" for="testType3">
-                    {{t $.locale "codes.issue.negative-test"}}
-                    <small class="form-text text-muted">
-                      {{t $.locale "codes.issue.negative-test-details"}}
-                    </small>
-                  </label>
+                <div class="col-md">
+                  <div class="form-check h-100 w-100">
+                    <input type="radio" name="testType" id="testType3" class="form-check-input" value="negative">
+                    <label class="form-check-label h-100 w-100" for="testType3">
+                      <span class="d-block">
+                        {{t $.locale "codes.issue.negative-test"}}
+                      </span>
+                      <small class="d-block text-muted">
+                        {{t $.locale "codes.issue.negative-test-details"}}
+                      </small>
+                    </label>
+                  </div>
                 </div>
-              </div>
               {{end}}
             </div>
           </div>
         </div>
 
         <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "codes.issue.dates-header"}}</div>
+          <div class="card-header">
+            <i class="bi bi-calendar-event me-2"></i>
+            {{t $.locale "codes.issue.dates-header"}}
+          </div>
           <div class="card-body">
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="test-date">{{t $.locale "codes.issue.testing-date-label"}}</label>
-                <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
+            <div class="row g-3">
+              <div class="col-md">
+                <div class="form-floating">
+                  <input type="date" name="testDate" id="test-date" min="{{.minDate}}" max="{{.maxDate}}"
+                    class="form-control" {{requiredIf $currentRealm.RequireDate}}>
+                  <label for="test-date">{{t $.locale "codes.issue.testing-date-label"}}</label>
+                </div>
               </div>
 
-              <div class="form-group col-md-6">
-                <label for="symptom-date">{{t $.locale "codes.issue.symptoms-date-label"}}</label>
-                <div class="input-group">
-                  <input type="date" id="symptom-date" name="symptomDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control" {{if $currentRealm.RequireDate}}required{{end}} />
+              <div class="col-md">
+                <div class="form-floating">
+                  <input type="date" name="symptomDate" id="symptom-date" min="{{.minDate}}" max="{{.maxDate}}"
+                    class="form-control" {{requiredIf $currentRealm.RequireDate}}>
+                  <label for="symptom-date">{{t $.locale "codes.issue.symptoms-date-label"}}</label>
                 </div>
               </div>
             </div>
@@ -120,60 +128,60 @@
         </div>
 
         {{ if $hasSMSConfig }}
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header">{{t $.locale "codes.issue.sms-text-message-header"}}</div>
-          <div class="card-body">
-            {{if $currentRealm.SMSTextAlternateTemplates}}
-            <div class="row form-group">
-              <label for="sms-template" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-template-label"}}</label>
-              <div class="col-sm-6 col-md-8 col-lg-9">
-                <div class="input-group">
-                  <select class="form-control" id="sms-template">
-                    <option value="Default SMS template">Default SMS template</option>
-                    {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
-                    <option value="{{$k}}" {{selectedIf (eq $k $currentMembership.DefaultSMSTemplateLabel)}}>{{$k}}</option>
-                    {{end}}
-                  </select>
-                </div>
-                <small class="form-text text-muted">
-                  {{t $.locale "codes.issue.sms-template-detail"}}
-                </small>
-              </div>
+          <div class="card mb-3 shadow-sm">
+            <div class="card-header">
+              <i class="bi bi-chat-left-dots me-2"></i>
+              {{t $.locale "codes.issue.sms-text-message-header"}}
             </div>
-            {{end}}
-            <div class="row form-group">
-              <label for="phone" class="col-sm-6 col-md-4 col-lg-3">{{t $.locale "codes.issue.sms-text-message-label"}}</label>
-              <div class="col-sm-6 col-md-8 col-lg-9">
-                <div class="input-group">
-                  <input type="tel" id="phone" name="phone" class="form-control w-100" autocomplete="off" />
-                </div>
-                <small class="form-text text-muted">
-                  {{t $.locale "codes.issue.sms-text-message-detail"}}
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-        {{ end }}
+            <div class="card-body">
+              <div class="row g-3">
+                {{if $currentRealm.SMSTextAlternateTemplates}}
+                  <div class="col-md">
+                    <div class="form-floating">
+                      <select class="form-select" id="sms-template">
+                        <option value="Default SMS template">Default SMS template</option>
+                        {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
+                        <option value="{{$k}}" {{selectedIf (eq $k $currentMembership.DefaultSMSTemplateLabel)}}>{{$k}}</option>
+                        {{end}}
+                      </select>
+                      <label for="sms-template">{{t $.locale "codes.issue.sms-template-label"}}</label>
+                    </div>
+                    <small class="form-text text-muted">
+                      {{t $.locale "codes.issue.sms-template-detail"}}
+                    </small>
+                  </div>
+                {{end}}
 
-        <div class="row mb-3">
-          <div class="col">
-            <button id="submit" type="submit" class="btn btn-primary btn-block">{{t $.locale "codes.issue.create-code-button"}}</button>
+                <div class="col-md">
+                  <div class="form-floating">
+                    <input type="tel" id="phone" name="phone" class="form-control w-100" autocomplete="off" />
+                    <small class="form-text text-muted">
+                      {{t $.locale "codes.issue.sms-text-message-detail"}}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        {{end}}
+
+        <div class="d-grid g-3">
+          <button id="submit" type="submit" class="btn btn-primary">{{t $.locale "codes.issue.create-code-button"}}</button>
         </div>
       </div>
     </form>
 
     <div id="long-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
+        <i class="bi bi-chat-left-dots me-2"></i>
         {{t $.locale "codes.issue.sms-verification-link-header"}}
-        <span id="long-code-expires-at" class="sm float-right text-danger"
+        <span id="long-code-expires-at" class="sm float-end text-danger"
           data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
           data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
-          <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
+          <i class="bi bi-check-square-fill me-2 text-success"></i>
           <span>
             {{t $.locale "codes.issue.sms-verification-detail" "<strong id=\"long-code-phone\"></strong>" | safeHTML}}
           </span>
@@ -183,65 +191,70 @@
 
     <div id="backup-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
+        <i class="bi bi-upc me-2"></i>
         {{t $.locale "codes.issue.backup-short-code-header"}}
-        <span id="backup-code-expires-at" class="sm float-right text-danger"
+        <span id="backup-code-expires-at" class="sm float-end text-danger"
           data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
           data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
-          <span class="oi oi-warning text-warning mr-2 mt-1" aria-hidden="true"></span>
+          <i class="bi bi-exclamation-square-fill me-2 text-warning"></i>
           <span>
             {{t $.locale "codes.issue.backup-short-code-detail"}}
           </span>
         </div>
 
-        <div id="backup-code" class="d-code text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
+        <div id="backup-code" class="d-code text-center user-select-none font-monospace fw-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
       </div>
     </div>
 
     <div id="short-code-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
+        <i class="bi bi-upc me-2"></i>
         {{t $.locale "codes.issue.generated-short-code-header"}}
-        <span id="short-code-expires-at" class="sm float-right text-danger"
+        <span id="short-code-expires-at" class="sm float-end text-danger"
           data-countdown-prefix="{{t $.locale "codes.issue.countdown-expires-in"}}"
           data-countdown-expired="{{t $.locale "codes.issue.countdown-expired"}}"></span>
       </div>
       <div class="card-body">
         <div class="d-flex">
-          <span class="oi oi-circle-check text-success mr-2 mt-1" aria-hidden="true"></span>
+          <i class="bi bi-check-square-fill me-2 text-success"></i>
           <span>
             {{t $.locale "codes.issue.generated-short-code-detail"}}
           </span>
         </div>
 
-        <div id="short-code" class="d-code text-center user-select-none text-monospace font-weight-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
+        <div id="short-code" class="d-code text-center user-select-none font-monospace fw-normal d-flex flex-row align-content-center justify-content-around flex-nowrap mx-auto mt-3 mb-2"></div>
       </div>
     </div>
 
     <div id="uuid-confirm" class="card d-none mb-3 shadow-sm">
       <div class="card-header">
+        <i class="bi bi-geo me-2"></i>
         {{t $.locale "codes.issue.uuid-header"}}
       </div>
       <div class="card-body">
-        <p>
-          <span class="oi oi-info text-info pr-1" aria-hidden="true"></span>
-          {{t $.locale "codes.issue.uuid-detail"}}
-        </p>
+        <div class="row row-cols-1 g-3">
+          <div class="col">
+            <div class="d-flex">
+              <i class="bi bi-info-square-fill me-2 text-primary"></i>
+              <span>{{t $.locale "codes.issue.uuid-detail"}}</span>
+            </div>
+          </div>
 
-        <div class="form-group row">
-          <div class="input-group col-sm-8 offset-sm-2">
-            <input type="text" id="uuid" class="form-control text-monospace">
-            {{template "clippy" "uuid"}}
+          <div class="col">
+            <div class="input-group">
+              <input type="text" id="uuid" class="form-control font-monospace">
+              {{template "clippy" "uuid"}}
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row mb-3">
-      <div class="col">
-        <button id="reset" class="d-none btn btn-secondary btn-block">{{t $.locale "codes.issue.reset-code-button"}}</button>
-      </div>
+    <div class="d-grid g-3">
+      <button id="reset" class="d-none btn btn-secondary">{{t $.locale "codes.issue.reset-code-button"}}</button>
     </div>
   </main>
 
@@ -440,7 +453,7 @@
                 let $span = $('<span>').text(code.charAt(i));
                   $span.addClass('border');
                   $span.addClass('rounded');
-                  $span.addClass('ml-1');
+                  $span.addClass('ms-1');
                   $span.addClass('py-2');
                   $span.addClass('bg-light');
                   $span.text(code.charAt(i));

@@ -19,21 +19,11 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Authenticated SMS</h1>
-    <p>
-      View or edit the Authenticated SMS settings and signing keys for
-      <strong>{{$realm.Name}}</strong> below.
-    </p>
-
     {{template "errorSummary" $realm}}
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        {{if $realm.UseAuthenticatedSMS}}
-          <span class="oi oi-lock-locked mr-2 ml-n1"></span>
-        {{else}}
-          <span class="oi oi-lock-unlocked mr-2 ml-n1"></span>
-        {{end}}
+        <i class="bi bi-shield-lock me-2"></i>
         Status
       </div>
       {{if .activeRealmKey}}
@@ -44,66 +34,79 @@
               with Apple and Google to enable this feature.
             </p>
 
-            <p>
+            <p class="mb-0">
               Enabling this feature will increase the length of your SMS
               messages such that they are split across multiple messages,
               <strong>which will increase costs</strong>.
             </p>
+          </div>
 
-            <a href="/realm/sms-keys/enable"
-              data-method="PUT" data-confirm="Are you sure you want enable Authenticated SMS?"
-              class="btn btn-block btn-success">
-              Enable Authenticated SMS
-            </a>
+          <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+            <div class="d-grid d-lg-inline">
+              <a href="/realm/sms-keys/enable"
+                data-method="PUT" data-confirm="Are you sure you want enable Authenticated SMS?"
+                class="btn btn-success">
+                Enable Authenticated SMS
+              </a>
+            </div>
           </div>
         {{else}}
           <div class="card-body">
-            <div class="form-label-group">
-              <div class="input-group">
-                <input type="text" id="certKeyID" class="form-control"
-                  placeholder="Key ID (kid)" value="{{.activeRealmKey}}" readonly />
-                <label for="certKeyID" class="col-sm-3">Key ID (kid)</label>
-                {{template "clippy" "certKeyID"}}
+            <div class="row g-3">
+              <div class="col-lg-12">
+                <div class="form-label-group">
+                  <div class="input-group">
+                    <input type="text" id="certKeyID" class="form-control"
+                      placeholder="Key ID (kid)" value="{{.activeRealmKey}}" readonly />
+                    <label for="certKeyID" class="col-sm-3">Key ID (kid)</label>
+                    {{template "clippy" "certKeyID"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    This is the Key ID (kid) of the currently active key.
+                  </small>
+                </div>
               </div>
-              <small class="form-text text-muted">
-                This is the Key ID (kid) of the currently active key.
-              </small>
-            </div>
 
-            <div class="form-label-group mb-0">
-              <div class="input-group">
-                <textarea class="form-control form-control-sm" rows="4" id="activePublicKey" placeholder="Public key" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
-                <label for="activePublicKey">Public key</label>
-                {{template "clippy" "activePublicKey"}}
+              <div class="col-lg-12">
+                <div class="form-label-group mb-0">
+                  <div class="input-group">
+                    <textarea class="form-control form-control-sm" rows="4" id="activePublicKey" placeholder="Public key" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
+                    <label for="activePublicKey">Public key</label>
+                    {{template "clippy" "activePublicKey"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    This is the currently active public key.
+                  </small>
+                </div>
               </div>
-              <small class="form-text text-muted">
-                This is the currently active public key.
-              </small>
             </div>
           </div>
 
-          <small class="card-footer d-flex justify-content-end text-muted">
-            <a href="/realm/sms-keys/disable"
-              data-method="PUT" data-confirm="Are you sure you want disable Authenticated SMS?"
-              class="text-muted">
-              Disable Authenticated SMS
-            </a>
-          </small>
+          <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+            <div class="d-grid d-lg-inline">
+              <a href="/realm/sms-keys/disable"
+                data-method="PUT" data-confirm="Are you sure you want disable Authenticated SMS?"
+                class="small link-danger">
+                Disable Authenticated SMS
+              </a>
+            </div>
+          </div>
         {{end}}
       {{else}}
         <div class="card-body">
-          <div class="alert alert-warning" role="alert">
+          <p class="mb-0">
             There are no SMS signing keys active for this realm.
-          </div>
+          </p>
         </div>
       {{end}}
     </div>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-key mr-2 ml-n1"></span>
+        <i class="bi bi-key me-2"></i>
         Signing keys
       </div>
+
       <div class="card-body">
           <p>To manual rotate your Authenticated SMS signing key:</p>
           <ol class="mb-3">
@@ -119,7 +122,7 @@
               There is a limit of {{.maximumKeyVersions}} key versions. Destroy an existing key version to create another.
             </div>
           {{else}}
-            <a href="/realm/sms-keys" data-method="POST" class="btn btn-primary btn-block">
+            <a href="/realm/sms-keys" data-method="POST" class="btn btn-primary">
               Create new signing key version
             </a>
           {{end}}
@@ -142,17 +145,17 @@
                 <tr>
                   <td>
                     {{$rk.GetKID}}
-                    {{if $rk.Active}}<span class="badge badge-success">Active</span>{{end}}
+                    {{if $rk.Active}}<span class="badge bg-success">Active</span>{{end}}
                   </td>
                   <td>
                     <div class="input-group">
-                      <textarea class="form-control form-control-sm text-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID | trimSpace}}</textarea>
+                      <textarea class="form-control form-control-sm font-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID | trimSpace}}</textarea>
                       {{template "clippy" $rk.GetKID}}
                     </div>
 
                     <p class="mt-3">Backed by:</p>
                     <div class="input-group">
-                      <input type="text" id="key-{{$rk.ID}}" class="form-control text-monospace" value="{{$rk.KeyID}}" readonly/>
+                      <input type="text" id="key-{{$rk.ID}}" class="form-control font-monospace" value="{{$rk.KeyID}}" readonly/>
                       {{template "clippy" (printf "key-%d" $rk.ID)}}
                     </div>
                     <small class="form-text text-muted">
@@ -166,9 +169,9 @@
                           class="text-danger"
                           data-method="DELETE"
                           data-confirm="Are you sure you want to destroy this key? This action is irreversible!"
-                          data-toggle="tooltip"
+                          data-bs-toggle="tooltip"
                           title="Destroy this key version">
-                          <span class="oi oi-trash" aria-hidden="true"></span>
+                          <i class="bi bi-trash"></i>
                         </a>
                       </div>
 
@@ -176,7 +179,7 @@
                         <form method="POST" action="/realm/sms-keys/activate">
                           {{ $csrfField }}
                           <input type="hidden" name="id" value="{{$rk.ID}}" />
-                          <a href="#" class="btn btn-primary float-right" data-confirm="Have you already shared this new version and public key with Apple and Google?" data-submit-form>
+                          <a href="#" class="btn btn-primary float-end" data-confirm="Have you already shared this new version and public key with Apple and Google?" data-submit-form>
                             Activate
                           </a>
                         </form>

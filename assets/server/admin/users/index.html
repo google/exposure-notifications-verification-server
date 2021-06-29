@@ -17,10 +17,10 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-people me-2"></i>
         Users
-        <a href="/admin/users/new" class="float-right mr-n1 text-secondary" id="new" data-toggle="tooltip" title="New system admin">
-          <span class="oi oi-plus small" aria-hidden="true"></span>
+        <a href="/admin/users/new" class="float-end text-secondary" id="new" data-bs-toggle="tooltip" title="New system admin">
+          <i class="bi bi-plus-square-fill"></i>
         </a>
       </div>
 
@@ -28,19 +28,17 @@
         <form method="GET" action="/admin/users" id="search-form">
           <div class="input-group">
             <span class="input-group-prepend">
-              <select name="filter" id="filter" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+              <select name="filter" id="filter" class="text-truncate form-select dropdown-toggle border-end-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" selected>All users</option>
                 <option value="systemAdmins" {{selectedIf (eq .filter "systemAdmins")}}>System admins</option>
               </select>
             </span>
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
         </form>
       </div>
@@ -60,8 +58,7 @@
               <td class="text-truncate">
                 <a href="/admin/users/{{.ID}}">{{.Name}}</a>
                 {{if .SystemAdmin}}
-                  <span class="oi oi-wrench ml-1" aria-hidden="true"
-                    data-toggle="tooltip" title="System admin"></span>
+                  <i class="bi bi-gear-wide-connected ms-1" data-bs-toggle="tooltip" title="System admin"></i>
                 {{end}}
               </td>
               <td class="text-truncate">{{.Email}}</td>
@@ -73,18 +70,18 @@
                   class="d-block text-danger"
                   data-method="DELETE"
                   data-confirm="Are you sure you want to remove system admin privileges?"
-                  data-toggle="tooltip"
+                  data-bs-toggle="tooltip"
                   title="Remove system admin privileges">
-                  <span class="oi oi-account-logout" aria-hidden="true"></span>
+                  <i class="bi bi-arrow-down-circle"></i>
                 </a>
                 {{else}}
                 <a href="/admin/users/{{.ID}}"
                   class="d-block text-danger"
                   data-method="DELETE"
                   data-confirm="Are you sure you want to delete this user? This will IMMEDIATELY delete the user, their account, and all access to all realms. This operation cannot be undone."
-                  data-toggle="tooltip"
+                  data-bs-toggle="tooltip"
                   title="Delete this user">
-                  <span class="oi oi-trash" aria-hidden="true"></span>
+                  <i class="bi bi-trash"></i>
                 </a>
                 {{end}}
                 {{end}}

@@ -19,7 +19,7 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span id="icon" class="oi oi-globe mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-house-door me-2"></i>
         {{t $.locale "login.realm-selection"}}
       </div>
 
@@ -36,7 +36,7 @@
                   <p class="mb-1">{{$currentRealm.RegionCode}}</p>
                 </div>
                 <div>
-                  <span class="oi oi-arrow-right" aria-hidden="true"></span>
+                  <i class="bi bi-arrow-right"></i>
                 </div>
               </a>
             </form>
@@ -54,7 +54,7 @@
     {{if $currentUser.SystemAdmin}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header text-bold text-white admin-header">
-          <span id="icon" class="oi oi-cog mr-2 ml-n1" aria-hidden="true"></span>
+          <i class="bi bi-gear me-2"></i>
           System admin
         </div>
         <div class="list-group-item p-0">
@@ -63,7 +63,7 @@
               <p class="mb-1">Go to system admin</p>
             </div>
             <div>
-              <span class="oi oi-arrow-right" aria-hidden="true"></span>
+              <i class="bi bi-arrow-right"></i>
             </div>
           </a>
         </div>

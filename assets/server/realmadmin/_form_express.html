@@ -2,7 +2,7 @@
 
 {{$realm := .realm}}
 
-<form method="POST" action="/realm/settings#express" class="floating-form">
+<form method="POST" action="/realm/settings#express">
   {{ .csrfField }}
 
   {{if $realm.EnableENExpress}}
@@ -11,11 +11,11 @@
       <strong>enabled</strong> for {{$realm.Name}}. Click the button below to
       disable EN Express. This will enable you to control all the settings.
     </p>
-    <p class="font-weight-bold text-danger">
+    <p class="fw-bold text-danger">
       This could cause your iOS and Android integrations to stop working!
     </p>
 
-    <a href="/realm/settings/disable-express" class="btn btn-danger btn-block mt-4"
+    <a href="/realm/settings/disable-express" class="btn btn-danger mt-4"
       data-method="POST" data-confirm="Are you sure you want to disable EN Express? This could cause your iOS and Android integrations to stop working.">
       Disable EN Express
     </a>
@@ -26,14 +26,16 @@
       enable EN Express. <strong>You should only do this if you have confirmed
       participation with Apple and Google.</strong>
     </p>
-    <p class="font-weight-bold text-danger">
+    <p class="fw-bold text-danger mb-0">
       This will override the settings and force the EN Express defaults.
     </p>
 
-    <a href="/realm/settings/enable-express" class="btn btn-danger btn-block mt-4"
-      data-method="POST" data-confirm="Are you sure you want to enable EN Express? You should only do this if you have confirmed participation with Apple and Google.">
-      Enable EN Express
-    </a>
+    <div class="card-footer cheating-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+      <a href="/realm/settings/enable-express" class="btn btn-danger"
+        data-method="POST" data-confirm="Are you sure you want to enable EN Express? You should only do this if you have confirmed participation with Apple and Google.">
+        Enable EN Express
+      </a>
+    </div>
   {{end}}
 </form>
 

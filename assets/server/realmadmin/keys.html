@@ -2,61 +2,74 @@
 {{/* This is only shown if the realm is NOT set to use per-realm signing keys */}}
 <div class="card mb-3 shadow-sm">
   <div class="card-header">
-    <span class="oi oi-document mr-2 ml-n1"></span>
+    <i class="bi bi-file-earmark-lock2 me-2"></i>
     System verification certificate
   </div>
-  <div class="card-body mb-n3">
+
+  <div class="card-body">
     <p>
       Share this information with your <em>key server</em> operator so they can
       add your certificate to the trust store.
     </p>
 
-    <div class="form-label-group">
-      <div class="input-group">
-        <input type="text" id="systemiss" class="form-control text-monospace"
-          placeholder="Issuer (iss)" value="{{.systemCertIssuer}}" readonly />
-        <label for="systemiss">Issuer (iss)</label>
-        {{template "clippy" "systemiss"}}
-      </div>
-    </div>
-
-    <div class="form-label-group">
-      <div class="input-group">
-        <input type="text" id="systemaud" class="form-control text-monospace"
-          placeholder="Audience (aud)" value="{{.systemCertAudience}}" readonly />
-        <label for="systemaud">Audience (aud)</label>
-        {{template "clippy" "systemaud"}}
-      </div>
-    </div>
-
-    <div class="form-label-group">
-      <div class="input-group">
-        <input type="text" id="certDuration" class="form-control text-monospace"
-          placeholder="Certificate duration" value="{{.systemCertDuration}}" readonly />
-        <label for="certDuration">Certificate duration</label>
-        {{template "clippy" "certDuration"}}
-      </div>
-    </div>
-
-    <div class="form-label-group">
-      <div class="input-group">
-        <input type="text" id="systemCertKeyID" class="form-control text-monospace"
-          placeholder="Key ID (kid)" value="{{.systemCertKeyID}}" readonly />
-        <label for="systemCertKeyID">Key ID (kid)</label>
-        {{template "clippy" "systemCertKeyID"}}
-      </div>
-    </div>
-
-    <div class="form-label-group">
-      <div class="input-group">
-        <textarea class="form-control form-control-sm text-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey | trimSpace}}</textarea>
-        <label for="systemPublicKey">Public key</label>
-        {{template "clippy" "systemPublicKey"}}
-        {{if .systemCertPublicKeyError}}
-        <div class="invalid-feedback">
-          {{.systemCertPublicKeyError}}
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-label-group">
+          <div class="input-group">
+            <input type="text" id="systemiss" class="form-control font-monospace"
+              placeholder="Issuer (iss)" value="{{.systemCertIssuer}}" readonly />
+            <label for="systemiss">Issuer (iss)</label>
+            {{template "clippy" "systemiss"}}
+          </div>
         </div>
-        {{end}}
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-label-group">
+          <div class="input-group">
+            <input type="text" id="systemaud" class="form-control font-monospace"
+              placeholder="Audience (aud)" value="{{.systemCertAudience}}" readonly />
+            <label for="systemaud">Audience (aud)</label>
+            {{template "clippy" "systemaud"}}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-label-group">
+          <div class="input-group">
+            <input type="text" id="certDuration" class="form-control font-monospace"
+              placeholder="Certificate duration" value="{{.systemCertDuration}}" readonly />
+            <label for="certDuration">Certificate duration</label>
+            {{template "clippy" "certDuration"}}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-label-group">
+          <div class="input-group">
+            <input type="text" id="systemCertKeyID" class="form-control font-monospace"
+              placeholder="Key ID (kid)" value="{{.systemCertKeyID}}" readonly />
+            <label for="systemCertKeyID">Key ID (kid)</label>
+            {{template "clippy" "systemCertKeyID"}}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-12">
+        <div class="form-label-group">
+          <div class="input-group">
+            <textarea class="form-control form-control-sm font-monospace{{if .systemCertPublicKeyError}} is-invalid{{end}}" rows="4" id="systemPublicKey" readonly>{{.systemCertPublicKey | trimSpace}}</textarea>
+            <label for="systemPublicKey">Public key</label>
+            {{template "clippy" "systemPublicKey"}}
+            {{if .systemCertPublicKeyError}}
+            <div class="invalid-feedback">
+              {{.systemCertPublicKeyError}}
+            </div>
+            {{end}}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -86,11 +99,6 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Verification certificate key settings</h1>
-    <p>
-      View or edit the verification certificate signing keys for <strong>{{$realm.Name}}</strong> below.
-    </p>
-
     {{template "errorSummary" $realm}}
 
     {{if not $realm.UseRealmCertificateKey}}
@@ -100,119 +108,136 @@
     {{if .supportsPerRealmSigning}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header">
-          <span class="oi oi-key mr-2 ml-n1"></span>
+          <i class="bi bi-key me-2"></i>
           Realm signing key configuration
         </div>
-        <div class="card-body">
-          {{if not $realm.UseRealmCertificateKey}}
-            {{if and $realm.CanUpgradeToRealmSigningKeys .activePublicKey}}
-              <div class="alert alert-info">
-                <p>
-                  {{$realm.Name}} currently uses a globally shared signing key
-                  with all other realms. Migrating to a realm-specific signing
-                  keys gives you more control over your keys and their rotation.
-                </p>
-                <p class="mb-0">
-                  You <strong>must</strong> work with your key server
-                  administrator to register these new realm-specific signing
-                  keys. Then you can
-                  <a href="/realm/keys/upgrade" data-method="POST"
-                    data-confirm="Are you sure you want to upgrade to realm specific signing keys? This action can not be reversed.">
-                    update to realm-specific signing keys
-                  </a>.
-                </p>
-              </div>
-            {{else}}
-              <div class="alert alert-info" role="alert">
-                To migrate to realm-specific signing keys, first configure your realm's issuer and audience settings below.
-              </div>
-            {{end}}
-          {{end}}
 
-          <form method="POST" action="/realm/keys/save">
-            {{ .csrfField }}
-            <div class="form-label-group">
-              <div class="input-group">
-                <input type="text" name="certificateIssuer" id="certificateIssuer" class="form-control text-monospace{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}"
-                  placeholder="Issuer (iss)" value="{{$realm.CertificateIssuer}}" {{readonlyIf $realm.UseRealmCertificateKey}} />
-                <label for="certificateIssuer">Issuer (iss)</label>
-                {{template "clippy" "certificateIssuer"}}
-                {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
-              </div>
-              <small class="form-text text-muted">
-                This value is specific to your health authority. This field
-                cannot be modified after upgrading to use realm specific keys.
-              </small>
-            </div>
+        <form method="POST" action="/realm/keys/save">
+          {{ .csrfField }}
 
-            <div class="form-label-group">
-              <div class="input-group">
-                <input type="text" name="certificateAudience" id="certificateAudience" class="form-control text-monospace{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}"
-                  placeholder="Audience (aud)" value="{{$realm.CertificateAudience}}" {{readonlyIf $realm.UseRealmCertificateKey}} />
-                <label for="certificateAudience">Audience (aud)</label>
-                {{template "clippy" "certificateAudience"}}
-                {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
-              </div>
-              <small class="form-text text-muted">
-                The audience (<tt>aud</tt>) value is provided by your key server
-                operator. This field cannot be modified after upgrading to use
-                realm specific keys.
-              </small>
-            </div>
-
-            <div class="form-label-group">
-              <div class="input-group">
-                <input type="text" name="certificateDuration" id="certificateDuration" class="form-control text-monospace{{if $realm.ErrorsFor "certificateDuration"}} is-invalid{{end}}"
-                  placeholder="Certificate duration" value="{{$realm.CertificateDuration.Duration}}" />
-                <label for="certificateDuration">Certificate duration</label>
-                {{template "errorable" $realm.ErrorsFor "certificateDuration"}}
-              </div>
-              <small class="form-text text-muted">
-                This is the amount of time a certificate is valid after issuing.
-                It should be relatively low, like 15 minutes.
-              </small>
-            </div>
-
-            {{if $realm.UseRealmCertificateKey}}
-              <div class="form-label-group">
-                <div class="input-group">
-                  <input type="text" id="certKeyID" class="form-control"
-                    placeholder="Key ID (kid)" value="{{.activeRealmKey}}" readonly />
-                  <label for="certKeyID" class="col-sm-3">Key ID (kid)</label>
-                  {{template "clippy" "certKeyID"}}
+          <div class="card-body">
+            {{if not $realm.UseRealmCertificateKey}}
+              {{if and $realm.CanUpgradeToRealmSigningKeys .activePublicKey}}
+                <div class="alert alert-info">
+                  <p>
+                    {{$realm.Name}} currently uses a globally shared signing key
+                    with all other realms. Migrating to a realm-specific signing
+                    keys gives you more control over your keys and their rotation.
+                  </p>
+                  <p class="mb-0">
+                    You <strong>must</strong> work with your key server
+                    administrator to register these new realm-specific signing
+                    keys. Then you can
+                    <a href="/realm/keys/upgrade" data-method="POST"
+                      data-confirm="Are you sure you want to upgrade to realm specific signing keys? This action can not be reversed.">
+                      update to realm-specific signing keys
+                    </a>.
+                  </p>
                 </div>
-                <small class="form-text text-muted">
-                  This is the Key ID (kid) of the currently active key.
-                </small>
-              </div>
-
-              <div class="form-label-group">
-                <div class="input-group">
-                  <textarea class="form-control form-control-sm" rows="4" id="activePublicKey" placeholder="Public key" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
-                  <label for="activePublicKey">Public key</label>
-                  {{template "clippy" "activePublicKey"}}
+              {{else}}
+                <div class="alert alert-info" role="alert">
+                  To migrate to realm-specific signing keys, first configure your realm's issuer and audience settings below.
                 </div>
-                <small class="form-text text-muted">
-                  This is the currently active public key.
-                </small>
-              </div>
+              {{end}}
             {{end}}
 
-            <button type="submit" class="btn btn-primary btn-block">
-              Save realm certificate settings
-            </button>
-          </form>
-        </div>
-        <div class="card-footer text-right">
-          <small>
-          <a href="/jwks/{{$realm.ID}}" target="_blank">View public key discovery</a>
-          </small>
-        </div>
+            <div class="row g-3">
+              <div class="col-lg-12">
+                <div class="form-label-group">
+                  <div class="input-group">
+                    <input type="text" name="certificateIssuer" id="certificateIssuer" class="form-control font-monospace{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}"
+                      placeholder="Issuer (iss)" value="{{$realm.CertificateIssuer}}" {{readonlyIf $realm.UseRealmCertificateKey}} />
+                    <label for="certificateIssuer">Issuer (iss)</label>
+                    {{template "clippy" "certificateIssuer"}}
+                    {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    This value is specific to your health authority. This field
+                    cannot be modified after upgrading to use realm specific keys.
+                  </small>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-label-group">
+                  <div class="input-group">
+                    <input type="text" name="certificateAudience" id="certificateAudience" class="form-control font-monospace{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}"
+                      placeholder="Audience (aud)" value="{{$realm.CertificateAudience}}" {{readonlyIf $realm.UseRealmCertificateKey}} />
+                    <label for="certificateAudience">Audience (aud)</label>
+                    {{template "clippy" "certificateAudience"}}
+                    {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    The audience (<tt>aud</tt>) value is provided by your key server
+                    operator. This field cannot be modified after upgrading to use
+                    realm specific keys.
+                  </small>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-label-group">
+                  <div class="input-group">
+                    <input type="text" name="certificateDuration" id="certificateDuration" class="form-control font-monospace{{if $realm.ErrorsFor "certificateDuration"}} is-invalid{{end}}"
+                      placeholder="Certificate duration" value="{{$realm.CertificateDuration.Duration}}" />
+                    <label for="certificateDuration">Certificate duration</label>
+                    {{template "errorable" $realm.ErrorsFor "certificateDuration"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    This is the amount of time a certificate is valid after issuing.
+                    It should be relatively low, like 15 minutes.
+                  </small>
+                </div>
+              </div>
+
+              {{if $realm.UseRealmCertificateKey}}
+                <div class="col-lg-12">
+                  <div class="form-label-group">
+                    <div class="input-group">
+                      <input type="text" id="certKeyID" class="form-control"
+                        placeholder="Key ID (kid)" value="{{.activeRealmKey}}" readonly />
+                      <label for="certKeyID" class="col-sm-3">Key ID (kid)</label>
+                      {{template "clippy" "certKeyID"}}
+                    </div>
+                    <small class="form-text text-muted">
+                      This is the Key ID (kid) of the currently active key.
+                    </small>
+                  </div>
+
+                  <div class="form-label-group">
+                    <div class="input-group">
+                      <textarea class="form-control form-control-sm" rows="4" id="activePublicKey" placeholder="Public key" readonly>{{if .activePublicKey}}{{.activePublicKey | trimSpace}}{{else}}Temporarily unable to show public key{{end}}</textarea>
+                      <label for="activePublicKey">Public key</label>
+                      {{template "clippy" "activePublicKey"}}
+                    </div>
+                    <small class="form-text text-muted">
+                      This is the currently active public key.
+                    </small>
+                  </div>
+                </div>
+              {{end}}
+            </div>
+          </div>
+
+          <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+            <div class="d-grid d-lg-inline">
+              <button type="submit" class="btn btn-primary">
+                Save realm certificate settings
+              </button>
+            </div>
+            <div class="text-center text-lg-start mt-3 mt-lg-0">
+              <a href="/jwks/{{$realm.ID}}" target="_blank" class="small text-secondary">
+                View public key discovery
+                <i class="bi bi-arrow-up-right-square ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </form>
       </div>
 
       <div class="card mb-3 shadow-sm">
         <div class="card-header">
-          <span class="oi oi-globe mr-2 ml-n1"></span>
+          <i class="bi bi-house-door me-2"></i>
           Realm public keys
         </div>
         <div class="card-body">
@@ -224,7 +249,6 @@
                   data-confirm="Are you sure you want revert to manual key rotation?">revert to manual key rotation.</a>
               </p>
             </div>
-
           {{else}}
             <div class="alert alert-info">
               <p><strong>Enable automatic key rotation</strong>.
@@ -253,7 +277,7 @@ Failure to do so in advance will prevent your application users from sharing tem
                 There is a limit of {{.maximumKeyVersions}} key versions. Destroy an existing key version to create another.
               </div>
             {{else}}
-              <a href="/realm/keys/create" data-method="POST" class="btn btn-primary btn-block">
+              <a href="/realm/keys/create" data-method="POST" class="btn btn-primary">
                 Create new signing key version
               </a>
             {{end}}
@@ -276,18 +300,18 @@ Failure to do so in advance will prevent your application users from sharing tem
                   {{range $rk := .realmKeys}}
                   <tr>
                     <td>
-                      <a href="/jwks/{{$rk.RealmID}}" class="text-monospace">{{$rk.GetKID}}</a>
-                      {{if $rk.Active}}<span class="badge badge-success">Active</span>{{end}}
+                      <a href="/jwks/{{$rk.RealmID}}" class="font-monospace">{{$rk.GetKID}}</a>
+                      {{if $rk.Active}}<span class="badge bg-success">Active</span>{{end}}
                     </td>
                     <td>
                       <div class="input-group">
-                        <textarea class="form-control form-control-sm text-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID | trimSpace}}</textarea>
+                        <textarea class="form-control form-control-sm font-monospace" rows="4" id="{{$rk.GetKID}}" readonly>{{index $publicKeys $rk.GetKID | trimSpace}}</textarea>
                         {{template "clippy" $rk.GetKID}}
                       </div>
 
                       <p class="mt-3">Backed by:</p>
                       <div class="input-group">
-                        <input type="text" id="key-{{$rk.ID}}" class="form-control text-monospace" value="{{$rk.KeyID}}" readonly/>
+                        <input type="text" id="key-{{$rk.ID}}" class="form-control font-monospace" value="{{$rk.KeyID}}" readonly/>
                         {{template "clippy" (printf "key-%d" $rk.ID)}}
                       </div>
                       <small class="form-text text-muted">
@@ -302,9 +326,9 @@ Failure to do so in advance will prevent your application users from sharing tem
                             class="text-danger"
                             data-method="DELETE"
                             data-confirm="Are you sure you want to destroy this key? This action is irreversible!"
-                            data-toggle="tooltip"
+                            data-bs-toggle="tooltip"
                             title="Destroy this key version">
-                            <span class="oi oi-trash" aria-hidden="true"></span>
+                            <i class="bi bi-trash"></i>
                           </a>
                         </div>
 
@@ -312,7 +336,7 @@ Failure to do so in advance will prevent your application users from sharing tem
                           <form method="POST" action="/realm/keys/activate">
                             {{ $csrfField }}
                             <input type="hidden" name="id" value="{{$rk.ID}}" />
-                            <a href="#" class="btn btn-primary float-right" data-confirm="Have you already shared the new certificate key version and public key with your 'key server' operator?" data-submit-form>
+                            <a href="#" class="btn btn-primary float-end" data-confirm="Have you already shared the new certificate key version and public key with your 'key server' operator?" data-submit-form>
                               Activate
                             </a>
                           </form>

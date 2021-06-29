@@ -78,7 +78,7 @@
 
         if (labels) {
           form.querySelectorAll(labels).forEach((label) => {
-            label.querySelectorAll('span.oi').forEach((icon) => {
+            label.querySelectorAll('span.bi').forEach((icon) => {
               icon.parentNode.removeChild(icon);
             });
           });

@@ -14,25 +14,34 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>New mobile app</h1>
-    <p>
-      Use the form below to create a new mobile app.
-    </p>
+    <form method="POST" action="/realm/mobile-apps">
+      {{ .csrfField }}
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
-        {{template "errorSummary" $app}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-window-sidebar me-2"></i>
+          New mobile app
+        </div>
 
-        <form method="POST" action="/realm/mobile-apps" class="floating-form">
-          {{ .csrfField }}
-
+        <div class="card-body">
+          {{template "errorSummary" $app}}
           {{template "mobileapps/_app" .}}
+        </div>
 
-          <button type="submit" id="submit" class="btn btn-primary btn-block">Create mobile app</button>
-        </form>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" id="submit" class="btn btn-primary">
+              Create mobile app
+            </button>
+          </div>
+          <div class="d-grid d-lg-inline">
+            <a href="/realm/mobile-apps" class="btn btn-danger mt-2 mt-lg-0">
+              Cancel
+            </a>
+          </div>
+        </div>
       </div>
-    </div>
+    </form>
   </main>
 </body>
 </html>

@@ -17,7 +17,11 @@
     </p>
 
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">User details</div>
+      <div class="card-header">
+        <i class="bi bi-person me-2"></i>
+        New user
+      </div>
+
       <div class="card-body">
         {{template "errorSummary" .user}}
         {{template "errorSummary" .userMembership}}

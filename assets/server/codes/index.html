@@ -15,49 +15,61 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Verification code status</h1>
-    <p>
-      Use an identifier to check the status of a code previously shared with your patient.
-    </p>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Code status</div>
-      <div class="card-body">
-        <form class="floating-form" action="/codes/status" id="form-check-status">
-          <div class="form-group">
-            <div class="form-label-group">
-              <input type="text" id="uuid" name="uuid"
-                class='form-control text-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
-                value="{{$code.UUID}}" placeholder="UUID" autocomplete="off" required autofocus>
-              <label for="uuid">UUID</label>
-              {{template "errorable" $code.ErrorsFor "uuid"}}
-              <small class="form-text text-muted">
-                Identifier given from the Issue Code form.
-              </small>
+    <div class="row mb-3 g-3">
+      <div class="col-md">
+        <form action="/codes/status" id="form-check-status">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <i class="bi bi-geo me-2"></i>
+              Code status
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col">
+                  <div class="form-floating">
+                    <input type="text" id="uuid" name="uuid"
+                      class='form-control font-monospace{{if $code.ErrorsFor "uuid"}} is-invalid{{end}}'
+                      value="{{$code.UUID}}" placeholder="UUID" autocomplete="off" required autofocus>
+                    <label for="uuid">UUID</label>
+                    {{template "errorable" $code.ErrorsFor "uuid"}}
+                  </div>
+                  <small class="form-text text-muted">
+                    Identifier given from the Issue Code form.
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+              <div class="d-grid d-lg-inline">
+                <input type="submit" value="Check code status" class="btn btn-primary">
+              </div>
             </div>
           </div>
-
-          <input type="submit" value="Check status" class="btn btn-primary btn-block">
         </form>
       </div>
-    </div>
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Your recently issued codes</div>
-      <div class="list-group list-group-flush">
-        {{range $code := .recentCodes}}
-          <a href="/codes/{{$code.UUID}}" class="list-group-item list-group-item-action">
-            <span class="text-monospace">{{$code.UUID}}</span>
-            <br />
-            <small data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">
-              {{$code.CreatedAt.Format "2006-02-01 15:04"}}
-            </small>
-          </a>
-        {{else}}
-          <div class="card-body text-center">
-            <em>You have not issued any codes recently.</em>
+      <div class="col-md">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <i class="bi bi-clock-history me-2"></i>
+            Your recently issued codes
           </div>
-        {{end}}
+          <div class="list-group list-group-flush">
+            {{range $code := .recentCodes}}
+              <a href="/codes/{{$code.UUID}}" class="list-group-item list-group-item-action">
+                <span class="font-monospace">{{$code.UUID}}</span>
+                <br />
+                <small data-timestamp="{{$code.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">
+                  {{$code.CreatedAt.Format "2006-02-01 15:04"}}
+                </small>
+              </a>
+            {{else}}
+              <div class="card-body text-center">
+                <em>You have not issued any codes recently.</em>
+              </div>
+            {{end}}
+          </div>
+        </div>
       </div>
     </div>
   </main>

@@ -42,12 +42,12 @@
     {{end}}
 
     {{if not .skipForm}}
-    <form method="POST" action="/report/issue" class="floating-form">
+    <form method="POST" action="/report/issue">
       {{ .csrfField }}
 
       <div class="row mb-4">
         <div class="col">
-          <div class="form-floating">
+          <div>
             <input type="tel" id="phone" name="phone" class="form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" required
               placeholder="{{t $.locale "user-report.phone-number-header"}}" value="{{.phoneNumber}}" />
             <label for="phone">{{t $.locale "user-report.phone-number-header"}}</label>
@@ -68,7 +68,7 @@
 
       <div class="row mb-4">
         <div class="col">
-          <div class="form-floating">
+          <div>
             <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}}
               value="{{.date}}"/>
             <label for="test-date">{{t $.locale "user-report.testing-date-label"}}</label>

@@ -15,47 +15,59 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>New system admin</h1>
-    <p>
-      Use the form below to create a new system admin.
-    </p>
+    <form method="POST" id="new-form" action="/admin/users">
+      {{ .csrfField }}
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">System admin details</div>
-      <div class="card-body">
-        {{template "errorSummary" $user}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-person me-2"></i>
+          New system admin
+        </div>
 
-        <form method="POST" id="new-form" action="/admin/users">
-          {{ .csrfField }}
+        <div class="card-body">
+          {{template "errorSummary" $user}}
 
-          <div class="form-label-group">
-            <input type="text" id="name" name="name" class="form-control{{if $user.ErrorsFor "name"}} is-invalid{{end}}"
-              value="{{$user.Name}}" placeholder="Name" required autofocus />
-            <label for="name">Name</label>
-            {{if $user.ErrorsFor "name"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($user.ErrorsFor "name") ", "}}
+          <div class="row g-3">
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="name" name="name" class="form-control{{if $user.ErrorsFor "name"}} is-invalid{{end}}"
+                  value="{{$user.Name}}" placeholder="Name" required autofocus />
+                <label for="name">Name</label>
+                {{if $user.ErrorsFor "name"}}
+                <div class="invalid-feedback">
+                  {{joinStrings ($user.ErrorsFor "name") ", "}}
+                </div>
+                {{end}}
+              </div>
             </div>
-            {{end}}
-          </div>
 
-          <div class="form-label-group">
-            <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}"
-              value="{{$user.Email}}" placeholder="Email address" required />
-            <label for="email">Email address</label>
-            {{if $user.ErrorsFor "email"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($user.ErrorsFor "email") ", "}}
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="email" id="email" name="email" class="form-control{{if $user.ErrorsFor "email"}} is-invalid{{end}}"
+                  value="{{$user.Email}}" placeholder="Email address" required />
+                <label for="email">Email address</label>
+                {{if $user.ErrorsFor "email"}}
+                <div class="invalid-feedback">
+                  {{joinStrings ($user.ErrorsFor "email") ", "}}
+                </div>
+                {{end}}
+              </div>
             </div>
-            {{end}}
           </div>
+        </div>
 
-          <button type="submit" class="btn btn-primary btn-block">
-            Create system admin
-          </button>
-        </form>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" class="btn btn-primary">
+              Create system admin
+            </button>
+          </div>
+          <div class="d-grid d-lg-inline mt-2 mt-lg-0">
+            <a href="/admin/users" class="btn btn-danger">Cancel</a>
+          </div>
+        </div>
       </div>
-    </div>
+    </form>
   </main>
 </body>
 

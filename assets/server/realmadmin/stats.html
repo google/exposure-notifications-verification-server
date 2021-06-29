@@ -16,38 +16,35 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <form class="form-inline mb-2 d-flex justify-content-end">
-      <div class="form-group">
-        <label for="smooth-drop">Distribution smoothing</label>
-        <select class="custom-select ml-1" name="smooth-drop" id="smooth-drop"
-        data-toggle="tooltip" title="Distribution graphs will be aggregated as the sum of this many days.">
-          <option value="1">1 day</option>
-          <option value="7" selected>1 week</option>
-          <option value="14">2 weeks</option>
-          <option value="28">4 weeks</option>
-        </select>
+    <div class="row mb-3">
+      <div class="col-lg-3 offset-lg-9">
+        <div class="form-floating">
+          <select name="smooth-drop" id="smooth-drop" class="form-select w-100"
+            data-bs-toggle="tooltip" title="Distribution graphs will be aggregated as the sum of this many days.">
+            <option value="1">1 day</option>
+            <option value="7" selected>1 week</option>
+            <option value="14">2 weeks</option>
+            <option value="28">4 weeks</option>
+          </select>
+          <label for="smooth-drop">Distribution smoothing</label>
+        </div>
       </div>
-    </form>
-
-    <h1>Realm stats</h1>
-    <p>
-      The data below shows realm statistics and visualizations.
-    </p>
+    </div>
 
     {{template "realmadmin/_stats_codes" .}}
 
     <div class="row">
-      <div class="col-lg-6 pr-lg-2">
+      <div class="col-lg-6 pe-lg-2">
         {{template "realmadmin/_stats_users" .}}
       </div>
 
-      <div class="col-lg-6 pl-lg-2">
+      <div class="col-lg-6 ps-lg-2">
         {{template "realmadmin/_stats_external_issuers" .}}
       </div>
     </div>
 
     {{if .hasKeyServerStats}}
-    {{template "realmadmin/_stats_keyserver" .}}
+      {{template "realmadmin/_stats_keyserver" .}}
     {{end}}
   </main>
 

@@ -15,20 +15,23 @@
 <meta name="theme-color" content="#ffffff">
 {{.csrfMeta}}
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
-  integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
-  integrity="sha384-wWci3BOzr88l+HNsAtr3+e5bk9qh5KfjU6gl/rbzfTYdsAVHBEbxB33veLYmFg/a" crossorigin="anonymous">
+{{if eq (printf "%s" $.textDirection) "rtl"}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.rtl.min.css"
+  integrity="sha384-gXt9imSW0VcJVHezoNQsP+TNrjYXoGcrqBZJpry9zJt8PCQjobwmhMGaDHTASo9N" crossorigin="anonymous">
+{{else}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+  integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+{{end}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+  integrity="sha384-tKLJeE1ALTUwtXlaGjJYM3sejfssWdAaWR2s97axw4xkiAdMzQjtOjgcyw0Y50KU" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/css/intlTelInput.min.css"
   integrity="sha384-+0L34NtZQE8CdqKYXA1psEH5gRnPhYm5Yrfl6+zHBC9rK+SuCkyS99e/a4wRIf3B" crossorigin="anonymous">
 {{ cssIncludeTag }}
 
-<script defer src="https://code.jquery.com/jquery-3.5.1.min.js"
-  integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
-  integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/js/intlTelInput.min.js"
   integrity="sha384-lZ7BQV5Pg5PjeG4uM5qkYztFBL5dtUWhiAtkcz6j/vj1tjZFA+3zhwsiGUmsqulm" crossorigin="anonymous"></script>
 {{ jsIncludeTag }}
@@ -39,13 +42,19 @@
 {{/* defines the top navigation bar */}}
 {{define "navbar"}}
 {{$currentMembership := .currentMembership}}
-<header class="mb-3">
-  {{with $v := .systemNotice}}
-    <div class="d-block px-3 py-2 text-center text-bold bg-warning mb-n3">
-      {{$v | safeHTML}}
-    </div>
-  {{end}}
 
+{{with $v := .systemNotice}}
+  <div class="alert alert-warning border-0 rounded-0 m-0" role="alert">
+    <div class="container">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-square-fill me-3"></i>
+        <span class="alert-message">{{$v | safeHTML}}</span>
+      </div>
+    </div>
+  </div>
+{{end}}
+
+<header class="mb-3">
   {{if $currentMembership}}
     {{$currentRealm := $currentMembership.Realm}}
     <div class="d-block px-3 py-2 text-center text-bold text-white bg-primary">
@@ -53,43 +62,36 @@
     </div>
   {{end}}
 
-  {{if .maintenanceMode}}
-    <div class="alert alert-danger" role="alert">
-      The server is undergoing maintenance and is read-only. Requests to issue
-      new codes will fail.
-    </div>
-  {{end}}
-
   {{if .currentPath}}
-    <nav class="nav nav-tabs navbar-expand-md navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
       <div class="container">
-        {{template "navtoggle" .}}
-
-        <div class="collapse navbar-collapse mt-2" id="navbar">
-          <ul class="nav mr-auto flex-column flex-md-row">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navigation">
+          <ul class="navbar-nav me-auto">
             {{if $currentMembership.Can rbac.CodeIssue}}
-              <li class="nav-item">
+              <li class="nav-item pe-3">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/issue"}}active{{end}}" href="/codes/issue">
                   {{t $.locale "nav.issue-code"}}
                 </a>
               </li>
             {{end}}
             {{if and $currentMembership.Realm.AllowBulkUpload ($currentMembership.Can rbac.CodeBulkIssue)}}
-              <li class="nav-item">
+              <li class="nav-item pe-3">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/bulk-issue"}}active{{end}}" href="/codes/bulk-issue">
                   {{t $.locale "nav.bulk-issue-codes"}}
                 </a>
               </li>
             {{end}}
             {{if $currentMembership.Can rbac.CodeRead}}
-              <li class="nav-item">
+              <li class="nav-item pe-3">
                 <a class="nav-link {{if .currentPath.IsDir "/codes/status"}}active{{end}}" href="/codes/status">
                   {{t $.locale "nav.check-code-status"}}
                 </a>
               </li>
             {{end}}
           </ul>
-
           {{template "navdropdown" .}}
         </div>
       </div>
@@ -98,28 +100,20 @@
 </header>
 {{end}}
 
-{{/* defines the hamburger menu toggle for mobile */}}
-{{define "navtoggle"}}
-<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar"
-aria-expanded="false" aria-label="Toggle navigation">
-  <span class="navbar-toggler-icon"></span>
-</button>
-{{end}}
-
 {{/* defines the user dropdown menu */}}
 {{define "navdropdown"}}
 {{$currentUser := .currentUser}}
 {{$currentMembership := .currentMembership}}
 {{$currentMemberships := .currentMemberships}}
-<ul class="navbar-nav ml-3">
+<ul class="navbar-nav">
   {{if $currentUser}}
     <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" id="profile-menu"
-        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="oi oi-person"></span>
+        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="bi bi-person-fill"></i>
       </a>
 
-      <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profile-menu">
+      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="profile-menu">
         {{if $currentMembership}}
           {{$showRealmMenu := false}}
           {{if $currentMembership.Can rbac.APIKeyRead}}
@@ -198,11 +192,9 @@ aria-expanded="false" aria-label="Toggle navigation">
 {{end}}
 
 {{define "clippy"}}
-<div class="input-group-append">
-  <a class="input-group-text" data-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="{{.}}">
-    <span class="oi oi-clipboard" aria-hidden="true"></span>
-  </a>
-</div>
+<a href="#" class="input-group-text" data-bs-toggle="tooltip" title="Copy to clipboard" data-copy data-copy-target="{{.}}">
+  <i class="bi bi-clipboard"></i>
+</a>
 {{end}}
 
 {{define "errorable"}}
@@ -215,12 +207,13 @@ aria-expanded="false" aria-label="Toggle navigation">
 
 {{define "errorSummary"}}
 {{if $errs := .Errors}}
-  <div class="alert alert-danger mb-4" role="alert">
-    <p>
-      The following errors occurred:
-    </p>
+  <div class="alert alert-danger mb-3" role="alert">
+    <div class="d-flex align-items-center mb-2">
+      <i class="bi bi-exclamation-circle-fill me-2"></i>
+      <span>The following errors occurred:</span>
+    </div>
 
-    <ul class="mb-1">
+    <ul class="list-unstyled mb-0">
       {{range $k, $v := $errs}}
         {{range $e := $v}}
           <li><strong>{{$k}}</strong> {{$e}}</li>
@@ -232,8 +225,12 @@ aria-expanded="false" aria-label="Toggle navigation">
 {{end}}
 
 {{define "beta-notice"}}
-<div class="alert alert-warning">
-  <span class="oi oi-beaker"></span> This feature is still under active
-  development.
+<div class="alert alert-warning" role="alert">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-cone-striped me-3"></i>
+    <span class="alert-message">
+      This feature is still under active development.
+    </span>
+  </div>
 </div>
 {{end}}

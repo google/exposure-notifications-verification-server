@@ -9,7 +9,7 @@
   for the realm.
 </p>
 
-<form method="POST" action="/realm/settings#email" class="floating-form">
+<form method="POST" action="/realm/settings#email">
   {{ .csrfField }}
   <input type="hidden" name="email" value="1" />
 
@@ -23,101 +23,121 @@
     {{end}}
 
     <div class="form-group form-check">
-      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1" {{if $realm.UseSystemEmailConfig}} checked{{end}}
-        data-toggle="collapse" data-target="#smtp-form">
+      <input type="checkbox" name="use_system_smtp_config" id="use-system-smtp-config" class="form-check-input" value="1"
+        data-bs-toggle="collapse" data-bs-target="#smtp-form"
+        {{checkedIf $realm.UseSystemEmailConfig}}>
       <label class="form-check-label" for="use-system-smtp-config">
         Use system SMTP configuration
       </label>
     </div>
   {{end}}
 
-  <div id="smtp-form" class="collapse{{if not $realm.UseSystemEmailConfig}} show{{end}}">
-    <div class="form-label-group">
-      <input type="text" name="smtp_account" id="smtp-account" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpAccount"}} is-invalid{{end}}"
-        placeholder="SMTP account" value="{{$emailConfig.SMTPAccount}}" />
-      <label for="smtp-account">SMTP account</label>
-      {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
-      <small class="form-text text-muted">
-        This is the SMTP email account eg. noreply@example.com
-      </small>
-    </div>
+  <div id="smtp-form" class="bg-light border rounded p-3 mb-3 collapse {{if not $realm.UseSystemEmailConfig}}show{{end}}">
+    <h5 class="mb-3">Credentials</h5>
 
-    <div class="form-label-group">
-      <input type="password" name="smtp_password" id="smtp-password" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPassword"}} is-invalid{{end}}" autocomplete="new-password"
-        placeholder="SMTP password" {{if $emailConfig.SMTPPassword}}value="{{passwordSentinel}}"{{end}}>
-      <label for="smtp-password">SMTP password</label>
-      {{template "errorable" $emailConfig.ErrorsFor "smtpPassword"}}
-      <small class="form-text text-muted">
-        This is the password for your SMTP email.
-      </small>
-    </div>
-
-    <div class="form-label-group">
-      <input name="smtp_host" id="smtp-host" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
-        placeholder="SMTP host" value="{{$emailConfig.SMTPHost}}" />
-      <label for="smtp-port">SMTP host</label>
-      {{template "errorable" $emailConfig.ErrorsFor "smtpHost"}}
-      <small class="form-text text-muted">
-        SMTP host is the hostname for the SMTP server.
-      </small>
-    </div>
-
-    <div class="form-label-group">
-      <input name="smtp_port" id="smtp-port" class="form-control text-monospace{{if $emailConfig.ErrorsFor "smtpPort"}} is-invalid{{end}}"
-        placeholder="SMTP port" value="{{if $emailConfig.SMTPPort}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
-      <label for="smtp-port">SMTP port</label>
-      {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
-      <small class="form-text text-muted">
-        SMTP port is the port number to connect to.
-        587 is the default port for SMTP, and legacy port 25 is blocked.
-      </small>
-    </div>
-
-    <hr>
-    <h6 class="mb-3">New user invitation email</h6>
-
-    <div class="form-label-group">
-      <textarea name="email_invite_template" id="email-invite-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailInviteTemplate"}} is-invalid{{end}}"
-        rows="5" placeholder="Template text">{{$realm.EmailInviteTemplate}}</textarea>
-      <label for="email-invite-template">Template text</label>
-      {{if $realm.ErrorsFor "EmailInviteTemplate"}}
-      <div class="invalid-feedback">
-        {{joinStrings ($realm.ErrorsFor "EmailInviteTemplate") ", "}}
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="text" name="smtp_account" id="smtp-account" class="form-control font-monospace {{invalidIf ($emailConfig.ErrorsFor "smtpAccount")}}"
+            placeholder="SMTP account" value="{{$emailConfig.SMTPAccount}}" />
+          <label for="smtp-account">SMTP account</label>
+          {{template "errorable" $emailConfig.ErrorsFor "smtpAccount"}}
+          <small class="form-text text-muted">
+            This is the SMTP email account eg. noreply@example.com
+          </small>
+        </div>
       </div>
-      {{end}}
-      <small class="form-text text-muted">
-        <p>
-        The invitation email message will be constructed based on the template you provide.
-        This can be helpful for introducing new users to the system or providing additional instructions.
-        There are some special strings that you can use to substitute items.
 
-        Your email invite template <em>MUST</em> contain <code>[invitelink]</code>.
-        </p>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input type="password" name="smtp_password" id="smtp-password" class="form-control font-monospace {{invalidIf ($emailConfig.ErrorsFor "smtpPassword")}}"
+            autocomplete="new-password" placeholder="SMTP password"
+            {{if $emailConfig.SMTPPassword}}value="{{passwordSentinel}}"{{end}}>
+          <label for="smtp-password">SMTP password</label>
+          {{template "errorable" $emailConfig.ErrorsFor "smtpPassword"}}
+          <small class="form-text text-muted">
+            This is the password for your SMTP email.
+          </small>
+        </div>
+      </div>
 
-        <ul>
-          <li><code>[invitelink]</code> The link given to the user to accept the invitation.</li>
-          <li><code>[realname]</code> The name of the current realm. Currently <em>{{$realm.Name}}</em>.</li>
-        </ul>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input name="smtp_host" id="smtp-host" class="form-control font-monospace {{invalidIf ($emailConfig.ErrorsFor "smtpPort")}}"
+            placeholder="SMTP host" value="{{$emailConfig.SMTPHost}}" />
+          <label for="smtp-port">SMTP host</label>
+          {{template "errorable" $emailConfig.ErrorsFor "smtpHost"}}
+          <small class="form-text text-muted">
+            SMTP host is the hostname for the SMTP server.
+          </small>
+        </div>
+      </div>
 
-        Here is an example invitation template.
-        <p>
-          <samp class="text-dark">
-            Welcome,<br/>
-            You have been invited to the State of Wonder Dept. of Health COVID-19 exposure notification
-            server. You may use the following link to set your password and sign-in: [invitelink]
-            <br/><br/>
-            If you did not request this, please ignore this email.
-          </samp>
-        </p>
-      </small>
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <input name="smtp_port" id="smtp-port" class="form-control font-monospace {{invalidIf ($emailConfig.ErrorsFor "smtpPort")}}"
+            placeholder="SMTP port" value="{{if $emailConfig.SMTPPort}}{{$emailConfig.SMTPPort}}{{else}}587{{end}}" />
+          <label for="smtp-port">SMTP port</label>
+          {{template "errorable" $emailConfig.ErrorsFor "smtpPort"}}
+          <small class="form-text text-muted">
+            SMTP port is the port number to connect to.
+            587 is the default port for SMTP, and legacy port 25 is blocked.
+          </small>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <hr>
-    <h6 class="mb-3">Password reset email</h6>
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">New user invitation email</h5>
 
-    <div class="form-label-group">
-      <textarea name="password_reset_template" id="password-reset-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailPasswordResetTemplate"}} is-invalid{{end}}"
-        rows="5" placeholder="Template text">{{$realm.EmailPasswordResetTemplate}}</textarea>
+    <div class="row g-3">
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <textarea name="email_invite_template" id="email-invite-template" class="form-control font-monospace {{invalidIf ($realm.ErrorsFor "EmailInviteTemplate")}}"
+            placeholder="Template text" style="height:150px;">{{$realm.EmailInviteTemplate}}</textarea>
+          <label for="email-invite-template">Template text</label>
+          {{if $realm.ErrorsFor "EmailInviteTemplate"}}
+          <div class="invalid-feedback">
+            {{joinStrings ($realm.ErrorsFor "EmailInviteTemplate") ", "}}
+          </div>
+          {{end}}
+          <small class="form-text text-muted">
+            <p>
+            The invitation email message will be constructed based on the template you provide.
+            This can be helpful for introducing new users to the system or providing additional instructions.
+            There are some special strings that you can use to substitute items.
+
+            Your email invite template <em>MUST</em> contain <code>[invitelink]</code>.
+            </p>
+
+            <ul>
+              <li><code>[invitelink]</code> The link given to the user to accept the invitation.</li>
+              <li><code>[realname]</code> The name of the current realm. Currently <em>{{$realm.Name}}</em>.</li>
+            </ul>
+
+            Here is an example invitation template.
+            <p class="mb-0">
+              <samp class="text-dark">
+                Welcome,<br/>
+                You have been invited to the State of Wonder Dept. of Health COVID-19 exposure notification
+                server. You may use the following link to set your password and sign-in: [invitelink]
+                <br/><br/>
+                If you did not request this, please ignore this email.
+              </samp>
+            </p>
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">Password reset email</h5>
+
+    <div class="form-floating">
+      <textarea name="password_reset_template" id="password-reset-template" class="form-control font-monospace {{invalidIf ($realm.ErrorsFor "EmailPasswordResetTemplate")}}"
+        placeholder="Template text" style="height:150px;">{{$realm.EmailPasswordResetTemplate}}</textarea>
       <label for="password-reset-template">Template text</label>
       {{if $realm.ErrorsFor "EmailPasswordResetTemplate"}}
       <div class="invalid-feedback">
@@ -139,7 +159,7 @@
         </ul>
 
         Here is an example invitation template.
-        <p>
+        <p class="mb-0">
           <samp class="text-dark">
             You have requested your password to the State of Wonder Dept. of Health COVID-19 exposure notification
             server to be reset. You may use the following link to set a new password: [passwordresetlink]
@@ -149,13 +169,14 @@
         </p>
       </small>
     </div>
+  </div>
 
-    <hr>
-    <h6 class="mb-3">Verify email address</h6>
+  <div class="bg-light border rounded p-3 mb-3">
+    <h5 class="mb-3">Verify email</h5>
 
-    <div class="form-label-group">
-      <textarea name="email_verify_template" id="email-verify-template" class="form-control text-monospace{{if $realm.ErrorsFor "EmailVerifyTemplate"}} is-invalid{{end}}"
-        rows="5" placeholder="Template text">{{$realm.EmailVerifyTemplate}}</textarea>
+    <div class="form-floating">
+      <textarea name="email_verify_template" id="email-verify-template" class="form-control font-monospace {{invalidIf ($realm.ErrorsFor "EmailVerifyTemplate")}}"
+        placeholder="Template text" style="height:150px;">{{$realm.EmailVerifyTemplate}}</textarea>
       <label for="email-verify-template">Template text</label>
       {{if $realm.ErrorsFor "EmailVerifyTemplate"}}
       <div class="invalid-feedback">
@@ -177,7 +198,7 @@
         </ul>
 
         Here is an example invitation template.
-        <p>
+        <p class="mb-0">
           <samp class="text-dark">
             Use the following link toverify your email address for the State of Wonder Dept. of Health COVID-19 exposure notification
             server: [verifylink]
@@ -189,8 +210,10 @@
     </div>
   </div>
 
-  <div class="mt-4">
-    <input type="submit" id="update-smtp" class="btn btn-primary btn-block" value="Update email settings" />
+  <div class="card-footer cheating-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+    <button type="submit" class="btn btn-primary">
+      Update email settings
+    </button>
   </div>
 </form>
 

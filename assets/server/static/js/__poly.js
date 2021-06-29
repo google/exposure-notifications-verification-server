@@ -104,3 +104,7 @@ const uploadWithRetries = async (uploadFn) => {
   }
   return cancel;
 };
+
+// sleep is a helper that returns an awaitable promise for async functions to
+// sleep.
+const sleep = (m) => new Promise((r) => setTimeout(r, m));

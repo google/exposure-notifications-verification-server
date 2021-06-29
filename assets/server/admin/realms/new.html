@@ -15,96 +15,117 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>New realm</h1>
-    <p>
-      Use the form below to create a new realm.
-    </p>
+    <form method="POST" action="/admin/realms" id="new-form">
+      {{ .csrfField }}
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
-        {{template "errorSummary" $realm}}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-house-door"></i>
+          New realm
+        </div>
 
-        <form method="POST" action="/admin/realms" id="new-form">
-          {{ .csrfField }}
+        <div class="card-body">
+          {{template "errorSummary" $realm}}
 
-          <div class="form-label-group">
-            <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" placeholder="Realm name" autofocus />
-            <label for="name">Realm name</label>
-            {{template "errorable" $realm.ErrorsFor "name"}}
-            <small class="form-text text-muted">
-              The realm name should be descriptive. It must also be globally
-              unique.
-            </small>
+          <div class="row g-3">
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="name" name="name" class="form-control{{if $realm.ErrorsFor "name"}} is-invalid{{end}}" value="{{$realm.Name}}" placeholder="Realm name" autofocus />
+                <label for="name">Realm name</label>
+                {{template "errorable" $realm.ErrorsFor "name"}}
+                <small class="form-text text-muted">
+                  The realm name should be descriptive. It must also be globally
+                  unique.
+                </small>
+              </div>
+            </div>
+
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" placeholder="Region code" />
+                <label for="name">Region code</label>
+                {{template "errorable" $realm.ErrorsFor "regionCode"}}
+                <small class="form-text text-muted">
+                  Used in creating deep link SMS for multi-helath authority apps. Region should
+                  be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and (optionally) ISO 3166-2 subdivision codes</a> where applicable.
+                  For example, Washington State would be <code>US-WA</code>, and Canada would be <code>CA</code>. The region code should be scoped to the authority of the public health
+                  system represented by this verification system.
+                </small>
+              </div>
+            </div>
+
+            {{if .supportsPerRealmSigning}}
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <select class="form-control form-select{{if $realm.ErrorsFor "useRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
+                    <option value="true" {{if $realm.UseRealmCertificateKey}}selected{{end}}>Create realm-specific signing key</option>
+                    <option value="false" {{if not $realm.UseRealmCertificateKey}}selected{{end}}>Use system signing key</option>
+                  </select>
+                  <label for="useRealmCertificateKey">Signing key configuration</label>
+                  {{template "errorable" $realm.ErrorsFor "useRealmCertificateKey"}}
+                  <small class="form-text text-muted">
+                    It is recommended that you create a realm-specific signing key when creating a new realm. However, it
+                    is important to note that this once a realm is created, you cannot switch back to using the system
+                    signing key.
+                  </small>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" placeholder="Issuer (iss)" />
+                  <label for="certificateIssuer">Issuer (iss)</label>
+                  {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
+                  <small class="form-text text-muted">
+                    This value is specific to the health authority. After created
+                    using realm-specific keys, this field cannot be changed.
+                  </small>
+                </div>
+              </div>
+
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <input type="text" id="certificateAudience" name="certificateAudience" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
+                  <label for="certificateAudience">Audience (aud)</label>
+                  {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
+                  <small class="form-text text-muted">
+                    The audience (<code>aud</code>) value is provided the <em>key
+                    server</em> operator. After upgrading to use realm-specific keys,
+                    this field cannot be changed.
+                  </small>
+                </div>
+              </div>
+            {{end}}
+
+            {{if $systemSMSConfig}}
+              <div class="col-lg-12">
+                <div class="form-group form-check">
+                  <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
+                  <label class="form-check-label" for="can-use-system-sms-config">
+                    Share system SMS configuration
+                  </label>
+                  <small class="form-text text-muted">
+                    Allow this realm to consume the system SMS credentials. If
+                    enabled, the realm will not see the credentials, but they will be
+                    able to send SMS messages using them. This could incur unexpected
+                    costs for the credential owner.
+                  </small>
+                </div>
+              </div>
+            {{end}}
           </div>
+        </div>
 
-          <div class="form-label-group">
-            <input type="text" id="regionCode" name="regionCode" class="form-control{{if $realm.ErrorsFor "regionCode"}} is-invalid{{end}}" value="{{$realm.RegionCode}}" placeholder="Region code" />
-            <label for="name">Region code</label>
-            {{template "errorable" $realm.ErrorsFor "regionCode"}}
-            <small class="form-text text-muted">
-              Used in creating deep link SMS for multi-helath authority apps. Region should
-              be <a href="https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes">ISO 3166-1 country codes and (optionally) ISO 3166-2 subdivision codes</a> where applicable.
-              For example, Washington State would be <code>US-WA</code>, and Canada would be <code>CA</code>. The region code should be scoped to the authority of the public health
-              system represented by this verification system.
-            </small>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" class="btn btn-primary">Create realm</button>
           </div>
-
-          {{if .supportsPerRealmSigning}}
-          <div class="form-group">
-            <select class="form-control custom-select{{if $realm.ErrorsFor "useRealmCertificateKey"}} is-invalid{{end}}" name="useRealmCertificateKey" id="useRealmCertificateKey">
-              <option value="true" {{if $realm.UseRealmCertificateKey}}selected{{end}}>Create realm-specific signing key</option>
-              <option value="false" {{if not $realm.UseRealmCertificateKey}}selected{{end}}>Use system signing key</option>
-            </select>
-            {{template "errorable" $realm.ErrorsFor "useRealmCertificateKey"}}
-            <small class="form-text text-muted">
-              It is recommended that you create a realm-specific signing key when creating a new realm. However, it
-              is important to note that this once a realm is created, you cannot switch back to using the system
-              signing key.
-            </small>
+          <div class="d-grid d-lg-inline mt-2 mt-lg-0">
+            <a href="/admin/realms" class="btn btn-danger">Cancel</a>
           </div>
-
-          <div class="form-label-group">
-            <input type="text" id="certificateIssuer" name="certificateIssuer" class="form-control{{if $realm.ErrorsFor "certificateIssuer"}} is-invalid{{end}}" value="{{$realm.CertificateIssuer}}" placeholder="Issuer (iss)" />
-            <label for="certificateIssuer">Issuer (iss)</label>
-            {{template "errorable" $realm.ErrorsFor "certificateIssuer"}}
-            <small class="form-text text-muted">
-              This value is specific to the health authority. After created
-              using realm-specific keys, this field cannot be changed.
-            </small>
-          </div>
-
-          <div class="form-label-group">
-            <input type="text" id="certificateAudience" name="certificateAudience" class="form-control{{if $realm.ErrorsFor "certificateAudience"}} is-invalid{{end}}" value="{{$realm.CertificateAudience}}" placeholder="Audience (aud)" />
-            <label for="certificateAudience">Audience (aud)</label>
-            {{template "errorable" $realm.ErrorsFor "certificateAudience"}}
-            <small class="form-text text-muted">
-              The audience (<code>aud</code>) value is provided the <em>key
-              server</em> operator. After upgrading to use realm-specific keys,
-              this field cannot be changed.
-            </small>
-          </div>
-          {{end}}
-
-          {{if $systemSMSConfig}}
-          <div class="form-group form-check">
-            <input type="checkbox" name="can_use_system_sms_config" id="can-use-system-sms-config" class="form-check-input" value="1" {{if $realm.CanUseSystemSMSConfig}} checked{{end}}>
-            <label class="form-check-label" for="can-use-system-sms-config">
-              Share system SMS configuration
-            </label>
-            <small class="form-text text-muted">
-              Allow this realm to consume the system SMS credentials. If
-              enabled, the realm will not see the credentials, but they will be
-              able to send SMS messages using them. This could incur unexpected
-              costs for the credential owner.
-            </small>
-          </div>
-          {{end}}
-
-          <button type="submit" class="btn btn-primary btn-block">Create realm</button>
-        </form>
+        </div>
       </div>
-    </div>
+    </form>
   </main>
 </body>
 </html>

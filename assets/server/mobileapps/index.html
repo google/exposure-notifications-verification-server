@@ -19,11 +19,11 @@
 
     <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
-        <span class="oi oi-phone mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-window-sidebar me-2"></i>
         Mobile apps
         {{if $canWrite}}
-          <a href="/realm/mobile-apps/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New mobile app">
-            <span class="oi oi-plus small" aria-hidden="true"></span>
+          <a href="/realm/mobile-apps/new" class="float-end text-secondary" data-bs-toggle="tooltip" title="New mobile app">
+            <i class="bi bi-plus-square-fill"></i>
           </a>
         {{end}}
       </div>
@@ -33,12 +33,10 @@
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
         </form>
       </div>
@@ -47,7 +45,6 @@
         <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
-              <th scope="col" width="40"></th>
               <th scope="col">Mobile app</th>
               <th scope="col" width="100">OS</th>
               {{if $canWrite}}
@@ -58,17 +55,17 @@
           <tbody>
           {{range $apps}}
             <tr id="mobileapp-{{.ID}}">
-              <td class="text-center">
+              <td>
                 {{if .DeletedAt}}
-                  <span class="oi oi-circle-x text-danger"
-                    data-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
+                  <span class="bi bi-x-square-fill text-danger me-1"
+                    data-bs-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
                 {{else}}
-                  <span class="oi oi-circle-check text-success"
-                    data-toggle="tooltip" title="Mobile app is enabled"></span>
+                  <span class="bi bi-check-square-fill text-success me-1"
+                    data-bs-toggle="tooltip" title="Mobile app is enabled"></span>
                 {{end}}
-              </td>
-              <td class="text-truncate">
-                <a href="/realm/mobile-apps/{{.ID}}">{{.Name}}</a>
+                <span class="text-truncate">
+                  <a href="/realm/mobile-apps/{{.ID}}">{{.Name}}</a>
+                </span>
               </td>
               <td>{{.OS.Display}}</td>
               {{if $canWrite}}
@@ -78,18 +75,18 @@
                     class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to enable '{{.Name}}'?"
-                    data-toggle="tooltip"
+                    data-bs-toggle="tooltip"
                     title="Enable this mobile app">
-                    <span class="oi oi-loop-circular" aria-hidden="true"></span>
+                    <i class="bi bi-recycle"></i>
                   </a>
                   {{else}}
                   <a href="/realm/mobile-apps/{{.ID}}/disable" id="disable-mobileapp-{{.ID}}"
                     class="d-block text-danger"
                     data-method="patch"
                     data-confirm="Are you sure you want to disable '{{.Name}}'?"
-                    data-toggle="tooltip"
+                    data-bs-toggle="tooltip"
                     title="Disable this mobile app">
-                    <span class="oi oi-trash" aria-hidden="true"></span>
+                    <i class="bi bi-trash"></i>
                   </a>
                   {{end}}
                 </td>

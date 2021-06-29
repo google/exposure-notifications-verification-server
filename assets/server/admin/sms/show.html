@@ -15,21 +15,19 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>System SMS config</h1>
-    <p>
-      Use the form below to create or edit a system SMS configuration. After
-      creation, you can grant realms the ability to use this config without them
-      seeing the credentials.
-    </p>
-
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">System SMS config</div>
-      <div class="card-body">
-        <form method="POST" action="/admin/sms" id="sms-form">
+    <form method="POST" action="/admin/sms" id="sms-form">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-chat-left-dots me-2"></i>
+          System SMS config
+        </div>
+        <div class="card-body">
           {{ .csrfField }}
 
-          <div class="form-label-group">
-            <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
+          {{template "errorSummary" $smsConfig}}
+
+          <div class="form-floating mb-3">
+            <input type="text" name="twilio_account_sid" id="twilio-account-sid" class="form-control font-monospace{{if $smsConfig.ErrorsFor "twilioAccountSid"}} is-invalid{{end}}"
               placeholder="Twilio account" {{if $smsConfig.TwilioAccountSid}}value="{{$smsConfig.TwilioAccountSid}}"{{end}} />
             <label for="twilio-account-sid">Twilio account</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioAccountSid"}}
@@ -38,8 +36,8 @@
             </small>
           </div>
 
-          <div class="form-label-group">
-            <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control text-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
+          <div class="form-floating mb-3">
+            <input type="password" name="twilio_auth_token" id="twilio-auth-token" class="form-control font-monospace{{if $smsConfig.ErrorsFor "twilioAuthToken"}} is-invalid{{end}}" autocomplete="new-password"
               placeholder="Twilio auth token" {{if $smsConfig.TwilioAuthToken}}value="{{passwordSentinel}}"{{end}}>
             <label for="twilio-auth-token">Twilio auth token</label>
             {{template "errorable" $smsConfig.ErrorsFor "twilioAuthToken"}}
@@ -59,20 +57,20 @@
             that messages will be flagged as spam.
           </p>
 
-          <div id="twilio-from-number-template" class="d-none form-row">
+          <div id="twilio-from-number-template" class="d-none row g-2 mb-2">
             <div class="col-sm-3">
-              <div class="form-label-group">
+              <div class="form-floating">
                 <input id="template-label" type="text" class="form-control" autocomplete="new-password" placeholder="Label" />
                 <label>Label</label>
               </div>
             </div>
             <div class="col-sm-9 d-flex">
-              <div class="form-label-group w-100">
-                <input id="template-from-number" type="tel" class="form-control text-monospace" autocomplete="new-password" placeholder="Phone number" />
+              <div class="form-floating w-100">
+                <input id="template-from-number" type="tel" class="form-control font-monospace" autocomplete="new-password" placeholder="Phone number" />
                 <label>From number</label>
               </div>
-              <a href="#" class="d-inline text-secondary mt-2 ml-3">
-                <span class="oi oi-circle-x"></span>
+              <a href="#" class="d-inline text-secondary mt-3 ms-3">
+                <i class="bi bi-x-circle-fill"></i>
               </a>
             </div>
           </div>
@@ -88,11 +86,12 @@
               </a>
             </small>
           </p>
-
-          <button type="submit" class="btn btn-primary btn-block">Update system SMS config</button>
-        </form>
+        </div>
+        <div class="card-footer d-grid gap-2 d-md-flex justify-content-md-end">
+          <button type="submit" class="btn btn-primary">Update system SMS config</button>
+        </div>
       </div>
-    </div>
+    </form>
   </main>
 
   <script type="text/javascript">

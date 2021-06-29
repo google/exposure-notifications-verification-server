@@ -14,54 +14,59 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>Edit API key</h1>
-    <p>
-      Use the form below to edit the API key.
-    </p>
+    <form method="POST" action="/realm/apikeys/{{$authApp.ID}}">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-key me-2"></i>
+          Details
+        </div>
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">Details</div>
-      <div class="card-body">
-        {{template "errorSummary" $authApp}}
+        <div class="card-body">
+          {{template "errorSummary" $authApp}}
 
-        <form method="POST" action="/realm/apikeys/{{$authApp.ID}}">
           <input type="hidden" name="_method" value="PATCH">
           {{ .csrfField }}
 
-          <div class="form-label-group">
-            <input type="text" id="name" name="name" class="form-control{{if $authApp.ErrorsFor "name"}} is-invalid{{end}}" value="{{$authApp.Name}}" placeholder="Application name" autofocus>
-            <label for="name">Application name</label>
-            {{if $authApp.ErrorsFor "name"}}
-            <div class="invalid-feedback">
-              {{joinStrings ($authApp.ErrorsFor "name") ", "}}
+          <div class="row g-3">
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="name" name="name" class="form-control {{invalidIf ($authApp.ErrorsFor "name")}}"
+                  value="{{$authApp.Name}}" autofocus>
+                <label for="name">Application name</label>
+                {{template "errorable" $authApp.ErrorsFor "name"}}
+              </div>
             </div>
-            {{end}}
-          </div>
 
-          <div class="form-group">
-            <select class="form-control" name="type" id="type" disabled>
-              <option selected>
-                {{if (eq $authApp.APIKeyType 0)}}
-                  Device (can verify codes)
-                {{else if (eq $authApp.APIKeyType 1)}}
-                  Admin (can issue codes)
-                {{else}}
-                  Unknown
-                {{end}}
-              </option>
-            </select>
+            <div class="col-lg-12">
+              <div class="form-group">
+                <select class="form-control" name="type" id="type" disabled>
+                  <option selected>
+                    {{if (eq $authApp.APIKeyType 0)}}
+                      Device (can verify codes)
+                    {{else if (eq $authApp.APIKeyType 1)}}
+                      Admin (can issue codes)
+                    {{else}}
+                      Unknown
+                    {{end}}
+                  </option>
+                </select>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <button type="submit" id="submit" class="btn btn-primary btn-block">Update API key</button>
-        </form>
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" id="submit" class="btn btn-primary">Update API key</button>
+          </div>
+          <div class="d-grid d-lg-inline">
+            <a href="/realm/apikeys/{{$authApp.ID}}" class="btn btn-danger mt-2 mt-lg-0">
+              Cancel
+            </a>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div>
-      <p>
-        <a href="/realm/apikeys">&larr; Back to all API keys</a>
-      </p>
-    </div>
+    </form>
   </main>
 </body>
 </html>

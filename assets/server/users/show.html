@@ -21,34 +21,31 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>{{$user.Name}}</h1>
-    <p>Here is information about the user.</p>
-
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-person me-2"></i>
         Details about {{$user.Name}}
 
         {{if $canWrite}}
-          <a href="/realm/users/{{$user.ID}}/edit" class="float-right mr-n1 text-body" id="edit" data-toggle="tooltip" title="Edit this user">
-            <span class="oi oi-pencil" aria-hidden="true"></span>
+          <a href="/realm/users/{{$user.ID}}/edit" class="float-end text-body" id="edit" data-bs-toggle="tooltip" title="Edit this user">
+            <i class="bi bi-pencil-fill"></i>
           </a>
         {{end}}
       </div>
-      <div class="card-body mb-n3">
+      <div class="card-body">
         <h6 class="card-title">Name</h6>
-        <div id="user-name" class="mb-3 mt-n2">
+        <div id="user-name" class="mb-3">
           {{$user.Name}}
         </div>
 
         <h6 class="card-title">Email</h6>
-        <div id="user-email" class="mb-3 mt-n2">
+        <div id="user-email" class="mb-3">
           {{$user.Email}}
         </div>
 
         {{if $canWrite}}
           <h6 class="card-title">Password</h6>
-          <div class="mb-3 mt-n2">
+          <div class="mb-3">
             <a href="/realm/users/{{$user.ID}}/reset-password"
               data-method="POST"
               data-confirm="Are you sure you want to reset this user's password?">
@@ -58,16 +55,16 @@
         {{end}}
 
         <h6 class="card-title">Permissions</h6>
-        <div class="mb-3 mt-n2">
+        <div class="mb-3">
           <ul class="list-unstyled">
             {{range $name, $permission := $permissions}}
               <li class="small py-1">
                 {{if $userMembership.Can $permission}}
-                  <span class="sr-only">{{$user.Name}} can {{$name}}</span>
-                  <span class="oi oi-circle-check text-success mr-1" aria-hidden="true"></span>
+                  <span class="visually-hidden">{{$user.Name}} can {{$name}}</span>
+                  <i class="bi bi-check-square-fill text-success me-1"></i>
                 {{else}}
-                  <span class="sr-only">{{$user.Name}} cannot {{$name}}</span>
-                  <span class="oi oi-circle-x text-muted mr-1" aria-hidden="true"></span>
+                  <span class="visually-hidden">{{$user.Name}} cannot {{$name}}</span>
+                  <i class="bi bi-x-circle-fill text-muted me-1"></i>
                 {{end}}
                 {{$name}} -
                 <span class="text-muted">
@@ -82,7 +79,7 @@
 
     <div class="card mb-3 shadow-sm mb-3">
       <div class="card-header">
-        <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+        <i class="bi bi-graph-up me-2"></i>
         Statistics
       </div>
       <div id="user_stats_chart" class="container d-flex h-100 w-100" style="min-height:300px;"
@@ -92,26 +89,24 @@
       <small class="card-footer d-flex justify-content-between text-muted">
         <span>
           This data is refreshed every 30 minutes.
-          <a href="#" data-toggle="modal" data-target="#user-stats-modal">Learn more</a>
+          <a href="#" data-bs-toggle="modal" data-bs-target="#user-stats-modal">Learn more</a>
         </span>
         <span>
-          <span class="mr-1">Export as:</span>
-          <a href="/stats/realm/users/{{$user.ID}}.csv" class="mr-1">CSV</a>
+          <span class="me-1">Export as:</span>
+          <a href="/stats/realm/users/{{$user.ID}}.csv" class="me-1">CSV</a>
           <a href="/stats/realm/users/{{$user.ID}}.json" target="_blank">JSON</a>
         </span>
       </small>
     </div>
 
-    <div class="modal fade" id="user-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="user-stats-modal" data-backdrop="static" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Codes issued by {{$user.Name}}</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body mb-n3">
+          <div class="modal-body">
             <p>
               This chart reflects the number of codes issued by {{$user.Name}}
               ({{$user.Email}}) for {{$currentMembership.Realm.Name}}.

@@ -14,37 +14,40 @@
   {{template "navbar" .}}
 
   <main role="main" class="container">
-    {{template "flash" .}}
-
     <div class="d-flex vh-100">
       <div class="d-flex w-100 justify-content-center">
-        <div class="col-sm-9">
+        <div class="login-container">
+          {{template "flash" .}}
+
+        <form method="POST" id="verify-email">
+          {{ .csrfField }}
+
           <div class="card shadow-sm">
             <div class="card-header">
-              <span id="icon" class="oi oi-envelope-closed mr-2 ml-n1" aria-hidden="true"></span>
+              <i class="bi bi-envelope me-2"></i>
               {{t $.locale "account.verify-email-address"}}
             </div>
 
             <div class="card-body">
-              {{if not $currentRealm}}
-                <div class="alert alert-warning">
+              <p class="mb-0">
+                {{if not $currentRealm}}
                   <!-- This is only for system admins, skip i18n. -->
                   Email address verification is required.
-                </div>
-              {{else if eq $currentRealm.EmailVerifiedMode.String "required"}}
-                <div class="alert alert-warning">
+                {{else}}
                   {{t $.locale "account.verify-email-address-required" $currentRealm.Name}}
-                </div>
-              {{end}}
+                {{end}}
+              </p>
+            </div>
 
-              <form method="POST" id="verify-email">
-                {{ .csrfField }}
-                <button type="submit" id="verify-button" class="btn btn-primary btn-block" disabled>
+            <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+              <div class="d-grid d-lg-inline">
+                <button type="submit" id="verify-button" class="btn btn-primary" disabled>
                   {{t $.locale "account.verify-email-address"}}
                 </button>
-              </form>
+              </div>
             </div>
           </div>
+        </form>
 
           {{if $currentRealm}}
             {{if ne $currentRealm.EmailVerifiedMode.String "required"}}
@@ -76,7 +79,7 @@
         if (user.emailVerified) {
           flash.clear();
           flash.alert('Your email address is already verified.');
-          window.location.assign('/login/post-authenticate');
+          // window.location.assign('/login/post-authenticate');
           return;
         }
 

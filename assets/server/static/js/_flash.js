@@ -33,20 +33,20 @@
       const body = alert.querySelector('.alert-message');
       body.textContent = message;
 
-      const icon = alert.querySelector('.oi');
+      const icon = alert.querySelector('.bi');
 
       switch (level) {
         case 'error':
           alert.classList.add('alert-danger');
-          icon.classList.add('oi-warning');
+          icon.classList.add('bi-exclamation-octagon-fill');
           break;
         case 'warning':
           alert.classList.add('alert-warning');
-          icon.classList.add('oi-warning');
+          icon.classList.add('bi-exclamation-square-fill');
           break;
         case 'alert':
           alert.classList.add('alert-success');
-          icon.classList.add('oi-check');
+          icon.classList.add('bi-check-square-fill');
           break;
         default:
           throw `invalid flash level ${level}`;

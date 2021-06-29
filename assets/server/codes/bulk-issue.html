@@ -21,111 +21,138 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <div class="card mb-3 shadow-sm">
-      <div class="card-header">{{t $.locale "codes.bulk-issue.header"}}</div>
-      <div class="card-body">
-        <form id="form">
-          <div class="form-group">
-            <div class="custom-file">
-              <input type="file" class="custom-file-input" id="csv" accept=".csv" required {{disabledIf (not $hasSMSConfig)}}>
-              <label class="custom-file-label" for="csv" id="file-label">{{t $.locale "codes.bulk-issue.select-csv"}}</label>
-            </div>
-            <small class="form-text text-muted">
-              {{t $.locale "codes.bulk-issue.csv-format1" `<code>phone,testDate,[optional]symptomDate,[optional]testType</code>` | safeHTML}}
-              {{t $.locale "codes.bulk-issue.csv-format2" `<a href="https://www.twilio.com/docs/glossary/what-e164" rel="noopener noreferrer" target="_blank">E.164</a>` `<a href="https://www.iso.org/iso-8601-date-and-time-format.html" rel="noopener noreferrer" target="_blank">ISO 8601</a>` | safeHTML}}
-            </small>
-          </div>
-
-          <hr>
-
-          <div class="form-label-group">
-            <input type="number" class="form-control text-monospace" id="start-at"
-              placeholder="Start at line" value="1" min="1">
-            <label for="start-at">Start at line</label>
-            <small class="form-text text-muted">
-              {{t $.locale "codes.bulk-issue.line-num"}}
-            </small>
-          </div>
-
-          <div class="form-label-group">
-            <div class="input-group">
-              <input type="text" class="form-control text-monospace" id="retry-code"
-                placeholder="{{t $.locale "codes.bulk-issue.retry-code"}}" required>
-              <label for="retry-code">{{t $.locale "codes.bulk-issue.retry-code"}}</label>
-              <div class="input-group-append">
-                <a id="new-code" class="input-group-text" data-toggle-password="twilio-auth-token" data-toggle="tooltip" title="{{t $.locale "codes.bulk-issue.new-retry-code"}}">
-                  <span class="oi oi-loop-circular" aria-hidden="true"></span>
-                  <span class="sr-only">{{t $.locale "codes.bulk-issue.new-retry-code"}}</span>
-                </a>
-              </div>
-            </div>
-            <small class="form-text text-muted">
-              {{t $.locale "codes.bulk-issue.retry-code-detail"}}
-            </small>
-          </div>
-
-          <div class="form-group">
-            <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input" id="remember-code">
-              <label class="custom-control-label" for="remember-code">{{t $.locale "codes.bulk-issue.remember-code"}}</label>
-            </div>
-            <small class="form-text text-muted">
-              {{t $.locale "codes.bulk-issue.remember-code-detail"}}
-            </small>
-          </div>
-
-          {{if $currentRealm.SMSTextAlternateTemplates}}
-          <div class="form-group">
-            <div class="input-group">
-              <select class="form-control" id="sms-template">
-                <option value="Default SMS template">Default SMS template</option>
-                {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
-                <option value="{{$k}}" {{selectedIf (eq $k $currentMembership.DefaultSMSTemplateLabel)}}>{{$k}}</option>
-                {{end}}
-              </select>
-            </div>
-            <small class="form-text text-muted">
-              {{t $.locale "codes.issue.sms-template-detail"}}
-            </small>
-          </div>
-          {{end}}
-
-          <button class="btn btn-primary btn-block" type="submit" id="import" disabled>{{t $.locale "codes.bulk-issue.issue-codes"}}</button>
-          <button class="btn btn-danger btn-block d-none" id="cancel" disabled>{{t $.locale "codes.bulk-issue.cancel"}}</button>
-        </form>
-
-        <div class="progress mt-3 d-none" id="progress-div">
-          <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0"
-            aria-valuemax="100"></div>
+    <form id="form">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-upload me-2"></i>
+          {{t $.locale "codes.bulk-issue.header"}}
         </div>
 
-        <table class="table table-bordered d-none" id="csv-table">
-          <thead>
-            <tr>
-              <th>{{t $.locale "codes.bulk-issue.phone-number"}}</th>
-              <th>{{t $.locale "codes.bulk-issue.test-date"}}</th>
-            </tr>
-          </thead>
-          <tbody id="csv-table-body"></tbody>
-        </table>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-lg-12">
+              <label class="form-label" for="csv">{{t $.locale "codes.bulk-issue.select-csv"}}</label>
+              <input type="file" class="form-control" id="csv" accept=".csv" required {{disabledIf (not $hasSMSConfig)}}>
+              <small class="form-text text-muted">
+                {{t $.locale "codes.bulk-issue.csv-format1" `<code>phone,testDate,[optional]symptomDate,[optional]testType</code>` | safeHTML}}
+                {{t $.locale "codes.bulk-issue.csv-format2" `<a href="https://www.twilio.com/docs/glossary/what-e164" rel="noopener noreferrer" target="_blank">E.164</a>` `<a href="https://www.iso.org/iso-8601-date-and-time-format.html" rel="noopener noreferrer" target="_blank">ISO 8601</a>` | safeHTML}}
+              </small>
+            </div>
+
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="number" class="form-control font-monospace" id="start-at"
+                  placeholder="Start at line" value="1" min="1">
+                <label for="start-at">Start at line</label>
+                <small class="form-text text-muted">
+                  {{t $.locale "codes.bulk-issue.line-num"}}
+                </small>
+              </div>
+            </div>
+
+            <div class="col-lg-12">
+              <div class="input-group">
+                <div class="form-floating">
+                  <input type="text" class="form-control font-monospace" id="retry-code"
+                    placeholder="{{t $.locale "codes.bulk-issue.retry-code"}}" required>
+                  <label for="retry-code">{{t $.locale "codes.bulk-issue.retry-code"}}</label>
+                </div>
+                <a href="#" id="new-code" class="input-group-text" data-bs-toggle="tooltip" title="{{t $.locale "codes.bulk-issue.new-retry-code"}}">
+                  <i class="bi bi-arrow-repeat"></i>
+                  <span class="visually-hidden">{{t $.locale "codes.bulk-issue.new-retry-code"}}</span>
+                </a>
+              </div>
+              <small class="form-text text-muted">
+                {{t $.locale "codes.bulk-issue.retry-code-detail"}}
+              </small>
+            </div>
+
+            <div class="col-lg-12">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="remember-code">
+                <label class="form-check-label" for="remember-code">
+                  <div>{{t $.locale "codes.bulk-issue.remember-code"}}</div>
+                  <div class="small text-muted">
+                    {{t $.locale "codes.bulk-issue.remember-code-detail"}}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {{if $currentRealm.SMSTextAlternateTemplates}}
+              <div class="col-lg-12">
+                <div class="form-floating">
+                  <select class="form-select" id="sms-template">
+                    <option value="Default SMS template">Default SMS template</option>
+                    {{range $k, $v := $currentRealm.SMSTextAlternateTemplates}}
+                      <option value="{{$k}}" {{selectedIf (eq $k $currentMembership.DefaultSMSTemplateLabel)}}>{{$k}}</option>
+                    {{end}}
+                  </select>
+                  <label for="sms-template">{{t $.locale "codes.issue.sms-template-label"}}</label>
+                </div>
+                <small class="form-text text-muted">
+                  {{t $.locale "codes.issue.sms-template-detail"}}
+                </small>
+              </div>
+            {{end}}
+          </div>
+
+          <div class="progress mt-3 d-none" id="progress-div">
+            <div id="progress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+              aria-valuemax="100"></div>
+          </div>
+
+          <table class="table table-bordered d-none" id="csv-table">
+            <thead>
+              <tr>
+                <th>{{t $.locale "codes.bulk-issue.phone-number"}}</th>
+                <th>{{t $.locale "codes.bulk-issue.test-date"}}</th>
+              </tr>
+            </thead>
+            <tbody id="csv-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button class="btn btn-primary" type="submit" id="import">{{t $.locale "codes.bulk-issue.issue-codes"}}</button>
+          </div>
+          <div class="d-grid d-lg-inline">
+            <button class="btn btn-danger d-none" id="cancel">{{t $.locale "codes.bulk-issue.cancel"}}</button>
+          </div>
+        </div>
       </div>
-    </div>
+    </for>
 
     <div class="card mb-3 shadow-sm d-none" id="receipt-div">
-      <div class="card-header">{{t $.locale "codes.bulk-issue.receipt-header"}}</div>
+      <div class="card-header">
+        <i class="bi bi-receipt-cutoff me-2"></i>
+        {{t $.locale "codes.bulk-issue.receipt-header"}}
+      </div>
+
       <div class="card-body">
-        <a id="save" class="card-link" download="bulk-issue-log.csv" href="data:text/plain,">{{t $.locale "codes.bulk-issue.save-results"}}</a>
         <small class="form-text text-muted">
           <p><span class="text-success" id="receipt-success">0</span> {{t $.locale "codes.bulk-issue.save-results-success"}}
           <span class="text-danger" id="receipt-failure">0</span> {{t $.locale "codes.bulk-issue.save-results-fail"}}</p>
           {{t $.locale "codes.bulk-issue.save-results-detail"}}
         </small>
-        <p>
+      </div>
+
+      <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+        <div class="d-grid d-lg-inline">
+          <a href="data:text/plain," id="save" class="btn btn-primary" download="bulk-issue-log.csv">
+            <i class="bi bi-download me-2"></i>
+            {{t $.locale "codes.bulk-issue.save-results"}}
+          </a>
+        </div>
       </div>
     </div>
 
     <div class="card mb-3 shadow-sm d-none" id="error-div">
-      <div class="card-header">{{t $.locale "codes.bulk-issue.errors-header"}}</div>
+      <div class="card-header">
+        <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>
+        {{t $.locale "codes.bulk-issue.errors-header"}}
+      </div>
       <table id="error-table" class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
         <thead>
           <tr>

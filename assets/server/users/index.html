@@ -17,11 +17,6 @@
     .dropdown-hover:hover {
       background-color: #f8f9fa;
     }
-
-    .custom-control-label.py-2::before,
-    .custom-control-label.py-2::after {
-      top: 0.72rem;
-    }
   </style>
 </head>
 
@@ -33,14 +28,14 @@
 
     <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
-        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-people me-2"></i>
         Users
         {{if $canWrite}}
-          <a href="/realm/users/new" class="float-right mr-n1 text-secondary" data-toggle="tooltip" title="New user">
-            <span class="oi oi-plus small" aria-hidden="true"></span>
+          <a href="/realm/users/new" class="float-end text-secondary" data-bs-toggle="tooltip" title="New user">
+            <i class="bi bi-plus-square-fill"></i>
           </a>
-          <a href="/realm/users/import" class="float-right mr-3 text-secondary" data-toggle="tooltip" title="Bulk import users">
-            <span class="oi oi-data-transfer-upload" aria-hidden="true"></span>
+          <a href="/realm/users/import" class="float-end me-3 text-secondary" data-bs-toggle="tooltip" title="Bulk import users">
+            <i class="bi bi-cloud-upload-fill"></i>
           </a>
         {{end}}
       </div>
@@ -50,29 +45,25 @@
           <div class="input-group">
             <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
               autocomplete="off" class="form-control" />
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
-          <small class="float-right mt-2">
-            <a href="#" data-toggle="modal" data-target="#advanced-search-modal">Advanced</a>
+          <small class="float-end mt-2">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#advanced-search-modal">Advanced</a>
           </small>
         </form>
       </div>
 
-      <div class="modal fade" id="advanced-search-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+      <div class="modal fade" id="advanced-search-modal" data-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Advanced search</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body mb-n3">
+            <div class="modal-body">
               <p>
                 The default search uses fuzzy matching on the name and email
                 fields for a user. For example, a search for
@@ -132,51 +123,55 @@
       {{if $memberships}}
         <form method="POST" id="users-form">
           {{$csrfField}}
-          <div class="float-left d-flex ml-3 pl-1 mt-n4 mb-3 pb-1">
+          <div class="float-start d-flex m-3" style="margin-top:-2rem !important;">
             <div class="dropdown">
-              <button disabled id="add-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+              <button disabled id="add-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                data-bs-auto-close="outside" data-bs-toggle="dropdown">
                 Add permissions
               </button>
               <div class="dropdown-menu">
                 {{range $name, $permission := $permissions}}
-                  <div class="custom-control custom-checkbox keep-open dropdown-hover">
+                  <div class="form-check keep-open dropdown-hover py-2" style="padding-left:2.5rem;">
                     <input type="checkbox" name="permission" id="add-permission-{{$name}}"
-                      class="custom-control-input" value="{{$permission.Value}}"
+                      class="form-check-input" value="{{$permission.Value}}"
                       {{disabledIf ($currentMembership.Cannot $permission)}}
                       {{readonlyIf ($currentMembership.Cannot $permission)}}
                     >
-                    <label for="add-permission-{{$name}}" class="custom-control-label user-select-none d-block ml-3 py-2">
+                    <label for="add-permission-{{$name}}" class="form-check-label user-select-none d-block">
                       {{$name}}
                       {{if $currentMembership.Cannot $permission}}
-                        <span class="oi oi-circle-x small py-1 px-1" aria-hidden="true"
-                          data-toggle="tooltip" data-placement="top" data-offset="75" title="You lack this permission"></span>
+                        <span class="bi bi-exclamation-octagon-fill small py-1 px-1"
+                          data-bs-toggle="tooltip" data-placement="top" data-offset="75" title="You lack this permission"></span>
                       {{end}}
                     </label>
                   </div>
                 {{end}}
                 <div class="dropdown-divider"></div>
-                <div class="mx-3 my-2">
+                <div class="d-grid px-2">
                   <input type="submit" value="Add permissions" formaction="/realm/users/bulk-permissions/add"
-                    id="add-permissions-submit" class="btn btn-primary btn-block mx-0 mt-3" style="min-width:275px;">
+                    id="add-permissions-submit" class="btn btn-primary" style="min-width:275px;">
                 </div>
               </div>
             </div>
 
             <div class="dropdown">
-              <button disabled id="remove-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle ml-2" type="button" data-toggle="dropdown">
+              <button disabled id="remove-permissions-button" class="btn btn-sm btn-secondary dropdown-toggle ms-2" type="button"
+                data-bs-auto-close="outside" data-bs-toggle="dropdown">
                 Remove permissions
               </button>
               <div class="dropdown-menu">
                 {{range $name, $permission := $permissions}}
-                  <div class="custom-control custom-checkbox keep-open dropdown-hover">
-                    <input type="checkbox" name="permission" id="remove-permission-{{$name}}" class="custom-control-input" value="{{$permission.Value}}">
-                    <label for="remove-permission-{{$name}}" class="custom-control-label user-select-none d-block ml-3 py-2">{{$name}}</label>
+                  <div class="form-check keep-open dropdown-hover py-2" style="padding-left:2.5rem;">
+                    <input type="checkbox" name="permission" id="remove-permission-{{$name}}" class="form-check-input" value="{{$permission.Value}}">
+                    <label for="remove-permission-{{$name}}" class="form-check-label user-select-none d-block">
+                      {{$name}}
+                    </label>
                   </div>
                 {{end}}
                 <div class="dropdown-divider"></div>
-                <div class="mx-3 my-2">
+                <div class="d-grid px-2">
                   <input type="submit" value="Remove permissions" formaction="/realm/users/bulk-permissions/remove"
-                    id="remove-permissions-submit" class="btn btn-primary btn-block mx-0 mt-3" style="min-width:275px;">
+                    id="remove-permissions-submit" class="btn btn-primary" style="min-width:275px;">
                 </div>
               </div>
             </div>
@@ -185,13 +180,13 @@
           <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
             <thead>
               <tr>
-                <th scope="col" width="40">
-                  <div class="custom-control custom-checkbox mr-0">
-                    <input type="checkbox" id="select-user-all" class="custom-control-input">
-                    <label class="custom-control-label" for="select-user-all"></label>
+                <th scope="col">
+                  <div class="form-check d-inline-block">
+                    <input type="checkbox" id="select-user-all" class="form-check-input">
+                    <label class="form-check-label" for="select-user-all"></label>
                   </div>
+                  Name
                 </th>
-                <th scope="col">Name</th>
                 <th scope="col" width="300">Email</th>
                 {{if $canWrite}}
                   <th scope="col" width="40"></th>
@@ -202,14 +197,14 @@
               {{range $membership := $memberships}}
               {{$user := $membership.User}}
               <tr id="user-{{$user.ID}}">
-                <td class="text-center">
-                  <div class="custom-control custom-checkbox mr-0">
-                    <input type="checkbox" name="user_id" id="select-user-{{$user.ID}}" class="custom-control-input" value="{{$user.ID}}">
-                    <label class="custom-control-label" for="select-user-{{$user.ID}}"></label>
-                  </div>
-                </td>
                 <td>
-                  <a href="/realm/users/{{$user.ID}}">{{$user.Name}}</a>
+                  <div class="form-check d-inline-block">
+                    <input type="checkbox" name="user_id" id="select-user-{{$user.ID}}" class="form-check-input" value="{{$user.ID}}">
+                    <label class="form-check-label" for="select-user-{{$user.ID}}"></label>
+                  </div>
+                  <a href="/realm/users/{{$user.ID}}" class="text-truncate">
+                    {{$user.Name}}
+                  </a>
                 </td>
                 <td>
                   {{$user.Email}}
@@ -222,9 +217,9 @@
                       class="d-block text-danger"
                       data-method="DELETE"
                       data-confirm="Are you sure you want to remove '{{$user.Name}}'?"
-                      data-toggle="tooltip"
+                      data-bs-toggle="tooltip"
                       title="Remove this user">
-                      <span class="oi oi-trash" aria-hidden="true"></span>
+                      <i class="bi bi-trash"></i>
                     </a>
                     {{end}}
                   </td>

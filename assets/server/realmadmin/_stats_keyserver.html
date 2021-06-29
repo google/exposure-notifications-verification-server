@@ -13,7 +13,7 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Total publish requests (by device operating system)
   </div>
 
@@ -21,13 +21,13 @@
     <div id="keyserver_os_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="keyserver_os_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="keyserver_os_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#publish-by-os-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#publish-by-os-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/key-server.csv" class="me-1">CSV</a>
       <a href="/stats/realm/key-server.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -35,20 +35,20 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Total TEKs Published
   </div>
   <div id="keyserver_dashboard_div">
     <div id="keyserver_chart_div" class="h-100 w-100" style="min-height:325px;">
       <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
     </div>
-    <div id="keyserver_filter_div" class="text-right" style="height: 75px;"></div>
+    <div id="keyserver_filter_div" class="text-end" style="height: 75px;"></div>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#keyserver-stats-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#keyserver-stats-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/key-server.csv" class="me-1">CSV</a>
       <a href="/stats/realm/key-server.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -56,21 +56,21 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     EN days active before upload <span class="sum-title">(7 day sum)</span>
   </div>
   <div id="keyserver_tek_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer pl-5 pr-5">
+  <div class="slidecontainer ps-5 pe-5">
     <input type="range" class="slider w-100" id="tek_slider" list="tek_slide_ticks">
     <datalist id="tek_slide_ticks"></datalist>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#tek-age-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#tek-age-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/key-server.csv" class="me-1">CSV</a>
       <a href="/stats/realm/key-server.json" target="_blank">JSON</a>
     </span>
   </small>
@@ -78,36 +78,34 @@
 
 <div class="card shadow-sm mb-3">
   <div class="card-header">
-    <span class="oi oi-bar-chart mr-2 ml-n1"></span>
+    <i class="bi bi-graph-up me-2"></i>
     Onset-to-upload distribution <span class="sum-title">(7 day sum)</span>
   </div>
   <div id="keyserver_onset_chart_div" class="h-100 w-100" style="min-height:325px;">
     <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
   </div>
-  <div class="slidecontainer pl-5 pr-5">
+  <div class="slidecontainer ps-5 pe-5">
     <input type="range" class="slider w-100" id="onset_slider" list="onset_slide_ticks"/>
     <datalist id="onset_slide_ticks"></datalist>
   </div>
   <small class="card-footer d-flex justify-content-between text-muted">
-    <a href="#" data-toggle="modal" data-target="#onset-to-upload-modal">Learn more about this chart</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#onset-to-upload-modal">Learn more about this chart</a>
     <span>
-      <span class="mr-1">Export as:</span>
-      <a href="/stats/realm/key-server.csv" class="mr-1">CSV</a>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/key-server.csv" class="me-1">CSV</a>
       <a href="/stats/realm/key-server.json" target="_blank">JSON</a>
     </span>
   </small>
 </div>
 
-<div class="modal fade" id="keyserver-stats-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="keyserver-stats-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Total TEKs Published</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body mb-n3">
+      <div class="modal-body">
         <p>
           This graph reflects data from the key-server for this realm,
           grouped by UTC day.
@@ -122,16 +120,14 @@
   </div>
 </div>
 
-<div class="modal fade" id="publish-by-os-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="publish-by-os-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Publish requests (by device operating system)</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body mb-n3">
+      <div class="modal-body">
         <p>
           This graph shows counts of the number of publish requests broken down by the request operating system.
           Hover over columns to see the percentage for each OS segment.
@@ -145,16 +141,14 @@
   </div>
 </div>
 
-<div class="modal fade" id="tek-age-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="tek-age-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">EN days active before upload</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body mb-n3">
+      <div class="modal-body">
         <p>
           This graph shows a distribution of the ages of temporary exposure keys by how many days old each TEK is.
           Move the slider to see how the distribution has changed over time.
@@ -167,16 +161,14 @@
   </div>
 </div>
 
-<div class="modal fade" id="onset-to-upload-modal" data-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="onset-to-upload-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Onset-to-upload distribution</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body mb-n3">
+      <div class="modal-body">
         <p>
           This graph reflects the distribution of the time between the TEK's symptom onset time and when the key was uploaded.
           Move the slider to see how the distribution has changed over time.

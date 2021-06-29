@@ -1,6 +1,9 @@
 window.addEventListener('load', (event) => {
-  // Add data-toogle="tooltop" to toggle tooltips!
-  $('[data-toggle="tooltip"]').tooltip();
+  // Add data-toogle="tooltip" to toggle tooltips!
+  let tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  [].forEach.call(tooltips, (element) => {
+    new bootstrap.Tooltip(element);
+  });
 
   // Add data-submit-form properties to a link to have it act as a submit
   // button. You can also add a data-confirm attribute with a confirmation
@@ -47,27 +50,6 @@ window.addEventListener('load', (event) => {
     $form.appendTo('body').submit();
   });
 
-  // Add data-toggle-password to an element with the value pointing to the id
-  // of an input[type="password"]. It will toggle/untoggle the value.
-  $('a[data-toggle-password]').click(function (e) {
-    e.preventDefault();
-
-    let $this = $(e.currentTarget);
-    let selector = $this.data('togglePassword');
-    let $input = $('#' + selector);
-    let $icon = $this.find('span.oi');
-
-    if ($input.attr('type') == 'password') {
-      $input.attr('type', 'text');
-      $icon.addClass('oi-lock-unlocked');
-      $icon.removeClass('oi-lock-locked');
-    } else if ($input.attr('type') == 'text') {
-      $input.attr('type', 'password');
-      $icon.addClass('oi-lock-locked');
-      $icon.removeClass('oi-lock-unlocked');
-    }
-  });
-
   $('a[data-fill-target]').click(function (e) {
     e.preventDefault();
 
@@ -103,14 +85,6 @@ window.addEventListener('load', (event) => {
     });
     $this.text(date.toLocaleString());
   });
-
-  // Disable propagation on links in menus if they are marked as such.
-  $(document).on('click', 'div.dropdown-menu .keep-open', function (e) {
-    e.stopPropagation();
-  });
-
-  // Toast shows alerts/flash messages.
-  $('.toast').toast('show');
 });
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -219,15 +193,15 @@ function checkPasswordValid(pwd, retype, requirements) {
   return valid;
 }
 
-const errClass = 'oi-circle-x text-danger';
-const checkClass = 'oi-circle-check text-success';
+const errClass = 'bi-exclamation-octagon-fill text-danger';
+const checkClass = 'bi-check-square-fill text-success';
 
 function decorateInvalid($element) {
-  $element.find('.oi').removeClass(checkClass).addClass(errClass);
+  $element.find('.bi').removeClass(checkClass).addClass(errClass);
 }
 
 function decorateValid($element) {
-  $element.find('.oi').removeClass(errClass).addClass(checkClass);
+  $element.find('.bi').removeClass(errClass).addClass(checkClass);
 }
 
 function loginScripts(hasCurrentUser, onLoginSuccess) {
@@ -239,7 +213,6 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
 
   let $pinDiv = $('#sms-code-div');
   let $pinText = $('#code-text');
-  let $pinClose = $('#sms-code-close');
   let $pinForm = $('#sms-code-form');
   let $pin = $('#sms-code');
   let $submitPin = $('#sms-code-submit');
@@ -247,7 +220,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   let $smsChange = $('#sms-change');
 
   let $registeredDiv = $('#registered-div');
-  let $factors = $('#factors');
+  let factorsContainer = document.querySelector('div#factors');
 
   let verId = '';
   let selectedFactorIndex = 0;
@@ -276,6 +249,7 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
     // Ask user for the SMS verification code.
     let cred = firebase.auth.PhoneAuthProvider.credential(verId, $pin.val().trim());
     let multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+
     // Complete sign-in.
     resolver
       .resolveSignIn(multiFactorAssertion)
@@ -288,14 +262,6 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
         window.recaptchaVerifier.reset();
         $submitPin.prop('disabled', false);
       });
-  });
-
-  $pinClose.on('click', function (event) {
-    event.preventDefault();
-    $submit.prop('disabled', false);
-    $factors.empty();
-    $loginDiv.show();
-    $pinDiv.addClass('d-none');
   });
 
   $resendPin.on('click', function (event) {
@@ -329,35 +295,13 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
         if (error.code == 'auth/multi-factor-auth-required') {
           window.recaptchaVerifier.render();
           resolver = error.resolver;
+
+          sortFactors(resolver.hints);
           populatePinText(resolver.hints);
           populateFactors(resolver.hints);
-          if (resolver.hints[selectedFactorIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
-            let phoneInfoOptions = {
-              multiFactorHint: resolver.hints[selectedFactorIndex],
-              session: resolver.session,
-            };
-            let phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
-            let appVerifier = window.recaptchaVerifier;
-            return phoneAuthProvider
-              .verifyPhoneNumber(phoneInfoOptions, appVerifier)
-              .then(function (verificationId) {
-                verId = verificationId;
-                setTimeout(function () {
-                  $resendPin.removeClass('disabled');
-                }, 15000);
-                $submitPin.prop('disabled', false);
-                $loginDiv.hide();
-                $pinDiv.removeClass('d-none');
-              })
-              .catch(function (error) {
-                window.recaptchaVerifier.reset();
-                flash.clear();
-                flash.error(error);
-                $submit.prop('disabled', false);
-              });
-          } else {
-            flash.clear();
-            flash.error('Unsupported 2nd factor authentication type.');
+
+          if (resolver.hints.length === 1) {
+            resendPin();
           }
         } else if (error.code == 'auth/too-many-requests') {
           flash.clear();
@@ -373,6 +317,10 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
   }
 
   function resendPin() {
+    $submitPin.prop('disabled', false);
+    $loginDiv.addClass('d-none');
+    $pinDiv.removeClass('d-none');
+
     $resendPin.addClass('disabled');
     setTimeout(function () {
       $resendPin.removeClass('disabled');
@@ -398,62 +346,47 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
       });
   }
 
-  function populatePinText(hints) {
-    let $displayName = $('<span/>');
-    $displayName.addClass('text-info');
-    $displayName.text(hints[selectedFactorIndex].displayName);
+  function populatePinText(factors) {
+    let factorTargetContainer = document.querySelector('#factor-target');
+    let factor = factors[selectedFactorIndex];
 
-    $pinText.empty();
-    $pinText.text('Code sent to ');
-    $pinText.append($displayName);
+    factorTargetContainer.textContent = `${factor.displayName} (${factor.phoneNumber})`;
   }
 
-  function populateFactors(hints) {
-    if (hints.length > 0) {
-      for (i = 0; i < hints.length; i++) {
-        appendAuthFactor(hints[i], i);
-      }
-    }
-    if (hints.length > 1) {
-      $smsChange.removeClass('d-none');
-    }
+  function sortFactors(factors) {
+    factors.sort((a, b) => {
+      return a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' });
+    });
+  }
+
+  function populateFactors(factors) {
+    factors.forEach((factor, i) => appendAuthFactor(factor, i));
+
+    $loginDiv.addClass('d-none');
+    $pinDiv.addClass('d-none');
+    $registeredDiv.removeClass('d-none');
   }
 
   function appendAuthFactor(factor, i) {
-    let $li = $('<a/>');
-    $li.addClass('list-group-item list-group-item-action');
-    if (i == 0) {
-      $li.addClass('bg-light');
-      $li.attr('id', 'selected-factor');
-    }
-    let $row = $('<div/>').text(factor.displayName);
-    $li.append($row);
+    let template = factorsContainer.querySelector('div#factor-template');
+    let item = template.cloneNode(true);
+    item.classList.remove('d-none');
+    item.removeAttribute('id');
 
-    let $icon = $('<span/>');
-    $icon.addClass('oi oi-phone mr-1');
-    $icon.attr('aria-hidden', 'true');
-    $row.prepend($icon);
+    let nameContainer = item.querySelector('.factor-name');
+    nameContainer.textContent = factor.displayName;
 
-    let $time = $('<small/>');
-    $time.addClass('row text-muted ml-1');
-    $time.text(`Phone number: ${factor.phoneNumber}`);
-    $row.append($time);
+    let numberContainer = item.querySelector('.factor-number');
+    numberContainer.textContent = factor.phoneNumber;
 
-    $li.on('click', function (event) {
+    item.addEventListener('click', () => {
       $registeredDiv.addClass('d-none');
       $pinDiv.removeClass('d-none');
-      if (selectedFactorIndex == i) {
-        return;
-      }
-
-      $('#selected-factor').removeClass('bg-light');
-      $li.addClass('bg-light');
-      $li.attr('id', 'selected-factor');
       selectedFactorIndex = i;
       resendPin();
     });
 
-    $factors.append($li);
+    factorsContainer.appendChild(item);
   }
 }
 

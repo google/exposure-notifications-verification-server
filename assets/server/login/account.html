@@ -18,17 +18,17 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-person mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-person me-2"></i>
         {{t $.locale "account.header-details"}}
       </div>
       <div class="card-body">
         <h6 class="card-title">{{t $.locale "account.full-name" }}</h6>
-        <div class="card-text mb-3 mt-n2">
+        <div class="card-text mb-3">
           {{$user.Name}}
         </div>
 
         <h6 class="card-title">{{t $.locale "login.email-address"}}</h6>
-        <div class="card-text mt-n2">
+        <div class="card-text">
           {{$user.Email}}
         </div>
       </div>
@@ -36,35 +36,35 @@
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">
-        <span class="oi oi-lock-locked mr-2 ml-n1" aria-hidden="true"></span>
+        <i class="bi bi-shield-lock me-2"></i>
         {{t $.locale "account.header-authentication"}}
       </div>
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
           {{if .emailVerified}}
-            <span class="oi oi-circle-check mr-1 ml-n1 text-success small" aria-hidden="true"></span>
+            <i class="bi bi-check-square-fill text-success me-1"></i>
             {{t $.locale "account.email-verified"}}
           {{else}}
-            <span class="oi oi-circle-x mr-1 ml-n1 text-danger small" aria-hidden="true"></span>
+            <i class="bi bi-x-square-fill text-danger me-1"></i>
             {{t $.locale "account.email-not-verified"}}
-            <a href="/login/manage-account?mode=verifyEmail" class="float-right">{{t $.locale "account.verify-email-address"}}</a>
+            <a href="/login/manage-account?mode=verifyEmail" class="float-end">{{t $.locale "account.verify-email-address"}}</a>
           {{end}}
         </li>
         <li class="list-group-item">
           {{if .mfaEnabled}}
-            <span class="oi oi-circle-check mr-1 ml-n1 text-success small" aria-hidden="true"></span>
+            <i class="bi bi-check-square-fill text-success me-1"></i>
             {{t $.locale "account.mfa-enabled"}}
-            <a href="/login/register-phone" class="float-right">{{t $.locale "account.manage-mfa"}}</a>
+            <a href="/login/register-phone" class="float-end">{{t $.locale "account.manage-mfa"}}</a>
           {{else}}
-            <span class="oi oi-circle-x mr-1 ml-n1 text-danger small" aria-hidden="true"></span>
+            <i class="bi bi-x-square-fill text-danger me-1"></i>
             {{t $.locale "account.mfa-disabled"}}
-            <a href="/login/register-phone" class="float-right">{{t $.locale "account.enable-mfa"}}</a>
+            <a href="/login/register-phone" class="float-end">{{t $.locale "account.enable-mfa"}}</a>
           {{end}}
         </li>
         <li class="list-group-item">
-          <span class="oi oi-clock mr-1 ml-n1 text-secondary small" aria-hidden="true"></span>
+          <i class="bi bi-clock text-secondary me-1"></i>
           {{t $.locale "account.password-last-changed" $user.PasswordAgeString}}
-          <a href="/login/change-password" class="float-right">{{t $.locale "account.change-password"}}</a>
+          <a href="/login/change-password" class="float-end">{{t $.locale "account.change-password"}}</a>
         </li>
       </ul>
     </div>
@@ -72,7 +72,7 @@
     {{if $currentMemberships}}
       <div class="card mb-3 shadow-sm">
         <div class="card-header">
-          <span class="oi oi-home mr-2 ml-n1" aria-hidden="true"></span>
+          <i class="bi bi-house-door me-2"></i>
           {{t $.locale "account.header-realm-memberships"}}
         </div>
         <ul class="list-group list-group-flush">

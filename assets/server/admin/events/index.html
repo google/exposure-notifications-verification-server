@@ -15,21 +15,17 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <h1>System event log</h1>
-    <p>
-      The list below shows the past 30 days of events that have occurred across all realms.
-      Not all events are recorded for auditing to preserve privacy.
-    </p>
-
     <div class="card mb-3 shadow-sm">
-      <div class="card-header">Events
-      {{if .realm}}
-      <span class="badge badge-secondary">{{.realm.Name}}
-        <a class="" href="/admin/events?from={{.from}}&to={{.to}}">
-          <span class="oi oi-circle-x ml-1 text-light" aria-hidden="true"></span>
-        </a>
-      </span>
-      {{end}}
+      <div class="card-header">
+        <i class="bi bi-clock-history me-2"></i>
+        Events
+        {{if .realm}}
+        <span class="badge bg-secondary ms-3">{{.realm.Name}}
+          <a class="" href="/admin/events?from={{.from}}&to={{.to}}">
+            <i class="bi bi-x-circle-fill ms-1 text-light"></i>
+          </a>
+        </span>
+        {{end}}
       </div>
 
       <div class="card-body">
@@ -37,7 +33,7 @@
           <!-- There's a hidden query param to filter on test `include_test=true` -->
           <div class="input-group">
             <span class="input-group-prepend">
-              <select name="realm_id" class="text-truncate custom-select dropdown-toggle border-right-0" style="border-radius:0.25rem 0 0 0.25rem;">
+              <select name="realm_id" class="text-truncate form-select dropdown-toggle border-end-0" style="border-radius:0.25rem 0 0 0.25rem;">
                 <option value="" {{selectedIf (not .realm)}}>All events</option>
                 <option value="0" {{if .realm}}{{selectedIf (eq .realm.ID 0)}}{{end}}>System events</option>
                 {{if .realm}}{{if ne .realm.ID 0}}
@@ -49,15 +45,13 @@
             </span>
             <input type="datetime-local" id="from" name="from" value="{{.from}}" class="form-control">
             <span class="input-group-append">
-              <span class="input-group-text bg-transparent border-left-0 border-right-0">thru</span>
+              <span class="input-group-text bg-transparent border-start-0 border-end-0">thru</span>
             </span>
             <input type="datetime-local" id="to" name="to" value="{{.to}}" class="form-control">
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span>
-                <span class="sr-only">Search</span>
-              </button>
-            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
           </div>
         </form>
       </div>
@@ -86,7 +80,7 @@
 
                 {{if $event.Diff}}
                 <br>
-                  <a href="#" data-toggle="collapse" data-target="#collapseDiff{{$event.ID}}"
+                  <a href="#" data-bs-toggle="collapse" data-bs-target="#collapseDiff{{$event.ID}}"
                     aria-expanded="true" aria-controls="collapseDiff{{$event.ID}}"
                     class="small text-muted">
                     Toggle diff
