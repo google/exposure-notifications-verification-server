@@ -1,6 +1,9 @@
 window.addEventListener('load', (event) => {
-  // Add data-toogle="tooltop" to toggle tooltips!
-  $('[data-bs-toggle="tooltip"]').tooltip();
+  // Add data-toogle="tooltip" to toggle tooltips!
+  let tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  [].forEach.call(tooltips, (element) => {
+    new bootstrap.Tooltip(element);
+  });
 
   // Add data-submit-form properties to a link to have it act as a submit
   // button. You can also add a data-confirm attribute with a confirmation
@@ -82,14 +85,6 @@ window.addEventListener('load', (event) => {
     });
     $this.text(date.toLocaleString());
   });
-
-  // Disable propagation on links in menus if they are marked as such.
-  $(document).on('click', 'div.dropdown-menu .keep-open', function (e) {
-    e.stopPropagation();
-  });
-
-  // Toast shows alerts/flash messages.
-  $('.toast').toast('show');
 });
 
 window.addEventListener('DOMContentLoaded', () => {
