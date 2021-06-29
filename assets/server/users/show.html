@@ -32,20 +32,20 @@
           </a>
         {{end}}
       </div>
-      <div class="card-body mb-n3">
+      <div class="card-body">
         <h6 class="card-title">Name</h6>
-        <div id="user-name" class="mb-3 mt-n2">
+        <div id="user-name" class="mb-3">
           {{$user.Name}}
         </div>
 
         <h6 class="card-title">Email</h6>
-        <div id="user-email" class="mb-3 mt-n2">
+        <div id="user-email" class="mb-3">
           {{$user.Email}}
         </div>
 
         {{if $canWrite}}
           <h6 class="card-title">Password</h6>
-          <div class="mb-3 mt-n2">
+          <div class="mb-3">
             <a href="/realm/users/{{$user.ID}}/reset-password"
               data-method="POST"
               data-confirm="Are you sure you want to reset this user's password?">
@@ -55,7 +55,7 @@
         {{end}}
 
         <h6 class="card-title">Permissions</h6>
-        <div class="mb-3 mt-n2">
+        <div class="mb-3">
           <ul class="list-unstyled">
             {{range $name, $permission := $permissions}}
               <li class="small py-1">
@@ -106,7 +106,7 @@
             <h5 class="modal-title">Codes issued by {{$user.Name}}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body mb-n3">
+          <div class="modal-body">
             <p>
               This chart reflects the number of codes issued by {{$user.Name}}
               ({{$user.Email}}) for {{$currentMembership.Realm.Name}}.

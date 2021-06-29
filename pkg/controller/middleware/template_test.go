@@ -17,6 +17,7 @@ package middleware_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -33,6 +34,9 @@ func TestPopulateTemplateVariables(t *testing.T) {
 	cfg := &config.ServerConfig{
 		ServerName:      "namey",
 		MaintenanceMode: true,
+	}
+	if err := cfg.Process(ctx); err != nil {
+		t.Fatal(err)
 	}
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
 
@@ -59,8 +63,8 @@ func TestPopulateTemplateVariables(t *testing.T) {
 		if _, ok := m["buildTag"]; !ok {
 			t.Errorf("expected buildTag to be populated in template map")
 		}
-		if got, want := m["maintenanceMode"], cfg.MaintenanceMode; got != want {
-			t.Errorf("expected %t to be %t", got, want)
+		if got, want := m["systemNotice"].(string), "undergoing maintenance"; !strings.Contains(got, want) {
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})).ServeHTTP(w, r)
 }

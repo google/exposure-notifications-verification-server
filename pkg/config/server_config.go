@@ -102,11 +102,20 @@ type ServerConfig struct {
 
 // NewServerConfig initializes and validates a ServerConfig struct.
 func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
-	var config ServerConfig
-	if err := ProcessWith(ctx, &config, envconfig.OsLookuper()); err != nil {
+	var c ServerConfig
+	if err := ProcessWith(ctx, &c, envconfig.OsLookuper()); err != nil {
 		return nil, err
 	}
 
+	if err := c.Process(ctx); err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+// Process processes the config. This is an internal API, but is public for
+// cross-package sharing.
+func (c *ServerConfig) Process(ctx context.Context) error {
 	// Deprecations
 	logger := logging.FromContext(ctx).Named("config.ServerConfig")
 	if v := os.Getenv("CSRF_AUTH_KEY"); v != "" {
@@ -114,23 +123,23 @@ func NewServerConfig(ctx context.Context) (*ServerConfig, error) {
 	}
 
 	// Append maintenance mode text to the system notice.
-	if config.MaintenanceMode {
-		existing := config.SystemNotice
-		config.SystemNotice = `The server is undergoing maintenance and is read-only. Requests to issue new codes will fail.`
+	if c.MaintenanceMode {
+		existing := c.SystemNotice
+		c.SystemNotice = `The server is undergoing maintenance and is read-only. Requests to issue new codes will fail.`
 		if existing != "" {
-			config.SystemNotice = config.SystemNotice + " " + existing
+			c.SystemNotice = c.SystemNotice + " " + existing
 		}
 	}
 
 	// Parse system notice - do this once since it's displayed on every page.
-	if v := project.TrimSpace(config.SystemNotice); v != "" {
+	if v := project.TrimSpace(c.SystemNotice); v != "" {
 		raw := blackfriday.Run([]byte(strings.TrimSpace(v)))
-		config.systemNotice = string(bluemonday.UGCPolicy().SanitizeBytes(raw))
+		c.systemNotice = string(bluemonday.UGCPolicy().SanitizeBytes(raw))
 	}
 
 	// For the, when inserting into the javascript, gets escaped and becomes unusable.
-	config.Firebase.DatabaseURL = strings.ReplaceAll(config.Firebase.DatabaseURL, "https://", "")
-	return &config, nil
+	c.Firebase.DatabaseURL = strings.ReplaceAll(c.Firebase.DatabaseURL, "https://", "")
+	return nil
 }
 
 func (c *ServerConfig) Validate() error {

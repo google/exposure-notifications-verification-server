@@ -139,7 +139,7 @@
       </div>
     </div>
     {{if $realm.ErrorsFor "smsTextTemplate"}}
-    <div class="invalid-feedback d-block mt-n1 pb-2">
+    <div class="invalid-feedback d-block pb-2">
       Errors found for one or more SMS templates
     </div>
     {{end}}
@@ -156,7 +156,7 @@
         <label for="sms-text-template">SMS text template</label>
       </div>
       {{if $realm.ErrorsFor $v.Label}}
-      <div class="invalid-feedback d-block mt-n2 mb-3">
+      <div class="invalid-feedback d-block mb-3">
         {{joinStrings ($realm.ErrorsFor $v.Label) ", "}}
       </div>
       {{end}}
