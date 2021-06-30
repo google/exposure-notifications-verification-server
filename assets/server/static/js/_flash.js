@@ -1,17 +1,17 @@
 (() => {
   // Flash is a class that manages flash alerts and messages.
   class Flash {
-    #container;
-    #template;
+    _container;
+    _template;
 
     constructor(container, template) {
-      this.#container = container;
-      this.#template = template;
+      this._container = container;
+      this._template = template;
     }
 
     clear() {
-      while (this.#container && this.#container.firstChild) {
-        this.#container.removeChild(this.#container.firstChild);
+      while (this._container && this._container.firstChild) {
+        this._container.removeChild(this._container.firstChild);
       }
     }
 
@@ -28,7 +28,7 @@
     }
 
     flash(level, message) {
-      const alert = this.#template.cloneNode(true);
+      const alert = this._template.cloneNode(true);
 
       const body = alert.querySelector('.alert-message');
       body.textContent = message;
@@ -52,7 +52,7 @@
           throw `invalid flash level ${level}`;
       }
 
-      this.#container.appendChild(alert).focus();
+      this._container.appendChild(alert).focus();
       alert.classList.remove('d-none');
     }
   }
