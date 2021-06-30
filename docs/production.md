@@ -317,19 +317,19 @@ Log in as a system admin and view realms, select the `e2e-test-realm`. If this
 realm has not yet been created, wait a few minutes. The e2e runner executes
 every 15 minutes.
 
-![system admin realms](images/e2e/image01.png)
+![](images/admin-realms-list-highlight-e2e-test.png)
 
-Join the realm
+Scroll to the bottom of the page and join the realm.
 
-![join e2e-test-realm](images/e2e/image02.png)
+![](images/admin-realms-join.png)
 
-Select the "Back to e2e-test-realm" link
+Select the "e2e-test-realm" from the realm selection menu.
 
-![back to e2e-test-realm](images/e2e/image03.png)
+![](images/realm-selection-highlight-e2e-test-realm.png)
 
 Select `Settings` from the drop down menu and select the "SMS" tab
 
-![sms settings tab](images/e2e/sms-settings-tab.png)
+![](images/realm-sms-settings.png)
 
 Enter your [Twilio Test Credentials](https://www.twilio.com/docs/iam/test-credentials) and the `From` number as `+15005550006`, and click "Update SMS settings".
 
@@ -339,35 +339,33 @@ If _Authenticated SMS_ is enabled for your system, configure the authenticated S
 
 Click "Create new signing key version".
 
-![select signing keys](images/e2e/authenticated-sms-before-enable.png)
+![](images/authenticated-sms-before-enable.png)
 
 Then click "Enable Authenticated SMS".
 
-![select signing keys](images/e2e/authenticated-sms-enable.png)
+![](images/authenticated-sms-enable.png)
 
-Select `Signing Keys` from the drop down menu
-
-![select signing keys](images/e2e/image04.png)
+Select `Signing Keys` from the drop down menu.
 
 Create a new (initial) realm specific signing key
 
-![create realm signing keys](images/e2e/image05.png)
+![](images/signing-keys-create.png)
 
 Set the issuer and audience values (`iss`/`aud`). The suggested issuer is
 the reverse DNS of your verification server plus the realm (`e2e-test-realm`)
 and the suggested audience value is the reverse DNS of your key server's exposure
 service. You will need this information later when configuring the key server.
 
-![create realm signing keys](images/e2e/image06.png)
+![](images/signing-keys-settings.png)
 
 Now, upgrade to realm specific signing keys for this realm.
 
-![create realm signing keys](images/e2e/image07.png)
+![](images/signing-keys-upgrade-realm.png)
 
 Moving on to the key server. Connect to your key server instance
 and run the admin console. Create a new verification key.
 
-![create key server verification key](images/e2e/image08.png)
+![](images/e2e/image08.png)
 
 Set the name, issuer, audience and JWKS URI in the configuration.
 
