@@ -213,7 +213,7 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	// Save the new value back, bypassing any validation.
 	realm.AbusePreventionLimit = next
 	if err := c.db.SaveRealm(realm, database.System); err != nil {
-		return fmt.Errorf("failed to save model: %w", err)
+		return fmt.Errorf("failed to save model: %w, errors: %q", err, realm.ErrorMessages())
 	}
 
 	// Calculate effective limit.
