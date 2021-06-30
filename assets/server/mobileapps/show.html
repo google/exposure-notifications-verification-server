@@ -44,12 +44,12 @@
             {{$app.OS.Display}}
           </dd>
 
-          {{if (eq $app.OS .iOS)}}
+          {{if $app.OS.IsIOS}}
             <dt>Application ID</dt>
             <dd id="mobileapps-app-id" class="font-monospace">{{$app.AppID}}</dd>
           {{end}}
 
-          {{if (eq $app.OS .android)}}
+          {{if $app.OS.IsAndroid}}
             <dt>Package name</dt>
             <dd id="mobileapps-package-name" class="font-monospace">{{$app.AppID}}</dd>
 
@@ -57,8 +57,8 @@
             <dd id="mobileapps-sha" class="font-monospace">{{$app.SHA}}</dd>
 
             {{if $app.Headless}}
-            <dt>Headless</dt>
-            <dd id="mobileapps-headless" class="font-monospace">EN Express headless (settings-based app)</dd>
+              <dt>Headless</dt>
+              <dd id="mobileapps-headless" class="font-monospace">EN Express headless (settings-based app)</dd>
             {{end}}
           {{end}}
         </dl>
