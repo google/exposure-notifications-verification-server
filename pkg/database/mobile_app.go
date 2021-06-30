@@ -47,6 +47,14 @@ func (o OSType) Len() int {
 	return 3
 }
 
+func (o OSType) IsAndroid() bool {
+	return o == OSTypeAndroid
+}
+
+func (o OSType) IsIOS() bool {
+	return o == OSTypeIOS
+}
+
 const (
 	OSTypeUnknown OSType = iota
 	OSTypeIOS

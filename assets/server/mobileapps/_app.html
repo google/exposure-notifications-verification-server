@@ -35,8 +35,8 @@
     <div class="form-floating">
       <select name="os" id="os" class="form-control form-select {{invalidIf ($app.ErrorsFor "os")}}">
         <option selected disabled>Choose...</option>
-        <option value="{{.iOS}}" {{if (eq $app.OS .iOS)}}selected{{end}}>iOS custom app</option>
-        <option value="{{.android}}" {{if (eq $app.OS .android)}}selected{{end}}>Android EN Express or custom app</option>
+        <option value="{{.iOS}}" {{selectedIf $app.OS.IsIOS}}>iOS custom app</option>
+        <option value="{{.android}}" {{selectedIf $app.OS.IsAndroid}}>Android EN Express or custom app</option>
       </select>
       <label for="os">Platform</label>
       {{template "errorable" $app.ErrorsFor "os"}}
@@ -113,7 +113,7 @@
     let itemsIOSOnly = document.querySelectorAll('.d-ios-only');
 
     function processChange() {
-      inputAppID.classList.add('d-none');
+      divAppID.classList.add('d-none');
 
       let val = inputOS.options[inputOS.selectedIndex].value;
       if (val === '{{.iOS}}') {
@@ -122,13 +122,13 @@
 
         itemsAndroidOnly.forEach((item) => { item.classList.add('d-none'); })
         itemsIOSOnly.forEach((item) => { item.classList.remove('d-none'); })
-        inputAppID.classList.remove('d-none');
+        divAppID.classList.remove('d-none');
       } else if (val === '{{.android}}') {
         inputAppID.placeholder = 'Package name';
         labelAppID.innerText = 'Package name';
         itemsAndroidOnly.forEach((item) => { item.classList.remove('d-none'); })
         itemsIOSOnly.forEach((item) => { item.classList.add('d-none'); })
-        inputAppID.classList.remove('d-none');
+        divAppID.classList.remove('d-none');
       }
     }
 
