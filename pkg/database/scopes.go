@@ -246,7 +246,7 @@ func WithMobileAppSearch(q string) Scope {
 		q = project.TrimSpace(q)
 		if q != "" {
 			q = `%` + q + `%`
-			return db.Where("mobile_apps.name ILIKE ?", q)
+			return db.Where("mobile_apps.name ILIKE ? OR realms.name ILIKE ?", q, q)
 		}
 		return db
 	}

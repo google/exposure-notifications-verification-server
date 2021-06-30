@@ -1,0 +1,80 @@
+{{define "admin/mobileapps/show"}}
+
+{{$app := .app}}
+{{$realm := $app.Realm}}
+
+<!doctype html>
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
+<head>
+  {{template "head" .}}
+</head>
+
+<body id="admin-mobileapps-index" class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <div class="card mb-3 shadow-sm">
+      <div class="card-header">
+        <i class="bi bi-phone me-2"></i>
+        {{$app.Name}} ({{$realm.Name}})
+      </div>
+
+      <div class="card-body">
+        <dl class="mb-0">
+          <dt>App name</dt>
+          <dd>{{$app.Name}}</dd>
+
+          <dt>AppStore link</dt>
+          <dd><a href="{{$app.URL | pathUnescape}}" rel="noopener noreferrer" target="_blank">{{$app.URL | pathUnescape}}</a></dd>
+
+          <dt>AppStore redirect</dt>
+          <dd>{{not $app.DisableRedirect}}</dd>
+
+          <dt>Headless</dt>
+          <dd>{{$app.Headless}}</dd>
+
+          <dt>OS</dt>
+          <dd>
+            {{$app.OS.Display}}
+          </dd>
+
+          {{if $app.OS.IsIOS}}
+          <dt>Application ID</dt>
+          <dd id="mobileapps-app-id" class="font-monospace">{{$app.AppID}}</dd>
+          {{end}}
+
+          {{if $app.OS.IsAndroid}}
+            <dt>Package name</dt>
+            <dd id="mobileapps-package-name" class="font-monospace">{{$app.AppID}}</dd>
+
+            <dt>SHA</dt>
+            <dd id="mobileapps-sha" class="font-monospace">{{$app.SHA}}</dd>
+
+            {{if $app.Headless}}
+            <dt>Headless</dt>
+            <dd id="mobileapps-headless" class="font-monospace">EN Express headless (settings-based app)</dd>
+            {{end}}
+          {{end}}
+
+          <dt>Created</dt>
+          <dd>
+            <span data-timestamp="{{$app.CreatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">
+              {{$app.CreatedAt.Format "2006-02-01 15:04"}}
+            </span>
+          </dd>
+
+          <dt>Updated</dt>
+          <dd>
+            <span data-timestamp="{{$app.UpdatedAt.Format "1/02/2006 3:04:05 PM UTC"}}">
+              {{$app.UpdatedAt.Format "2006-02-01 15:04"}}
+            </span>
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+{{end}}

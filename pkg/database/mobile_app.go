@@ -72,6 +72,7 @@ type MobileApp struct {
 
 	// RealmID is the id of the mobile app.
 	RealmID uint `gorm:"column:realm_id;"`
+	Realm   *Realm
 
 	// URL is the link to the app in it's appstore.
 	URL    string  `gorm:"-"`
@@ -106,7 +107,7 @@ func (a *MobileApp) BeforeSave(tx *gorm.DB) error {
 		a.AddError("name", "cannot be blank")
 	}
 
-	if a.RealmID == 0 {
+	if a.RealmID == 0 && a.Realm == nil {
 		a.AddError("realm_id", "is required")
 	}
 
@@ -160,56 +161,40 @@ func (a *MobileApp) AfterFind(tx *gorm.DB) error {
 	return nil
 }
 
-// ExtendedMobileApp combines a MobileApp with its Realm
-type ExtendedMobileApp struct {
-	MobileApp
-	Realm
-}
-
-// ListActiveAppsWithRealm finds all active mobile apps with their associated realm.
-func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
-	return db.SearchActiveAppsWithRealm(p, "")
-}
-
-// SearchActiveAppsWithRealm finds all active mobile apps with their associated realm.
-func (db *Database) SearchActiveAppsWithRealm(p *pagination.PageParams, q string) ([]*ExtendedMobileApp, *pagination.Paginator, error) {
-	query := db.db.Table("mobile_apps").
-		Select("mobile_apps.*, realms.*").
-		Joins("left join realms on realms.id = mobile_apps.realm_id")
-
-	q = project.TrimSpace(q)
-	if q != "" {
-		q = `%` + q + `%`
-		query = query.Where("(mobile_apps.name ILIKE ? OR realms.name ILIKE ?)", q, q)
+func (db *Database) FindMobileApp(id interface{}) (*MobileApp, error) {
+	var app MobileApp
+	if err := db.db.
+		Where("id = ?", id).
+		First(&app).
+		Error; err != nil {
+		return nil, err
 	}
+	return &app, nil
+}
+
+// ListActiveAppsWithRealm finds all active mobile apps with their associated
+// realm preloaded. Refine the search with scopes.
+func (db *Database) ListActiveAppsWithRealm(p *pagination.PageParams, scopes ...Scope) ([]*MobileApp, *pagination.Paginator, error) {
+	var apps []*MobileApp
+	query := db.db.
+		Model(&MobileApp{}).
+		Joins("JOIN realms ON realms.id = mobile_apps.realm_id").
+		Scopes(scopes...).
+		Order("realms.id ASC, LOWER(mobile_apps.name) ASC")
 
 	if p == nil {
 		p = new(pagination.PageParams)
 	}
 
-	apps := make([]*ExtendedMobileApp, 0)
-
-	paginator, err := PaginateFn(query, p.Page, p.Limit, func(query *gorm.DB, offset uint64) error {
-		rows, err := query.
-			Limit(p.Limit).
-			Offset(offset).
-			Rows()
-		if err != nil || rows == nil {
-			return nil
+	paginator, err := Paginate(query, &apps, p.Page, p.Limit)
+	if err != nil {
+		if IsNotFound(err) {
+			return apps, nil, nil
 		}
-		defer rows.Close()
+		return nil, nil, err
+	}
 
-		for rows.Next() {
-			app := &ExtendedMobileApp{}
-			if err := db.db.ScanRows(rows, &app); err != nil {
-				return err
-			}
-			apps = append(apps, app)
-		}
-		return nil
-	})
-
-	return apps, paginator, err
+	return apps, paginator, nil
 }
 
 // ListActiveApps finds mobile apps by their realm.

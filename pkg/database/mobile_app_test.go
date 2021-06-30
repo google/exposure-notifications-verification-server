@@ -16,6 +16,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -161,69 +162,75 @@ func TestMobileApp_Validation(t *testing.T) {
 	})
 }
 
-func TestDatabase_ListActiveApps(t *testing.T) {
+func TestDatabase_FindMobileApp(t *testing.T) {
 	t.Parallel()
 
-	t.Run("access_mobileapps_and_realms", func(t *testing.T) {
-		t.Parallel()
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		realm1 := NewRealmWithDefaults("realm1")
-		if err := db.SaveRealm(realm1, SystemTest); err != nil {
-			t.Fatal(err)
-		}
+	app := &MobileApp{
+		Name:  "app1",
+		Realm: realm,
+		URL:   "https://example1.com",
+		OS:    OSTypeIOS,
+		AppID: "app1",
+	}
+	if err := db.SaveMobileApp(app, SystemTest); err != nil {
+		t.Fatal(err, app.ErrorMessages())
+	}
 
-		realm2 := NewRealmWithDefaults("realm2")
-		if err := db.SaveRealm(realm2, SystemTest); err != nil {
-			t.Fatal(err)
-		}
+	cases := []struct {
+		name string
+		id   interface{}
+		err  string
+	}{
+		{
+			name: "not_found",
+			id:   "123456",
+			err:  "not found",
+		},
+		{
+			name: "invalid_id",
+			id:   "banana",
+			err:  "invalid input syntax",
+		},
+		{
+			name: "found",
+			id:   app.ID,
+		},
+	}
 
-		app1 := &MobileApp{
-			Name:    "app1",
-			RealmID: realm1.ID,
-			URL:     "https://example1.com",
-			OS:      OSTypeIOS,
-			AppID:   "app1",
-		}
-		if err := db.SaveMobileApp(app1, SystemTest); err != nil {
-			t.Fatal(err)
-		}
+	for _, tc := range cases {
+		tc := tc
 
-		app2 := &MobileApp{
-			Name:    "app2",
-			RealmID: realm1.ID,
-			URL:     "https://example2.com",
-			OS:      OSTypeAndroid,
-			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
-			AppID:   "app2",
-		}
-		if err := db.SaveMobileApp(app2, SystemTest); err != nil {
-			t.Fatal(err)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
-		page := &pagination.PageParams{
-			Page:  0,
-			Limit: pagination.DefaultLimit,
-		}
-		extapp, _, err := db.ListActiveAppsWithRealm(page)
-		if err != nil {
-			t.Fatal(err)
-		}
+			found, err := db.FindMobileApp(tc.id)
+			if err != nil {
+				if tc.err != "" {
+					if got, want := err.Error(), tc.err; !strings.Contains(got, want) {
+						t.Fatalf("expected %q to contain %q", got, want)
+					}
+				} else {
+					t.Fatal(err)
+				}
+			}
 
-		if len(extapp) != 2 {
-			t.Errorf("got %v apps, wanted: 2", len(extapp))
-		}
-
-		apps, err := db.ListActiveApps(realm1.ID, WithAppOS(OSTypeAndroid))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(apps) != 1 {
-			t.Errorf("got %v apps, wanted: 1", len(apps))
-		}
-	})
+			if found != nil {
+				if got, want := found.ID, tc.id; got != want {
+					t.Errorf("expected %q to be %q", got, want)
+				}
+				if got, want := found.RealmID, realm.ID; got != want {
+					t.Errorf("expected %q to be %q", got, want)
+				}
+			}
+		})
+	}
 }
 
 func TestDatabase_PurgeMobileApps(t *testing.T) {

@@ -495,7 +495,8 @@ func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	r.Handle("/users/new", c.HandleSystemAdminCreate()).Methods(http.MethodGet)
 	r.Handle("/users/{id:[0-9]+}/revoke", c.HandleSystemAdminRevoke()).Methods(http.MethodDelete)
 
-	r.Handle("/mobile-apps", c.HandleMobileAppsShow()).Methods(http.MethodGet)
+	r.Handle("/mobile-apps", c.HandleMobileAppsIndex()).Methods(http.MethodGet)
+	r.Handle("/mobile-apps/{id:[0-9]+}", c.HandleMobileAppsShow()).Methods(http.MethodGet)
 	r.Handle("/sms", c.HandleSMSUpdate()).Methods(http.MethodGet, http.MethodPost)
 	r.Handle("/email", c.HandleEmailUpdate()).Methods(http.MethodGet, http.MethodPost)
 	r.Handle("/events", c.HandleEventsShow()).Methods(http.MethodGet)
