@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	texttemplate "text/template"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 )
@@ -32,7 +33,7 @@ import (
 const sriPrefix = "sha384-"
 
 var (
-	cssIncludeTmpl = htmltemplate.Must(htmltemplate.New(`cssIncludeTmpl`).Parse(strings.TrimSpace(`
+	cssIncludeTmpl = texttemplate.Must(texttemplate.New(`cssIncludeTmpl`).Parse(strings.TrimSpace(`
 {{ range . -}}
 <link rel="stylesheet" href="/{{.Path}}?{{.BuildID}}"
   integrity="{{.SRI}}" crossorigin="anonymous">
@@ -43,7 +44,7 @@ var (
 )
 
 var (
-	jsIncludeTmpl = htmltemplate.Must(htmltemplate.New(`jsIncludeTmpl`).Parse(strings.TrimSpace(`
+	jsIncludeTmpl = texttemplate.Must(texttemplate.New(`jsIncludeTmpl`).Parse(strings.TrimSpace(`
 {{ range . -}}
 <script defer src="/{{.Path}}?{{.BuildID}}"
   integrity="{{.SRI}}" crossorigin="anonymous"></script>
@@ -69,7 +70,7 @@ func (a *asset) BuildID() string {
 // assetIncludeTag searches the fs for all assets of the given search type and
 // renders the template. In non-dev mode, the results are cached on the first
 // invocation.
-func assetIncludeTag(fsys fs.FS, search string, tmpl *htmltemplate.Template, cache *htmltemplate.HTML, devMode bool) func() (htmltemplate.HTML, error) {
+func assetIncludeTag(fsys fs.FS, search string, tmpl *texttemplate.Template, cache *htmltemplate.HTML, devMode bool) func() (htmltemplate.HTML, error) {
 	var mu sync.Mutex
 
 	return func() (htmltemplate.HTML, error) {
@@ -130,5 +131,5 @@ func generateSRI(r io.ReadCloser) (string, error) {
 	if _, err := io.Copy(h, r); err != nil {
 		return "", err
 	}
-	return sriPrefix + base64.RawURLEncoding.EncodeToString(h.Sum(nil)), nil
+	return sriPrefix + base64.RawStdEncoding.EncodeToString(h.Sum(nil)), nil
 }
