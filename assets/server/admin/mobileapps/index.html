@@ -42,21 +42,21 @@
             </tr>
           </thead>
           <tbody>
-          {{range .apps}}
+          {{range $app := .apps}}
             <tr>
               <td>
-                {{if .MobileApp.DeletedAt}}
+                {{if $app.DeletedAt}}
                   <span class="bi bi-x-square-fill text-danger me-1"
                     data-bs-toggle="tooltip" title="Mobile app is disabled - it will be deleted in a few days"></span>
                 {{else}}
                   <span class="bi bi-check-square-fill text-success me-1"
                     data-bs-toggle="tooltip" title="Mobile app is enabled"></span>
                 {{end}}
-                <a href="/realm/mobile-apps/{{.MobileApp.ID}}" class="text-truncate">{{.MobileApp.Name}}</a>
+                <a href="/admin/mobile-apps/{{$app.ID}}" class="text-truncate">{{$app.Name}}</a>
               </td>
 
               <td>
-                <a href="/admin/realms/{{.Realm.ID}}/edit">{{.Realm.Name}}</a>
+                <a href="/admin/realms/{{$app.RealmID}}/edit">{{.Realm.Name}}</a>
               </td>
             </tr>
           {{end}}
