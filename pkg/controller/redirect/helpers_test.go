@@ -313,7 +313,7 @@ func TestDecideRedirect(t *testing.T) {
 			enxEnabled:   true,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
-			expected:     "ensonboarding://picker",
+			expected:     "ensonboarding://picker/us-moo",
 		},
 		{
 			// In this case, there is no app registered, so the link hit the server
@@ -323,7 +323,7 @@ func TestDecideRedirect(t *testing.T) {
 			enxEnabled:   false,
 			userAgent:    userAgentAndroid,
 			appStoreData: &appLinkNeither,
-			expected:     "ensonboarding://picker",
+			expected:     "ensonboarding://picker/us-moo",
 		},
 		{
 			name:         "android_headless_onboarding",

@@ -114,6 +114,9 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 				AppID:    app.PackageName,
 				Headless: app.Headless,
 			}
+			if newApp.Headless {
+				newApp.DisableRedirect = true
+			}
 			if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %w", err))
 				continue

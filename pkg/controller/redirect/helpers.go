@@ -48,19 +48,20 @@ func decideRedirect(region, userAgent string, u *url.URL, enxEnabled bool, appSt
 	// On Android redirect to Play Store if App Link doesn't trigger and an a link
 	// is set up.
 	if onAndroid {
-		if noQuery {
-			// Is it headless ENX, special case w/ internal protocol.
-			if appStoreData.AndroidHeadless {
-				return fmt.Sprintf(androidHeadlessOnboarding, strings.ToLower(region)), true
-			}
+		// Is it headless ENX, special case w/ internal protocol.
+		// If the server has been reached, we know ENX isn't active
+		if appStoreData.AndroidHeadless {
+			return fmt.Sprintf(androidHeadlessOnboarding, strings.ToLower(region)), true
+		}
 
+		if noQuery {
 			// Is it an app that redirects to the play store.
 			if v := appStoreData.AndroidURL; v != "" {
 				return v, true
 			}
 
-			// Generic onboarding, this is a play store search redirect.
-			return androidOnboardingRedirect, true
+			// Generic onboarding, w/ hint to region.
+			return fmt.Sprintf(androidHeadlessOnboarding, strings.ToLower(region)), true
 		}
 
 		// There is an app for this host, build an intent into that app, passing the path and query params.
@@ -70,7 +71,7 @@ func decideRedirect(region, userAgent string, u *url.URL, enxEnabled bool, appSt
 		}
 
 		// we know it's android so generic onboarding
-		return androidOnboardingRedirect, true
+		return fmt.Sprintf(androidHeadlessOnboarding, strings.ToLower(region)), true
 	}
 
 	// On iOS redirect to App Store if App Link doesn't trigger and an a link is set up.
