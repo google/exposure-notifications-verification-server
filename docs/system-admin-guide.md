@@ -50,11 +50,11 @@ https://<your-domain>/admin/users
 
 Or by choosing "System admin" from the dropdown and selecting the "Users" tab.
 
-![System Admin list](images/system-admin/users-index.png "System Admin list")
+![](images/admin-users-list.png)
 
 Click the "+" to launch the New System Admin page.
 
-![New System Admin](images/system-admin/new-system-admin.png "New System Admin")
+![](images/admin-user-create.png)
 
 Click "Create System Admin" to create the user. If the user already exists in
 the system, they will be promoted. Otherwise, an account will be automatically
@@ -71,11 +71,11 @@ https://<your-domain>/admin/realms
 
 Or by choosing "System admin" from the dropdown and selecting the "Realms" tab.
 
-![Realms list](images/system-admin/realms-index.png "Realms list")
+![](images/admin-realms-list.png)
 
 Click the "+" to launch the New Realm page. **Realms cannot be deleted!**
 
-![New Realm](images/system-admin/new-realm.png "New Realm")
+![](images/admin-realms-create.png)
 
 The realm should provide you the values for the `iss` and `aud` values, and
 these values must match what is supplied to the key server.
@@ -95,11 +95,11 @@ https://<your-domain>/admin/realms
 
 Or by choosing "System admin" from the dropdown and selecting the "Realms" tab.
 
-![Realms list](images/system-admin/realms-index.png "Realms list")
+![](images/admin-realms-list.png)
 
 Click on the realm name in the realms list view:
 
-![Realms show](images/system-admin/realm-show.png "Realm show")
+![](images/admin-realms-show.png)
 
 You can see abuse prevention statistics and deep links to events and mobile apps
 for this realm. You do **not** need to join the realm to see this data.
@@ -116,11 +116,11 @@ https://<your-domain>/admin/realms
 
 Or by choosing "System admin" from the dropdown and selecting the "Realms" tab.
 
-![Realms list](images/system-admin/realms-index.png "Realms list")
+![](images/admin-realms-list.png)
 
 Click on the realm name in the realms list view:
 
-![Realms show](images/system-admin/realm-show.png "Realm show")
+![](images/admin-realms-join.png)
 
 Scroll to the bottom and click "Join realm". **This event is audited and
 logged!**
@@ -139,7 +139,7 @@ https://<your-domain>/admin/sms
 
 Or by choosing "System admin" from the dropdown and selecting the "SMS" tab.
 
-![SMS show](images/system-admin/sms-show.png "SMS show")
+![](images/admin-smsconfig.png)
 
 Complete the information for the [Twilio](https://twilio.com) credentials and
 click the "Update system SMS config" button.
@@ -147,8 +147,6 @@ click the "Update system SMS config" button.
 Upon saving the system SMS configuration, the "New realm" and "Realm show" pages
 will have a new optional setting to share this system SMS configuration with
 that realm.
-
-![Realm show SMS settings](images/system-admin/realm-show-sms.png "Realm show SMS settings")
 
 ## Create system SMTP configuration
 
@@ -164,15 +162,13 @@ https://<your-domain>/admin/email
 
 Or by choosing "System admin" from the dropdown and selecting the "Email" tab.
 
-![Email show](images/system-admin/email-show.png "Email show")
+![](images/admin-emailconfig.png)
 
 Complete the information for the SMTP credentials.
 
 Upon saving the system email configuration, the "New realm" and "Realm show"
 pages will have a new optional setting to share this system email configuration
 with that realm.
-
-![Realm show email settings](images/system-admin/realm-show-email.png "Realm show email settings")
 
 ## Configure ENX redirect service
 
@@ -263,7 +259,7 @@ https://<your-domain>/admin/caches
 
 Or by choosing "System admin" from the dropdown and selecting the "Caches" tab.
 
-![Caches index](images/system-admin/caches-index.png "Caches index")
+![](images/admin-caches.png)
 
 Each cache is self-described under the name. Press the big red button to clear
 the cache. You will be prompted to confirm.
@@ -279,7 +275,7 @@ https://<your-domain>/admin/info
 
 Or by choosing "System admin" from the dropdown and selecting the "Info" tab.
 
-![Info show](images/system-admin/info-show.png "Info show")
+![](images/admin-info.png)
 
 Supply this information when requested.
 
@@ -290,7 +286,11 @@ of upcoming downtime, you can set the `SYSTEM_NOTICE` environment variable to
 markdown text and restart the service. Doing so will cause a yellow banner to
 appear on all pages with your message.
 
-![System notice show](images/system-admin/system-notice.png "System notice show")
+![](images/system-notice-example.png)
 
 To clear the message, remove the environment variable or set it to the empty
 string.
+
+You can also set the environment variable `MAINTENANCE_MODE` to a truthy value which will put the system in readonly and automatically add a system notice.
+
+![](images/mainteance-mode-example.png)

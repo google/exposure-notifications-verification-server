@@ -62,25 +62,21 @@ A member of the realm should be responsible for monitoring the number of codes i
 
 Go to the realm setting by selecting the `settings` drop down menu (shown under your name).
 
-![settings](images/admin/menu_settings.png "Click on your name and select 'settings'")
-
 Under general settings, confirm the `Name` (display name only) and `Region code` settings.
 
 The region code is important for `EN Express` customers and must match the
 [ISO 3166-1 country codes and ISO 3166-2 subdivision codes](https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes)
 for the geographic region that you cover.
 
-![region code](images/admin/settings02.png "Confirm your region code")
+![](images/settings-general-highlight-name.png)
 
 Once that is confirmed and saved, click the `Enable EN Express` button.
 
-![express](images/admin/settings03.png "Enable EN Express")
+![](images/settings-enable-enx.png)
 
 ## Settings, code settings
 
 Also under realm settings `settings` from the drop down menu, there are several settings for code issuance.
-
-![express](images/admin/settings_code.png "Code settings")
 
 ### Bulk Issue Codes
 
@@ -134,13 +130,11 @@ whereas long codes may be more secure for realms where they may be sent via SMS 
 
 To dispatch verification codes / links over SMS, a realm must provide their credentials for [Twilio](https://www.twilio.com/). The necessary credentials (Twilio account, auth token, and phone number) must be obtained from the Twilio console.
 
-![sms settings](images/admin/sms-settings.png "SMS settings")
+![](images/realm-sms-settings.png)
 
 ### SMS Text Template
 
 It is possible to customize the text of the SMS message that gets sent to patients. See the help text on that page for guidance.
-
-![sms text template](images/admin/sms-template.png "SMS Template")
 
 The fields `[region]`, `[code]`, `[expires]`, `[longcode]`, and `[longexpires]` may be included with brackets which will be programmatically substituted with values. It is recommended that the text of this SMS be composed in such a way that is respectful to the patient and does not reveal details about their diagnosis to potential onlookers of the phone's notifications with further information presented in-app.
 
@@ -151,36 +145,32 @@ Authenticated SMS adds a cryptographic signature to SMS messages which Android a
 
 Click "Authenticated SMS" in the main dropdown navigation menu. If you do not see "Authenticated SMS" in the menu, it means your system administrator has not enabled this functionality on the servers. Contact your server operator for more information.
 
-The default Authenticated SMS page will look like the following:
+The default Authenticated SMS page will be mostly empty. Create an initial
+Authenticated SMS signing key version by clicking the "Create new signing key
+version":
 
-![Authenticated SMS disabled](images/admin/authenticated-sms-disabled.png)
+![](images/authenticated-sms-before-enable.png)
 
-Create an initial Authenticated SMS signing key version by clicking the "Create new signing key version":
+The page will refresh and you will see the new key version and an option to Enable Authenticated SMS. Click "Enable Authenticated SMS" to enable it:
 
-![Authenticated SMS create key version](images/admin/authenticated-sms-create-version.png)
-
-The page will refresh and you will see the new key version and an option to Enable Authenticated SMS:
-
-![Authenticated SMS created key version](images/admin/authenticated-sms-key-created.png)
-
-Click "Enable Authenticated SMS" to enable it:
-
-![Enable Authenticated SMS](images/admin/authenticated-sms-enable.png)
+![](images/authenticated-sms-enable.png)
 
 Finally, share the resulting key information with Google and Apple:
 
-![Authenticated SMS key information](images/admin/authenticated-sms-enabled.png)
+![](images/authenticated-sms-status.png)
 
 ## Adding users
 
-Go to realm users admin by selecting 'Users' from the drop-down menu (shown under your name).
-
-![settings](images/admin/menu_users.png "Click on your name and select 'Users'")
+Go to realm users admin by selecting 'Users' from the drop-down menu.
 
 Add users, by clicking on the `+` in the header. If you do not see the `+`, you
 do not have permission to add users.
 
+![](images/users-list.png)
+
 Enter the name of the user and the email address to add. The email address will need to be verified on the person's first login.
+
+![](images/users-create.png)
 
 Choose the permissions the new user should have. Since permissions are
 constantly evolving, your list might be different than the one shown here. In
@@ -191,31 +181,28 @@ Privilege and only grant the most minimal set of permissions.
 
 Note, you can only grant permissions at or below your current level.
 
-![users](images/admin/users02.png "User listing")
-
 ## API keys
 
 API Keys are used by your mobile app to access the verification server.
-These API keys should be kept secret and only used by your mobile app.
+These API keys should be kept secret and only used by your mobile app. Go to API keys admin by selecting 'API keys' from the drop-down menu.
 
-![api keys](images/admin/menu_apikeys.png "Click on your name and select 'API Keys'")
+Create API keys by clicking on the `+` in the header. If you do not see the `+`, you
+do not have permission to create API keys.
 
-Click the link to create a new API key.
-
-![api keys](images/admin/apikeys01.png "Click on create a new API key")
+![](images/apikeys-list.png)
 
 Enter a name that indicates what this API key is for and select the type.
 The `Device` type is the one that is needed by mobile apps.
 
 When ready, click the `Create API key` button.
 
-![api keys](images/admin/apikeys02.png "Create API key")
+![](images/apikeys-create.png)
 
 Once the API key is created, it will be displayed to you.
 This is the __only__ time that this API key will be displayed.
 If you fail to copy it, you will need to create another one.
 
-![api keys](images/admin/apikeys03.png "API key created")
+![](images/apikeys-post-create.png)
 
 ## ENX redirector service
 
@@ -255,22 +242,14 @@ and prompted to install.
 
 ## Mobile apps
 
-**You must have `MobileAppWrite` permissions to perform these steps.**
+Go to Mobile apps admin by selecting 'Mobile apps' from the drop-down menu.
 
-To create a new mobile app, visit the `/realm/mobile-apps` URL. You can access
-it directly via:
+![](images/mobileapps-list.png)
 
-```text
-https://<your-domain>/realm/mobile-apps
-```
+Create mobile apps by clicking on the `+` in the header. If you do not see the `+`, you
+do not have permission to create mobile apps.
 
-Or by choosing "Mobile apps" from the dropdown.
-
-![Mobile apps list](images/admin/mobile-apps-index.png "Mobile apps list")
-
-Click the "+" to launch the New Mobile Apps page.
-
-![New mobile app](images/admin/mobile-apps-new.png "New mobile app")
+![](images/mobileapps-create.png)
 
 Complete the information for your mobile app. Depending on the platform (iOS or
 Android), you may be required to enter different information. Click "Create
@@ -381,8 +360,6 @@ Periodically, you will want to rotate the certificate signing key for your verif
 This is done from the 'Signing Keys' screen. There are two modes of operation (1) automatic rotation
 and (2) manual rotation. If your key server supports it, automatic rotation is recommended.
 
-![settings](images/admin/menu_signing.png "Click on your name and select 'Signing Keys'")
-
 ### Automatic Rotation
 
 🛑 ⚠️ **WARNING** Before moving forward, please ensure that your key sever is configured
@@ -392,15 +369,9 @@ your application users will not be able to share their keys.**
 Once you have confirmed that public key discovery is set up directly, click the "Enable automatic
 verification certificate key rotation." link (as pictured below).
 
-![api keys](images/admin/signing-auto-01.png "Enable automatic rotation")
+![](images/signing-keys-upgrade-realm.png)
 
-You will then be asked to confirm that pubic key discovery is set up correctly.
-
-![api keys](images/admin/signing-auto-02.png "Enable automatic rotation confirmation")
-
-When automatic rotation is enabled, the "Realm public keys" section will be changed to:
-
-![api keys](images/admin/signing-auto-03.png "Automatic rotation enabled")
+You will then be asked to confirm that pubic key discovery is set up correctly. When automatic rotation is enabled, the "Realm public keys" section will be note that automatic rotation is enabled.
 
 If you visit this page ever 30d, you should see that there is a different set of available/active
 public keys.
@@ -411,15 +382,9 @@ The first rotation will start between 60 and 90 minutes after you enable rotatio
 
 Click the "Create a new signing key version" button. This will _create_ but not make active a new key.
 
-![api keys](images/admin/keys01.png "API key created")
+If successful, you will get a message indicating the new key version that was created. This keyID and the public key need to be communicated to your key sever operator.
 
-If successful, you will get a message indicating the new key version that was created.
-
-![api keys](images/admin/keys02.png "successful")
-
-This keyID and the public key need to be communicated to your key sever operator.
-
-![api keys](images/admin/keys03.png "successful")
+![](images/signing-keys-manual-rotation.png)
 
 When your key server operator confirms that this key is configured, you can click 'Activate.'
 
