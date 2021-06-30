@@ -324,7 +324,7 @@ func TestIndex(t *testing.T) {
 			t.Errorf("expected %d to be %d: %s", got, want, body)
 		}
 
-		if got, want := resp.Header.Get("Location"), "ensonboarding://picker"; got != want {
+		if got, want := resp.Header.Get("Location"), "ensonboarding://picker/cc"; got != want {
 			t.Errorf("Expected %q to be %q", got, want)
 		}
 	})
