@@ -42,7 +42,7 @@
     {{end}}
 
     {{if not .skipForm}}
-    <form method="POST" action="/report/issue">
+    <form method="POST" action="/report/issue" onSubmit="document.getElementById('submit').disabled=true;">
       {{ .csrfField }}
 
       <div class="row mb-4">
