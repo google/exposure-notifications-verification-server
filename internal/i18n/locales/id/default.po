@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "Nomor Ponsel Anda"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Kode verifikasi memungkinkan Anda untuk membagikan hasil pengujian Anda. Kode Anda akan dikirim ke nomor yang Anda berikan."
+msgstr "Anda harus memasukkan nomor telepon yang valid untuk menerima kode verifikasi. Biaya operator mungkin berlaku."
 
 msgid "user-report.agreement-header"
 msgstr "Perjanjian"
 
 msgid "user-report.agreement"
-msgstr "Saya telah menerima hasil tes positif untuk COVID-19 dan nomor telepon yang saya berikan adalah nomor saya sendiri."
+msgstr "Saya mengakui bahwa saya telah menerima hasil tes positif COVID-19 dan nomor telepon yang saya berikan adalah milik saya sendiri dan saya ingin menerima kode untuk melaporkan hasil tes positif saya."
 
 msgid "user-report.request-button"
-msgstr "Minta kode verifikasi"
+msgstr "Terus"
 
 msgid "user-report.code-issued"
 msgstr "Kode verifikasi dikeluarkan"
@@ -472,7 +472,14 @@ msgid "user-report.testing-date-label"
 msgstr "Tanggal Tes COVID-19 Anda"
 
 msgid "user-report.phone-storage"
-msgstr "Untuk mencegah orang mengirimkan lebih dari satu hasil, nomor telepon Anda mungkin disimpan sementara oleh otoritas kesehatan masyarakat Anda."
+msgstr "Versi nomor telepon Anda yang dilindungi secara kriptografis dapat disimpan untuk mencegah pengiriman tambahan."
 
 msgid "user-report.learn-more"
 msgstr "Pelajari lebih lanjut..."
+
+msgid "user-report.header"
+msgstr "Bantu Beri Tahu Orang Lain tentang Paparan"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXX XXX"
+

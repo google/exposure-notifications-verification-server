@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "หมายเลขโทรศัพท์มือถือของคุณ"
 
 msgid "user-report.phone-number-instructions"
-msgstr "รหัสยืนยันช่วยให้คุณแชร์ผลการทดสอบได้ รหัสของคุณจะถูกส่งไปยังหมายเลขที่คุณระบุ"
+msgstr "คุณต้องป้อนหมายเลขโทรศัพท์ที่ถูกต้องเพื่อรับรหัสยืนยัน อาจมีค่าธรรมเนียมผู้ให้บริการ"
 
 msgid "user-report.agreement-header"
 msgstr "ข้อตกลง"
 
 msgid "user-report.agreement"
-msgstr "ฉันได้รับผลการทดสอบ COVID-19 ในเชิงบวกและหมายเลขโทรศัพท์ที่ฉันให้ไว้เป็นของฉันเอง"
+msgstr "ฉันรับทราบว่าได้ผลการทดสอบในเชิงบวกสำหรับ COVID-19 และหมายเลขโทรศัพท์ที่ฉันให้ไว้นั้นเป็นหมายเลขของฉันเอง และฉันต้องการรับรหัสเพื่อรายงานผลการทดสอบที่เป็นบวก"
 
 msgid "user-report.request-button"
-msgstr "ขอรหัสยืนยัน"
+msgstr "ดำเนินการต่อ"
 
 msgid "user-report.code-issued"
 msgstr "ออกรหัสยืนยันแล้ว"
@@ -472,7 +472,14 @@ msgid "user-report.testing-date-label"
 msgstr "วันที่คุณตรวจโควิด-19"
 
 msgid "user-report.phone-storage"
-msgstr "เพื่อป้องกันไม่ให้ผู้อื่นส่งผลลัพธ์มากกว่าหนึ่งรายการ หมายเลขโทรศัพท์ของคุณอาจถูกจัดเก็บไว้ชั่วคราวโดยหน่วยงานด้านสาธารณสุขของคุณ"
+msgstr "อาจมีการจัดเก็บหมายเลขโทรศัพท์ของคุณในเวอร์ชันที่ป้องกันด้วยการเข้ารหัสเพื่อป้องกันการส่งเพิ่มเติม"
 
 msgid "user-report.learn-more"
 msgstr "เรียนรู้เพิ่มเติม..."
+
+msgid "user-report.header"
+msgstr "ช่วยแจ้งให้ผู้อื่นทราบถึงความเสี่ยง"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

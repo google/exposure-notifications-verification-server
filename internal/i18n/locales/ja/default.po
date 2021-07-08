@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "あなたの携帯電話番号"
 
 msgid "user-report.phone-number-instructions"
-msgstr "検証コードを使用すると、テスト結果を共有できます。 あなたのコードはあなたが提供した番号に送られます。"
+msgstr "確認コードを受け取るには、有効な電話番号を入力する必要があります。 運送業者の手数料がかかる場合があります。"
 
 msgid "user-report.agreement-header"
 msgstr "合意"
 
 msgid "user-report.agreement"
-msgstr "COVID-19の検査結果が陽性で、提供した電話番号は自分のものです。"
+msgstr "COVID-19の検査結果が陽性であり、提供した電話番号は自分のものであり、陽性の検査結果を報告するためのコードを受け取りたいと思います。"
 
 msgid "user-report.request-button"
-msgstr "確認コードのリクエスト"
+msgstr "継続する"
 
 msgid "user-report.code-issued"
 msgstr "確認コードが発行されました"
@@ -472,7 +472,13 @@ msgid "user-report.testing-date-label"
 msgstr "COVID-19テストの日付"
 
 msgid "user-report.phone-storage"
-msgstr "他の人が複数の結果を送信するのを防ぐために、あなたの電話番号はあなたの公衆衛生当局によって一時的に保存されるかもしれません。"
+msgstr "追加の送信を防ぐために、暗号で保護されたバージョンの電話番号が保存される場合があります。"
 
 msgid "user-report.learn-more"
 msgstr "詳細..."
+
+msgid "user-report.header"
+msgstr "他の人に露出を通知するのを手伝ってください"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXXX XXXX"
