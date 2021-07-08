@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "Jübi telefonyňyzyň belgisi"
 
 msgid "user-report.phone-number-instructions"
-msgstr "A verification code allows you to share your test results. Your code will be sent to the number you provide."
+msgstr "Doğrulama kodu almak için geçerli bir telefon numarası girmelisiniz. Taşıyıcı ücretleri geçerli olabilir."
 
 msgid "user-report.agreement-header"
 msgstr "Sözleşme"
 
 msgid "user-report.agreement"
-msgstr "COVID-19 için pozitif bir test sonucu aldım ve verdiğim telefon numarası bana ait."
+msgstr "COVID-19 için pozitif bir test sonucu aldığımı ve verdiğim telefon numarasının bana ait olduğunu ve pozitif test sonucumu bildirmek için bir kod almak istediğimi kabul ediyorum."
 
 msgid "user-report.request-button"
-msgstr "Doğrulama kodu iste"
+msgstr "Devam et"
 
 msgid "user-report.code-issued"
 msgstr "Doğrulama kodu verildi"
@@ -472,7 +472,13 @@ msgid "user-report.testing-date-label"
 msgstr "COVID-19 synagyňyzyň senesi"
 
 msgid "user-report.phone-storage"
-msgstr "Adamlaryň birden köp netije bermeginiň öňüni almak üçin telefon belgiňiz wagtlaýyn saglygy goraýyş edarasy tarapyndan saklanyp bilner."
+msgstr "Ek gönderimleri önlemek için telefon numaranızın kriptografik olarak korunan bir sürümü saklanabilir."
 
 msgid "user-report.learn-more"
 msgstr "Has giňişleýin öwren ..."
+
+msgid "user-report.header"
+msgstr "Maruz Kalma Durumunda Diğerlerini Bildirmeye Yardımcı Olun"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXX XX XX"

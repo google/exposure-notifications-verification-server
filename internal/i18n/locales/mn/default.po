@@ -417,16 +417,16 @@ msgid "user-report.phone-number-header"
 msgstr "Таны гар утасны дугаар"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Баталгаажуулах код нь тестийн үр дүнг хуваалцах боломжийг танд олгоно. Таны оруулсан дугаар руу кодоо илгээх болно."
+msgstr "Баталгаажуулах кодыг хүлээн авахын тулд та зөв утасны дугаар оруулах шаардлагатай. Оператор компанийн төлбөр шаардагдаж магадгүй юм."
 
 msgid "user-report.agreement-header"
 msgstr "Гэрээ"
 
 msgid "user-report.agreement"
-msgstr "Би COVID-19-ийн туршилтын эерэг хариу авсан бөгөөд миний өгсөн утасны дугаар минийх байна."
+msgstr "Би COVID-19-ийн шинжилгээний эерэг үр дүнг хүлээн авсан гэдгээ мэдэгдэж байгаа бөгөөд миний өгсөн утасны дугаар минийх бөгөөд миний эерэг тестийн үр дүнг тайлагнах кодыг авахыг хүсч байна."
 
 msgid "user-report.request-button"
-msgstr "Баталгаажуулах код хүсэх"
+msgstr "Үргэлжлүүлэх"
 
 msgid "user-report.code-issued"
 msgstr "Баталгаажуулах код гаргасан"
@@ -471,7 +471,13 @@ msgid "user-report.testing-date-label"
 msgstr "Таны COVID-19 туршилтын огноо"
 
 msgid "user-report.phone-storage"
-msgstr "Хүмүүс нэгээс илүү үр дүн илгээхээс урьдчилан сэргийлэхийн тулд таны утасны дугаарыг таны нийгмийн эрүүл мэндийн байгууллагад түр хадгалах боломжтой."
+msgstr "Таны утасны дугаарын криптографийн хамгаалалттай хувилбарыг хадгалах боломжтой бөгөөд нэмэлт мэдээлэл оруулахаас сэргийлнэ."
 
 msgid "user-report.learn-more"
 msgstr "Дэлгэрэнгүй үзэх ..."
+
+msgid "user-report.header"
+msgstr "Бусад өртөлтийн талаар мэдэгдэхэд тусална уу"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXXX"

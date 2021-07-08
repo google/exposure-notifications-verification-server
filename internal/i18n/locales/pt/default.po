@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "Seu número de celular"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Um código de verificação permite que você compartilhe os resultados do seu teste. Seu código será enviado para o número que você fornecer."
+msgstr "Você deve inserir um número de telefone válido para receber um código de verificação. Taxas da operadora podem ser aplicadas."
 
 msgid "user-report.agreement-header"
 msgstr "Acordo"
 
 msgid "user-report.agreement"
-msgstr "Recebi um resultado de teste positivo para COVID-19 e o número de telefone que indiquei é o meu."
+msgstr "Confirmo que recebi um resultado de teste positivo para COVID-19 e o número de telefone que indiquei é o meu próprio e gostaria de receber um código para relatar o meu resultado de teste positivo."
 
 msgid "user-report.request-button"
-msgstr "Solicitar código de verificação"
+msgstr "Prosseguir"
 
 msgid "user-report.code-issued"
 msgstr "Código de verificação emitido"
@@ -472,7 +472,13 @@ msgid "user-report.testing-date-label"
 msgstr "Data do seu teste COVID-19"
 
 msgid "user-report.phone-storage"
-msgstr "Para evitar que as pessoas enviem mais de um resultado, seu número de telefone pode ser armazenado temporariamente pela autoridade de saúde pública."
+msgstr "Uma versão criptograficamente protegida do seu número de telefone pode ser armazenada para evitar envios adicionais."
 
 msgid "user-report.learn-more"
 msgstr "Saiba mais ..."
+
+msgid "user-report.header"
+msgstr "Ajude a notificar outras pessoas sobre a exposição"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XX XXXXX XXXX"

@@ -10,20 +10,18 @@
 
 <body class="my-4 g-4">
   <main role="main" class="container">
+    <h1 class="display-1 mb-3 w-100"><strong>{{t $.locale "user-report.header"}}</strong></h1>
+
     {{if $currentRealm.AgencyImage}}
-    <div id="logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
+    <div id="logo" class="rounded-corners pha-logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
       <img src="{{$currentRealm.AgencyImage}}" style="width:80vw; max-width:720px; content-visibility:auto;"
         loading="lazy" decoding="async"
         alt="{{$currentRealm.Name}} logo" />
     </div>
     {{end}}
 
-    <h1 class="mb-3 w-100 text-center">{{tDefault $.realmLocale .realm.Name "agencyDisplayName"}}</h1>
-
-    <h2 class="w-100 text-center">{{t $.locale "user-report.request-code-from"}}</h2>
-
     {{if not .skipForm}}
-    <div class="alert alert-primary d-flex align-items-center" role="alert">
+    <div class="alert alert-primary d-flex align-items-center rounded-corners" role="alert">
       <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" aria-label="Info:">
         <use xlink:href="/static/icons.svg#info-circle-fill"/>
       </svg>
@@ -48,9 +46,25 @@
       <div class="row mb-4">
         <div class="col">
           <div>
-            <input type="tel" id="phone" name="phone" class="form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" required
-              placeholder="{{t $.locale "user-report.phone-number-header"}}" value="{{.phoneNumber}}" />
-            <label for="phone">{{t $.locale "user-report.phone-number-header"}}</label>
+            <label for="test-date"><strong>{{t $.locale "user-report.testing-date-label"}}</strong></label>
+            <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="floating-field form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}}
+              value="{{.date}}"/>            
+          </div>
+          {{if .dateError}}
+            <div class="invalid-feedback">{{.dateError}}</div>
+          {{end}}
+          <div class="form-text">
+            {{tDefault $.realmLocale (t $.locale "user-report.enter-date-instructions") "webReportDateMessage"}}
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col">
+          <div>
+            <label for="phone"><strong>{{t $.locale "user-report.phone-number-header"}}</strong></label>
+            <input type="tel" id="phone" name="phone" class="floating-field form-control{{if .phoneError}} is-invalid{{end}}" autocomplete="off" required
+              placeholder="{{t $.locale "user-report.phone-number-placeholder"}}" value="{{.phoneNumber}}" />            
           </div>
           {{if .phoneError}}
             <div class="invalid-feedback">{{.phoneError}}</div>
@@ -67,28 +81,18 @@
       </div>
 
       <div class="row mb-4">
-        <div class="col">
-          <div>
-            <input type="date" id="test-date" name="testDate" min="{{.minDate}}" max="{{.maxDate}}" class="form-control w-100{{if .dateError}} is-invalid{{end}}" {{if $currentRealm.RequireDate}}required{{end}}
-              value="{{.date}}"/>
-            <label for="test-date">{{t $.locale "user-report.testing-date-label"}}</label>
-          </div>
-          {{if .dateError}}
-            <div class="invalid-feedback">{{.dateError}}</div>
-          {{end}}
-          <div class="form-text">
-            {{tDefault $.realmLocale (t $.locale "user-report.enter-date-instructions") "webReportDateMessage"}}
-          </div>
-        </div>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col">
-          <div class="form-check">
-            <input type="checkbox" name="agreement" id="agreement" class="form-check-input {{if .termsError}} is-invalid{{end}}" value="true" required {{if .agreement}}checked{{end}} />
-            <label for="agreement" class="form-check-label">
-              {{tDefault $.realmLocale (t $.locale "user-report.agreement") "webReportLegalMessage"}}
-            </label>
+        <div class="col alert agreement rounded-corners">
+          <div class="form-check container">
+            <div class="row">
+              <div class="col-1 justify-content-center">
+                <input type="checkbox" name="agreement" id="agreement" class="position-relative top-50 translate-middle-y agree-button form-check-input {{if .termsError}} is-invalid{{end}}" value="true" required {{if .agreement}}checked{{end}} />
+              </div>
+              <div class="col">
+                <label for="agreement" class="form-check-label">
+                  {{t $.locale "user-report.agreement"}}
+                </label>
+              </div>
+            </div>
           </div>
           {{if .termsError}}
             <div class="invalid-feedback">{{.termsError}}</div>

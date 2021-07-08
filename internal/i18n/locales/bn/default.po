@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "আপনার মোবাইল ফোন নম্বর"
 
 msgid "user-report.phone-number-instructions"
-msgstr "একটি যাচাইকরণ কোড আপনাকে আপনার পরীক্ষার ফলাফলগুলি ভাগ করতে দেয়। আপনার কোড আপনি সরবরাহ করা নম্বরে প্রেরণ করা হবে।"
+msgstr "একটি যাচাইকরণ কোড পেতে আপনাকে অবশ্যই একটি বৈধ ফোন নম্বর প্রবেশ করতে হবে। ক্যারিয়ার ফি প্রয়োগ হতে পারে।"
 
 msgid "user-report.agreement-header"
 msgstr "চুক্তি"
 
 msgid "user-report.agreement"
-msgstr "আমি COVID-19 এর জন্য একটি ইতিবাচক পরীক্ষার ফলাফল পেয়েছি এবং আমি যে ফোন নম্বর সরবরাহ করেছি তা আমার নিজের।"
+msgstr "আমি স্বীকার করি যে আমি COVID-19 এর জন্য একটি ইতিবাচক পরীক্ষার ফলাফল পেয়েছি এবং আমি যে ফোন নম্বর সরবরাহ করেছি তা আমার নিজের এবং আমি আমার ইতিবাচক পরীক্ষার ফলাফলের রিপোর্ট করার জন্য একটি কোড পেতে চাই।"
 
 msgid "user-report.request-button"
-msgstr "অনুরোধ যাচাইকরণ কোড"
+msgstr "চালিয়ে যান"
 
 msgid "user-report.code-issued"
 msgstr "যাচাইকরণ কোড জারি"
@@ -472,7 +472,13 @@ msgid "user-report.testing-date-label"
 msgstr "আপনার COVID-19 পরীক্ষার তারিখ"
 
 msgid "user-report.phone-storage"
-msgstr "লোককে একাধিক ফলাফল জমা দেওয়া থেকে বিরত রাখতে আপনার ফোন নম্বরটি আপনার জনস্বাস্থ্য কর্তৃপক্ষের দ্বারা অস্থায়ীভাবে সংরক্ষণ করা যেতে পারে।"
+msgstr "অতিরিক্ত জমাগুলি রোধ করতে আপনার ফোন নম্বরটির একটি ক্রিপ্টোগ্রাফিকভাবে সুরক্ষিত সংস্করণ সংরক্ষণ করা যেতে পারে।"
 
 msgid "user-report.learn-more"
 msgstr "আরও জানুন ..."
+
+msgid "user-report.header"
+msgstr "এক্সপোজারের অন্যদের অবহিত করতে সহায়তা করুন"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXXX-XXXXXX"

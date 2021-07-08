@@ -417,16 +417,16 @@ msgid "user-report.phone-number-header"
 msgstr "رقم الهاتف المحمول"
 
 msgid "user-report.phone-number-instructions"
-msgstr "يسمح لك رمز التحقق بمشاركة نتائج الاختبار الخاصة بك. سيتم إرسال الرمز الخاص بك إلى الرقم الذي تقدمه."
+msgstr "يجب إدخال رقم هاتف صالح لتلقي رمز التحقق. قد يتم تطبيق رسوم الناقل."
 
 msgid "user-report.agreement-header"
 msgstr "اتفاق"
 
 msgid "user-report.agreement"
-msgstr "لقد تلقيت نتيجة اختبار إيجابية لـ COVID-19 ورقم الهاتف الذي قدمته هو خاص بي."
+msgstr "أقر بأنني تلقيت نتيجة اختبار إيجابية لـ COVID-19 وأن رقم الهاتف الذي قدمته هو خاص بي وأود تلقي رمز للإبلاغ عن نتيجة الاختبار الإيجابية الخاصة بي."
 
 msgid "user-report.request-button"
-msgstr "اطلب رمز التحقق"
+msgstr "يكمل"
 
 msgid "user-report.code-issued"
 msgstr "تم إصدار رمز التحقق"
@@ -471,7 +471,13 @@ msgid "user-report.testing-date-label"
 msgstr "تاريخ اختبار COVID-19 الخاص بك"
 
 msgid "user-report.phone-storage"
-msgstr "لمنع الأشخاص من إرسال أكثر من نتيجة واحدة ، قد يتم تخزين رقم هاتفك مؤقتًا بواسطة هيئة الصحة العامة الخاصة بك."
+msgstr "قد يتم تخزين نسخة محمية مشفرة من رقم هاتفك لمنع عمليات الإرسال الإضافية."
 
 msgid "user-report.learn-more"
 msgstr "يتعلم أكثر..."
+
+msgid "user-report.header"
+msgstr "ساعد في إعلام الآخرين بالتعرض"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXXXX"

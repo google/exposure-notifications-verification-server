@@ -417,16 +417,16 @@ msgid "user-report.phone-number-header"
 msgstr "Deine Handynummer"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Mit einem Bestätigungscode können Sie Ihre Testergebnisse teilen. Ihr Code wird an die von Ihnen angegebene Nummer gesendet."
+msgstr "Ich bestätige, dass ich ein positives Testergebnis für COVID-19 erhalten habe und die von mir angegebene Telefonnummer meine eigene ist und ich möchte einen Code erhalten, um mein positives Testergebnis zu melden."
 
 msgid "user-report.agreement-header"
 msgstr "Vereinbarung"
 
 msgid "user-report.agreement"
-msgstr "Ich habe ein positives Testergebnis für COVID-19 erhalten und die von mir angegebene Telefonnummer ist meine eigene."
+msgstr "Ich bestätige, dass ich ein positives Testergebnis für COVID-19 erhalten habe und die von mir angegebene Telefonnummer meine eigene ist und ich möchte einen Code erhalten, um mein positives Testergebnis zu melden."
 
 msgid "user-report.request-button"
-msgstr "Bestätigungscode anfordern"
+msgstr "Fortsetzen"
 
 msgid "user-report.code-issued"
 msgstr "Bestätigungscode ausgegeben"
@@ -471,7 +471,13 @@ msgid "user-report.testing-date-label"
 msgstr "Datum Ihres COVID-19-Tests"
 
 msgid "user-report.phone-storage"
-msgstr "Um zu verhindern, dass Personen mehr als ein Ergebnis übermitteln, kann Ihre Telefonnummer von Ihrem Gesundheitsamt vorübergehend gespeichert werden."
+msgstr "Eine kryptographisch geschützte Version Ihrer Telefonnummer kann gespeichert werden, um zusätzliche Übermittlungen zu verhindern."
 
 msgid "user-report.learn-more"
 msgstr "Weitere Informationen..."
+
+msgid "user-report.header"
+msgstr "Helfen Sie mit, andere über Gefährdungen zu informieren"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXXX XXXXXXX"

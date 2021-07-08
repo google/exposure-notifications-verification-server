@@ -16,7 +16,33 @@
   integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 {{end}}
 
-<title>{{t $.locale "user-report.title"}}</title>
+<style>
+.rounded-corners {
+  border-radius: 20px;
+}
+
+.agreement {
+  border: 1px solid grey;
+}
+
+.agree-button {
+  border-radius: 25px;
+  border: 1px solid;
+}
+
+.pha-logo {
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+.floating-field {
+  border-radius: 0px;
+  border: none;
+  border-bottom: 1px solid grey;
+}
+</style>
+
+<title>{{tDefault $.realmLocale .realm.Name "agencyDisplayName"}}</title>
 {{end}}
 
 {{define "errorable"}}

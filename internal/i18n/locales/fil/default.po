@@ -418,16 +418,16 @@ msgid "user-report.phone-number-header"
 msgstr "Ang iyong numero ng Mobile Phone"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Pinapayagan ka ng isang verification code na ibahagi ang iyong mga resulta sa pagsubok. Ipapadala ang iyong code sa numerong ibibigay mo."
+msgstr "Dapat kang maglagay ng wastong numero ng telepono upang makatanggap ng isang verification code. Maaaring mailapat ang mga bayarin sa carrier."
 
 msgid "user-report.agreement-header"
 msgstr "Kasunduan"
 
 msgid "user-report.agreement"
-msgstr "Nakatanggap ako ng positibong resulta sa pagsubok para sa COVID-19 at ang ibinigay kong numero ng telepono ay aking sarili."
+msgstr "Kinikilala ko na nakatanggap ako ng positibong resulta sa pagsubok para sa COVID-19 at ang numero ng telepono na ibinigay ko ay aking sarili at nais kong makatanggap ng isang code upang iulat ang aking positibong resulta sa pagsubok."
 
 msgid "user-report.request-button"
-msgstr "Humiling ng verification code"
+msgstr "Magpatuloy"
 
 msgid "user-report.code-issued"
 msgstr "Inisyu ang verification code"
@@ -472,7 +472,13 @@ msgid "user-report.testing-date-label"
 msgstr "Petsa ng Iyong Pagsubok sa COVID-19"
 
 msgid "user-report.phone-storage"
-msgstr "Upang maiwasan ang mga tao na magsumite ng higit sa isang resulta, ang iyong numero ng telepono ay maaaring pansamantalang maiimbak ng iyong awtoridad sa kalusugan sa publiko."
+msgstr "Ang isang bersyon na protektado ng cryptographically ng iyong numero ng telepono ay maaaring maimbak upang maiwasan ang karagdagang mga pagsusumite."
 
 msgid "user-report.learn-more"
 msgstr "Matuto nang higit pa ..."
+
+msgid "user-report.header"
+msgstr "Tulungan Ipaalam sa Iba ang Pagkakalantad"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXX XXXX"
