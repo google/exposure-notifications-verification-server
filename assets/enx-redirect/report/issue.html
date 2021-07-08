@@ -11,7 +11,7 @@
 <body class="my-4 g-4">
   <main role="main" class="container">
     {{if $currentRealm.AgencyImage}}
-    <div id="logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
+    <div id="logo" class="rounded-corners pha-logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
       <img src="{{$currentRealm.AgencyImage}}" style="width:80vw; max-width:720px; content-visibility:auto;"
         loading="lazy" decoding="async"
         alt="{{$currentRealm.Name}} logo" />
