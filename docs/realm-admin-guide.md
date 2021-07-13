@@ -303,8 +303,6 @@ This chart shows all of the process points involved in issuing and using a verif
 * The delta between codes claimed and tokens claimed indicates users that enter a valid verification code but don't get through the consent to share data screen.
 * The delta between tokens claimed and publish requests indicates that a user got past the consent screen but keys were not uploaded.
 
-![stats](images/admin/stats01.png "codes issued and used chart")
-
 #### Code usage latency
 
 There are two charts here. The first is a histogram showing how quickly users are using
@@ -312,14 +310,11 @@ verification codes (once successfully used).
 
 The second shows the mean of the code usage time (in minutes).
 
-![stats](images/admin/stats02.png "code usage latency charts")
 
 #### Total TEKs published
 
 This chart shows the total number of temporary exposure keys published due to
 verification certificates issued by your public health authority.
-
-![stats](images/admin/stats03.png "total TEKs published")
 
 
 #### Total publish requests
@@ -334,14 +329,12 @@ certificate did not contain a test date or a symptom onset date and the user als
 declined to provide a symptom onset date, or one was not known. In that case, those requests
 received default values according to the configuration of the key server.
 
-![stats](images/admin/stats04.png "total publish requests by operating system")
 
 #### EN days active before upload
 
 This histogram shows, based on publish requests, how many days a device had EN activated
 before reporting a diagnosis. Ideally this chart will skew to the right (active longer).
 
-![stats](images/admin/stats05.png "EN days activate before upload")
 
 #### Onset to upload
 
@@ -351,7 +344,6 @@ how many days ago that symptom onset date was compared to the upload date.
 The lower this chart skews, the healthier the testing pipeline and verification code delivery
 system is.
 
-![stats](images/admin/stats06.png "Onset-to-upload chart")
 
 ## Rotating certificate signing keys
 

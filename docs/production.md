@@ -365,34 +365,28 @@ Now, upgrade to realm specific signing keys for this realm.
 Moving on to the key server. Connect to your key server instance
 and run the admin console. Create a new verification key.
 
-![](images/e2e/image08.png)
-
 Set the name, issuer, audience and JWKS URI in the configuration.
 
-![verification key configuration](images/e2e/image09.png)
+![](images/key-e2e-verification-configuration.png)
 
 Navigate back to the admin console home, and then click back into the
 newly created verification key config. Refresh this page until the JWKS
 importer has picked up the public key.
 
-When that is ready, navigate back to the admin console home and create
-a new authorized health authority.
+When that is ready, navigate back to the admin console home and create a new
+authorized health authority. Set the Health Authority ID to `e2e-test-only`, set
+the regions to something your system is not using, and select the matching
+certificate value.
 
-![new health authority](images/e2e/image10.png)
-
-Set the Health Authority ID to `e2e-test-only`, set the regions to
-something your system is not using, and select the matching certificate
-value.
-
-![health authority config](images/e2e/image11.png)
+![](images/key-e2e-health-authority-configuration.png)
 
 Wait 5 minutes (cache refresh at exposure service), and then force the end to end
 workflows to run (verification Cloud Scheduler).
 
-![cloud scheduler](images/e2e/image12.png)
+![](images/e2e-cloud-scheduler)
 
 If the workflows move to `success`, then you have done everything correctly!
 
 ## Architecture
 
-![diagram of layout](images/architecture/go-diagrams/diagram.png)
+![](images/architecture/go-diagrams/diagram.png)
