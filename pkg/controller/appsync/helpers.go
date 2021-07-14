@@ -106,16 +106,14 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 			}
 
 			newApp := &database.MobileApp{
-				Name:     name,
-				RealmID:  realm.ID,
-				URL:      playStoreURL.String(),
-				OS:       database.OSTypeAndroid,
-				SHA:      app.SHA256CertFingerprints,
-				AppID:    app.PackageName,
-				Headless: app.Headless,
-			}
-			if newApp.Headless {
-				newApp.DisableRedirect = true
+				Name:            name,
+				RealmID:         realm.ID,
+				URL:             playStoreURL.String(),
+				OS:              database.OSTypeAndroid,
+				SHA:             app.SHA256CertFingerprints,
+				AppID:           app.PackageName,
+				Headless:        app.Headless,
+				DisableRedirect: true, // For all ENX - use the on device picker, not play store.
 			}
 			if err := c.db.SaveMobileApp(newApp, database.System); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed saving mobile app: %w", err))
