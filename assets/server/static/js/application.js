@@ -300,8 +300,11 @@ function loginScripts(hasCurrentUser, onLoginSuccess) {
           populatePinText(resolver.hints);
           populateFactors(resolver.hints);
 
+          // If there is only one registered factor, jump to the input window
+          // directly.
           if (resolver.hints.length === 1) {
             resendPin();
+            $registeredDiv.addClass('d-none');
           }
         } else if (error.code == 'auth/too-many-requests') {
           flash.clear();
