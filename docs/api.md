@@ -90,6 +90,9 @@ Exchange a verification code for a long term verification token.
   * `["confirmed", "likely", "negative"]`
   * It is not possible to get just `likely` or just `negative` - if a client
         passes `likely` they are indicating they can process both `confirmed` and `likely`.
+  * If you are accepting user initiated reports, `user-report` can be added to any of the arrays above,
+        or sent in an array by itself. For example: `["confirmed", "user-report"]` indicates that the
+        client will accept confirmed test or user initiated report codes.
 * `padding` is a _recommended_ field that obfuscates the size of the request
   body to a network observer. The client should generate and insert a random
   number of base64-encoded bytes into this field. The server does not process
