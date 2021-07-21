@@ -10,7 +10,7 @@
 
 <body class="my-4 g-4">
   <main role="main" class="container">
-    <h1 class="display-1 mb-3 w-100"><strong>{{t $.locale "user-report.header"}}</strong></h1>
+    <h1 class="display-1 mb-3 w-100 ur-title"><strong>{{t $.locale "user-report.header"}}</strong></h1>
 
     {{if $currentRealm.AgencyImage}}
     <div id="logo" class="rounded-corners pha-logo" style="background-color: {{$currentRealm.AgencyBackgroundColor}};" >
@@ -21,7 +21,7 @@
     {{end}}
 
     {{if not .skipForm}}
-    <div class="alert alert-primary d-flex align-items-center rounded-corners" role="alert">
+    <div class="alert alert-primary d-flex align-items-center rounded-corners ur-alert" role="alert">
       <svg class="bi flex-shrink-0 me-3" width="24" height="24" role="img" aria-label="Info:">
         <use xlink:href="/static/icons.svg#info-circle-fill"/>
       </svg>
@@ -101,7 +101,7 @@
       </div>
 
       <div class="d-grid">
-        <button id="submit" type="submit" class="btn btn-primary">
+        <button id="submit" type="submit" class="btn btn-primary continue-btn">
           {{t $.locale "user-report.request-button"}}
         </button>
       </div>
