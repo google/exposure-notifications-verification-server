@@ -4,14 +4,14 @@
 <meta name="build-id" content="{{.buildID}}">
 <meta name="build-tag" content="{{.buildTag}}">
 
-<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-<link rel="manifest" href="/static/site.webmanifest">
-<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
-<link rel="shortcut icon" href="/static/favicon.ico">
-<meta name="msapplication-TileColor" content="#ff0554">
-<meta name="msapplication-config" content="/static/browserconfig.xml">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?{{.buildID}}">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png?{{.buildID}}">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png?{{.buildID}}">
+<link rel="manifest" href="/static/site.webmanifest?{{.buildID}}">
+<link rel="mask-icon" href="/static/safari-pinned-tab.svg?{{.buildID}}" color="#d85140">
+<link rel="shortcut icon" href="/static/favicon.ico?{{.buildID}}">
+<meta name="msapplication-TileColor" content="#d85140">
+<meta name="msapplication-config" content="/static/browserconfig.xml?{{.buildID}}">
 <meta name="theme-color" content="#ffffff">
 
 {{if eq $.textDirection "rtl"}}
