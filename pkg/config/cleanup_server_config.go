@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 
 	"github.com/google/exposure-notifications-server/pkg/observability"
@@ -50,9 +51,9 @@ type CleanupConfig struct {
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
 	// StatsMaxAge is the maximum amount of time to retain statistics. The default
-	// value is 31d. It can be extended up to 90 days and cannot be less than 30
+	// value is 31d. It can be extended up to 120 days and cannot be less than 30
 	// days.
-	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=744h"`
+	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=2160h"`
 
 	// RealmChaffEventMaxAge is the maximum amount of time to store whether a
 	// realm had received a chaff request.
@@ -125,7 +126,7 @@ func (c *CleanupConfig) Validate() error {
 	if min := 30; c.StatsMaxAge < time.Duration(min)*24*time.Hour {
 		return fmt.Errorf("STATS_MAX_AGE must be at least %d days", min)
 	}
-	if max := 90; c.StatsMaxAge > time.Duration(max)*24*time.Hour {
+	if max := project.StatsDisplayDays * 2; c.StatsMaxAge > time.Duration(max)*24*time.Hour {
 		return fmt.Errorf("STATS_MAX_AGE must be less than %d days", max)
 	}
 

@@ -284,7 +284,7 @@ func (u *User) DeleteFromRealm(db *Database, r *Realm, actor Auditable) error {
 // stats exist, it returns an empty array.
 func (u *User) Stats(db *Database, realm *Realm) (UserStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
-	start := stop.Add(30 * -24 * time.Hour)
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}

@@ -1757,11 +1757,11 @@ func (r *Realm) destroyManagedSigningKey(ctx context.Context, db *Database, id i
 	return nil
 }
 
-// Stats returns the 30-day usage statistics for this realm. If no stats exist,
-// returns an empty array.
+// Stats returns the usage statistics for this realm. If no stats exist, returns
+// an empty array.
 func (r *Realm) Stats(db *Database) (RealmStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
-	start := stop.Add(30 * -24 * time.Hour)
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -1818,11 +1818,11 @@ func (r *Realm) StatsCached(ctx context.Context, db *Database, cacher cache.Cach
 	return stats, nil
 }
 
-// ExternalIssuerStats returns the 30-day external issuer stats for this realm.
-// If no stats exist, returns an empty slice.
+// ExternalIssuerStats returns the external issuer stats for this realm. If no
+// stats exist, returns an empty slice.
 func (r *Realm) ExternalIssuerStats(db *Database) (ExternalIssuerStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
-	start := stop.Add(30 * -24 * time.Hour)
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
@@ -1880,10 +1880,10 @@ func (r *Realm) ExternalIssuerStatsCached(ctx context.Context, db *Database, cac
 	return stats, nil
 }
 
-// UserStats returns the 30-day stats by user.
+// UserStats returns the stats by user.
 func (r *Realm) UserStats(db *Database) (RealmUserStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
-	start := stop.Add(30 * -24 * time.Hour)
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}

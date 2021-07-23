@@ -203,7 +203,7 @@ func (db *Database) FindAuthorizedAppByAPIKey(apiKey string) (*AuthorizedApp, er
 // returns an empty array.
 func (a *AuthorizedApp) Stats(db *Database) (AuthorizedAppStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
-	start := stop.Add(30 * -24 * time.Hour)
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}

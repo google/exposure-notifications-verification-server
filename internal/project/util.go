@@ -39,6 +39,10 @@ var devMode, _ = strconv.ParseBool(os.Getenv("DEV_MODE"))
 // SMS.
 const TestPhoneNumber = "+18558361987"
 
+// StatsDisplayDays is the number of days for which to display statistics. This
+// is separate from stats retention, which is controlled by the cleanup job.
+const StatsDisplayDays = 90
+
 var _, self, _, _ = runtime.Caller(0)
 
 // Root returns the filepath to the root of this project.
