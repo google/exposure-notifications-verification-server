@@ -30,6 +30,7 @@ import (
 
 	firebase "firebase.google.com/go"
 	firebaseauth "firebase.google.com/go/auth"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/rotation"
@@ -309,7 +310,7 @@ func realMain(ctx context.Context) error {
 	return nil
 }
 
-// generateCodesAndStats exercises the system for the past 30 days with random
+// generateCodesAndStats exercises the system for the past N days with random
 // values to simulate data that might appear in the real world. This is
 // primarily used to test statistics and graphs.
 func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[string]int, error) {
@@ -365,8 +366,8 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 
 	tokensClaimedPerDay := make(map[string]int)
 
-	for day := 1; day <= 30; day++ {
-		max := rand.Intn(250)
+	for day := 1; day <= project.StatsDisplayDays; day++ {
+		max := rand.Intn(50) + rand.Intn(10)
 		totalClaimed := 0
 		date := now.Add(time.Duration(day) * -24 * time.Hour)
 		for i := 0; i < max; i++ {
@@ -510,15 +511,15 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 	return tokensClaimedPerDay, nil
 }
 
-// generateKeyServerStats generates stats normally gathered from a key-server. This is
-// primarily used to test statistics and graphs.
+// generateKeyServerStats generates stats normally gathered from a key-server.
+// This is primarily used to test statistics and graphs.
 func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPerDay map[string]int) error {
 	if err := db.SaveKeyServerStats(&database.KeyServerStats{RealmID: realm.ID}); err != nil {
 		return fmt.Errorf("failed create stats config: %w", err)
 	}
 
 	midnight := timeutils.UTCMidnight(time.Now())
-	for day := 0; day < 30; day++ {
+	for day := 0; day < project.StatsDisplayDays; day++ {
 		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
 		max := 20 // lower default, otherwise generate realistic numbers.
