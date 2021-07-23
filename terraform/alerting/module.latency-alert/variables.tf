@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2021 the Exposure Notifications Verification Server authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,4 +43,3 @@ variable "duration" {
   type        = number
   description = "Duration of alert evaluation (in ms)"
 }
-
