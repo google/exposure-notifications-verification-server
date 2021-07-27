@@ -282,6 +282,10 @@ func (db *Database) SaveAuthorizedApp(a *AuthorizedApp, actor Auditable) error {
 
 		// Save the app
 		if err := tx.Unscoped().Save(a).Error; err != nil {
+			if IsUniqueViolation(err, "realm_apikey_name") {
+				a.AddError("name", "must be unique")
+				return ErrValidationFailed
+			}
 			return err
 		}
 

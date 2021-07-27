@@ -1302,6 +1302,14 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 
 		// Save the realm
 		if err := tx.Save(r).Error; err != nil {
+			switch {
+			case IsUniqueViolation(err, "uix_realms_name"):
+				r.AddError("name", "must be unique")
+				return ErrValidationFailed
+			case IsUniqueViolation(err, "uix_realms_region_code"):
+				r.AddError("regionCode", "must be unique")
+				return ErrValidationFailed
+			}
 			return err
 		}
 

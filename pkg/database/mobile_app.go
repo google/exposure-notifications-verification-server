@@ -240,6 +240,10 @@ func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
 
 		// Save the app
 		if err := tx.Unscoped().Save(a).Error; err != nil {
+			if IsUniqueViolation(err, "uix_name_realm_id_os") {
+				a.AddError("name", "must be unique")
+				return ErrValidationFailed
+			}
 			return err
 		}
 
