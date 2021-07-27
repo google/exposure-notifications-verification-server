@@ -47,7 +47,6 @@ import (
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
 	"github.com/lib/pq"
-	postgres "github.com/lib/pq"
 )
 
 const (
@@ -97,7 +96,7 @@ func init() {
 			return
 		}
 	}
-	sql.Register(enobs.OCSQLDriverName, ocsql.Wrap(&postgres.Driver{}))
+	sql.Register(enobs.OCSQLDriverName, ocsql.Wrap(&pq.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
