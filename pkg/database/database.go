@@ -46,7 +46,16 @@ import (
 
 	// ensure the postgres dialiect is compiled in.
 	"contrib.go.opencensus.io/integrations/ocsql"
-	postgres "github.com/lib/pq"
+	"github.com/lib/pq"
+)
+
+const (
+	// Postgres error codes:
+	//   https://www.postgresql.org/docs/13/errcodes-appendix.html
+	//
+	// pgCodeUniqueViolation is the error code for uniquess violations
+	// (constraints/indexes).
+	pgCodeUniqueViolation = "23505"
 )
 
 // callbackLock prevents multiple callbacks from being registered
@@ -87,7 +96,7 @@ func init() {
 			return
 		}
 	}
-	sql.Register(enobs.OCSQLDriverName, ocsql.Wrap(&postgres.Driver{}))
+	sql.Register(enobs.OCSQLDriverName, ocsql.Wrap(&pq.Driver{}))
 }
 
 // SupportsPerRealmSigning returns true if the configuration supports
@@ -395,6 +404,16 @@ func IsNotFound(err error) bool {
 // error), or false otherwise.
 func IsValidationError(err error) bool {
 	return errors.Is(err, ErrValidationFailed)
+}
+
+// IsUniqueViolation returns true if the given error corresponds to a "duplicate
+// index" error on the given index.
+func IsUniqueViolation(err error, idx string) bool {
+	var typ *pq.Error
+	if !errors.As(err, &typ) {
+		return false
+	}
+	return typ.Code == pgCodeUniqueViolation && typ.Constraint == idx
 }
 
 // callbackIncrementMetric increments the provided metric
