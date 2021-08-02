@@ -177,6 +177,7 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.CodeClaimMeanAge.Duration.Seconds()), 10))
 			row = append(row, strings.Join(stat.RealmStats.CodeClaimAgeDistributionAsStrings(), "|"))
 		}
+
 		if stat.KeyServerStats == nil {
 			// no key sever stats, 8 empty columns
 			row = append(row, "", "", "", "", "", "", "", "")
@@ -190,9 +191,18 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 			row = append(row, joinInt64s(stat.KeyServerStats.TEKAgeDistribution, "|"))
 			row = append(row, joinInt64s(stat.KeyServerStats.OnsetToUploadDistribution, "|"))
 		}
-		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsIssued), 10))
-		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsClaimed), 10))
-		row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportTokensClaimed), 10))
+
+		// User-report stats. Yes, this is the same nil check as above near L168,
+		// but we need to preserve the ordering in the CSV for backwards-compat.
+		if stat.RealmStats == nil {
+			// No user-report stats
+			row = append(row, "", "", "")
+		} else {
+			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsIssued), 10))
+			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsClaimed), 10))
+			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportTokensClaimed), 10))
+		}
+
 		// Invalid codes by OS
 		if stat.RealmStats == nil {
 			row = append(row, "", "", "")
