@@ -133,6 +133,9 @@ func AdminAPI(
 		sub.Handle("/realm/users/{id}.csv", statsController.HandleRealmUserStats(stats.TypeCSV)).Methods(http.MethodGet)
 		sub.Handle("/realm/users/{id}.json", statsController.HandleRealmUserStats(stats.TypeJSON)).Methods(http.MethodGet)
 
+		sub.Handle("/realm/api-keys/{id}.csv", statsController.HandleRealmAuthorizedAppStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/api-keys/{id}.json", statsController.HandleRealmAuthorizedAppStats(stats.TypeJSON)).Methods(http.MethodGet)
+
 		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods(http.MethodGet)
 		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
