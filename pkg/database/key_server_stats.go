@@ -20,6 +20,7 @@ import (
 	"time"
 
 	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 
 	"github.com/jinzhu/gorm"
@@ -170,7 +171,7 @@ func (db *Database) SaveKeyServerStatsDay(day *KeyServerStatsDay) error {
 	return db.db.Debug().Save(day).Error
 }
 
-// DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than 30 days
+// DeleteOldKeyServerStatsDays deletes rows from KeyServerStatsDays that are older than maxAge (default 90d)
 func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, error) {
 	if maxAge > 0 {
 		maxAge = -1 * maxAge
@@ -182,7 +183,7 @@ func (db *Database) DeleteOldKeyServerStatsDays(maxAge time.Duration) (int64, er
 	return rtn.RowsAffected, rtn.Error
 }
 
-// ListKeyServerStatsDaysCached retrieves the last 30 days of key-server statistics
+// ListKeyServerStatsDaysCached retrieves the last 90 days of key-server statistics
 func (db *Database) ListKeyServerStatsDaysCached(ctx context.Context, realmID uint, cacher cache.Cacher) ([]*KeyServerStatsDay, error) {
 	var stats []*KeyServerStatsDay
 	cacheKey := &cache.Key{
@@ -197,14 +198,14 @@ func (db *Database) ListKeyServerStatsDaysCached(ctx context.Context, realmID ui
 	return stats, nil
 }
 
-// ListKeyServerStatsDays retrieves the last 30 days of key-server statistics
+// ListKeyServerStatsDays retrieves the last 90 days of key-server statistics
 func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, error) {
 	var stats []*KeyServerStatsDay
 	if err := db.db.
 		Model(&KeyServerStatsDay{}).
 		Where("realm_id = ?", realmID).
 		Order("day DESC").
-		Limit(30).
+		Limit(project.StatsDisplayDays).
 		Find(&stats).
 		Error; err != nil {
 		return nil, err
