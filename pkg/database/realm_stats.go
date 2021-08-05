@@ -79,6 +79,45 @@ type RealmStat struct {
 	CodeClaimMeanAge DurationSeconds `gorm:"column:code_claim_mean_age; type:bigint; not null; default: 0;"`
 }
 
+func (s *RealmStat) IsEmpty() bool {
+	if s == nil {
+		return true
+	}
+
+	if s.CodesIssued > 0 {
+		return false
+	}
+	if s.CodesClaimed > 0 {
+		return false
+	}
+	if s.CodesInvalid > 0 {
+		return false
+	}
+	if s.UserReportsIssued > 0 {
+		return false
+	}
+	if s.UserReportsClaimed > 0 {
+		return false
+	}
+	if s.TokensClaimed > 0 {
+		return false
+	}
+	if s.TokensInvalid > 0 {
+		return false
+	}
+	if s.UserReportTokensClaimed > 0 {
+		return false
+	}
+
+	for _, v := range s.CodeClaimAgeDistribution {
+		if v > 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (s *RealmStat) AfterFind(tx *gorm.DB) (err error) {
 	if len(s.CodesInvalidByOS) == 0 {
 		s.CodesInvalidByOS = make([]int64, OSTypeUnknown.Len())
