@@ -407,8 +407,10 @@ github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9 h1:V2IgdyerlBa/MxaEFR
 github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9/go.mod h1:0EXg4mc1CNP0HCqCz+K4ts155PXIlUywf0wqN+GfPZw=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
-github.com/google/exposure-notifications-server v0.34.1-0.20210804215831-6fa52e62e20d h1:fTa+TBohrfTiiF3vop5G2ITeBQ7a6Kchk54MBQEy0cE=
-github.com/google/exposure-notifications-server v0.34.1-0.20210804215831-6fa52e62e20d/go.mod h1:pRCNPtvty7GiaOaePC2xBwWeRSgZ7EcSVmuhL70BCEQ=
+github.com/google/exposure-notifications-server v0.34.0 h1:m6kXax/OEyLCisCNmtZhN9oduvwQBmrdmTmnmZ4ae38=
+github.com/google/exposure-notifications-server v0.34.0/go.mod h1:pRCNPtvty7GiaOaePC2xBwWeRSgZ7EcSVmuhL70BCEQ=
+github.com/google/exposure-notifications-server v0.34.1-0.20210805183820-b0016757bf72 h1:/FbD10/wyY5w2lyac0goPkDt6IyyJzC75dQ8L+R0kAM=
+github.com/google/exposure-notifications-server v0.34.1-0.20210805183820-b0016757bf72/go.mod h1:pRCNPtvty7GiaOaePC2xBwWeRSgZ7EcSVmuhL70BCEQ=
 github.com/google/flatbuffers v1.11.0/go.mod h1:1AeVuKshWv4vARoZatz6mlQ0JxURH0Kv5+zNeJKJCa8=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
