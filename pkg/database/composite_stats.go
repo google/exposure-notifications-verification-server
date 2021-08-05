@@ -45,6 +45,10 @@ type CompositeDay struct {
 	KeyServerStats *keyserver.StatsDay
 }
 
+func (c *CompositeDay) IsEmpty() bool {
+	return c.RealmStats.IsEmpty() && c.KeyServerStats.IsEmpty()
+}
+
 type jsonCompositeStat struct {
 	RealmID           uint                      `json:"realm_id"`
 	HasKeyServerStats bool                      `json:"has_key_server_stats"`

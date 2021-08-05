@@ -83,6 +83,17 @@ func (c *Controller) HandleComposite(typ Type) http.Handler {
 			})
 		}
 
+		// Trim empty days.
+		trimIdx := 0
+		for i, v := range stats {
+			if v.IsEmpty() {
+				trimIdx = i + 1
+			} else {
+				break
+			}
+		}
+		stats = stats[trimIdx:]
+
 		switch typ {
 		case TypeCSV:
 			c.h.RenderCSV(w, http.StatusOK, csvFilename("composite-stats"), stats)
