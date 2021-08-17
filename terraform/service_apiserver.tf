@@ -92,6 +92,7 @@ resource "google_cloud_run_service" "apiserver" {
             local.database_config,
             local.firebase_config,
             local.gcp_config,
+            local.issue_config,
             local.rate_limit_config,
             local.signing_config,
             local.observability_config,
