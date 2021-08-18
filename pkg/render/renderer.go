@@ -322,7 +322,7 @@ func valueIfTruthy(s string) func(i interface{}) htmltemplate.HTMLAttr {
 			return ""
 		}
 
-		//nolint // Complains about non-exhaustive search, but that's intentional
+		//nolint:exhaustive
 		switch v.Kind() {
 		case reflect.Bool:
 			if v.Bool() {

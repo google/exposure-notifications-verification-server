@@ -35,7 +35,7 @@ func (p *Noop) SendSMS(_ context.Context, _, _ string) error {
 }
 
 // ErrNoop is the error NoopFail always returns.
-var ErrNoop error = errors.New("noop always fails")
+var ErrNoop = errors.New("noop always fails")
 
 // NoopFail always fails.
 type NoopFail struct{}
