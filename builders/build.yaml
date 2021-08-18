@@ -447,6 +447,7 @@ steps:
   - 'build'
   - '--file=builders/service.dockerfile'
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/metrics-registrar:${_TAG}'
+  - '--build-arg=SERVICE=metrics-registrar'
   - '.'
   waitFor:
   - 'build'
