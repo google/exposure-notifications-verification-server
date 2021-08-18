@@ -18,6 +18,7 @@
 package tools
 
 import (
+	_ "github.com/google/exposure-notifications-server/tools/gen-metrics-registrar"
 	_ "github.com/sethvargo/zapw/cmd/zapw"
 	_ "golang.org/x/tools/cmd/goimports"
 )

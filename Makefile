@@ -18,7 +18,7 @@ GO_FILES = $(shell find . -name \*.go)
 MD_FILES = $(shell find . -name \*.md)
 
 generate:
-	@GO111MODULE=off go generate ./...
+	@go generate ./...
 .PHONY: generate
 
 generate-check: generate
