@@ -126,7 +126,7 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 	case http.StatusConflict:
 		// This only occurs on "user-report" types where the phone number collides with
 		// an already known one. In this case we just return "success" and don't
-		// actually do anything. This mathes the other user-report code issue paths.
+		// actually do anything. This matches the other user-report code issue paths.
 		c.h.RenderJSON(w, http.StatusOK, &api.UserReportResponse{
 			ExpiresAt:          res.IssueCodeResponse().ExpiresAt,
 			ExpiresAtTimestamp: res.IssueCodeResponse().ExpiresAtTimestamp,
