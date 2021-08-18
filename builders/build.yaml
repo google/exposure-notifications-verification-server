@@ -445,7 +445,7 @@ steps:
   name: 'docker:19'
   args:
   - 'build'
-  - '--file=builders/metrics-registrar.dockerfile'
+  - '--file=builders/service.dockerfile'
   - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/metrics-registrar:${_TAG}'
   - '.'
   waitFor:
