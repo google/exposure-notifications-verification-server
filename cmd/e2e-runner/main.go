@@ -27,15 +27,14 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
 	"github.com/google/exposure-notifications-server/pkg/server"
-	"go.opencensus.io/stats"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/e2erunner"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
-	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
 	"github.com/gorilla/handlers"
@@ -157,10 +156,11 @@ func realMain(ctx context.Context) error {
 	recovery := middleware.Recovery(h)
 	r.Use(recovery)
 
-	r.Handle("/default", handleDefault(cfg, db, h))
-	r.Handle("/revise", handleRevise(cfg, db, h))
-	r.Handle("/user-report", handleUserReport(cfg, db, h))
-	r.Handle("/enx-redirect", handleENXRedirect(enxRedirectClient, h))
+	e2erunnerController := e2erunner.New(cfg, db, enxRedirectClient, h)
+	r.Handle("/default", e2erunnerController.HandleDefault())
+	r.Handle("/revise", e2erunnerController.HandleRevise())
+	r.Handle("/user-report", e2erunnerController.HandleUserReport())
+	r.Handle("/enx-redirect", e2erunnerController.HandleENXRedirect())
 
 	mux := http.Handler(r)
 	if cfg.DevMode {
@@ -174,78 +174,4 @@ func realMain(ctx context.Context) error {
 	}
 	logger.Infow("server listening", "port", cfg.Port)
 	return srv.ServeHTTPHandler(ctx, mux)
-}
-
-// handleDefault handles the default end-to-end scenario.
-func handleDefault(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
-	c := *cfg
-	c.DoRevise = false
-	c.DoUserReport = false
-	return handleEndToEnd(&c, db, h, mDefaultSuccess)
-}
-
-// handleRevise runs the end-to-end runner with revision tokens.
-func handleRevise(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
-	c := *cfg
-	c.DoRevise = true
-	c.DoUserReport = false
-	return handleEndToEnd(&c, db, h, mRevisionSuccess)
-}
-
-// handleUserReport runs the end-to-end runner initiated by a user-report API request.
-func handleUserReport(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer) http.Handler {
-	c := *cfg
-	c.DoRevise = false
-	c.DoUserReport = true
-	return handleEndToEnd(&c, db, h, mUserReportSuccess)
-}
-
-// handleEndToEnd handles the common end-to-end scenario. m is incremented iff
-// the run succeeds.
-func handleEndToEnd(cfg *config.E2ERunnerConfig, db *database.Database, h *render.Renderer, m *stats.Int64Measure) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := logging.FromContext(ctx)
-
-		if cfg.DoUserReport {
-			if err := db.DeleteUserReport(project.TestPhoneNumber); err != nil {
-				logger.Errorw("error deleting previous user report for test phone number", "error", err)
-				h.RenderJSON(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
-
-		if err := clients.RunEndToEnd(ctx, cfg); err != nil {
-			logger.Errorw("failure", "error", err)
-			h.RenderJSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		stats.Record(ctx, m.M(1))
-		h.RenderJSON(w, http.StatusOK, nil)
-	})
-}
-
-// handleENXRedirect handles tests for the redirector service.
-func handleENXRedirect(client *clients.ENXRedirectClient, h *render.Renderer) http.Handler {
-	// If the client doesn't exist, it means the host was not provided.
-	if client == nil {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h.RenderJSON(w, http.StatusOK, nil)
-		})
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := logging.FromContext(ctx)
-
-		if err := client.RunE2E(ctx); err != nil {
-			logger.Errorw("failure", "error", err)
-			h.RenderJSON(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		stats.Record(ctx, mRedirectSuccess.M(1))
-		h.RenderJSON(w, http.StatusOK, nil)
-	})
 }
