@@ -1,4 +1,4 @@
-// Copyright 2020 the Exposure Notifications Verification Server authors
+// Copyright 2021 the Exposure Notifications Verification Server authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build tools
-
-// Package tools includes the list of tools used in the project.
-package tools
+package metricsregistrar
 
 import (
-	_ "github.com/google/exposure-notifications-server/tools/gen-metrics-registrar"
-	_ "github.com/sethvargo/zapw/cmd/zapw"
-	_ "golang.org/x/tools/cmd/goimports"
+	"net/http"
 )
+
+func (c *Controller) HandleRoot() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.h.RenderJSON(w, http.StatusOK, nil)
+	})
+}
