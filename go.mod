@@ -3,14 +3,18 @@ module github.com/google/exposure-notifications-verification-server
 go 1.16
 
 require (
-	cloud.google.com/go v0.91.1
+	cloud.google.com/go v0.93.3 // indirect
 	cloud.google.com/go/firestore v1.5.0 // indirect
+	cloud.google.com/go/kms v0.1.0 // indirect
+	cloud.google.com/go/monitoring v0.1.0
+	cloud.google.com/go/secretmanager v0.1.0
+	cloud.google.com/go/trace v0.1.0 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200615190824-f8c219d2d895 // indirect
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Azure/azure-sdk-for-go v56.2.0+incompatible // indirect
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/aws/aws-sdk-go v1.40.22 // indirect
+	github.com/aws/aws-sdk-go v1.40.24 // indirect
 	github.com/chromedp/cdproto v0.0.0-20210808225517-c36c1bd4c35e
 	github.com/chromedp/chromedp v0.7.4
 	github.com/dustin/go-humanize v1.0.0
@@ -25,7 +29,7 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.35.0
+	github.com/google/exposure-notifications-server v0.35.1-0.20210818150701-542dc61ba081
 	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
@@ -48,7 +52,7 @@ require (
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/prometheus/common v0.30.0 // indirect
-	github.com/prometheus/procfs v0.7.2 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rakutentech/jwk-go v1.0.1
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0
@@ -61,12 +65,12 @@ require (
 	github.com/unrolled/secure v1.0.9
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
-	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5 // indirect
+	golang.org/x/oauth2 v0.0.0-20210817223510-7df4dd6e12ab // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210816074244-15123e1e1f71 // indirect
+	golang.org/x/sys v0.0.0-20210818153620-00dd8d7831e7 // indirect
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.5

@@ -438,6 +438,44 @@ steps:
   waitFor:
   - 'push-migrate'
 
+#
+# metrics-registrar
+#
+- id: 'dockerize-metrics-registrar'
+  name: 'docker:19'
+  args:
+  - 'build'
+  - '--file=builders/metrics-registrar.dockerfile'
+  - '--tag=gcr.io/${PROJECT_ID}/${_REPO}/metrics-registrar:${_TAG}'
+  - '.'
+  waitFor:
+  - 'build'
+
+- id: 'push-metrics-registrar'
+  name: 'docker:19'
+  args:
+  - 'push'
+  - 'gcr.io/${PROJECT_ID}/${_REPO}/metrics-registrar:${_TAG}'
+  waitFor:
+  - 'dockerize-metrics-registrar'
+
+- id: 'attest-metrics-registrar'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:335.0.0'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    ARTIFACT_URL=$(docker inspect gcr.io/${PROJECT_ID}/${_REPO}/metrics-registrar:${_TAG} --format='{{index .RepoDigests 0}}')
+    gcloud beta container binauthz attestations sign-and-create \
+      --project "${PROJECT_ID}" \
+      --artifact-url "$${ARTIFACT_URL}" \
+      --attestor "${_BINAUTHZ_ATTESTOR}" \
+      --keyversion "${_BINAUTHZ_KEY_VERSION}"
+  waitFor:
+  - 'push-metrics-registrar'
+
 
 #
 # modeler
