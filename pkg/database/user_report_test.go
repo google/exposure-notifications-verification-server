@@ -159,9 +159,10 @@ func TestPurgeUserReports(t *testing.T) {
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
 	cases := []struct {
-		name    string
-		claimed bool
-		method  func() (int64, error)
+		name     string
+		claimed  bool
+		method   func() (int64, error)
+		expected int
 	}{
 		{
 			name:    "unclaimed",
@@ -169,6 +170,7 @@ func TestPurgeUserReports(t *testing.T) {
 			method: func() (int64, error) {
 				return db.PurgeUnclaimedUserReports(500 * time.Millisecond)
 			},
+			expected: 1,
 		},
 		{
 			name:    "claimed",
@@ -176,6 +178,23 @@ func TestPurgeUserReports(t *testing.T) {
 			method: func() (int64, error) {
 				return db.PurgeClaimedUserReports(500 * time.Millisecond)
 			},
+			expected: 1,
+		},
+		{
+			name:    "unclaimed_not_ready",
+			claimed: false,
+			method: func() (int64, error) {
+				return db.PurgeUnclaimedUserReports(700 * time.Hour)
+			},
+			expected: 0,
+		},
+		{
+			name:    "claimed_not_ready",
+			claimed: true,
+			method: func() (int64, error) {
+				return db.PurgeClaimedUserReports(700 * time.Hour)
+			},
+			expected: 0,
 		},
 	}
 
@@ -211,8 +230,8 @@ func TestPurgeUserReports(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error purging user reports: %v", err)
 			}
-			if n != 1 {
-				t.Fatalf("expected 1 record to be removed, got: %v", n)
+			if n != int64(tc.expected) {
+				t.Fatalf("expected %d record to be removed, got: %v", tc.expected, n)
 			}
 		})
 	}

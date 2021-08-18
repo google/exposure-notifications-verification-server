@@ -134,7 +134,10 @@ func (db *Database) PurgeUnclaimedUserReports(maxAge time.Duration) (int64, erro
 
 // PurgeClaimedUserReports removes expired user reports.
 func (db *Database) PurgeClaimedUserReports(maxAge time.Duration) (int64, error) {
-	deleteBefore := time.Now().UTC()
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
 	rtn := db.db.Unscoped().
 		Where("created_at < ?", deleteBefore).
 		Delete(&UserReport{})
