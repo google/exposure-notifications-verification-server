@@ -37,7 +37,7 @@ func (c *Controller) HandleIndex() http.Handler {
 			baseHost = host
 		}
 
-		var hostRegion string = ""
+		hostRegion := ""
 		for hostname, region := range c.hostnameToRegion {
 			if hostname == baseHost {
 				hostRegion = region

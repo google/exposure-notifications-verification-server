@@ -18,10 +18,10 @@ package buildinfo
 
 var (
 	// BuildID is the unique build identifier.
-	BuildID string = "unknown"
+	BuildID = "unknown"
 
 	// BuildTag is the git tag from which this build was created.
-	BuildTag string = "unknown"
+	BuildTag = "unknown"
 )
 
 // buildinfo provides the build information about the key server.

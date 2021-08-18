@@ -31,7 +31,7 @@ import (
 const minDuration = -1 << 63
 
 // They probably didn't make an account before this project existed.
-var launched time.Time = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
+var launched = time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // Ensure user can be an audit actor.
 var _ Auditable = (*User)(nil)
