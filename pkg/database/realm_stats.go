@@ -47,7 +47,8 @@ type RealmStat struct {
 
 	// CodesIssued is the total number of codes issued. CodesClaimed are
 	// successful claims. CodesInvalid are codes that have failed to claim
-	// (expired or not found).
+	// (expired or not found). This includes UserReportsIssued and
+	// UserReportsClaimed.
 	CodesIssued  uint `gorm:"column:codes_issued; type:integer; not null; default:0;"`
 	CodesClaimed uint `gorm:"column:codes_claimed; type:integer; not null; default:0;"`
 	CodesInvalid uint `gorm:"column:codes_invalid; type:integer; not null; default:0;"`
@@ -55,20 +56,20 @@ type RealmStat struct {
 	// CodesInvalidByOS is an array where the index is the controller.OperatingSystem enums.
 	CodesInvalidByOS pq.Int64Array `gorm:"column:codes_invalid_by_os; type:bigint[];"`
 
-	// UserReportsIssued is the specific number of codes that were issued
-	// because the user initiated a self-report request. These numbers are NOT
-	// included in the overall codes issued and codes claimed.
+	// UserReportsIssued is the specific number of codes that were issued because
+	// the user initiated a self-report request. These numbers are also included
+	// in the sum of codes issued and codes claimed.
 	UserReportsIssued  uint `gorm:"column:user_reports_issued; type:integer; not null; default:0;"`
 	UserReportsClaimed uint `gorm:"column:user_reports_claimed; type:integer; not null; default:0;"`
 
 	// TokensClaimed is the number of tokens exchanged for a certificate.
 	// TokensInvalid is the number of tokens which failed to exchange due to
-	// a user error.
+	// a user error. This includes UserReportTokensClaimed.
 	TokensClaimed uint `gorm:"column:tokens_claimed; type:integer; not null; default:0;"`
 	TokensInvalid uint `gorm:"column:tokens_invalid; type:integer; not null; default:0;"`
 
 	// UserReportTokensClaimed is the number of tokens claimed that represent a user
-	// initiated report. This is not included in tokens claimed.
+	// initiated report. This sum is also included in tokens claimed.
 	UserReportTokensClaimed uint `gorm:"column:user_report_tokens_claimed; type:integer; not null; default:0;"`
 
 	// CodeClaimAgeDistribution shows a distribution of time from code issue to claim.
