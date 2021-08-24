@@ -103,21 +103,42 @@ func (b *BulkPermission) Apply(db *Database, actor Auditable) error {
 				continue
 			}
 
-			// Save the membership.
-			if err := tx.
-				Model(&Membership{}).
-				Where("realm_id = ?", membership.RealmID).
-				Where("user_id = ?", membership.UserID).
-				Update("permissions", newPerms).
-				Error; err != nil {
-				return fmt.Errorf("failed to save membership: %w", err)
-			}
+			if newPerms == 0 {
+				if err := tx.
+					Unscoped().
+					Model(&Membership{}).
+					Where("realm_id = ?", membership.RealmID).
+					Where("user_id = ?", membership.UserID).
+					Delete(&Membership{
+						RealmID: membership.RealmID,
+						UserID:  membership.UserID,
+					}).
+					Error; err != nil {
+					return fmt.Errorf("failed to delete membership: %w", err)
+				}
 
-			// Audit if permissions were changed.
-			audit := BuildAuditEntry(actor, "updated user permissions", actor, membership.RealmID)
-			audit.Diff = stringSliceDiff(rbac.PermissionNames(existingPerms), rbac.PermissionNames(newPerms))
-			if err := tx.Save(audit).Error; err != nil {
-				return fmt.Errorf("failed to save audit: %w", err)
+				// Generate audit
+				audit := BuildAuditEntry(actor, "removed user from realm", membership.User, membership.RealmID)
+				if err := tx.Save(audit).Error; err != nil {
+					return fmt.Errorf("failed to save audit: %w", err)
+				}
+			} else {
+				// Save the membership.
+				if err := tx.
+					Model(&Membership{}).
+					Where("realm_id = ?", membership.RealmID).
+					Where("user_id = ?", membership.UserID).
+					Update("permissions", newPerms).
+					Error; err != nil {
+					return fmt.Errorf("failed to save membership: %w", err)
+				}
+
+				// Audit if permissions were changed.
+				audit := BuildAuditEntry(actor, "updated user permissions", actor, membership.RealmID)
+				audit.Diff = stringSliceDiff(rbac.PermissionNames(existingPerms), rbac.PermissionNames(newPerms))
+				if err := tx.Save(audit).Error; err != nil {
+					return fmt.Errorf("failed to save audit: %w", err)
+				}
 			}
 
 			// Cascade updated_at on user
