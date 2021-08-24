@@ -61,15 +61,22 @@ func TestBulkPermission_Apply(t *testing.T) {
 		// Remove
 		{
 			name:          "remove_one",
-			existingPerms: rbac.CodeIssue,
+			existingPerms: rbac.CodeIssue | rbac.UserRead,
 			changePerms:   rbac.CodeIssue,
 			action:        BulkPermissionActionRemove,
-			expPerms:      0,
+			expPerms:      rbac.UserRead,
 		},
 		{
 			name:          "remove_many",
-			existingPerms: rbac.CodeIssue | rbac.APIKeyRead,
+			existingPerms: rbac.CodeIssue | rbac.UserRead | rbac.APIKeyRead,
 			changePerms:   rbac.CodeIssue | rbac.APIKeyRead,
+			action:        BulkPermissionActionRemove,
+			expPerms:      rbac.UserRead,
+		},
+		{
+			name:          "remove_all",
+			existingPerms: rbac.CodeIssue,
+			changePerms:   rbac.CodeIssue,
 			action:        BulkPermissionActionRemove,
 			expPerms:      0,
 		},
@@ -153,10 +160,13 @@ func TestBulkPermission_Apply(t *testing.T) {
 
 			membership2, err := user2.FindMembership(db, realm.ID)
 			if err != nil {
-				t.Fatal(err)
-			}
-			if got, want := membership2.Permissions, tc.expPerms; got != want {
-				t.Errorf("expected %v to be %v", got, want)
+				if !IsNotFound(err) && tc.expPerms != 0 {
+					t.Fatal(err)
+				}
+			} else {
+				if got, want := membership2.Permissions, tc.expPerms; got != want {
+					t.Errorf("expected %v to be %v", got, want)
+				}
 			}
 		})
 	}
