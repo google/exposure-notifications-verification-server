@@ -24,6 +24,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/jinzhu/gorm"
 )
@@ -164,6 +165,76 @@ func TestHandleCleanup(t *testing.T) {
 		}
 		if got, want := len(tokens), 0; got != want {
 			t.Errorf("got %d tokens, expected %d", got, want)
+		}
+	})
+
+	t.Run("orphaned_memberships", func(t *testing.T) {
+		t.Parallel()
+
+		db, _ := testDatabaseInstance.NewDatabase(t, nil)
+		realm, err := db.FindRealm(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		c := New(config, db, keyManagerSigner, h)
+
+		// Create users in the realm with the provided permissions
+		user1 := &database.User{
+			Email: "one@example.com",
+			Name:  "one",
+		}
+		if err := db.SaveUser(user1, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+		membership1 := &database.Membership{
+			UserID:      user1.ID,
+			RealmID:     realm.ID,
+			Permissions: 0,
+		}
+		if err := db.SaveMembership(membership1, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		user2 := &database.User{
+			Email: "two@example.com",
+			Name:  "two",
+		}
+		if err := db.SaveUser(user2, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+		membership2 := &database.Membership{
+			UserID:      user2.ID,
+			RealmID:     realm.ID,
+			Permissions: rbac.CodeIssue,
+		}
+		if err := db.SaveMembership(membership2, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+
+		{
+			memberships, _, err := realm.ListMemberships(db, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := len(memberships), 2; got != want {
+				t.Errorf("got %d memberships, expected %d: %#v", got, want, memberships)
+			}
+		}
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodGet, "/", nil)
+		c.HandleCleanup().ServeHTTP(w, r)
+
+		{
+			memberships, _, err := realm.ListMemberships(db, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Only memberships with 0 permissions should be deleted.
+			if got, want := len(memberships), 1; got != want {
+				t.Errorf("got %d memberships, expected %d: %#v", got, want, memberships)
+			}
 		}
 	})
 
