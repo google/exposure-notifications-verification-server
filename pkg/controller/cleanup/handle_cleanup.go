@@ -106,6 +106,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
+		// Memberships
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "MEMBERSHIP")
+			if count, err := c.db.PurgeOrphanedMemberships(); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge orphaned memberships: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged orphaned memberships", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
 		// Mobile apps
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
