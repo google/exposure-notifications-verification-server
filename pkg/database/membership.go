@@ -46,7 +46,8 @@ type Membership struct {
 	UpdatedAt time.Time
 }
 
-// SaveMembership saves the membership details. Should have a userID and a realmID to identify it.
+// SaveMembership saves the membership details. Should have a userID and a
+// realmID to identify it.
 func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 	if m == nil {
 		return fmt.Errorf("provided membership is nil")
@@ -61,16 +62,22 @@ func (db *Database) SaveMembership(m *Membership, actor Auditable) error {
 
 		var existing Membership
 		if err := tx.
-			Model(m).
+			Model(&Membership{}).
 			Where("user_id = ? AND realm_id = ?", m.UserID, m.RealmID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
-			return fmt.Errorf("failed to get existing membership")
+			return fmt.Errorf("failed to get existing membership: %w", err)
 		}
 
 		// Save the membership
-		if err := tx.Model(m).Update(m).Error; err != nil {
-			return fmt.Errorf("failed to save membership: %w", err)
+		if existing.UserID != 0 {
+			if err := tx.Model(&existing).Update(m).Error; err != nil {
+				return fmt.Errorf("failed to update membership: %w", err)
+			}
+		} else {
+			if err := tx.Model(&Membership{}).Create(m).Error; err != nil {
+				return fmt.Errorf("failed to create membership: %w", err)
+			}
 		}
 
 		if existing.DefaultSMSTemplateLabel != m.DefaultSMSTemplateLabel {
@@ -102,6 +109,17 @@ func (m *Membership) AfterFind() error {
 	}
 
 	return m.ErrorOrNil()
+}
+
+// PurgeOrphanedMemberships will delete memberships that have no permissions. This
+// exists to fix a bug that existed since 2021-08-24. It should be safe to
+// remove this code in 0.40.0+, but it's also not hurting anything to stick
+// around.
+func (db *Database) PurgeOrphanedMemberships() (int64, error) {
+	rtn := db.db.Unscoped().
+		Where("memberships.permissions = 0").
+		Delete(&Membership{})
+	return rtn.RowsAffected, rtn.Error
 }
 
 // Can returns true if the membership has the checked permission on the realm,
