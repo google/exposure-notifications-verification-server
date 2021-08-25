@@ -29,6 +29,8 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type buildCodeValidation func(t testing.TB, vCode *database.VerificationCode)
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
@@ -41,6 +43,12 @@ func TestValidate(t *testing.T) {
 		t.Fatal(err)
 	}
 	realm.AllowedTestTypes = database.TestTypeConfirmed
+	realm.AllowGeneratedSMS = true
+	realm.CodeDuration = database.FromDuration(15 * time.Minute)
+	realm.LongCodeDuration = database.FromDuration(24 * time.Hour)
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to update realm: %v", err)
+	}
 
 	existingCode := &database.VerificationCode{
 		RealmID:       realm.ID,
@@ -71,6 +79,7 @@ func TestValidate(t *testing.T) {
 		request        api.IssueCodeRequest
 		responseErr    string
 		httpStatusCode int
+		vcValidation   buildCodeValidation
 	}{
 		{
 			name: "success",
@@ -83,9 +92,10 @@ func TestValidate(t *testing.T) {
 		{
 			name: "no_phone_provider",
 			request: api.IssueCodeRequest{
-				TestType:    "confirmed",
-				SymptomDate: symptomDate,
-				Phone:       "5005550000",
+				TestType:        "confirmed",
+				SymptomDate:     symptomDate,
+				Phone:           "5005550000",
+				OnlyGenerateSMS: false,
 			},
 			httpStatusCode: http.StatusBadRequest,
 		},
@@ -162,6 +172,23 @@ func TestValidate(t *testing.T) {
 			responseErr:    api.ErrUUIDAlreadyExists,
 			httpStatusCode: http.StatusConflict,
 		},
+		{
+			name: "only_generate_sms",
+			request: api.IssueCodeRequest{
+				TestType:        "confirmed",
+				TestDate:        symptomDate,
+				OnlyGenerateSMS: true,
+				Phone:           "+12068675309",
+			},
+			httpStatusCode: http.StatusOK,
+			vcValidation: func(t testing.TB, vCode *database.VerificationCode) {
+				t.Helper()
+
+				if !vCode.LongExpiresAt.After(vCode.ExpiresAt.Add(time.Second)) {
+					t.Errorf("long_expires_at (%v) is not after expires_at (%v)", vCode.LongExpiresAt, vCode.ExpiresAt)
+				}
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -175,6 +202,9 @@ func TestValidate(t *testing.T) {
 			ctx = controller.WithMembership(ctx, &database.Membership{UserID: 456})
 
 			verCode, result := c.BuildVerificationCode(ctx, &issueapi.IssueRequestInternal{IssueRequest: &tc.request}, realm)
+			if tc.vcValidation != nil {
+				tc.vcValidation(t, verCode)
+			}
 			if verCode != nil {
 				if tc.request.UUID != "" && tc.request.UUID != verCode.UUID {
 					t.Errorf("expecting stable client-provided uuid. got %s, want %s", verCode.UUID, tc.request.UUID)
