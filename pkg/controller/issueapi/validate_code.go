@@ -128,7 +128,7 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest 
 		}
 	}
 
-	if request.Phone == "" || smsProvider == nil {
+	if request.Phone == "" || (smsProvider == nil && !request.OnlyGenerateSMS) {
 		// If this isn't going to be send via SMS, make the long code expiration time same as short.
 		// This is because the long code will never be shown or sent.
 		vCode.LongExpiresAt = vCode.ExpiresAt
