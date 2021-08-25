@@ -73,11 +73,11 @@ func realMain(ctx context.Context) error {
 	// Setup monitoring
 	logger.Info("configuring observability exporter")
 	oeConfig := cfg.ObservabilityExporterConfig()
-	oe, err := observability.NewFromEnv(oeConfig)
+	oe, err := observability.NewFromEnv(ctx, oeConfig)
 	if err != nil {
 		return fmt.Errorf("unable to create ObservabilityExporter provider: %w", err)
 	}
-	if err := oe.StartExporter(ctx); err != nil {
+	if err := oe.StartExporter(); err != nil {
 		return fmt.Errorf("error initializing observability exporter: %w", err)
 	}
 	defer oe.Close()
