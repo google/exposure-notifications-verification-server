@@ -64,6 +64,7 @@ resource "google_cloud_run_service" "metrics-registrar" {
           for_each = merge(
             local.gcp_config,
             local.observability_config,
+            local.metrics_registrar_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "_all", {}),
