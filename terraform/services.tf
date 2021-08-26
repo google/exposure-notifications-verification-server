@@ -66,6 +66,10 @@ locals {
     FIREBASE_STORAGE_BUCKET    = lookup(data.google_firebase_web_app_config.default, "storage_bucket")
   }
 
+  metrics_registrar_config = {
+    STACKDRIVER_REGISTER_METRICS = true
+  }
+
   rate_limit_config = {
     RATE_LIMIT_HMAC_KEY       = "secret://${google_secret_manager_secret_version.ratelimit-hmac-key.id}"
     RATE_LIMIT_TYPE           = "REDIS"
