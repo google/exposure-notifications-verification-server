@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build tools
+//go:build tools
 
 // Package tools includes the list of tools used in the project.
 package tools
 
 import (
+	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/google/exposure-notifications-server/tools/gen-metrics-registrar"
 	_ "github.com/sethvargo/zapw/cmd/zapw"
 	_ "golang.org/x/tools/cmd/goimports"
