@@ -29,8 +29,8 @@ generate-check: generate
 # locally. There is a chance that CI detects linter errors that are not found
 # locally, but it should be rare.
 lint:
-	@command -v golangci-lint > /dev/null 2>&1 || (cd $${TMPDIR} && go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.42.0)
-	golangci-lint run --config .golangci.yaml
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	@golangci-lint run --config .golangci.yaml
 .PHONY: lint
 
 tabcheck:
@@ -43,18 +43,20 @@ tabcheck:
 
 test:
 	@go test \
-		-short \
-		-tags=google \
 		-count=1 \
+		-short \
+		-shuffle=on \
+		-tags=google \
 		-timeout=5m \
 		./...
 .PHONY: test
 
 test-acc:
 	@go test \
-		-tags=google \
 		-count=1 \
 		-race \
+		-shuffle=on \
+		-tags=google \
 		-timeout=10m \
 		./... \
 		-coverprofile=./coverage.out
@@ -65,5 +67,6 @@ test-coverage:
 .PHONY: test-coverage
 
 zapcheck:
-	@command -v zapw > /dev/null 2>&1 || (cd $${TMPDIR} && go get github.com/sethvargo/zapw/cmd/zapw)
+	@go install github.com/sethvargo/zapw/cmd/zapw
 	@zapw ./...
+.PHONY: zapcheck
