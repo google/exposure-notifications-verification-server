@@ -18,7 +18,7 @@ set -eEuo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 
-if [ -n "$(git status --porcelain)" ]; then
+if [ -n "$(git -C ${ROOT} status --porcelain)" ]; then
   echo "✋ Uncommitted local changes!" >&2
   exit 1
 fi
@@ -29,7 +29,7 @@ if [ -z "${PROJECT_ID:-}" ]; then
 fi
 
 if [ -z "${TAG:-}" ]; then
-  TAG="$(git describe --dirty)"
+  TAG="$(git -C ${ROOT} describe --dirty)"
   echo "🎈 Using ${TAG}!" >&2
 fi
 echo "🎉 Building all services in ${PROJECT_ID}"

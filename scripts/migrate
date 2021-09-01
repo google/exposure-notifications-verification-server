@@ -19,7 +19,7 @@ set -eEuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." &>/dev/null; pwd -P)"
 
 if [ -z "${TAG:-}" ]; then
-  TAG="$(git describe --dirty)"
+  TAG="$(git -C ${ROOT} describe --dirty)"
   echo "🎈 Using ${TAG}!" >&2
 fi
 

@@ -24,7 +24,7 @@ if [ -z "${PROJECT_ID:-}" ]; then
 fi
 
 if [ -z "${TAG:-}" ]; then
-  TAG="$(git describe --dirty)"
+  TAG="$(git -C ${ROOT} describe --dirty)"
   echo "🎈 Using ${TAG}!" >&2
 fi
 echo "🎉 Deploying all services in ${PROJECT_ID} with 0% traffic"
