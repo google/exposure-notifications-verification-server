@@ -99,7 +99,7 @@ func TestSendWebhookRequest(t *testing.T) {
 			t.Errorf("bad json: %s", err)
 		}
 
-		if got, want := m["generatedSMS"], "TODO"; got != want {
+		if got, want := m["generatedSMS"], "this is a test message"; got != want {
 			t.Errorf("expected %q to be %q: %v", got, want, m)
 		}
 		if got, want := m["phone"], "+15005550000"; got != want {
@@ -129,7 +129,7 @@ func TestSendWebhookRequest(t *testing.T) {
 			PhoneNumber: "+15005550000",
 			Code:        "abcd1234",
 		},
-		GeneratedSMS: "TODO",
+		GeneratedSMS: "this is a test message",
 	}); err != nil {
 		t.Fatal(err)
 	}
