@@ -32,7 +32,7 @@ const (
 	colon = ":"
 
 	// authPrefix is the prefix to the authentication bits.
-	authPrefix = "\nAuthentication:"
+	authPrefix = " \nAuthentication:"
 )
 
 // SMSPurpose is an SMS purpose, used in signature calculation.
