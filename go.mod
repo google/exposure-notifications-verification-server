@@ -16,7 +16,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golangci/golangci-lint v1.42.0
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/exposure-notifications-server v0.35.1-0.20210827195618-3cc443587c21
+	github.com/google/exposure-notifications-server v0.37.0
 	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
