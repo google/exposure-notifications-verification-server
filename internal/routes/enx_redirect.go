@@ -94,7 +94,7 @@ func ENXRedirect(
 	r.Use(processDebug)
 
 	// Handle health.
-	r.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
+	r.Handle("/health", controller.HandleHealthz(db, h, cfg.IsMaintenanceMode())).Methods(http.MethodGet)
 
 	// Share static assets with server.
 	{
