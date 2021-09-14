@@ -172,7 +172,7 @@ func Server(
 
 	{
 		sub := sub.PathPrefix("").Subrouter()
-		sub.Handle("/health", controller.HandleHealthz(db, h)).Methods(http.MethodGet)
+		sub.Handle("/health", controller.HandleHealthz(db, h, cfg.IsMaintenanceMode())).Methods(http.MethodGet)
 	}
 
 	{

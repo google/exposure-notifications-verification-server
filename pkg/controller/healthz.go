@@ -28,7 +28,7 @@ import (
 	"github.com/sethvargo/go-retry"
 )
 
-func HandleHealthz(pinger driver.Pinger, h *render.Renderer) http.Handler {
+func HandleHealthz(pinger driver.Pinger, h *render.Renderer, isMaintenanceMode bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -58,6 +58,6 @@ func HandleHealthz(pinger driver.Pinger, h *render.Renderer) http.Handler {
 			logger.Warnw("unknown service", "service", service)
 		}
 
-		h.RenderJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		h.RenderJSON(w, http.StatusOK, map[string]interface{}{"status": "ok", "maintenance_mode": isMaintenanceMode})
 	})
 }
