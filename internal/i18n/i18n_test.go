@@ -30,50 +30,58 @@ import (
 func TestI18n_matching(t *testing.T) {
 	t.Parallel()
 
-	var pos []*gotext.Po
-	localesDir := filepath.Join(project.Root(), "internal", "i18n", "locales")
-	if err := filepath.Walk(localesDir, func(pth string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	cases := []string{"default", "redirect"}
 
-		if info.IsDir() {
-			return nil
-		}
+	for _, subDir := range cases {
+		subDir := subDir
+		t.Run(subDir, func(t *testing.T) {
+			t.Parallel()
+			var pos []*gotext.Po
+			localesDir := filepath.Join(project.Root(), "internal", "i18n", "locales", subDir)
+			if err := filepath.Walk(localesDir, func(pth string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
 
-		if filepath.Ext(info.Name()) != ".po" {
-			return nil
-		}
+				if info.IsDir() {
+					return nil
+				}
 
-		po := gotext.NewPo()
-		po.ParseFile(pth)
-		pos = append(pos, po)
+				if filepath.Ext(info.Name()) != ".po" {
+					return nil
+				}
 
-		return nil
-	}); err != nil {
-		t.Fatal(err)
-	}
+				po := gotext.NewPo()
+				po.ParseFile(pth)
+				pos = append(pos, po)
 
-	translations := make(map[string]struct{})
-	translationsByLocale := make(map[string]map[string]struct{})
-	for _, po := range pos {
-		keys := po.GetDomain().GetTranslations()
-		for k := range keys {
-			translations[k] = struct{}{}
-
-			if translationsByLocale[po.Language] == nil {
-				translationsByLocale[po.Language] = make(map[string]struct{})
+				return nil
+			}); err != nil {
+				t.Fatal(err)
 			}
-			translationsByLocale[po.Language][k] = struct{}{}
-		}
-	}
 
-	for k := range translations {
-		for loc, existing := range translationsByLocale {
-			if _, ok := existing[k]; !ok {
-				t.Errorf("locale %q is missing translation %q", loc, k)
+			translations := make(map[string]struct{})
+			translationsByLocale := make(map[string]map[string]struct{})
+			for _, po := range pos {
+				keys := po.GetDomain().GetTranslations()
+				for k := range keys {
+					translations[k] = struct{}{}
+
+					if translationsByLocale[po.Language] == nil {
+						translationsByLocale[po.Language] = make(map[string]struct{})
+					}
+					translationsByLocale[po.Language][k] = struct{}{}
+				}
 			}
-		}
+
+			for k := range translations {
+				for loc, existing := range translationsByLocale {
+					if _, ok := existing[k]; !ok {
+						t.Errorf("locale %q is missing translation %q", loc, k)
+					}
+				}
+			}
+		})
 	}
 }
 

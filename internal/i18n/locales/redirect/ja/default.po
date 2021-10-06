@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "について学ぶ Exposure Notifications"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "見つかりません"
+
+msgid "static.resource-does-not-exist"
+msgstr "そのリソースは存在しません。"
+
+msgid "static.redirect-not-found"
+msgstr "Exposure Notifications コードを利用するには、モバイルデバイスのリンクにアクセスしてください。"
+
+msgid "static.unauthorized"
+msgstr "許可されていない"
+
+msgid "static.unauthorized-message"
+msgstr "そのアクションを実行する権限がありません。"
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "確認コードを取得する"
+
+msgid "user-report.navbar"
+msgstr "接触通知の要求確認コード"
+
+msgid "user-report.request-code-from"
+msgstr "確認コードを取得する"
+
+msgid "user-report.instructions"
+msgstr "COVID-19の検査で陽性であったが、テキストまたは電話で保健当局からコードを受け取っていない場合は、ここでコードをリクエストできます。"
+
+msgid "user-report.enter-date-instructions"
+msgstr "COVID-19テストの日付を入力してください"
+
+msgid "user-report.phone-number-header"
+msgstr "あなたの携帯電話番号"
+
+msgid "user-report.phone-number-instructions"
+msgstr "確認コードを受け取るには、有効な電話番号を入力する必要があります。 運送業者の手数料がかかる場合があります。"
+
+msgid "user-report.agreement-header"
+msgstr "合意"
+
+msgid "user-report.agreement"
+msgstr "COVID-19の検査結果が陽性であり、提供した電話番号は自分のものであり、陽性の検査結果を報告するためのコードを受け取りたいと思います。"
+
+msgid "user-report.request-button"
+msgstr "継続する"
+
+msgid "user-report.code-issued"
+msgstr "確認コードが発行されました"
+
+msgid "user-report.check-mobile-device"
+msgstr "モバイルデバイスでテキストメッセージを確認してください。"
+
+msgid "user-report.invalid-request"
+msgstr "リクエストが無効です。モバイルデバイスの接触通知アプリケーションから起動してください。"
+
+msgid "user-report.not-available"
+msgstr "現在、地域の保健当局はユーザーが開始したレポートを受け付けていません。"
+
+msgid "user-report.missing-agreement"
+msgstr "確認コードをリクエストするには規約に同意する必要があります"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19テスト日が無効です。"
+
+msgid "user-report.error-missing-phone"
+msgstr "携帯電話番号が必要です。"
+
+msgid "user-report.error-invalid-phone"
+msgstr "携帯電話番号が無効です。"
+
+msgid "user-report.quota-exceeded"
+msgstr "一時的に確認コードを発行できません。しばらくしてからもう一度お試しください。"
+
+msgid "user-report.phone-not-eligible"
+msgstr "あなたの電話番号は現在ユーザーレポートの対象ではありません"
+
+msgid "user-report.internal-error"
+msgstr "内部エラーが発生しました。現時点では確認コードをリクエストできません。"
+
+msgid "user-report.unable-to-issue"
+msgstr "確認コードを送信できませんでした。"
+
+msgid "user-report.code-device-throttled"
+msgstr "コードを何度もリクエストしました。それでもコードが必要な場合は、保健当局に連絡してください。"
+
+msgid "user-report.testing-date-label"
+msgstr "COVID-19テストの日付"
+
+msgid "user-report.phone-storage"
+msgstr "追加の送信を防ぐために、暗号で保護されたバージョンの電話番号が保存される場合があります。"
+
+msgid "user-report.learn-more"
+msgstr "詳細..."
+
+msgid "user-report.header"
+msgstr "他の人に露出を通知するのを手伝ってください"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXXX XXXX"

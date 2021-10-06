@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Language: fil\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Tungkol sa Exposure Notifications"
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Hindi mahanap"
+
+msgid "static.resource-does-not-exist"
+msgstr "Wala ang mapagkukunang iyon."
+
+msgid "static.redirect-not-found"
+msgstr "Upang makuha ang isang Exposure Notifications code, bisitahin ang link sa iyong mobile device."
+
+msgid "static.unauthorized"
+msgstr "Hindi pinahintulutan"
+
+msgid "static.unauthorized-message"
+msgstr "Hindi ka pinahintulutan na gawin ang aksyon na iyon."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Kumuha ng isang verification code"
+
+msgid "user-report.navbar"
+msgstr "Humiling ng code sa pag-verify ng Mga Abiso sa Exposure"
+
+msgid "user-report.request-code-from"
+msgstr "Kumuha ng isang verification code"
+
+msgid "user-report.instructions"
+msgstr "Kung sumubok ka ng positibo para sa COVID-19 ngunit hindi nakatanggap ng isang code mula sa iyong Health Authority sa pamamagitan ng text o tawag sa telepono, maaari kang humiling ng isa rito."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Ipasok ang petsa ng iyong pagsubok sa COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Ang iyong numero ng Mobile Phone"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Dapat kang maglagay ng wastong numero ng telepono upang makatanggap ng isang verification code. Maaaring mailapat ang mga bayarin sa carrier."
+
+msgid "user-report.agreement-header"
+msgstr "Kasunduan"
+
+msgid "user-report.agreement"
+msgstr "Kinikilala ko na nakatanggap ako ng positibong resulta sa pagsubok para sa COVID-19 at ang numero ng telepono na ibinigay ko ay aking sarili at nais kong makatanggap ng isang code upang iulat ang aking positibong resulta sa pagsubok."
+
+msgid "user-report.request-button"
+msgstr "Magpatuloy"
+
+msgid "user-report.code-issued"
+msgstr "Inisyu ang verification code"
+
+msgid "user-report.check-mobile-device"
+msgstr "Mangyaring suriin ang iyong mga text message sa iyong mobile device."
+
+msgid "user-report.invalid-request"
+msgstr "Di-wastong kahilingan, mangyaring ilunsad mula sa iyong application ng Mga Exposure Notification sa iyong mobile device."
+
+msgid "user-report.not-available"
+msgstr "Ang iyong lokal na awtoridad sa kalusugan ay hindi tumatanggap ng mga ulat na pinasimulan ng gumagamit sa ngayon."
+
+msgid "user-report.missing-agreement"
+msgstr "Dapat kang sumang-ayon sa mga tuntunin upang humiling ng isang verification code"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 test date invalid."
+
+msgid "user-report.error-missing-phone"
+msgstr "Kinakailangan ang numero ng mobile phone."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Ang numero ng mobile phone ay hindi wasto."
+
+msgid "user-report.quota-exceeded"
+msgstr "Pansamantalang hindi makapag-isyu ng mga verification code, mangyaring subukang muli sa ibang pagkakataon."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Ang numero ng iyong telepono na kasalukuyang hindi karapat-dapat para sa ulat ng gumagamit"
+
+msgid "user-report.internal-error"
+msgstr "Nagkaroon ng panloob na error. Ang isang verification code ay hindi maaaring hilingin sa ngayon."
+
+msgid "user-report.unable-to-issue"
+msgstr "Hindi namin napadalhan ka ng isang verification code."
+
+msgid "user-report.code-device-throttled"
+msgstr "Humiling ka ng isang code nang maraming beses. Mangyaring makipag-ugnay sa iyong Awtoridad sa Kalusugan kung kailangan mo pa rin ng isang code."
+
+msgid "user-report.testing-date-label"
+msgstr "Petsa ng Iyong Pagsubok sa COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Ang isang bersyon na protektado ng cryptographically ng iyong numero ng telepono ay maaaring maimbak upang maiwasan ang karagdagang mga pagsusumite."
+
+msgid "user-report.learn-more"
+msgstr "Matuto nang higit pa ..."
+
+msgid "user-report.header"
+msgstr "Tulungan Ipaalam sa Iba ang Pagkakalantad"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXX XXXX"

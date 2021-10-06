@@ -35,6 +35,18 @@ const (
 	defaultLocale = "en"
 )
 
+type Source int
+
+const (
+	DefaultSource = iota
+	RedirectSource
+)
+
+var dirMap = map[Source]string{
+	DefaultSource:  "default",
+	RedirectSource: "redirect",
+}
+
 //go:embed locales/**/*
 var localesFS embed.FS
 
@@ -55,6 +67,7 @@ type LocaleMap struct {
 	dynamicMatcher map[uint]language.Matcher
 	dynamicLock    sync.Mutex
 
+	source     Source
 	reload     bool
 	reloadLock sync.Mutex
 }
@@ -220,7 +233,12 @@ func (l *LocaleMap) Canonicalize(id string, matcher language.Matcher) (result st
 func (l *LocaleMap) load() error {
 	fsys := LocalesFS()
 
-	entries, err := fs.ReadDir(fsys, "locales")
+	subDir, ok := dirMap[l.source]
+	if !ok {
+		return fmt.Errorf("no translation source specified")
+	}
+
+	entries, err := fs.ReadDir(fsys, path.Join("locales", subDir))
 	if err != nil {
 		return fmt.Errorf("failed to load locales: %w", err)
 	}
@@ -231,7 +249,7 @@ func (l *LocaleMap) load() error {
 		name := entry.Name()
 		names = append(names, language.Make(name))
 
-		b, err := fs.ReadFile(fsys, path.Join("locales", name, "default.po"))
+		b, err := fs.ReadFile(fsys, path.Join("locales", subDir, name, "default.po"))
 		if err != nil {
 			return fmt.Errorf("failed to read %q: %w", name, err)
 		}
@@ -253,6 +271,24 @@ type Option func(*LocaleMap) *LocaleMap
 func WithReloading(v bool) Option {
 	return func(l *LocaleMap) *LocaleMap {
 		l.reload = v
+		return l
+	}
+}
+
+// WithDefaultSource loads the default translations
+// for the main Web UI (server).
+func WithDefaultSource() Option {
+	return func(l *LocaleMap) *LocaleMap {
+		l.source = DefaultSource
+		return l
+	}
+}
+
+// WithRedirectSource loads the translations
+// for the redirect server.
+func WithRedirectSource() Option {
+	return func(l *LocaleMap) *LocaleMap {
+		l.source = RedirectSource
 		return l
 	}
 }

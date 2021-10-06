@@ -1,0 +1,395 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Adresse e-mail"
+
+msgid "login.password"
+msgstr "Mot de passe"
+
+msgid "login.authenticate"
+msgstr "Authentifier"
+
+msgid "login.refresh-authentication"
+msgstr "Actualiser l'authentification"
+
+msgid "login.forgot-password"
+msgstr "Mot de passe oublié"
+
+msgid "login.about-exposure-notifications"
+msgstr "À propos des Exposure Notifications"
+
+msgid "login.signing-out"
+msgstr "Déconnecter..."
+
+msgid "login.signing-out-error"
+msgstr "Échec de la déconnexion. Fermez votre navigateur ou effacez les cookies."
+
+msgid "login.realm-selection"
+msgstr "Sélection de royaume"
+
+msgid "login.realm-no-memberships"
+msgstr "Vous n'êtes membre d'aucun royaume."
+
+msgid "account.full-name"
+msgstr "Nom complet"
+
+msgid "account.header-details"
+msgstr "Détails du compte"
+
+msgid "account.header-authentication"
+msgstr "Authentification"
+
+msgid "account.header-realm-memberships"
+msgstr "Adhésions au royaume"
+
+msgid "account.email-verified"
+msgstr "L'adresse e-mail est vérifiée"
+
+msgid "account.email-not-verified"
+msgstr "L'adresse e-mail n'est pas vérifiée"
+
+msgid "account.verify-email-address"
+msgstr "Vérifier l'adresse e-mail"
+
+msgid "account.verify-email-address-required"
+msgstr "%s nécessite que vous vérifiiez votre adresse e-mail."
+
+msgid "account.verifying-email-address"
+msgstr "Vérification de l'adresse e-mail..."
+
+msgid "account.verify-email-address-error"
+msgstr "Échec de la vérification de l'adresse e-mail"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Continuer sans vérifier l'adresse e-mail"
+
+msgid "account.mfa-enabled"
+msgstr "L'authentification multifacteur (MFA) est activée"
+
+msgid "account.mfa-disabled"
+msgstr "L'authentification multifacteur (MFA) est désactivée"
+
+msgid "account.manage-mfa"
+msgstr "Gérer MFA"
+
+msgid "account.enable-mfa"
+msgstr "Activer MFA"
+
+msgid "account.password-last-changed"
+msgstr "Le mot de passe a été modifié pour la dernière fois il y a %s"
+
+msgid "account.change-password"
+msgstr "Changer"
+
+msgid "mfa.mfa"
+msgstr "Authentification multifacteur"
+
+msgid "mfa.notice-required"
+msgstr "%s nécessite que vous activiez l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte."
+
+msgid "mfa.notice-prompt"
+msgstr "%s vous recommande d'activer l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte. Cela pourrait être nécessaire à l'avenir."
+
+msgid "mfa.notice-optional"
+msgstr "%s vous recommande d'activer l'authentification multifacteur (MFA) pour améliorer la sécurité de votre compte."
+
+msgid "mfa.phone-display-name"
+msgstr "Afficher le nom"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Il s'agit du nom de l'appareil tel qu'il apparaîtra sur la page des paramètres de votre compte.""
+
+msgid "mfa.phone-number-help-text"
+msgstr "Le système enverra un code par SMS à ce numéro de téléphone chaque fois que vous vous authentifiez. Les tarifs SMS standard s'appliqueront."
+
+msgid "mfa.enable-mfa"
+msgstr "Activer l'authentification multifacteur"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continuer sans authentification multifacteur"
+
+msgid "password.reset-password"
+msgstr "Réinitialiser le mot de passe"
+
+msgid "password.send-reset-password"
+msgstr "Envoyer un e-mail de réinitialisation du mot de passe"
+
+msgid "password.old-password"
+msgstr "Ancien mot de passe"
+
+msgid "password.new-password"
+msgstr "Nouveau mot de passe"
+
+msgid "password.confirm-new-password"
+msgstr "Confirmer le nouveau mot de passe"
+
+msgid "password.requirements-length"
+msgstr "Avoir une longueur de %d caractères ou plus"
+
+msgid "password.requirements-uppercase"
+msgstr "Contiennent au moins %d lettres majuscules"
+
+msgid "password.requirements-lowercase"
+msgstr "Contiennent au moins %d lettres minuscules"
+
+msgid "password.requirements-number"
+msgstr "Contiennent au moins %d nombres"
+
+msgid "password.requirements-special"
+msgstr "Contient %d ou plus de caractères spéciaux"
+
+msgid "password.requirements-match"
+msgstr "Faire correspondre le mot de passe confirmé"
+
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Émettre un code"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Émettre des codes multiples"
+
+msgid "nav.check-code-status"
+msgstr "Vérifier l'état d'un code"
+
+msgid "nav.api-keys"
+msgstr "Clés d'API"
+
+msgid "nav.mobile-apps"
+msgstr "Applications mobiles"
+
+msgid "nav.event-log"
+msgstr "Journal d'événements"
+
+msgid "nav.signing-keys"
+msgstr "Clés de signature"
+
+msgid "nav.authenticated-sms"
+msgstr "SMS authentifié"
+
+msgid "nav.statistics"
+msgstr "Statistiques"
+
+msgid "nav.users"
+msgstr "Utilisateurs"
+
+msgid "nav.settings"
+msgstr "Paramètres"
+
+msgid "nav.change-realm"
+msgstr "Changer de domaine"
+
+msgid "nav.select-realm"
+msgstr "Sélectionner un domaine"
+
+msgid "nav.system-admin"
+msgstr "Administrateur système"
+
+msgid "nav.my-account"
+msgstr "Mon compte"
+
+msgid "nav.sign-out"
+msgstr "Déconnexion"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Créer un code de vérification"
+
+msgid "codes.issue.instructions"
+msgstr "Remplissez le formulaire suivant pour émettre un code à usage unique pour vérifier un patient. Ne soumettre ce formulaire que lorsque vous êtes prêt à transmettre le code au patient."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnostic"
+
+msgid "codes.issue.dates-header"
+msgstr "Dates"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Test positif"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Résultat de test positif confirmé par une source officielle de dépistage"
+
+msgid "codes.issue.likely-test"
+msgstr "Diagnostic vraisemblable"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Diagnostic clinique sans test"
+
+msgid "codes.issue.negative-test"
+msgstr "Test négatif"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Résultat de test négatif confirmé par une source officielle de dépistage"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Date du test (heure locale)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Apparition des symptômes (heure locale)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "Message SMS (recommandé)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Numéro de téléphone du patient"
+
+msgid "codes.issue.sms-template-label"
+msgstr "Modèle de SMS"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "Le patient recevra un SMS avec le modèle de message sélectionné."
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "S'il est fourni, le système enverra au patient par SMS un message textuel contenant le code. Ce numéro doit être capabe de recevoir des messages SMS."
+
+msgid "codes.issue.create-code-button"
+msgstr "Créer un code de vérification"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Annuler et revenir en arrière"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "Lien de vérification SMS"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "SMS envoyé avec succès au %s. Demandez au patient de vérifier ses messages SMS sur son téléphone où Notifications d'exposition au COVID-19 est activé."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Code court de secours"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Partagez ce code avec le patient s'il n'a pas recu de SMS sur son téléphone portable."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Générer un code court"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Partagez ce code immédiatement avec le patient."
+
+msgid "codes.issue.uuid-header"
+msgstr "Identificateur unique"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Utilisez ceci pour vérifier qu'un code a bien été saisi."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Expire dans"
+
+msgid "codes.issue.countdown-expired"
+msgstr "EXPIRÉ"
+
+
+#
+# bulk-issue codes
+# ----------
+
+msgid "codes.bulk-issue.header"
+msgstr "Bulk issue"
+
+msgid "codes.bulk-issue.receipt-header"
+msgstr "Receipt"
+
+msgid "codes.bulk-issue.errors-header"
+msgstr "Errors"
+
+msgid "codes.bulk-issue.success-header"
+msgstr "Successfully issued codes"
+
+msgid "codes.bulk-issue.no-sms-provider"
+msgstr "No SMS provider is configured for this realm. Please contact a realm administrator to enable this feature."
+
+msgid "codes.bulk-issue.select-csv"
+msgstr "Select a CSV file..."
+
+msgid "codes.bulk-issue.csv-format1"
+msgstr "The CSV file must be of the format %s."
+
+msgid "codes.bulk-issue.csv-format2"
+msgstr "Each entry must appear on its own line, and phone numbers must be in %s format and dates in %s."
+
+msgid "codes.bulk-issue.line-num"
+msgstr "Parsing the CSV will start at this line. Begin at 1 for a new file. This can be used to resume a canceled or partial upload."
+
+msgid "codes.bulk-issue.retry-code"
+msgstr "Retry code"
+
+msgid "codes.bulk-issue.new-retry-code"
+msgstr "Generate new code"
+
+msgid "codes.bulk-issue.retry-code-detail"
+msgstr "The retry code is a password for this bulk upload status in case it fails during processing. If you attempt this upload again with the same retry code, the server will be able to retry re-issue codes for phones which have not been successfully notified. You may use the same retry code for all of your uploads, but guard it like a password."
+
+msgid "codes.bulk-issue.remember-code"
+msgstr "Remember code"
+
+msgid "codes.bulk-issue.remember-code-detail"
+msgstr "Store the retry code in a cookie in your browser."
+
+msgid "codes.bulk-issue.issue-codes"
+msgstr "Issue codes"
+
+msgid "codes.bulk-issue.cancel"
+msgstr "Cancel"
+
+msgid "codes.bulk-issue.phone-number"
+msgstr "Phone number"
+
+msgid "codes.bulk-issue.test-date"
+msgstr "Test date"
+
+msgid "codes.bulk-issue.save-results"
+msgstr "Save code results log"
+
+msgid "codes.bulk-issue.save-results-success"
+msgstr "codes issued."
+
+msgid "codes.bulk-issue.save-results-fail"
+msgstr "codes failed."
+
+msgid "codes.bulk-issue.save-results-detail"
+msgstr "The above link allows you to download a log file of the results of your bulk issuance. It follows the same CSV format as input with tracking UUIDs appended for successfully issued codes or the error code and message for failures. You can make corrections to lines of this file and use it to retry the upload."
+
+msgid "codes.bulk-issue.too-many-fail"
+msgstr "Too many code errors to display results"
+
+msgid "codes.bulk-issue.too-many-success"
+msgstr "Too many codes issued to display results"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Pas trouvé"
+
+msgid "static.resource-does-not-exist"
+msgstr "Cette ressource n'existe pas."
+
+msgid "static.redirect-not-found"
+msgstr "Pour utiliser un code Exposure Notifications, visitez le lien sur votre appareil mobile."
+
+msgid "static.unauthorized"
+msgstr "Non autorisé"
+
+msgid "static.unauthorized-message"
+msgstr "Vous n'êtes pas autorisé à effectuer cette action."

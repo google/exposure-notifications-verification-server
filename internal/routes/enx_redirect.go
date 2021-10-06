@@ -59,7 +59,7 @@ func ENXRedirect(
 	r.Use(obs)
 
 	// Load localization
-	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
+	locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode), i18n.WithRedirectSource())
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup i18n: %w", err)
 	}
@@ -135,7 +135,7 @@ func ENXRedirect(
 		}
 
 		// Load localization
-		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode))
+		locales, err := i18n.Load(i18n.WithReloading(cfg.DevMode), i18n.WithRedirectSource())
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup i18n: %w", err)
 		}

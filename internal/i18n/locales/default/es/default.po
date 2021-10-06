@@ -1,0 +1,394 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+# login / account
+# ----------------
+
+msgid "login.email-address"
+msgstr "Dirección de correo electrónico"
+
+msgid "login.password"
+msgstr "Contraseña"
+
+msgid "login.authenticate"
+msgstr "Autenticar"
+
+msgid "login.refresh-authentication"
+msgstr "Actualizar autenticación"
+
+msgid "login.forgot-password"
+msgstr "Contraseña olvidada"
+
+msgid "login.about-exposure-notifications"
+msgstr "Acerca de las Exposure Notifications"
+
+msgid "login.signing-out"
+msgstr "Cerrando sesión..."
+
+msgid "login.signing-out-error"
+msgstr "No se pudo cerrar la sesión. Cierre su navegador o borre las cookies."
+
+msgid "login.realm-selection"
+msgstr "Selección de reino"
+
+msgid "login.realm-no-memberships"
+msgstr "No eres miembro de ningún reino."
+
+msgid "account.full-name"
+msgstr "Nombre completo"
+
+msgid "account.header-details"
+msgstr "Detalles de la cuenta"
+
+msgid "account.header-authentication"
+msgstr "Autenticación"
+
+msgid "account.header-realm-memberships"
+msgstr "Membresías de reino"
+
+msgid "account.email-verified"
+msgstr "Dirección de correo electrónico está verificada"
+
+msgid "account.email-not-verified"
+msgstr "Dirección de correo electrónico no está verificada"
+
+msgid "account.verify-email-address"
+msgstr "Verificar"
+
+msgid "account.verify-email-address-required"
+msgstr "%s requiere que verifique su dirección de correo electrónico."
+
+msgid "account.verifying-email-address"
+msgstr "Verificando la dirección de correo electrónico..."
+
+msgid "account.verify-email-address-error"
+msgstr "No se pudo verificar la dirección de correo electrónico"
+
+msgid "account.continue-without-verifying-email-address"
+msgstr "Continuar sin verificar la dirección de correo electrónico"
+
+msgid "account.mfa-enabled"
+msgstr "Multi-Factor de autenticación (AMF) está activado"
+
+msgid "account.mfa-disabled"
+msgstr "Multi-Factor de autenticación (AMF) está desactivada"
+
+msgid "account.manage-mfa"
+msgstr "Administrar MFA"
+
+msgid "account.enable-mfa"
+msgstr "Habilitar MFA"
+
+msgid "account.password-last-changed"
+msgstr "La contraseña se cambió por última vez hace %s"
+
+msgid "account.change-password"
+msgstr "Cambiar contraseña"
+
+msgid "mfa.mfa"
+msgstr "Autenticación multifactor"
+
+msgid "mfa.notice-required"
+msgstr "%s requiere que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta."
+
+msgid "mfa.notice-prompt"
+msgstr "%s recomienda que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta. Es posible que sea necesaria en el futuro."
+
+msgid "mfa.notice-optional"
+msgstr "%s recomienda que habilite la autenticación multifactor (MFA) para mejorar la seguridad de su cuenta."
+
+msgid "mfa.phone-display-name"
+msgstr "Nombre para mostrar"
+
+msgid "mfa.phone-display-name-help-text"
+msgstr "Este es el nombre del dispositivo tal como aparecerá en la página de configuración de su cuenta."
+
+msgid "mfa.phone-number-help-text"
+msgstr "El sistema enviará un código por SMS a este número de teléfono cada vez que se autentique. Se aplicarán las tarifas estándar de SMS."
+
+msgid "mfa.enable-mfa"
+msgstr "Habilitar la autenticación multifactor"
+
+msgid "mfa.continue-without-mfa"
+msgstr "Continuar sin autenticación multifactor"
+
+msgid "password.reset-password"
+msgstr "Restablecer contraseña"
+
+msgid "password.send-reset-password"
+msgstr "Enviar correo electrónico para restablecer la contraseña"
+
+msgid "password.old-password"
+msgstr "Contraseña anterior"
+
+msgid "password.new-password"
+msgstr "Nueva contraseña"
+
+msgid "password.confirm-new-password"
+msgstr "Confirmar nueva contraseña"
+
+msgid "password.requirements-length"
+msgstr "Tener una longitud de %d o más caracteres"
+
+msgid "password.requirements-uppercase"
+msgstr "Contienen %d o más letras mayúsculas"
+
+msgid "password.requirements-lowercase"
+msgstr "Contienen %d o más letras minúsculas"
+
+msgid "password.requirements-number"
+msgstr "Contener %d o más números"
+
+msgid "password.requirements-special"
+msgstr "Contener %d o más caracteres especiales"
+
+msgid "password.requirements-match"
+msgstr "Coincidir con la contraseña confirmada"
+
+
+#
+# navigation menus
+# ----------------
+
+msgid "nav.issue-code"
+msgstr "Generar código"
+
+msgid "nav.bulk-issue-codes"
+msgstr "Generar lote de códigos"
+
+msgid "nav.check-code-status"
+msgstr "Revisar estatus de código"
+
+msgid "nav.api-keys"
+msgstr "Llaves de API"
+
+msgid "nav.mobile-apps"
+msgstr "Aplicaciones móviles"
+
+msgid "nav.event-log"
+msgstr "Bitácora de eventos"
+
+msgid "nav.signing-keys"
+msgstr "Llaves firmantes"
+
+msgid "nav.authenticated-sms"
+msgstr "SMS autenticados"
+
+msgid "nav.statistics"
+msgstr "Estadísticas"
+
+msgid "nav.users"
+msgstr "Usuarios"
+
+msgid "nav.settings"
+msgstr "Configuración"
+
+msgid "nav.change-realm"
+msgstr "Cambiar de ámbito"
+
+msgid "nav.select-realm"
+msgstr "Seleccionar ámbito"
+
+msgid "nav.system-admin"
+msgstr "Administrador de sistema"
+
+msgid "nav.my-account"
+msgstr "Mi cuenta"
+
+msgid "nav.sign-out"
+msgstr "Finalizar sesión"
+
+
+#
+# issue code
+# ----------
+
+msgid "codes.issue.header"
+msgstr "Crear código de verificación"
+
+msgid "codes.issue.instructions"
+msgstr "Complete el siguiente formulario para generar un código de un solo uso para verificar un paciente. No envíe esta forma hasta estar listo para dar el código al paciente."
+
+msgid "codes.issue.diagnosis-header"
+msgstr "Diagnóstico"
+
+msgid "codes.issue.dates-header"
+msgstr "Fechas"
+
+msgid "codes.issue.confirmed-test"
+msgstr "Prueba positiva"
+
+msgid "codes.issue.confirmed-test-details"
+msgstr "Resultado positivo confirmado de prueba proveniente de una fuente oficial"
+
+msgid "codes.issue.likely-test"
+msgstr "Diagnóstico probable"
+
+msgid "codes.issue.likely-test-details"
+msgstr "Diagnóstico clínico sin prueba"
+
+msgid "codes.issue.negative-test"
+msgstr "Prueba negativa"
+
+msgid "codes.issue.negative-test-details"
+msgstr "Resultado negativo confirmado de prueba proveniente de una fuente oficial"
+
+msgid "codes.issue.testing-date-label"
+msgstr "Fecha de prueba (hora local)"
+
+msgid "codes.issue.symptoms-date-label"
+msgstr "Inicio de síntomas (hora local)"
+
+msgid "codes.issue.sms-text-message-header"
+msgstr "Mensaje de texto SMS (recomendado)"
+
+msgid "codes.issue.sms-text-message-label"
+msgstr "Número telefónico del paciente"
+
+msgid "codes.issue.sms-template-label"
+msgstr "Plantilla de SMS"
+
+msgid "codes.issue.sms-template-detail"
+msgstr "El paciente recibirá un SMS con la plantilla de mensaje seleccionada."
+
+msgid "codes.issue.sms-text-message-detail"
+msgstr "El sistema enviará un mensaje de texto conteniendo el código al paciente a este número, si es provisto. El telefóno deberá ser capaz de recibir mensajes de texto SMS."
+
+msgid "codes.issue.create-code-button"
+msgstr "Crear código de verificación"
+
+msgid "codes.issue.reset-code-button"
+msgstr "Borrar datos y regresar"
+
+msgid "codes.issue.sms-verification-link-header"
+msgstr "Liga de verificación de SMS"
+
+msgid "codes.issue.sms-verification-detail"
+msgstr "Se ha enviado SMS a %s. Informe al paciente que revise sus mensajes en el teléfono celular donde Notificaciones de Exposición está habilitado."
+
+msgid "codes.issue.backup-short-code-header"
+msgstr "Código de respaldo"
+
+msgid "codes.issue.backup-short-code-detail"
+msgstr "Comparta este código con el paciente en caso de no haber recibido el mensaje de texto en su teléfono celular."
+
+msgid "codes.issue.generated-short-code-header"
+msgstr "Se ha generado el código de respaldo"
+
+msgid "codes.issue.generated-short-code-detail"
+msgstr "Comparta este código inmediatamente con el paciente."
+
+msgid "codes.issue.uuid-header"
+msgstr "Identificador único"
+
+msgid "codes.issue.uuid-detail"
+msgstr "Utilícese para saber si el código de verificación ha sido usado."
+
+msgid "codes.issue.countdown-expires-in"
+msgstr "Expira en"
+
+msgid "codes.issue.countdown-expired"
+msgstr "EXPIRADO"
+
+
+#
+# bulk-issue codes
+# ----------
+
+msgid "codes.bulk-issue.header"
+msgstr "Generar lote de códigos"
+
+msgid "codes.bulk-issue.receipt-header"
+msgstr "Recibo"
+
+msgid "codes.bulk-issue.errors-header"
+msgstr "Errores"
+
+msgid "codes.bulk-issue.success-header"
+msgstr "Códigos emitidos con éxito"
+
+msgid "codes.bulk-issue.no-sms-provider"
+msgstr "No hay ningún proveedor de SMS configurado para este reino. Comuníquese con un administrador del reino para habilitar esta función."
+
+msgid "codes.bulk-issue.select-csv"
+msgstr "Seleccione un archivo CSV ..."
+
+msgid "codes.bulk-issue.csv-format1"
+msgstr "El archivo CSV debe tener el formato %s."
+
+msgid "codes.bulk-issue.csv-format2"
+msgstr "Cada entrada debe aparecer en su propia línea, y los números de teléfono deben estar en formato %s y las fechas en %s."
+
+msgid "codes.bulk-issue.line-num"
+msgstr "El análisis del CSV comenzará en esta línea. Comience en 1 para un archivo nuevo. Esto se puede utilizar para reanudar una carga cancelada o parcial"
+
+msgid "codes.bulk-issue.retry-code"
+msgstr "Código de reintento"
+
+msgid "codes.bulk-issue.new-retry-code"
+msgstr "Generar nuevo código"
+
+msgid "codes.bulk-issue.retry-code-detail"
+msgstr "El código de reintento es una contraseña para este estado de carga masiva en caso de que falle durante el procesamiento. Si intenta esta carga nuevamente con el mismo código de reintento, el servidor podrá volver a intentar volver a emitir códigos para teléfonos que no hayan sido notificados correctamente. Puede usar el mismo código de reintento para todas sus cargas, pero guárdelo como una contraseña."
+
+msgid "codes.bulk-issue.remember-code"
+msgstr "Recuerda el código"
+
+msgid "codes.bulk-issue.remember-code-detail"
+msgstr "Almacene el código de reintento en una cookie en su navegador."
+
+msgid "codes.bulk-issue.issue-codes"
+msgstr "Emitir códigos"
+
+msgid "codes.bulk-issue.cancel"
+msgstr "Cancelar"
+
+msgid "codes.bulk-issue.phone-number"
+msgstr "Número telefónico"
+
+msgid "codes.bulk-issue.test-date"
+msgstr "Fecha de prueba"
+
+msgid "codes.bulk-issue.save-results"
+msgstr "Guardar registro de resultados de código"
+
+msgid "codes.bulk-issue.save-results-success"
+msgstr "códigos emitidos."
+
+msgid "codes.bulk-issue.save-results-fail"
+msgstr "códigos fracasaron."
+
+msgid "codes.bulk-issue.save-results-detail"
+msgstr "El enlace anterior le permite descargar un archivo de registro de los resultados de su emisión masiva. Sigue el mismo formato CSV que la entrada con los UUID de seguimiento adjuntos para los códigos emitidos con éxito o el código de error y el mensaje de fallas. Puede hacer correcciones a las líneas de este archivo y usarlo para volver a intentar la carga."
+
+msgid "codes.bulk-issue.too-many-fail"
+msgstr "Demasiados errores de código para mostrar resultados"
+
+msgid "codes.bulk-issue.too-many-success"
+msgstr "Se emitieron demasiados códigos para mostrar los resultados"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Extraviado"
+
+msgid "static.resource-does-not-exist"
+msgstr "Ese recurso no existe."
+
+msgid "static.redirect-not-found"
+msgstr "Para canjear un código Exposure Notifications, visite el vínculo en su dispositivo móvil."
+
+msgid "static.unauthorized"
+msgstr "No autorizado"
+
+msgid "static.unauthorized-message"
+msgstr "No está autorizado para realizar esa acción."
