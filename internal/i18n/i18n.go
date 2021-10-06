@@ -42,7 +42,7 @@ const (
 	RedirectSource
 )
 
-var dirMap map[Source]string = map[Source]string{
+var dirMap = map[Source]string{
 	DefaultSource:  "default",
 	RedirectSource: "redirect",
 }
