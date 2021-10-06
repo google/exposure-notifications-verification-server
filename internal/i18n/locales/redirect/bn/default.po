@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: bn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "এক্সপোজার নোটিফিকেশন সম্পর্কে"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "পাওয়া গেল না"
+
+msgid "static.resource-does-not-exist"
+msgstr "সেই সংস্থান নেই"
+
+msgid "static.redirect-not-found"
+msgstr "একটি এক্সপোজার বিজ্ঞপ্তি কোড রিডিম করতে, আপনার মোবাইল ডিভাইসের লিঙ্কটি দেখুন।"
+
+msgid "static.unauthorized"
+msgstr "অননুমোদিত"
+
+msgid "static.unauthorized-message"
+msgstr "আপনি এই ক্রিয়াটি সম্পাদনের জন্য অনুমোদিত নন।"
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "একটি যাচাইকরণ কোড পান"
+
+msgid "user-report.navbar"
+msgstr "অনুরোধ এক্সপোজার বিজ্ঞপ্তি যাচাইকরণ কোড"
+
+msgid "user-report.request-code-from"
+msgstr "একটি যাচাইকরণ কোড পান"
+
+msgid "user-report.instructions"
+msgstr "আপনি যদি কভিড -১৯ এর জন্য ইতিবাচক পরীক্ষা করেছেন তবে পাঠ্য বা ফোন কল করে আপনার স্বাস্থ্য কর্তৃপক্ষের কাছ থেকে কোনও কোড না পেয়েছেন, আপনি এখানে একটি অনুরোধ করতে পারেন।"
+
+msgid "user-report.enter-date-instructions"
+msgstr "আপনার COVID-19 পরীক্ষার তারিখ লিখুন"
+
+msgid "user-report.phone-number-header"
+msgstr "আপনার মোবাইল ফোন নম্বর"
+
+msgid "user-report.phone-number-instructions"
+msgstr "একটি যাচাইকরণ কোড পেতে আপনাকে অবশ্যই একটি বৈধ ফোন নম্বর প্রবেশ করতে হবে। ক্যারিয়ার ফি প্রয়োগ হতে পারে।"
+
+msgid "user-report.agreement-header"
+msgstr "চুক্তি"
+
+msgid "user-report.agreement"
+msgstr "আমি স্বীকার করি যে আমি COVID-19 এর জন্য একটি ইতিবাচক পরীক্ষার ফলাফল পেয়েছি এবং আমি যে ফোন নম্বর সরবরাহ করেছি তা আমার নিজের এবং আমি আমার ইতিবাচক পরীক্ষার ফলাফলের রিপোর্ট করার জন্য একটি কোড পেতে চাই।"
+
+msgid "user-report.request-button"
+msgstr "চালিয়ে যান"
+
+msgid "user-report.code-issued"
+msgstr "যাচাইকরণ কোড জারি"
+
+msgid "user-report.check-mobile-device"
+msgstr "আপনার মোবাইল ডিভাইসে আপনার পাঠ্য বার্তাগুলি পরীক্ষা করুন।"
+
+msgid "user-report.invalid-request"
+msgstr "অবৈধ অনুরোধ, আপনার মোবাইল ডিভাইসে আপনার এক্সপোজার বিজ্ঞপ্তি অ্যাপ্লিকেশন থেকে লঞ্চ করুন।"
+
+msgid "user-report.not-available"
+msgstr "আপনার স্থানীয় স্বাস্থ্য কর্তৃপক্ষ এই মুহুর্তে ব্যবহারকারী সূচিত প্রতিবেদনগুলি গ্রহণ করছে না।"
+
+msgid "user-report.missing-agreement"
+msgstr "একটি যাচাইকরণ কোডের অনুরোধ করার জন্য আপনাকে অবশ্যই শর্তাদির সাথে একমত হতে হবে"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 পরীক্ষার তারিখটি অবৈধ।"
+
+msgid "user-report.error-missing-phone"
+msgstr "মোবাইল ফোন নম্বর প্রয়োজন।"
+
+msgid "user-report.error-invalid-phone"
+msgstr "মোবাইল ফোন নম্বরটি অবৈধ।"
+
+msgid "user-report.quota-exceeded"
+msgstr "অস্থায়ীভাবে যাচাইকরণ কোডগুলি ইস্যু করতে অক্ষম, দয়া করে পরে আবার চেষ্টা করুন।"
+
+msgid "user-report.phone-not-eligible"
+msgstr "আপনার ফোন নম্বরটি বর্তমানে ব্যবহারকারী রিপোর্টের জন্য যোগ্য নয়"
+
+msgid "user-report.internal-error"
+msgstr "অভ্যন্তরীণ ত্রুটি ছিল। এই সময়ে একটি যাচাইকরণ কোডের জন্য অনুরোধ করা যাবে না।"
+
+msgid "user-report.unable-to-issue"
+msgstr "আমরা আপনাকে একটি যাচাইকরণ কোড পাঠাতে অক্ষম"
+
+msgid "user-report.code-device-throttled"
+msgstr "আপনি একটি কোড অনেকবার অনুরোধ করেছেন। আপনার যদি এখনও কোনও কোডের প্রয়োজন হয় তবে আপনার স্বাস্থ্য কর্তৃপক্ষের সাথে যোগাযোগ করুন"
+
+msgid "user-report.testing-date-label"
+msgstr "আপনার COVID-19 পরীক্ষার তারিখ"
+
+msgid "user-report.phone-storage"
+msgstr "অতিরিক্ত জমাগুলি রোধ করতে আপনার ফোন নম্বরটির একটি ক্রিপ্টোগ্রাফিকভাবে সুরক্ষিত সংস্করণ সংরক্ষণ করা যেতে পারে।"
+
+msgid "user-report.learn-more"
+msgstr "আরও জানুন ..."
+
+msgid "user-report.header"
+msgstr "এক্সপোজারের অন্যদের অবহিত করতে সহায়তা করুন"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXXX-XXXXXX"

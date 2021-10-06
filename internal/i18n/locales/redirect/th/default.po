@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "เกี่ยวกับการแจ้งเตือนการสัมผัส"
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "ไม่พบ"
+
+msgid "static.resource-does-not-exist"
+msgstr "ไม่มีทรัพยากรนั้น"
+
+msgid "static.redirect-not-found"
+msgstr "หากต้องการแลกรหัสการแจ้งเตือนการเปิดเผยให้ไปที่ลิงก์บนอุปกรณ์มือถือของคุณ"
+
+msgid "static.unauthorized"
+msgstr "ไม่ได้รับอนุญาต"
+
+msgid "static.unauthorized-message"
+msgstr "คุณไม่ได้รับอนุญาตให้ดำเนินการนั้น"
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "รับรหัสยืนยัน"
+
+msgid "user-report.navbar"
+msgstr "ขอรหัสยืนยันการแจ้งเตือนการเปิดเผย"
+
+msgid "user-report.request-code-from"
+msgstr "รับรหัสยืนยัน"
+
+msgid "user-report.instructions"
+msgstr "หากคุณได้รับการทดสอบเชิงบวกสำหรับ COVID-19 แต่ยังไม่ได้รับรหัสจากหน่วยงานด้านสุขภาพของคุณทางข้อความหรือทางโทรศัพท์คุณสามารถขอรหัสได้ที่นี่"
+
+msgid "user-report.enter-date-instructions"
+msgstr "ป้อนวันที่ของการทดสอบ COVID-19 ของคุณ"
+
+msgid "user-report.phone-number-header"
+msgstr "หมายเลขโทรศัพท์มือถือของคุณ"
+
+msgid "user-report.phone-number-instructions"
+msgstr "คุณต้องป้อนหมายเลขโทรศัพท์ที่ถูกต้องเพื่อรับรหัสยืนยัน อาจมีค่าธรรมเนียมผู้ให้บริการ"
+
+msgid "user-report.agreement-header"
+msgstr "ข้อตกลง"
+
+msgid "user-report.agreement"
+msgstr "ฉันรับทราบว่าได้ผลการทดสอบในเชิงบวกสำหรับ COVID-19 และหมายเลขโทรศัพท์ที่ฉันให้ไว้นั้นเป็นหมายเลขของฉันเอง และฉันต้องการรับรหัสเพื่อรายงานผลการทดสอบที่เป็นบวก"
+
+msgid "user-report.request-button"
+msgstr "ดำเนินการต่อ"
+
+msgid "user-report.code-issued"
+msgstr "ออกรหัสยืนยันแล้ว"
+
+msgid "user-report.check-mobile-device"
+msgstr "โปรดตรวจสอบข้อความของคุณบนอุปกรณ์มือถือของคุณ"
+
+msgid "user-report.invalid-request"
+msgstr "คำขอไม่ถูกต้องโปรดเปิดจากแอปพลิเคชันการแจ้งเตือนการเปิดเผยบนอุปกรณ์มือถือของคุณ"
+
+msgid "user-report.not-available"
+msgstr "หน่วยงานสาธารณสุขในพื้นที่ของคุณไม่ยอมรับรายงานที่เริ่มโดยผู้ใช้ในขณะนี้"
+
+msgid "user-report.missing-agreement"
+msgstr "คุณต้องยอมรับเงื่อนไขเพื่อขอรหัสยืนยัน"
+
+msgid "user-report.error-invalid-date"
+msgstr "วันที่ตรวจโควิด-19 ไม่ถูกต้อง"
+
+msgid "user-report.error-missing-phone"
+msgstr "ต้องระบุหมายเลขโทรศัพท์มือถือ"
+
+msgid "user-report.error-invalid-phone"
+msgstr "หมายเลขโทรศัพท์มือถือไม่ถูกต้อง"
+
+msgid "user-report.quota-exceeded"
+msgstr "ไม่สามารถออกรหัสยืนยันได้ชั่วคราวโปรดลองอีกครั้งในภายหลัง"
+
+msgid "user-report.phone-not-eligible"
+msgstr "หมายเลขโทรศัพท์ของคุณไม่สามารถรายงานผู้ใช้ได้ในขณะนี้"
+
+msgid "user-report.internal-error"
+msgstr "เกิดข้อผิดพลาดภายในไม่สามารถขอรหัสยืนยันได้ในขณะนี้"
+
+msgid "user-report.unable-to-issue"
+msgstr "เราไม่สามารถส่งรหัสยืนยันให้คุณได้"
+
+msgid "user-report.code-device-throttled"
+msgstr "คุณขอรหัสหลายครั้งเกินไป โปรดติดต่อหน่วยงานด้านสุขภาพของคุณ หากคุณยังต้องการรหัส"
+
+msgid "user-report.testing-date-label"
+msgstr "วันที่คุณตรวจโควิด-19"
+
+msgid "user-report.phone-storage"
+msgstr "อาจมีการจัดเก็บหมายเลขโทรศัพท์ของคุณในเวอร์ชันที่ป้องกันด้วยการเข้ารหัสเพื่อป้องกันการส่งเพิ่มเติม"
+
+msgid "user-report.learn-more"
+msgstr "เรียนรู้เพิ่มเติม..."
+
+msgid "user-report.header"
+msgstr "ช่วยแจ้งให้ผู้อื่นทราบถึงความเสี่ยง"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

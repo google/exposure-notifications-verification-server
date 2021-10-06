@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Tentang Exposure Notifications"
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Tidak ditemukan"
+
+msgid "static.resource-does-not-exist"
+msgstr "Sumber daya itu tidak ada."
+
+msgid "static.redirect-not-found"
+msgstr "Untuk menukarkan kode Exposure Notifications, kunjungi tautan di perangkat seluler Anda."
+
+msgid "static.unauthorized"
+msgstr "Tidak resmi"
+
+msgid "static.unauthorized-message"
+msgstr "Anda tidak diizinkan melakukan tindakan itu."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Dapatkan kode verifikasi"
+
+msgid "user-report.navbar"
+msgstr "Minta kode verifikasi Pemberitahuan Pemaparan"
+
+msgid "user-report.request-code-from"
+msgstr "Dapatkan kode verifikasi"
+
+msgid "user-report.instructions"
+msgstr "Jika Anda telah dites positif COVID-19 tetapi belum menerima kode dari Otoritas Kesehatan Anda melalui teks atau panggilan telepon, Anda dapat memintanya di sini."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Masukkan tanggal tes COVID-19 Anda"
+
+msgid "user-report.phone-number-header"
+msgstr "Nomor Ponsel Anda"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Anda harus memasukkan nomor telepon yang valid untuk menerima kode verifikasi. Biaya operator mungkin berlaku."
+
+msgid "user-report.agreement-header"
+msgstr "Perjanjian"
+
+msgid "user-report.agreement"
+msgstr "Saya mengakui bahwa saya telah menerima hasil tes positif COVID-19 dan nomor telepon yang saya berikan adalah milik saya sendiri dan saya ingin menerima kode untuk melaporkan hasil tes positif saya."
+
+msgid "user-report.request-button"
+msgstr "Terus"
+
+msgid "user-report.code-issued"
+msgstr "Kode verifikasi dikeluarkan"
+
+msgid "user-report.check-mobile-device"
+msgstr "Silakan periksa pesan teks Anda di perangkat seluler Anda."
+
+msgid "user-report.invalid-request"
+msgstr "Permintaan tidak valid, silakan luncurkan dari aplikasi Pemberitahuan Eksposur di perangkat seluler Anda."
+
+msgid "user-report.not-available"
+msgstr "Otoritas kesehatan lokal Anda tidak menerima laporan yang dimulai pengguna saat ini."
+
+msgid "user-report.missing-agreement"
+msgstr "Anda harus menyetujui persyaratan untuk meminta kode verifikasi"
+
+msgid "user-report.error-invalid-date"
+msgstr "Tanggal tes COVID-19 tidak valid."
+
+msgid "user-report.error-missing-phone"
+msgstr "Diperlukan nomor ponsel."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Nomor ponsel tidak valid."
+
+msgid "user-report.quota-exceeded"
+msgstr "Untuk sementara tidak dapat mengeluarkan kode verifikasi, coba lagi nanti."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Nomor telepon Anda saat ini tidak memenuhi syarat untuk laporan pengguna"
+
+msgid "user-report.internal-error"
+msgstr "Ada kesalahan internal. Kode verifikasi tidak dapat diminta saat ini."
+
+msgid "user-report.unable-to-issue"
+msgstr "Kami tidak dapat mengirimi Anda kode verifikasi."
+
+msgid "user-report.code-device-throttled"
+msgstr "Anda sudah terlalu sering meminta kode. Silakan hubungi Otoritas Kesehatan Anda jika Anda masih membutuhkan kode."
+
+msgid "user-report.testing-date-label"
+msgstr "Tanggal Tes COVID-19 Anda"
+
+msgid "user-report.phone-storage"
+msgstr "Versi nomor telepon Anda yang dilindungi secara kriptografis dapat disimpan untuk mencegah pengiriman tambahan."
+
+msgid "user-report.learn-more"
+msgstr "Pelajari lebih lanjut..."
+
+msgid "user-report.header"
+msgstr "Bantu Beri Tahu Orang Lain tentang Paparan"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXX XXX"
+

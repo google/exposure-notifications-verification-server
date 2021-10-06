@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "login.about-exposure-notifications"
+msgstr "Exposure Notifications حول"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "غير موجود"
+
+msgid "static.resource-does-not-exist"
+msgstr "هذا المورد غير موجود."
+
+msgid "static.redirect-not-found"
+msgstr "لاسترداد رمز Exposure Notifications ، قم بزيارة الرابط الموجود على جهازك المحمول."
+
+msgid "static.unauthorized"
+msgstr "غير مصرح"
+
+msgid "static.unauthorized-message"
+msgstr "أنت غير مخول للقيام بهذا الإجراء."
+
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "احصل على رمز التحقق"
+
+msgid "user-report.navbar"
+msgstr "طلب رمز التحقق من إخطارات التعرض"
+
+msgid "user-report.request-code-from"
+msgstr "احصل على رمز التحقق"
+
+msgid "user-report.instructions"
+msgstr "اطلب رمزًا من إذا كانت نتيجة اختبار COVID-19 إيجابية ولكنك لم تتلق رمزًا من هيئة الصحة الخاصة بك عن طريق رسالة نصية أو مكالمة هاتفية ، فيمكنك طلب رمز هنا."
+
+msgid "user-report.enter-date-instructions"
+msgstr "أدخل تاريخ اختبار COVID-19 الخاص بك"
+
+msgid "user-report.phone-number-header"
+msgstr "رقم الهاتف المحمول"
+
+msgid "user-report.phone-number-instructions"
+msgstr "يجب إدخال رقم هاتف صالح لتلقي رمز التحقق. قد يتم تطبيق رسوم الناقل."
+
+msgid "user-report.agreement-header"
+msgstr "اتفاق"
+
+msgid "user-report.agreement"
+msgstr "أقر بأنني تلقيت نتيجة اختبار إيجابية لـ COVID-19 وأن رقم الهاتف الذي قدمته هو خاص بي وأود تلقي رمز للإبلاغ عن نتيجة الاختبار الإيجابية الخاصة بي."
+
+msgid "user-report.request-button"
+msgstr "يكمل"
+
+msgid "user-report.code-issued"
+msgstr "تم إصدار رمز التحقق"
+
+msgid "user-report.check-mobile-device"
+msgstr "يرجى التحقق من رسائلك النصية على جهازك المحمول."
+
+msgid "user-report.invalid-request"
+msgstr "طلب غير صالح ، يرجى بدء التشغيل من تطبيق Exposure Notifications على جهازك المحمول."
+
+msgid "user-report.not-available"
+msgstr "لا تقبل هيئة الصحة المحلية الخاصة بك التقارير التي بدأها المستخدم في الوقت الحالي."
+
+msgid "user-report.missing-agreement"
+msgstr "يجب أن توافق على الشروط لطلب رمز التحقق"
+
+msgid "user-report.error-invalid-date"
+msgstr "تاريخ اختبار COVID-19 غير صالح."
+
+msgid "user-report.error-missing-phone"
+msgstr "رقم الهاتف المحمول مطلوب."
+
+msgid "user-report.error-invalid-phone"
+msgstr "رقم الهاتف المحمول غير صالح."
+
+msgid "user-report.quota-exceeded"
+msgstr "غير قادر مؤقتًا على إصدار رموز التحقق ، يرجى المحاولة مرة أخرى لاحقًا."
+
+msgid "user-report.phone-not-eligible"
+msgstr "رقم هاتفك غير مؤهل حاليًا لتقرير المستخدم"
+
+msgid "user-report.internal-error"
+msgstr "كان هناك خطأ داخلي. لا يمكن طلب رمز التحقق في هذا الوقت."
+
+msgid "user-report.unable-to-issue"
+msgstr "لم نتمكن من إرسال رمز التحقق إليك."
+
+msgid "user-report.code-device-throttled"
+msgstr "لقد طلبت رمزًا مرات عديدة. يرجى الاتصال بهيئة الصحة إذا كنت لا تزال بحاجة إلى رمز."
+
+msgid "user-report.testing-date-label"
+msgstr "تاريخ اختبار COVID-19 الخاص بك"
+
+msgid "user-report.phone-storage"
+msgstr "قد يتم تخزين نسخة محمية مشفرة من رقم هاتفك لمنع عمليات الإرسال الإضافية."
+
+msgid "user-report.learn-more"
+msgstr "يتعلم أكثر..."
+
+msgid "user-report.header"
+msgstr "ساعد في إعلام الآخرين بالتعرض"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXXXX"

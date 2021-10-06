@@ -1,0 +1,119 @@
+msgid ""
+msgstr ""
+"Language: mn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Тухай Exposure Notifications"
+
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "Олдсонгүй"
+
+msgid "static.resource-does-not-exist"
+msgstr "Тэр нөөц байхгүй."
+
+msgid "static.redirect-not-found"
+msgstr "Exposure Notifications кодыг зарцуулахын тулд мобайл төхөөрөмж дээрх холбоосоор зочилно уу."
+
+msgid "static.unauthorized"
+msgstr "Зөвшөөрөлгүй"
+
+msgid "static.unauthorized-message"
+msgstr "Та энэ үйлдлийг хийх эрхгүй байна."
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "Баталгаажуулах код авна уу"
+
+msgid "user-report.navbar"
+msgstr "Гэрэл зургийн мэдэгдэл баталгаажуулах кодыг авах хүсэлт гаргах."
+
+msgid "user-report.request-code-from"
+msgstr "Баталгаажуулах код авна уу"
+
+msgid "user-report.instructions"
+msgstr "Хэрэв танд COVID-19 илэрсэн нь батлагдсан боловч эрүүл мэндийн газраас код, мессежээр эсвэл утасны дуудлага хүлээж аваагүй бол та эндээс хүсэлт гаргаж болно."
+
+msgid "user-report.enter-date-instructions"
+msgstr "COVID-19 туршилтын огноог оруулна уу."
+
+msgid "user-report.phone-number-header"
+msgstr "Таны гар утасны дугаар"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Баталгаажуулах кодыг хүлээн авахын тулд та зөв утасны дугаар оруулах шаардлагатай. Оператор компанийн төлбөр шаардагдаж магадгүй юм."
+
+msgid "user-report.agreement-header"
+msgstr "Гэрээ"
+
+msgid "user-report.agreement"
+msgstr "Би COVID-19-ийн шинжилгээний эерэг үр дүнг хүлээн авсан гэдгээ мэдэгдэж байгаа бөгөөд миний өгсөн утасны дугаар минийх бөгөөд миний эерэг тестийн үр дүнг тайлагнах кодыг авахыг хүсч байна."
+
+msgid "user-report.request-button"
+msgstr "Үргэлжлүүлэх"
+
+msgid "user-report.code-issued"
+msgstr "Баталгаажуулах код гаргасан"
+
+msgid "user-report.check-mobile-device"
+msgstr "Гар утасны төхөөрөмж дээрээ текст мессежээ шалгана уу."
+
+msgid "user-report.invalid-request"
+msgstr "Хүчингүй хүсэлт, мобайл төхөөрөмж дээрх Exposure Notifications програмаас эхлүүлнэ үү."
+
+msgid "user-report.not-available"
+msgstr "Танай орон нутгийн эрүүл мэндийн байгууллага одоогоор хэрэглэгчийн санаачилсан тайланг хүлээж авахгүй байна."
+
+msgid "user-report.missing-agreement"
+msgstr "Баталгаажуулах код шаардахын тулд та нөхцлийг зөвшөөрөх ёстой."
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 туршилтын огноо хүчингүй."
+
+msgid "user-report.error-missing-phone"
+msgstr "Гар утасны дугаар шаардлагатай."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Гар утасны дугаар буруу байна."
+
+msgid "user-report.quota-exceeded"
+msgstr "Баталгаажуулах кодыг түр хугацаанд гаргаж чадахгүй байна. Дараа дахин оролдоно уу."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Таны утасны дугаар одоогоор хэрэглэгчийн тайланд орох эрхгүй байна."
+
+msgid "user-report.internal-error"
+msgstr "Дотоод алдаа гарсан байна. Баталгаажуулах кодыг одоогоор шаардах боломжгүй байна."
+
+msgid "user-report.unable-to-issue"
+msgstr "Бид танд баталгаажуулах код илгээж чадсангүй."
+
+msgid "user-report.code-device-throttled"
+msgstr "Та код хэт олон удаа хүссэн. Хэрэв танд код шаардлагатай хэвээр байгаа бол Эрүүл мэндийн газартайгаа холбоо бариарай."
+
+msgid "user-report.testing-date-label"
+msgstr "Таны COVID-19 туршилтын огноо"
+
+msgid "user-report.phone-storage"
+msgstr "Таны утасны дугаарын криптографийн хамгаалалттай хувилбарыг хадгалах боломжтой бөгөөд нэмэлт мэдээлэл оруулахаас сэргийлнэ."
+
+msgid "user-report.learn-more"
+msgstr "Дэлгэрэнгүй үзэх ..."
+
+msgid "user-report.header"
+msgstr "Бусад өртөлтийн талаар мэдэгдэхэд тусална уу"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXXX XXXX"
