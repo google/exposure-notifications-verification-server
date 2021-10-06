@@ -19,7 +19,6 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -239,12 +238,10 @@ func (l *LocaleMap) load() error {
 		return fmt.Errorf("no translation source specified")
 	}
 
-	entries, err := fs.ReadDir(fsys, fmt.Sprintf("locales/%s", subDir))
+	entries, err := fs.ReadDir(fsys, path.Join("locales", subDir))
 	if err != nil {
 		return fmt.Errorf("failed to load locales: %w", err)
 	}
-
-	log.Printf("locales: %v  dir: %v entries: %v", l.source, subDir, entries)
 
 	data := make(map[string]gotext.Translator, len(entries))
 	names := make([]language.Tag, 0, len(entries))
