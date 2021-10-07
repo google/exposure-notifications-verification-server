@@ -26,7 +26,7 @@ import (
 	"github.com/sethvargo/go-limiter"
 	"github.com/sethvargo/go-limiter/memorystore"
 	"github.com/sethvargo/go-limiter/noopstore"
-	"github.com/sethvargo/go-redisstore"
+	"github.com/sethvargo/go-redisstore-opencensus"
 	"go.opencensus.io/trace"
 )
 
