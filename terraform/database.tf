@@ -418,5 +418,5 @@ output "db_encryption_key_secret" {
 }
 
 output "db_backup_command" {
-  value = "gcloud scheduler jobs run backup-database-worker --project ${var.project}"
+  value = "gcloud scheduler jobs run ${google_cloud_scheduler_job.backup-worker.name} --project ${var.project}"
 }
