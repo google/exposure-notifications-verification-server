@@ -297,6 +297,11 @@ msgstr "Expires in"
 msgid "codes.issue.countdown-expired"
 msgstr "EXPIRED"
 
+msgid "codes.codes-claimed-ratio-deviated"
+msgstr "Your code claim rate for yesterday was %.2f%%, which is less than your historical average of %.2f%%."
+
+msgid "codes.tokens-claimed-ratio-deviated"
+msgstr "Your token claim rate for yesterday was %.2f%%, which is less than your historical average of %.2f%%."
 
 #
 # bulk-issue codes

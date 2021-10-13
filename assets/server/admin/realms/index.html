@@ -45,13 +45,10 @@
               <th scope="col" width="50" class="text-center">ID</th>
               <th scope="col" width="100" class="text-center">Region</th>
               <th scope="col">Name</th>
-              <th scope="col" width="75" class="text-center d-none d-md-table-cell">Chaff (7d)</th>
+              <th scope="col" width="100" class="text-center d-none d-md-table-cell">Chaff (7d)</th>
               <th scope="col" width="100" class="text-center d-none d-md-table-cell">Abuse Modeling</th>
-              <th scope="col" width="75" class="text-center d-none d-md-table-cell">Auth SMS</th>
-              <th scope="col" width="110" class="text-center d-none d-md-table-cell">Generated SMS</th>
-              <th scope="col" width="90" class="text-center d-none d-md-table-cell">User Report</th>
-              <th scope="col" width="90" class="text-center d-none d-md-table-cell">User Report Web</th>
-              <th scope="col" width="90" class="text-center d-none d-md-table-cell">Signing key</th>
+              <th scope="col" width="100" class="text-center d-none d-md-table-cell">SMS</th>
+              <th scope="col" width="100" class="text-center d-none d-md-table-cell">User Report</th>
             </tr>
           </thead>
           <tbody>
@@ -63,9 +60,13 @@
                 <a href="/admin/realms/{{.ID}}/edit">
                   {{.Name}}
                 </a>
-                {{if (index $memberships .ID)}}
-                  <span class="small bi bi-check-square-fill text-success ms-1"
-                    data-bs-toggle="tooltip" title="You have permissions on this realm"></span>
+                {{if .CodesClaimedRatioDeviated}}
+                  <span class="small bi bi-exclamation-triangle-fill text-warning"
+                    data-bs-toggle="tooltip" title="The ratio between codes issued and codes claimed has deviated from the historical norm"></span>
+                {{end}}
+                {{if .CodesClaimedRatioDeviated}}
+                  <span class="small bi bi-exclamation-triangle-fill text-warning"
+                    data-bs-toggle="tooltip" title="The ratio between codes claimed and tokens claimed has deviated from the historical norm"></span>
                 {{end}}
               </td>
               <td class="text-center d-none d-md-table-cell">
@@ -88,19 +89,17 @@
               </td>
               <td class="text-center d-none d-md-table-cell">
                 {{if .UseAuthenticatedSMS}}
-                  <span class="small bi bi-check-square-fill text-success px-2"
+                  <span class="small bi bi-lock-fill text-success px-2"
                     data-bs-toggle="tooltip" title="Authenticated SMS is enabled"></span>
                 {{else}}
-                  <span class="small bi bi-x-square-fill text-danger px-2"
+                  <span class="small bi bi-unlock-fill text-danger px-2"
                     data-bs-toggle="tooltip" title="Authenticated SMS is not enabled"></span>
                 {{end}}
-              </td>
-              <td class="text-center d-none d-md-table-cell">
                 {{if .AllowGeneratedSMS}}
-                  <span class="small bi bi-check-square-fill text-success px-2"
+                  <span class="small bi bi-file-code-fill text-success px-2"
                     data-bs-toggle="tooltip" title="Allow generated SMS is enabled"></span>
                 {{else}}
-                  <span class="small bi bi-x-square-fill text-danger px-2"
+                  <span class="small bi bi-file-code-fill text-danger px-2"
                     data-bs-toggle="tooltip" title="Allow generated SMS is not enabled"></span>
                 {{end}}
               </td>
@@ -112,18 +111,13 @@
                   <span class="small bi bi-x-square-fill text-danger px-2"
                     data-bs-toggle="tooltip" title="User report is not enabled"></span>
                 {{end}}
-              </td>
-              <td class="text-center d-none d-md-table-cell">
                 {{if .AllowUserReportWebView}}
-                  <span class="small bi bi-check-square-fill text-success px-2"
+                  <span class="small bi bi-globe text-success px-2"
                     data-bs-toggle="tooltip" title="User report web view is enabled"></span>
                 {{else}}
-                  <span class="small bi bi-x-square-fill text-danger px-2"
+                  <span class="small bi bi-globe text-danger px-2"
                     data-bs-toggle="tooltip" title="User report web view is not enabled"></span>
                 {{end}}
-              </td>
-              <td class="text-center d-none d-md-table-cell">
-                {{if .UseRealmCertificateKey}}Realm{{else}}System{{end}}
               </td>
             </tr>
           {{end}}

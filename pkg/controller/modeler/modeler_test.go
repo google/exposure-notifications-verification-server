@@ -15,12 +15,14 @@
 package modeler
 
 import (
+	"math"
 	"testing"
 	"time"
 
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sethvargo/go-limiter/memorystore"
 
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -69,7 +71,7 @@ func testModeler(tb testing.TB) *Controller {
 	return modeler
 }
 
-func TestRebuildModel(t *testing.T) {
+func TestRebuildAbusePreventionModel(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
@@ -109,7 +111,7 @@ func TestRebuildModel(t *testing.T) {
 		}
 
 		// Build the model.
-		if err := modeler.rebuildModels(ctx); err != nil {
+		if err := modeler.rebuildAbusePreventionModel(ctx, realm); err != nil {
 			t.Fatal(err)
 		}
 
@@ -144,7 +146,7 @@ func TestRebuildModel(t *testing.T) {
 		}
 
 		// Build the model.
-		if err := modeler.rebuildModels(ctx); err != nil {
+		if err := modeler.rebuildAbusePreventionModel(ctx, realm); err != nil {
 			t.Fatal(err)
 		}
 
@@ -179,7 +181,7 @@ func TestRebuildModel(t *testing.T) {
 		}
 
 		// Build the model.
-		if err := modeler.rebuildModels(ctx); err != nil {
+		if err := modeler.rebuildAbusePreventionModel(ctx, realm); err != nil {
 			t.Fatal(err)
 		}
 
@@ -214,7 +216,7 @@ func TestRebuildModel(t *testing.T) {
 		}
 
 		// Build the model.
-		if err := modeler.rebuildModels(ctx); err != nil {
+		if err := modeler.rebuildAbusePreventionModel(ctx, realm); err != nil {
 			t.Fatal(err)
 		}
 
@@ -253,7 +255,7 @@ func TestRebuildModel(t *testing.T) {
 		}
 
 		// Build the model.
-		if err := modeler.rebuildModels(ctx); err != nil {
+		if err := modeler.rebuildAbusePreventionModel(ctx, realm); err != nil {
 			t.Fatal(err)
 		}
 
@@ -267,4 +269,153 @@ func TestRebuildModel(t *testing.T) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}
+}
+
+func TestRebuildAnomaliesModel(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	cases := []struct {
+		name  string
+		stats []*database.RealmStat
+		exp   [6]float64 // codes_claimed,mean,stddev,tokens_claimed,mean,stddev
+	}{
+		{
+			name:  "zeros",
+			stats: make([]*database.RealmStat, 16),
+			exp:   [6]float64{0, 0, 0, 0, 0, 0},
+		},
+		{
+			name: "simple_mean_stddev",
+			stats: []*database.RealmStat{
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+			},
+			exp: [6]float64{1, 1, 0, 1, 1, 0},
+		},
+		{
+			name: "growing",
+			stats: []*database.RealmStat{
+				{CodesIssued: 5, CodesClaimed: 4, TokensClaimed: 1},   // current date
+				{CodesIssued: 29, CodesClaimed: 27, TokensClaimed: 1}, // last whole date
+				{CodesIssued: 28, CodesClaimed: 25, TokensClaimed: 1},
+				{CodesIssued: 27, CodesClaimed: 25, TokensClaimed: 1},
+				{CodesIssued: 26, CodesClaimed: 24, TokensClaimed: 1},
+				{CodesIssued: 25, CodesClaimed: 24, TokensClaimed: 1},
+				{CodesIssued: 24, CodesClaimed: 24, TokensClaimed: 1},
+				{CodesIssued: 23, CodesClaimed: 18, TokensClaimed: 1},
+				{CodesIssued: 22, CodesClaimed: 18, TokensClaimed: 1},
+				{CodesIssued: 21, CodesClaimed: 18, TokensClaimed: 1},
+				{CodesIssued: 20, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 19, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 18, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 17, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 16, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 15, CodesClaimed: 15, TokensClaimed: 1},
+			},
+			exp: [6]float64{0.931034, 0.882318, 0.077307, 0.034483, 0.055119, 0.011341},
+		},
+		{
+			name: "declining",
+			stats: []*database.RealmStat{
+				{CodesIssued: 1, CodesClaimed: 0, TokensClaimed: 1}, // current date
+				{CodesIssued: 2, CodesClaimed: 1, TokensClaimed: 1}, // last whole date
+				{CodesIssued: 4, CodesClaimed: 2, TokensClaimed: 1},
+				{CodesIssued: 8, CodesClaimed: 4, TokensClaimed: 1},
+				{CodesIssued: 8, CodesClaimed: 8, TokensClaimed: 1},
+				{CodesIssued: 9, CodesClaimed: 8, TokensClaimed: 1},
+				{CodesIssued: 10, CodesClaimed: 9, TokensClaimed: 1},
+				{CodesIssued: 14, CodesClaimed: 10, TokensClaimed: 1},
+				{CodesIssued: 16, CodesClaimed: 14, TokensClaimed: 1},
+				{CodesIssued: 18, CodesClaimed: 16, TokensClaimed: 1},
+				{CodesIssued: 22, CodesClaimed: 18, TokensClaimed: 1},
+				{CodesIssued: 38, CodesClaimed: 22, TokensClaimed: 1},
+				{CodesIssued: 54, CodesClaimed: 38, TokensClaimed: 1},
+				{CodesIssued: 55, CodesClaimed: 54, TokensClaimed: 1},
+				{CodesIssued: 56, CodesClaimed: 55, TokensClaimed: 1},
+				{CodesIssued: 58, CodesClaimed: 56, TokensClaimed: 1},
+			},
+			exp: [6]float64{0.5, 0.806955, 0.171171, 1.0, 0.109066, 0.124041},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			now := time.Now().UTC()
+
+			c := testModeler(t)
+			// Create the realm.
+			realm, err := c.db.FindRealm(1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Create the stats.
+			for i, v := range tc.stats {
+				if v == nil {
+					v = &database.RealmStat{}
+				}
+				v.RealmID = realm.ID
+				v.Date = timeutils.UTCMidnight(now.Add(time.Duration(-i) * 24 * time.Hour))
+				if err := c.db.RawDB().Create(v).Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			if err := c.rebuildAnomaliesModel(ctx, realm); err != nil {
+				t.Fatal(err)
+			}
+
+			// Lookup the realm again to ensure it has updated values.
+			realm, err = c.db.FindRealm(realm.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := realm.LastCodesClaimedRatio, tc.exp[0]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+			if got, want := realm.CodesClaimedRatioMean, tc.exp[1]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+			if got, want := realm.CodesClaimedRatioStddev, tc.exp[2]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+			if got, want := realm.LastTokensClaimedRatio, tc.exp[3]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+			if got, want := realm.TokensClaimedRatioMean, tc.exp[4]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+			if got, want := realm.TokensClaimedRatioStddev, tc.exp[5]; !floatsEqual(got, want) {
+				t.Errorf("expected %f to be %f", got, want)
+			}
+		})
+	}
+}
+
+func floatsEqual(a, b float64) bool {
+	if diff, tolerance := math.Abs(a-b), 0.0001; diff < tolerance {
+		return true
+	}
+	return false
 }

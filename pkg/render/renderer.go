@@ -339,6 +339,10 @@ func valueIfTruthy(s string) func(i interface{}) htmltemplate.HTMLAttr {
 	}
 }
 
+func toPercent(f float64) float64 {
+	return f * 100.0
+}
+
 func (r *Renderer) templateFuncs() htmltemplate.FuncMap {
 	return map[string]interface{}{
 		"jsIncludeTag":  assetIncludeTag(r.fs, "static/js", jsIncludeTmpl, &jsIncludeTagCache, r.debug),
@@ -353,6 +357,7 @@ func (r *Renderer) templateFuncs() htmltemplate.FuncMap {
 		"toJSON":           json.Marshal,
 		"humanizeTime":     humanizeTime,
 		"toBase64":         base64.StdEncoding.EncodeToString,
+		"toPercent":        toPercent,
 		"safeHTML":         safeHTML,
 		"checkedIf":        valueIfTruthy("checked"),
 		"requiredIf":       valueIfTruthy("required"),
