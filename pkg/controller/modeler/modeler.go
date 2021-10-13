@@ -74,12 +74,6 @@ func (c *Controller) HandleModel() http.Handler {
 			return
 		}
 
-		if err := c.rebuildModels(ctx); err != nil {
-			logger.Errorw("failed to build models", "error", err)
-			c.h.RenderJSON500(w, err)
-			return
-		}
-
 		if merr := c.rebuildModels(ctx); merr != nil {
 			if errs := merr.WrappedErrors(); len(errs) > 0 {
 				logger.Errorw("failed to rebuild models", "errors", errs)
