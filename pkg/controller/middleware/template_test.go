@@ -33,6 +33,7 @@ func TestPopulateTemplateVariables(t *testing.T) {
 
 	cfg := &config.ServerConfig{
 		ServerName:      "namey",
+		ServerEndpoint:  "https://foo.bar",
 		MaintenanceMode: true,
 	}
 	if err := cfg.Process(ctx); err != nil {
@@ -42,7 +43,6 @@ func TestPopulateTemplateVariables(t *testing.T) {
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
-	r.Header.Set("Accept", "application/json")
 
 	w := httptest.NewRecorder()
 
@@ -52,10 +52,13 @@ func TestPopulateTemplateVariables(t *testing.T) {
 		m := controller.TemplateMapFromContext(ctx)
 
 		if got, want := m["server"], cfg.ServerName; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+			t.Errorf("expected %q to be %q", got, want)
+		}
+		if got, want := m["serverEndpoint"], cfg.ServerEndpoint; got != want {
+			t.Errorf("expected %q to be %q", got, want)
 		}
 		if got, want := m["title"], cfg.ServerName; got != want {
-			t.Errorf("Expected %q to be %q", got, want)
+			t.Errorf("expected %q to be %q", got, want)
 		}
 		if _, ok := m["buildID"]; !ok {
 			t.Errorf("expected buildID to be populated in template map")
@@ -67,4 +70,65 @@ func TestPopulateTemplateVariables(t *testing.T) {
 			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})).ServeHTTP(w, r)
+}
+
+func TestServerEndpoint(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+
+	cases := []struct {
+		name  string
+		req   *http.Request
+		given string
+		exp   string
+	}{
+		{
+			name: "default",
+			req:  httptest.NewRequest(http.MethodGet, "/", nil),
+			exp:  "https://example.com",
+		},
+		{
+			name: "localhost",
+			req: func() *http.Request {
+				r := httptest.NewRequest(http.MethodGet, "/", nil)
+				r.Host = "localhost"
+				return r
+			}(),
+			exp: "http://localhost",
+		},
+		{
+			name: "custom_port",
+			req: func() *http.Request {
+				r := httptest.NewRequest(http.MethodGet, "/", nil)
+				r.Host = "localhost:8080"
+				return r
+			}(),
+			exp: "http://localhost:8080",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var cfg config.ServerConfig
+			populateTemplateVariables := middleware.PopulateTemplateVariables(&cfg)
+
+			r := tc.req.Clone(ctx)
+			w := httptest.NewRecorder()
+
+			// Verify the proper fields are added to the template map.
+			populateTemplateVariables(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ctx := r.Context()
+				m := controller.TemplateMapFromContext(ctx)
+
+				if got, want := m["serverEndpoint"], tc.exp; got != want {
+					t.Errorf("expected %q to be %q", got, want)
+				}
+			})).ServeHTTP(w, r)
+		})
+	}
 }

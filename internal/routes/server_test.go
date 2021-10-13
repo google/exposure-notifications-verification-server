@@ -326,6 +326,29 @@ func TestRoutes_statsRoutes(t *testing.T) {
 	}
 }
 
+func TestRoutes_webhooksRoutes(t *testing.T) {
+	t.Parallel()
+
+	m := mux.NewRouter()
+	webhooksRoutes(m, nil)
+
+	cases := []struct {
+		req  *http.Request
+		vars map[string]string
+	}{
+		{
+			req: httptest.NewRequest(http.MethodGet, "/1/twilio", nil),
+		},
+		{
+			req: httptest.NewRequest(http.MethodGet, "/123/twilio", nil),
+		},
+	}
+
+	for _, tc := range cases {
+		testRoute(t, m, tc.req, tc.vars)
+	}
+}
+
 func TestRoutes_realmadminRoutes(t *testing.T) {
 	t.Parallel()
 

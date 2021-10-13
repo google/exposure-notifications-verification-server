@@ -38,6 +38,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/stats"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/user"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/webhooks"
 	"github.com/google/exposure-notifications-verification-server/pkg/cookiestore"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/keyutils"
@@ -300,6 +301,14 @@ func Server(
 		statsRoutes(sub, statsController)
 	}
 
+	// webhooks
+	if cfg.Features.EnableSMSErrorWebhook {
+		sub := sub.PathPrefix("/webhook").Subrouter()
+
+		webhooksController := webhooks.New(cacher, db, h)
+		webhooksRoutes(sub, webhooksController)
+	}
+
 	// realms
 	{
 		sub := sub.PathPrefix("/realm").Subrouter()
@@ -453,11 +462,19 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 	r.Handle("/realm/external-issuers.csv", c.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods(http.MethodGet)
 	r.Handle("/realm/external-issuers.json", c.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
+	r.Handle("/realm/sms-errors.csv", c.HandleRealmSMSErrorStats(stats.TypeCSV)).Methods(http.MethodGet)
+	r.Handle("/realm/sms-errors.json", c.HandleRealmSMSErrorStats(stats.TypeJSON)).Methods(http.MethodGet)
+
 	r.Handle("/realm/key-server.csv", c.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
 	r.Handle("/realm/key-server.json", c.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
 
 	r.Handle("/realm/composite.csv", c.HandleComposite(stats.TypeCSV)).Methods(http.MethodGet)
 	r.Handle("/realm/composite.json", c.HandleComposite(stats.TypeJSON)).Methods(http.MethodGet)
+}
+
+// webhooksRoutes are the webhook routes.
+func webhooksRoutes(r *mux.Router, c *webhooks.Controller) {
+	r.Handle("/{realm_id:[0-9]+}/twilio", c.HandleTwilio()).Headers("X-Twilio-Signature").Methods(http.MethodPost)
 }
 
 // realmadminRoutes are the realm admin routes.

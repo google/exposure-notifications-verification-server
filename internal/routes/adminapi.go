@@ -139,6 +139,9 @@ func AdminAPI(
 		sub.Handle("/realm/external-issuers.csv", statsController.HandleRealmExternalIssuersStats(stats.TypeCSV)).Methods(http.MethodGet)
 		sub.Handle("/realm/external-issuers.json", statsController.HandleRealmExternalIssuersStats(stats.TypeJSON)).Methods(http.MethodGet)
 
+		sub.Handle("/realm/sms-errors.csv", statsController.HandleRealmSMSErrorStats(stats.TypeCSV)).Methods(http.MethodGet)
+		sub.Handle("/realm/sms-errors.json", statsController.HandleRealmSMSErrorStats(stats.TypeJSON)).Methods(http.MethodGet)
+
 		sub.Handle("/realm/key-server.csv", statsController.HandleKeyServerStats(stats.TypeCSV)).Methods(http.MethodGet)
 		sub.Handle("/realm/key-server.json", statsController.HandleKeyServerStats(stats.TypeJSON)).Methods(http.MethodGet)
 	}

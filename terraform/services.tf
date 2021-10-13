@@ -111,7 +111,9 @@ locals {
     HOSTNAME_TO_REGION = join(",", [for o in concat(var.enx_redirect_domain_map, var.enx_redirect_domain_map_add) : format("%s:%s", o.host, o.region)])
   }
 
-  server_config = {}
+  server_config = {
+    "SERVER_ENDPOINT" = local.enable_lb ? "https://${var.server_hosts[0]}" : "" // Note: we can't ask Terraform for this value because otherwise it's a circular reference
+  }
 
   observability_config = {}
 }

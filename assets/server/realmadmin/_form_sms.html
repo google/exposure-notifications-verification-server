@@ -117,6 +117,28 @@
         set this to your most common region.
       </small>
     </div>
+
+    {{if $.features.EnableSMSErrorWebhook}}
+    <div class="col-lg-12 mt-3"> {{/* TODO(sethvargo): move mt-3 to mb-3 above once revealed */}}
+      <div class="form-label-group">
+        <div class="input-group">
+          <input type="text" readonly id="twilio-alerts-webhook-url" class="form-control font-monospace"
+            placeholder="Twilio alerts webhook URL" value="{{$.serverEndpoint}}/webhooks/{{$realm.ID}}/twilio" />
+          <label for="twilio-alerts-webhook-url">Twilio alerts webhook URL</label>
+          {{template "clippy" "twilio-alerts-webhook-url"}}
+        </div>
+        <small class="form-text text-muted">
+          Use this URL as the value for your <a
+          href="https://www.twilio.com/docs/usage/monitor-alert">Twilio alert
+          webhook</a>. Once configured this Exposure Notifications Verification
+          Server will aggregate errors onto the statistics page and statistics
+          API. Additionally, this will allow server operators to be configured
+          if there is a large spike in errors returned from the Twilio API,
+          potentially indicating a misconfiguration or carrier issue.
+        </small>
+      </div>
+    </div>
+    {{end}}
   </div>
 
   <div class="bg-light border rounded p-3 mb-3">

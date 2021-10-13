@@ -26,7 +26,10 @@ import (
 
 const MetricRoot = "en-verification-server"
 
-var RealmTagKey = tag.MustNewKey("realm")
+var (
+	RealmTagKey     = tag.MustNewKey("realm")
+	ErrorCodeTagKey = tag.MustNewKey("error_code")
+)
 
 // CommonTagKeys returns the slice of common tag keys that should used in all
 // views.
@@ -35,6 +38,7 @@ func CommonTagKeys() []tag.Key {
 		enobs.BuildIDTagKey,
 		enobs.BuildTagTagKey,
 		RealmTagKey,
+		ErrorCodeTagKey,
 	}
 }
 
@@ -54,6 +58,20 @@ func WithRealmID(octx context.Context, realmID uint64) context.Context {
 		logger.Errorw("failed to upsert realm on observability context",
 			"error", err,
 			"realm_id", realmIDStr)
+		return octx
+	}
+	return ctx
+}
+
+// WithErrorCode creates a new context with the realm id attached to the
+// observability context.
+func WithErrorCode(octx context.Context, errorCode string) context.Context {
+	ctx, err := tag.New(octx, tag.Upsert(ErrorCodeTagKey, errorCode))
+	if err != nil {
+		logger := logging.FromContext(octx).Named("observability.WithErrorCode")
+		logger.Errorw("failed to upsert error_code on observability context",
+			"error", err,
+			"error_code", errorCode)
 		return octx
 	}
 	return ctx

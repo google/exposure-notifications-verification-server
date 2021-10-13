@@ -1895,6 +1895,65 @@ func (r *Realm) ExternalIssuerStatsCached(ctx context.Context, db *Database, cac
 	return stats, nil
 }
 
+// SMSErrorStats returns the sms error stats for this realm.
+func (r *Realm) SMSErrorStats(db *Database) (SMSErrorStats, error) {
+	stop := timeutils.UTCMidnight(time.Now())
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	// Ensure we have a full list (with values of 0 where appropriate) to ensure
+	// continuity in graphs.
+	sql := `
+		SELECT
+			d.date AS date,
+			$1 AS realm_id,
+			d.error_code AS error_code,
+			COALESCE(s.quantity, 0) AS quantity
+		FROM (
+			SELECT
+				d.date AS date,
+				i.error_code AS error_code
+			FROM generate_series($2, $3, '1 day'::interval) d
+			CROSS JOIN (
+				SELECT DISTINCT(error_code)
+				FROM sms_error_stats
+				WHERE realm_id = $1 AND date >= $2 AND date <= $3
+			) AS i
+		) d
+		LEFT JOIN sms_error_stats s ON s.realm_id = $1 AND s.error_code = d.error_code AND s.date = d.date
+		ORDER BY date DESC, error_code`
+
+	var stats []*SMSErrorStat
+	if err := db.db.Raw(sql, r.ID, start, stop).Scan(&stats).Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+	return stats, nil
+}
+
+// SMSErrorStatsCached is stats, but cached.
+func (r *Realm) SMSErrorStatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (SMSErrorStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats SMSErrorStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:realm:sms_error_stats",
+		Key:       strconv.FormatUint(uint64(r.ID), 10),
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return r.SMSErrorStats(db)
+	}); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 // UserStats returns the stats by user.
 func (r *Realm) UserStats(db *Database) (RealmUserStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
