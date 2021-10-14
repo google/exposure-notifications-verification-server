@@ -328,7 +328,7 @@ func TestRebuildAnomaliesModel(t *testing.T) {
 				{CodesIssued: 16, CodesClaimed: 15, TokensClaimed: 1},
 				{CodesIssued: 15, CodesClaimed: 15, TokensClaimed: 1},
 			},
-			exp: [6]float64{0.931034, 0.882318, 0.077307, 0.034483, 0.055119, 0.011341},
+			exp: [6]float64{0.931034, 0.882318, 0.077307, 0.037037, 0.055119, 0.011341},
 		},
 		{
 			name: "declining",
