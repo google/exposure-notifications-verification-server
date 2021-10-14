@@ -252,6 +252,48 @@ resource "google_monitoring_alert_policy" "ForwardProgress" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "CodesClaimedRatioAnomaly" {
+  project      = var.project
+  display_name = "CodesClaimedRatioAnomaly"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "Codes issued to codes claimed ratio is anomalous"
+
+    condition_threshold {
+      filter = "metric.type = \"${local.custom_prefix}/modeler/codes_claimed_ratio_anomaly\" AND resource.type = \"generic_task\""
+      // modeler runs every 4h, alert on the second failure (to avoid situations
+      // where the UTC day just passed).
+      duration = "${8 * local.hour + 10 * local.minute}s"
+
+      comparison      = "COMPARISON_GT"
+      threshold_value = 1
+
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_DELTA"
+        group_by_fields      = ["resource.labels.realm"]
+        cross_series_reducer = "REDUCE_SUM"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/CodesClaimedRatioAnomaly.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
   project      = var.project
   combiner     = "OR"

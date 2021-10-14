@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
@@ -224,14 +225,14 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 	logger := logging.FromContext(ctx).Named("modeler.rebuildAnamoliesModel").With("id", realm.ID)
 
 	// Fetch the historical statistics.
-	stats, err := realm.Stats(c.db)
+	realmStats, err := realm.Stats(c.db)
 	if err != nil {
 		return fmt.Errorf("failed to fetch stats: %w", err)
 	}
 
 	// This should never happen because realm.Stats returns zero-padded data, but
 	// I prefer verbosity over panics.
-	if len(stats) < 2 {
+	if len(realmStats) < 2 {
 		logger.Warnw("skipping, not enough stats points")
 		return nil
 	}
@@ -239,12 +240,12 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 	// Remove the first entry - that's the most recent date which is likely an
 	// incomplete UTC day. Also remove the second entry, since that's the first
 	// full UTC day and it's what we'll use to compute the "current" ratio.
-	lastCompleteDay, stats := stats[1], stats[2:]
+	lastCompleteDay, realmStats := realmStats[1], realmStats[2:]
 
 	// Get the last 30 days of stats in which codes have been issued, ignoring any
 	// days where zero codes were issued.
 	codesRatios := make([]float64, 0, 30)
-	for _, stat := range stats {
+	for _, stat := range realmStats {
 		// Only capture 30 days worth of data.
 		if len(codesRatios) == 30 {
 			break
@@ -300,6 +301,12 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 	realm.CodesClaimedRatioStddev = codesStddev
 	if err := c.db.SaveRealm(realm, database.System); err != nil {
 		return fmt.Errorf("failed to save model: %w, errors: %q", err, realm.ErrorMessages())
+	}
+
+	// If the new ratio is anomalous, emit a metric.
+	if realm.CodesClaimedRatioAnomalous() {
+		ctx = observability.WithRealmID(ctx, uint64(realm.ID))
+		stats.Record(ctx, mCodesClaimedRatioAnomaly.M(1))
 	}
 
 	return nil
