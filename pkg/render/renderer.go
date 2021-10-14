@@ -339,6 +339,8 @@ func valueIfTruthy(s string) func(i interface{}) htmltemplate.HTMLAttr {
 	}
 }
 
+// toPercent takes the given float, multiplies by 100, and then appends a
+// trailing percent symbol.
 func toPercent(f float64) string {
 	return fmt.Sprintf("%.2f%%", f*100.0)
 }
