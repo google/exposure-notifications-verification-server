@@ -296,6 +296,9 @@ msgstr "ينتهي في"
 msgid "codes.issue.countdown-expired"
 msgstr "منتهية الصلاحية"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "كان معدل المطالبة بالكود الخاص بك أمس %s ، وهو أقل من المعدل التاريخي لـ %s."
+
 
 #
 # bulk-issue codes

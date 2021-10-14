@@ -297,6 +297,9 @@ msgstr "Scade in"
 msgid "codes.issue.countdown-expired"
 msgstr "SCADUTO"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Il tuo tasso di richiesta del codice per ieri era %s, che è inferiore alla tua media storica di %s."
+
 
 #
 # bulk-issue codes

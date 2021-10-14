@@ -297,6 +297,9 @@ msgstr "Kalan süre"
 msgid "codes.issue.countdown-expired"
 msgstr "SÜRESİ DOLDU"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Dün için kod talep oranınız %s idi ve bu, %s olan geçmiş ortalamanızdan daha az."
+
 
 #
 # bulk-issue codes

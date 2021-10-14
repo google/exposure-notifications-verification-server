@@ -297,6 +297,9 @@ msgstr "Expire dans"
 msgid "codes.issue.countdown-expired"
 msgstr "EXPIRÉ"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Votre taux de réclamation de code pour hier était de %s, ce qui est inférieur à votre moyenne historique de %s."
+
 
 #
 # bulk-issue codes

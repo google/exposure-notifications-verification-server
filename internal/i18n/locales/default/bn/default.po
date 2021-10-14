@@ -297,6 +297,9 @@ msgstr "মেয়াদ শেষ"
 msgid "codes.issue.countdown-expired"
 msgstr "মেয়াদোত্তীর্ণ"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "গতকালের জন্য আপনার কোড দাবির হার ছিল %s, যা আপনার %s এর historicalতিহাসিক গড়ের চেয়ে কম।"
+
 
 #
 # bulk-issue codes
