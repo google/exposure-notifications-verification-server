@@ -74,7 +74,7 @@ func TestUser_Lifecycle(t *testing.T) {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 
-		if got.LastRevokeCheck == (time.Time{}) {
+		if got.LastRevokeCheck.IsZero() {
 			t.Errorf("expected LastRevokeCheck set, got %q", got.LastRevokeCheck)
 		}
 	}
@@ -273,7 +273,7 @@ func TestUser_DeleteFromRealm(t *testing.T) {
 			t.Errorf("expected %#v to be %#v", got, want)
 		}
 		// Assert that the user time was updated.
-		if originalTime == got.Model.UpdatedAt {
+		if originalTime.Equal(got.Model.UpdatedAt) {
 			t.Errorf("expected user time to be updated. Got %#v", originalTime.Format(time.RFC3339))
 		}
 	})

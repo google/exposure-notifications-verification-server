@@ -60,13 +60,9 @@
                 <a href="/admin/realms/{{.ID}}/edit">
                   {{.Name}}
                 </a>
-                {{if .CodesClaimedRatioDeviated}}
+                {{if .CodesClaimedRatioAnomalous}}
                   <span class="small bi bi-exclamation-triangle-fill text-warning"
                     data-bs-toggle="tooltip" title="The ratio between codes issued and codes claimed has deviated from the historical norm"></span>
-                {{end}}
-                {{if .CodesClaimedRatioDeviated}}
-                  <span class="small bi bi-exclamation-triangle-fill text-warning"
-                    data-bs-toggle="tooltip" title="The ratio between codes claimed and tokens claimed has deviated from the historical norm"></span>
                 {{end}}
               </td>
               <td class="text-center d-none d-md-table-cell">

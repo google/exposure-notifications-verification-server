@@ -339,8 +339,8 @@ func valueIfTruthy(s string) func(i interface{}) htmltemplate.HTMLAttr {
 	}
 }
 
-func toPercent(f float64) float64 {
-	return f * 100.0
+func toPercent(f float64) string {
+	return fmt.Sprintf("%.2f%%", f*100.0)
 }
 
 func (r *Renderer) templateFuncs() htmltemplate.FuncMap {

@@ -2418,10 +2418,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realms
 						ADD COLUMN IF NOT EXISTS last_codes_claimed_ratio NUMERIC(10,8) NOT NULL DEFAULT 0,
 						ADD COLUMN IF NOT EXISTS codes_claimed_ratio_mean NUMERIC(10,8) NOT NULL DEFAULT 0,
-						ADD COLUMN IF NOT EXISTS codes_claimed_ratio_stddev NUMERIC(10,8) NOT NULL DEFAULT 0,
-						ADD COLUMN IF NOT EXISTS last_tokens_claimed_ratio NUMERIC(10,8) NOT NULL DEFAULT 0,
-						ADD COLUMN IF NOT EXISTS tokens_claimed_ratio_mean NUMERIC(10,8) NOT NULL DEFAULT 0,
-						ADD COLUMN IF NOT EXISTS tokens_claimed_ratio_stddev NUMERIC(10,8) NOT NULL DEFAULT 0`,
+						ADD COLUMN IF NOT EXISTS codes_claimed_ratio_stddev NUMERIC(10,8) NOT NULL DEFAULT 0`,
 				)
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -2429,10 +2426,7 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realms
 						DROP COLUMN IF EXISTS last_codes_claimed_ratio,
 						DROP COLUMN IF EXISTS codes_claimed_ratio_mean,
-						DROP COLUMN IF EXISTS codes_claimed_ratio_stddev,
-						DROP COLUMN IF EXISTS last_tokens_claimed_ratio,
-						DROP COLUMN IF EXISTS tokens_claimed_ratio_mean,
-						DROP COLUMN IF EXISTS tokens_claimed_ratio_stddev`,
+						DROP COLUMN IF EXISTS codes_claimed_ratio_stddev`,
 				)
 			},
 		},

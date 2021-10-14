@@ -102,26 +102,13 @@
 {{if $.features.NotifyAnomalies}}
 {{if $currentMembership}}
   {{$realm := $currentMembership.Realm}}
-  {{if $realm.CodesClaimedRatioDeviated}}
+  {{if $realm.CodesClaimedRatioAnomalous}}
     <div class="container">
       <div class="alert alert-warning" role="alert">
         <div class="d-flex align-items-center">
           <i class="bi bi-exclamation-square-fill me-3"></i>
           <span class="alert-message">
-            {{t $.locale "codes.codes-claimed-ratio-deviated" ($realm.LastCodesClaimedRatio | toPercent) ($realm.CodesClaimedRatioMean | toPercent)}}
-          </span>
-        </div>
-      </div>
-    </div>
-  {{end}}
-
-  {{if $realm.TokensClaimedRatioDeviated}}
-    <div class="container">
-      <div class="alert alert-warning" role="alert">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-exclamation-square-fill me-3"></i>
-          <span class="alert-message">
-            {{t $.locale "codes.tokens-claimed-ratio-deviated" ($realm.LastTokensClaimedRatio | toPercent) ($realm.TokensClaimedRatioMean | toPercent)}}
+            {{t $.locale "codes.codes-claimed-ratio-anomalous" ($realm.LastCodesClaimedRatio | toPercent) ($realm.CodesClaimedRatioMean | toPercent)}}
           </span>
         </div>
       </div>

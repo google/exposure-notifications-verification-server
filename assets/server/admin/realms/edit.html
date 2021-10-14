@@ -234,44 +234,23 @@
             </table>
           </div>
 
-          <div class="d-flex justify-content-between g-3">
-            <div class="bg-light border rounded p-3 me-3">
-              <div class="d-flex justify-content-between">
-                <h5 class="mb-3">Code claim ratios</h5>
-                <em class="small">Dates are in UTC</em>
-              </div>
-              <p>
-                This represents the ratio of <strong>codes issued</strong> to <strong>codes claimed</strong>.
-              </p>
-              <ul>
-                <li>Most recent: <span class="font-monospace">{{printf "%.5f" $realm.LastCodesClaimedRatio}}</span></li>
-                <li>Computed mean: <span class="font-monospace">{{printf "%.5f" $realm.CodesClaimedRatioMean}}</span></li>
-                <li>Standard deviation: <span class="font-monospace">{{printf "%.5f" $realm.CodesClaimedRatioStddev}}</span></li>
-              </ul>
-              <p class="fst-italic m-0">
-                Note: the "most recent" values correspond to the most recent
-                complete UTC date, which is likely one day in the past.
-              </p>
+          <div class="bg-light border rounded p-3 me-3">
+            <div class="d-flex justify-content-between">
+              <h5 class="mb-3">Code claim ratios</h5>
+              <em class="small">Dates are in UTC</em>
             </div>
-
-            <div class="bg-light border rounded p-3">
-              <div class="d-flex justify-content-between">
-                <h5 class="mb-3">Token claim ratios</h5>
-                <em class="small">Dates are in UTC</em>
-              </div>
-              <p>
-                This represents the ratio of <strong>codes claimed</strong> to <strong>tokens claimed</strong>.
-              </p>
-              <ul>
-                <li>Most recent: <span class="font-monospace">{{printf "%.5f" $realm.LastTokensClaimedRatio}}</span></li>
-                <li>Computed mean: <span class="font-monospace">{{printf "%.5f" $realm.TokensClaimedRatioMean}}</span></li>
-                <li>Standard deviation: <span class="font-monospace">{{printf "%.5f" $realm.TokensClaimedRatioStddev}}</span></li>
-              </ul>
-              <p class="fst-italic m-0">
-                Note: the "most recent" values correspond to the most recent
-                complete UTC date, which is likely one day in the past.
-              </p>
-            </div>
+            <p>
+              This represents the ratio of <strong>codes issued</strong> to <strong>codes claimed</strong>.
+            </p>
+            <ul>
+              <li>Most recent: <span class="font-monospace">{{printf "%.5f" $realm.LastCodesClaimedRatio}}</span></li>
+              <li>Computed mean: <span class="font-monospace">{{printf "%.5f" $realm.CodesClaimedRatioMean}}</span></li>
+              <li>Standard deviation: <span class="font-monospace">{{printf "%.5f" $realm.CodesClaimedRatioStddev}}</span></li>
+            </ul>
+            <p class="fst-italic m-0">
+              Note: the "most recent" values correspond to the most recent
+              complete UTC date, which is likely one day in the past.
+            </p>
           </div>
         </div>
 

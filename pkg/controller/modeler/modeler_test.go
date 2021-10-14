@@ -284,73 +284,73 @@ func TestRebuildAnomaliesModel(t *testing.T) {
 		{
 			name:  "zeros",
 			stats: make([]*database.RealmStat, 16),
-			exp:   [6]float64{0, 0, 0, 0, 0, 0},
+			exp:   [6]float64{0, 0, 0},
 		},
 		{
 			name: "simple_mean_stddev",
 			stats: []*database.RealmStat{
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
-				{CodesIssued: 1, CodesClaimed: 1, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 1},
 			},
-			exp: [6]float64{1, 1, 0, 1, 1, 0},
+			exp: [6]float64{1, 1, 0},
 		},
 		{
 			name: "growing",
 			stats: []*database.RealmStat{
-				{CodesIssued: 5, CodesClaimed: 4, TokensClaimed: 1},   // current date
-				{CodesIssued: 29, CodesClaimed: 27, TokensClaimed: 1}, // last whole date
-				{CodesIssued: 28, CodesClaimed: 25, TokensClaimed: 1},
-				{CodesIssued: 27, CodesClaimed: 25, TokensClaimed: 1},
-				{CodesIssued: 26, CodesClaimed: 24, TokensClaimed: 1},
-				{CodesIssued: 25, CodesClaimed: 24, TokensClaimed: 1},
-				{CodesIssued: 24, CodesClaimed: 24, TokensClaimed: 1},
-				{CodesIssued: 23, CodesClaimed: 18, TokensClaimed: 1},
-				{CodesIssued: 22, CodesClaimed: 18, TokensClaimed: 1},
-				{CodesIssued: 21, CodesClaimed: 18, TokensClaimed: 1},
-				{CodesIssued: 20, CodesClaimed: 15, TokensClaimed: 1},
-				{CodesIssued: 19, CodesClaimed: 15, TokensClaimed: 1},
-				{CodesIssued: 18, CodesClaimed: 15, TokensClaimed: 1},
-				{CodesIssued: 17, CodesClaimed: 15, TokensClaimed: 1},
-				{CodesIssued: 16, CodesClaimed: 15, TokensClaimed: 1},
-				{CodesIssued: 15, CodesClaimed: 15, TokensClaimed: 1},
+				{CodesIssued: 5, CodesClaimed: 4},   // current date
+				{CodesIssued: 29, CodesClaimed: 27}, // last whole date
+				{CodesIssued: 28, CodesClaimed: 25},
+				{CodesIssued: 27, CodesClaimed: 25},
+				{CodesIssued: 26, CodesClaimed: 24},
+				{CodesIssued: 25, CodesClaimed: 24},
+				{CodesIssued: 24, CodesClaimed: 24},
+				{CodesIssued: 23, CodesClaimed: 18},
+				{CodesIssued: 22, CodesClaimed: 18},
+				{CodesIssued: 21, CodesClaimed: 18},
+				{CodesIssued: 20, CodesClaimed: 15},
+				{CodesIssued: 19, CodesClaimed: 15},
+				{CodesIssued: 18, CodesClaimed: 15},
+				{CodesIssued: 17, CodesClaimed: 15},
+				{CodesIssued: 16, CodesClaimed: 15},
+				{CodesIssued: 15, CodesClaimed: 15},
 			},
-			exp: [6]float64{0.931034, 0.882318, 0.077307, 0.037037, 0.055119, 0.011341},
+			exp: [6]float64{0.931034, 0.882318, 0.077307},
 		},
 		{
 			name: "declining",
 			stats: []*database.RealmStat{
-				{CodesIssued: 1, CodesClaimed: 0, TokensClaimed: 1}, // current date
-				{CodesIssued: 2, CodesClaimed: 1, TokensClaimed: 1}, // last whole date
-				{CodesIssued: 4, CodesClaimed: 2, TokensClaimed: 1},
-				{CodesIssued: 8, CodesClaimed: 4, TokensClaimed: 1},
-				{CodesIssued: 8, CodesClaimed: 8, TokensClaimed: 1},
-				{CodesIssued: 9, CodesClaimed: 8, TokensClaimed: 1},
-				{CodesIssued: 10, CodesClaimed: 9, TokensClaimed: 1},
-				{CodesIssued: 14, CodesClaimed: 10, TokensClaimed: 1},
-				{CodesIssued: 16, CodesClaimed: 14, TokensClaimed: 1},
-				{CodesIssued: 18, CodesClaimed: 16, TokensClaimed: 1},
-				{CodesIssued: 22, CodesClaimed: 18, TokensClaimed: 1},
-				{CodesIssued: 38, CodesClaimed: 22, TokensClaimed: 1},
-				{CodesIssued: 54, CodesClaimed: 38, TokensClaimed: 1},
-				{CodesIssued: 55, CodesClaimed: 54, TokensClaimed: 1},
-				{CodesIssued: 56, CodesClaimed: 55, TokensClaimed: 1},
-				{CodesIssued: 58, CodesClaimed: 56, TokensClaimed: 1},
+				{CodesIssued: 1, CodesClaimed: 0}, // current date
+				{CodesIssued: 2, CodesClaimed: 1}, // last whole date
+				{CodesIssued: 4, CodesClaimed: 2},
+				{CodesIssued: 8, CodesClaimed: 4},
+				{CodesIssued: 8, CodesClaimed: 8},
+				{CodesIssued: 9, CodesClaimed: 8},
+				{CodesIssued: 10, CodesClaimed: 9},
+				{CodesIssued: 14, CodesClaimed: 10},
+				{CodesIssued: 16, CodesClaimed: 14},
+				{CodesIssued: 18, CodesClaimed: 16},
+				{CodesIssued: 22, CodesClaimed: 18},
+				{CodesIssued: 38, CodesClaimed: 22},
+				{CodesIssued: 54, CodesClaimed: 38},
+				{CodesIssued: 55, CodesClaimed: 54},
+				{CodesIssued: 56, CodesClaimed: 55},
+				{CodesIssued: 58, CodesClaimed: 56},
 			},
-			exp: [6]float64{0.5, 0.806955, 0.171171, 1.0, 0.109066, 0.124041},
+			exp: [6]float64{0.5, 0.806955, 0.171171},
 		},
 	}
 
@@ -398,15 +398,6 @@ func TestRebuildAnomaliesModel(t *testing.T) {
 				t.Errorf("expected %f to be %f", got, want)
 			}
 			if got, want := realm.CodesClaimedRatioStddev, tc.exp[2]; !floatsEqual(got, want) {
-				t.Errorf("expected %f to be %f", got, want)
-			}
-			if got, want := realm.LastTokensClaimedRatio, tc.exp[3]; !floatsEqual(got, want) {
-				t.Errorf("expected %f to be %f", got, want)
-			}
-			if got, want := realm.TokensClaimedRatioMean, tc.exp[4]; !floatsEqual(got, want) {
-				t.Errorf("expected %f to be %f", got, want)
-			}
-			if got, want := realm.TokensClaimedRatioStddev, tc.exp[5]; !floatsEqual(got, want) {
 				t.Errorf("expected %f to be %f", got, want)
 			}
 		})

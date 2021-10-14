@@ -339,12 +339,9 @@ type Realm struct {
 	// deviation here likely indicates some kind of application-level issue.
 	//
 	// These fields are set by the modeler.
-	LastCodesClaimedRatio    float64 `gorm:"column:last_codes_claimed_ratio type:numeric(10,8); not null; default:0.0;"`
-	CodesClaimedRatioMean    float64 `gorm:"column:codes_claimed_ratio_mean type:numeric(10,8); not null; default:0.0;"`
-	CodesClaimedRatioStddev  float64 `gorm:"column:codes_claimed_ratio_stddev type:numeric(10,8); not null; default:0.0;"`
-	LastTokensClaimedRatio   float64 `gorm:"column:last_tokens_claimed_ratio type:numeric(10,8); not null; default:0.0;"`
-	TokensClaimedRatioMean   float64 `gorm:"column:tokens_claimed_ratio_mean type:numeric(10,8); not null; default:0.0;"`
-	TokensClaimedRatioStddev float64 `gorm:"column:tokens_claimed_ratio_stddev type:numeric(10,8); not null; default:0.0;"`
+	LastCodesClaimedRatio   float64 `gorm:"column:last_codes_claimed_ratio type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioMean   float64 `gorm:"column:codes_claimed_ratio_mean type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioStddev float64 `gorm:"column:codes_claimed_ratio_stddev type:numeric(10,8); not null; default:0.0;"`
 
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
@@ -733,19 +730,11 @@ func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 	return r.MFAMode
 }
 
-// CodesClaimedRatioDeviated returns true if the ratio of codes issued to codes
+// CodesClaimedRatioAnomalous returns true if the ratio of codes issued to codes
 // claimed is less than the predicted mean by more than one standard deviation.
-func (r *Realm) CodesClaimedRatioDeviated() bool {
+func (r *Realm) CodesClaimedRatioAnomalous() bool {
 	return r.LastCodesClaimedRatio < r.CodesClaimedRatioMean &&
 		r.CodesClaimedRatioMean-r.LastCodesClaimedRatio > r.CodesClaimedRatioStddev
-}
-
-// TokensClaimedRatioDeviated returns true if the ratio of codes claimed to
-// tokens claimed is less than the predicted mean by more than one standard
-// deviation.
-func (r *Realm) TokensClaimedRatioDeviated() bool {
-	return r.LastTokensClaimedRatio < r.TokensClaimedRatioMean &&
-		r.TokensClaimedRatioMean-r.LastTokensClaimedRatio > r.TokensClaimedRatioStddev
 }
 
 // FindVerificationCodeByUUID find a verification codes by UUID. It returns

@@ -244,7 +244,6 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 	// Get the last 30 days of stats in which codes have been issued, ignoring any
 	// days where zero codes were issued.
 	codesRatios := make([]float64, 0, 30)
-	tokensRatios := make([]float64, 0, 30)
 	for _, stat := range stats {
 		// Only capture 30 days worth of data.
 		if len(codesRatios) == 30 {
@@ -264,18 +263,6 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 			codeRatio = 1.0
 		}
 		codesRatios = append(codesRatios, codeRatio)
-
-		// Compute the collection of daily ratios of tokens claimed to codes claimed
-		// (aka tokens issued). We need an additional guard here because it's
-		// possible that no codes were claimed on this day.
-		var tokenRatio float64
-		if stat.CodesClaimed > 0 {
-			tokenRatio = float64(stat.TokensClaimed) / float64(stat.CodesClaimed)
-		}
-		if tokenRatio > 1.0 {
-			tokenRatio = 1.0
-		}
-		tokensRatios = append(tokensRatios, tokenRatio)
 	}
 
 	// Require a minimum number of data points before building a model.
@@ -284,13 +271,11 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 		return nil
 	}
 
-	// Calculate the means.
+	// Calculate the mean.
 	codesMean := mean(codesRatios)
-	tokensMean := mean(tokensRatios)
 
-	// Calculate the standard deviations.
+	// Calculate the standard deviation.
 	codesStddev := stddev(codesRatios, codesMean)
-	tokensStddev := stddev(tokensRatios, tokensMean)
 
 	// Calculate the means for the the most recent complete day.
 	var lastCodes float64
@@ -305,24 +290,9 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 		lastCodes = 1.0
 	}
 
-	var lastTokens float64
-	if lastCompleteDay.CodesClaimed == 0 {
-		// If no codes were claimed on the most recent day, set the ratio to 1. We
-		// don't want to trigger the alerting if zero codes were claimed.
-		lastTokens = 1.0
-	} else {
-		lastTokens = float64(lastCompleteDay.TokensClaimed) / float64(lastCompleteDay.CodesClaimed)
-	}
-	if lastTokens > 1.0 {
-		lastTokens = 1.0
-	}
-
 	realm.LastCodesClaimedRatio = lastCodes
 	realm.CodesClaimedRatioMean = codesMean
 	realm.CodesClaimedRatioStddev = codesStddev
-	realm.LastTokensClaimedRatio = lastTokens
-	realm.TokensClaimedRatioMean = tokensMean
-	realm.TokensClaimedRatioStddev = tokensStddev
 	if err := c.db.SaveRealm(realm, database.System); err != nil {
 		return fmt.Errorf("failed to save model: %w, errors: %q", err, realm.ErrorMessages())
 	}
