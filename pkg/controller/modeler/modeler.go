@@ -259,6 +259,11 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 
 		// Compute the collection of daily ratios of codes claimed vs codes issued.
 		codeRatio := float64(stat.CodesClaimed) / float64(stat.CodesIssued)
+
+		// Cap the ratio at 1.0. This can happen because statistics are UTC-bound,
+		// and verification codes are valid for 24h. It's possible that a code
+		// issued in UTC day 1 isn't claimed until UTC day 2, but that's still
+		// within 24h.
 		if codeRatio > 1.0 {
 			codeRatio = 1.0
 		}
