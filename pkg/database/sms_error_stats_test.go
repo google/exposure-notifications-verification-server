@@ -113,10 +113,16 @@ func TestDatabase_PurgeSMSErrorStats(t *testing.T) {
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
 
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for i := 1; i < 10; i++ {
 		ts := timeutils.UTCMidnight(time.Now().UTC()).Add(-24 * time.Hour * time.Duration(i))
 		if err := db.RawDB().Create(&SMSErrorStat{
-			Date: ts,
+			Date:    ts,
+			RealmID: realm.ID,
 		}).Error; err != nil {
 			t.Fatal(err)
 		}
