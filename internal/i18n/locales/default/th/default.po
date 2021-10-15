@@ -297,6 +297,9 @@ msgstr "หมดอายุใน"
 msgid "codes.issue.countdown-expired"
 msgstr "หมดอายุ"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "อัตราการอ้างสิทธิ์รหัสของคุณสำหรับเมื่อวานคือ %s ซึ่งน้อยกว่าค่าเฉลี่ยในอดีตของคุณที่ %s"
+
 
 #
 # bulk-issue codes

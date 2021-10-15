@@ -26,6 +26,8 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
@@ -74,12 +76,30 @@ func (c *Controller) HandleModel() http.Handler {
 			return
 		}
 
-		if merr := c.rebuildModels(ctx); merr != nil {
-			if errs := merr.WrappedErrors(); len(errs) > 0 {
-				logger.Errorw("failed to rebuild models", "errors", errs)
-				c.h.RenderJSON(w, http.StatusInternalServerError, errs)
-				return
+		// Get all realms.
+		realms, _, err := c.db.ListRealms(pagination.UnlimitedResults)
+		if err != nil {
+			logger.Errorw("failed to list realms", "error", err)
+			c.h.RenderJSON(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Build models for each realm
+		var merr *multierror.Error
+		for _, realm := range realms {
+			if err := c.rebuildAbusePreventionModel(ctx, realm); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to rebuild abuse prevention model for realm %d: %w", realm.ID, err))
 			}
+
+			if err := c.rebuildAnomaliesModel(ctx, realm); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to rebuild anomaly model for realm %d: %w", realm.ID, err))
+			}
+		}
+
+		if errs := merr.WrappedErrors(); len(errs) > 0 {
+			logger.Errorw("failed to rebuild models", "errors", errs)
+			c.h.RenderJSON(w, http.StatusInternalServerError, errs)
+			return
 		}
 
 		stats.Record(ctx, mSuccess.M(1))
@@ -87,40 +107,13 @@ func (c *Controller) HandleModel() http.Handler {
 	})
 }
 
-// rebuildModels iterates over all models with abuse prevention enabled,
-// calculates the new limits, and updates the new limits.
-func (c *Controller) rebuildModels(ctx context.Context) *multierror.Error {
-	logger := logging.FromContext(ctx).Named("modeler.rebuildModels")
+// rebuildAbusePreventionModel builds the abuse prevention model for the realm.
+func (c *Controller) rebuildAbusePreventionModel(ctx context.Context, realm *database.Realm) error {
+	logger := logging.FromContext(ctx).Named("modeler.rebuildAbusePreventionModel").With("id", realm.ID)
 
-	var merr *multierror.Error
-
-	// Get all realm IDs in a single operation so we can iterate realm-by-realm to
-	// avoid a full table lock during stats calculation.
-	ids, err := c.db.AbusePreventionEnabledRealmIDs()
-	if err != nil {
-		merr = multierror.Append(merr, fmt.Errorf("failed to fetch ids: %w", err))
-		return merr
-	}
-	logger.Debugw("building models", "count", len(ids))
-
-	// Process all models.
-	for _, id := range ids {
-		if err := c.rebuildModel(ctx, id); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to update realm %d: %w", id, err))
-		}
-	}
-
-	return merr
-}
-
-// rebuildModel rebuilds and updates the model for a single model.
-func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
-	logger := logging.FromContext(ctx).Named("modeler.rebuildModel").With("id", id)
-
-	// Lookup the realm.
-	realm, err := c.db.FindRealm(id)
-	if err != nil {
-		return fmt.Errorf("failed to find realm: %w", err)
+	// Skip if abuse prevention is not enabled on this realm.
+	if !realm.AbusePreventionEnabled {
+		return nil
 	}
 
 	// Get 21 days of historical data for the realm.
@@ -225,6 +218,116 @@ func (c *Controller) rebuildModel(ctx context.Context, id uint64) error {
 	}
 
 	return nil
+}
+
+// rebuildAnomaliesModel rebuilds the anomaly detection models.
+func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.Realm) error {
+	logger := logging.FromContext(ctx).Named("modeler.rebuildAnamoliesModel").With("id", realm.ID)
+
+	// Fetch the historical statistics.
+	realmStats, err := realm.Stats(c.db)
+	if err != nil {
+		return fmt.Errorf("failed to fetch stats: %w", err)
+	}
+
+	// This should never happen because realm.Stats returns zero-padded data, but
+	// I prefer verbosity over panics.
+	if len(realmStats) < 2 {
+		logger.Warnw("skipping, not enough stats points")
+		return nil
+	}
+
+	// Remove the first entry - that's the most recent date which is likely an
+	// incomplete UTC day. Also remove the second entry, since that's the first
+	// full UTC day and it's what we'll use to compute the "current" ratio.
+	lastCompleteDay, realmStats := realmStats[1], realmStats[2:]
+
+	// Get the last 30 days of stats in which codes have been issued, ignoring any
+	// days where zero codes were issued.
+	codesRatios := make([]float64, 0, 30)
+	for _, stat := range realmStats {
+		// Only capture 30 days worth of data.
+		if len(codesRatios) == 30 {
+			break
+		}
+
+		// Only include days where codes were issued. This discards weekends or
+		// holidays in which no codes were issued from the model as they are almost
+		// always anomalies.
+		if stat.CodesIssued == 0 {
+			continue
+		}
+
+		// Compute the collection of daily ratios of codes claimed vs codes issued.
+		codeRatio := float64(stat.CodesClaimed) / float64(stat.CodesIssued)
+
+		// Cap the ratio at 1.0. This can happen because statistics are UTC-bound,
+		// and verification codes are valid for 24h. It's possible that a code
+		// issued in UTC day 1 isn't claimed until UTC day 2, but that's still
+		// within 24h.
+		if codeRatio > 1.0 {
+			codeRatio = 1.0
+		}
+		codesRatios = append(codesRatios, codeRatio)
+	}
+
+	// Require a minimum number of data points before building a model.
+	if got, want := len(codesRatios), 14; got < want {
+		logger.Warnw("skipping, not enough data", "points", got)
+		return nil
+	}
+
+	// Calculate the mean.
+	codesMean := mean(codesRatios)
+
+	// Calculate the standard deviation.
+	codesStddev := stddev(codesRatios, codesMean)
+
+	// Calculate the means for the the most recent complete day.
+	var lastCodes float64
+	if lastCompleteDay.CodesIssued == 0 {
+		// If no codes were issued on the most recent day, set the ratio to 1. We
+		// don't want to trigger the alerting if zero codes were issued.
+		lastCodes = 1.0
+	} else {
+		lastCodes = float64(lastCompleteDay.CodesClaimed) / float64(lastCompleteDay.CodesIssued)
+	}
+	if lastCodes > 1.0 {
+		lastCodes = 1.0
+	}
+
+	realm.LastCodesClaimedRatio = lastCodes
+	realm.CodesClaimedRatioMean = codesMean
+	realm.CodesClaimedRatioStddev = codesStddev
+	if err := c.db.SaveRealm(realm, database.System); err != nil {
+		return fmt.Errorf("failed to save model: %w, errors: %q", err, realm.ErrorMessages())
+	}
+
+	// If the new ratio is anomalous, emit a metric.
+	if realm.CodesClaimedRatioAnomalous() {
+		ctx = observability.WithRealmID(ctx, uint64(realm.ID))
+		stats.Record(ctx, mCodesClaimedRatioAnomaly.M(1))
+	}
+
+	return nil
+}
+
+// mean computes the mean of the slice.
+func mean(in []float64) float64 {
+	var sum float64
+	for _, v := range in {
+		sum += v
+	}
+	return sum / float64(len(in))
+}
+
+// stddev calculates the population standard deviation for the slice.
+func stddev(in []float64, m float64) float64 {
+	var sd float64
+	for _, v := range in {
+		sd += (v - m) * (v - m)
+	}
+	return math.Sqrt(sd / float64(len(in)))
 }
 
 // vandermonde creates a Vandermonde projection (matrix) of the given degree.

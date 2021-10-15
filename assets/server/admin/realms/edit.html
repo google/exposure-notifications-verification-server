@@ -203,7 +203,7 @@
             </div>
           {{end}}
 
-          <div class="bg-light border rounded p-3">
+          <div class="bg-light border rounded p-3 mb-3">
             <div class="d-flex justify-content-between">
               <h5 class="mb-3">Chaff usage</h5>
               <em class="small">Dates are in UTC</em>
@@ -232,6 +232,25 @@
                 </tr>
               </thead>
             </table>
+          </div>
+
+          <div class="bg-light border rounded p-3 mb-3">
+            <div class="d-flex justify-content-between">
+              <h5 class="mb-3">Code claim ratios</h5>
+              <em class="small">Dates are in UTC</em>
+            </div>
+            <p>
+              This represents the ratio of <strong>codes issued</strong> to <strong>codes claimed</strong>.
+            </p>
+            <ul>
+              <li>Most recent: <span class="font-monospace">{{$realm.LastCodesClaimedRatio | toPercent}}</span></li>
+              <li>Computed mean: <span class="font-monospace">{{$realm.CodesClaimedRatioMean | toPercent}}</span></li>
+              <li>Standard deviation: <span class="font-monospace">{{printf "%.5f" $realm.CodesClaimedRatioStddev}}</span></li>
+            </ul>
+            <p class="fst-italic m-0">
+              Note: the "most recent" values correspond to the most recent
+              complete UTC date, which is usually one day in the past.
+            </p>
           </div>
         </div>
 

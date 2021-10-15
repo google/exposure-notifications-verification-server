@@ -2411,6 +2411,25 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00113-AddRealmPreferredRatios",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						ADD COLUMN IF NOT EXISTS last_codes_claimed_ratio NUMERIC(10,8) NOT NULL DEFAULT 0,
+						ADD COLUMN IF NOT EXISTS codes_claimed_ratio_mean NUMERIC(10,8) NOT NULL DEFAULT 0,
+						ADD COLUMN IF NOT EXISTS codes_claimed_ratio_stddev NUMERIC(10,8) NOT NULL DEFAULT 0`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms
+						DROP COLUMN IF EXISTS last_codes_claimed_ratio,
+						DROP COLUMN IF EXISTS codes_claimed_ratio_mean,
+						DROP COLUMN IF EXISTS codes_claimed_ratio_stddev`,
+				)
+			},
+		},
 	}
 }
 

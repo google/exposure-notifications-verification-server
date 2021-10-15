@@ -329,6 +329,20 @@ type Realm struct {
 	// before triggering abuse protections.
 	AbusePreventionLimitFactor float32 `gorm:"type:numeric(6, 3); not null; default:1.0;"`
 
+	// LastCodesClaimedRatio is the percentage of codes claimed (out of all codes
+	// issued) for the most recent completely full UTC day. CodesClaimedRatioMean and
+	// CodesClaimedRatioStddev represent the mean and standard deviation for the
+	// previous N days of statistics (see modeler for exact numbers).
+	//
+	// The *Tokens fields are identical, except the represent the ratio between
+	// codes claimed and tokens claimed (aka app-side redemption). A high
+	// deviation here likely indicates some kind of application-level issue.
+	//
+	// These fields are set by the modeler.
+	LastCodesClaimedRatio   float64 `gorm:"column:last_codes_claimed_ratio type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioMean   float64 `gorm:"column:codes_claimed_ratio_mean type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioStddev float64 `gorm:"column:codes_claimed_ratio_stddev type:numeric(10,8); not null; default:0.0;"`
+
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
@@ -716,6 +730,13 @@ func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 	return r.MFAMode
 }
 
+// CodesClaimedRatioAnomalous returns true if the ratio of codes issued to codes
+// claimed is less than the predicted mean by more than one standard deviation.
+func (r *Realm) CodesClaimedRatioAnomalous() bool {
+	return r.LastCodesClaimedRatio < r.CodesClaimedRatioMean &&
+		r.CodesClaimedRatioMean-r.LastCodesClaimedRatio > r.CodesClaimedRatioStddev
+}
+
 // FindVerificationCodeByUUID find a verification codes by UUID. It returns
 // NotFound if the UUID is invalid.
 func (r *Realm) FindVerificationCodeByUUID(db *Database, uuidStr string) (*VerificationCode, error) {
@@ -912,20 +933,6 @@ func (r *Realm) AbusePreventionEffectiveLimit() uint {
 	// database.
 	factor := math.Floor(float64(r.AbusePreventionLimitFactor)*100) / 100
 	return uint(math.Ceil(float64(r.AbusePreventionLimit) * factor))
-}
-
-// AbusePreventionEnabledRealmIDs returns the list of realm IDs that have abuse
-// prevention enabled.
-func (db *Database) AbusePreventionEnabledRealmIDs() ([]uint64, error) {
-	var ids []uint64
-	if err := db.db.
-		Model(&Realm{}).
-		Where("abuse_prevention_enabled IS true").
-		Pluck("id", &ids).
-		Error; err != nil {
-		return nil, err
-	}
-	return ids, nil
 }
 
 // CurrentSigningKey returns the currently active certificate signing key, the one marked

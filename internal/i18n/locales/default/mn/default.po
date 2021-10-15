@@ -297,6 +297,9 @@ msgstr "Дуусах хугацаа"
 msgid "codes.issue.countdown-expired"
 msgstr "Хугацаа дууссан"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Таны өчигдрийн кодын нэхэмжлэлийн хувь %s байсан бөгөөд энэ нь таны түүхэн дунджаас %s -с бага байна."
+
 
 #
 # bulk-issue codes

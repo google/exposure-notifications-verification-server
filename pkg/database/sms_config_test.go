@@ -102,7 +102,7 @@ func TestSMSConfig_Validate(t *testing.T) {
 					t.Error(err)
 				}
 			} else if err == nil || !strings.Contains(err.Error(), tc.err) {
-				t.Errorf("expected error. got %w, want %s", err, tc.err)
+				t.Errorf("expected error. got %s, want %s", err, tc.err)
 			}
 		})
 	}

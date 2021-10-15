@@ -297,6 +297,9 @@ msgstr "有効期限"
 msgid "codes.issue.countdown-expired"
 msgstr "期限切れ"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "昨日のコードクレーム率は%sでした。これは、過去の平均である%sよりも低くなっています."
+
 
 #
 # bulk-issue codes

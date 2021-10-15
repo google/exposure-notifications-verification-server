@@ -374,10 +374,12 @@
 
         let $ageTicks = $("#issue_age_ticks");
         $ageTicks.empty();
-        for (i = 0; i < data.statistics.length; i++) {
-          let $opt = $('<option/>');
-          $opt.val(i);
-          $ageTicks.append($opt);
+        if (data.statistics) {
+          for (i = 0; i < data.statistics.length; i++) {
+            let $opt = $('<option/>');
+            $opt.val(i);
+            $ageTicks.append($opt);
+          }
         }
 
 

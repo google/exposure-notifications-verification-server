@@ -297,6 +297,9 @@ msgstr "Kadaluarsa dalam"
 msgid "codes.issue.countdown-expired"
 msgstr "KEDALUWARSA"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Tingkat klaim kode Anda untuk kemarin adalah %s, yang kurang dari rata-rata historis Anda sebesar %s."
+
 
 #
 # bulk-issue codes

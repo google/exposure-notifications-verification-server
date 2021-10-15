@@ -24,7 +24,11 @@ import (
 
 const metricPrefix = observability.MetricRoot + "/modeler"
 
-var mSuccess = stats.Int64(metricPrefix+"/success", "successful execution", stats.UnitDimensionless)
+var (
+	mSuccess = stats.Int64(metricPrefix+"/success", "successful execution", stats.UnitDimensionless)
+
+	mCodesClaimedRatioAnomaly = stats.Int64(metricPrefix+"/codes_claimed_ratio_anomaly", "an anomaly occurred with the ratio of codes issued to codes claimed", stats.UnitDimensionless)
+)
 
 func init() {
 	enobs.CollectViews([]*view.View{
@@ -33,6 +37,13 @@ func init() {
 			Description: "Number of successes",
 			TagKeys:     observability.CommonTagKeys(),
 			Measure:     mSuccess,
+			Aggregation: view.Count(),
+		},
+		{
+			Name:        metricPrefix + "/codes_claimed_ratio_anomaly",
+			Description: "Number of times an anomaly occurred with the ratio of codes issued to codes claimed",
+			TagKeys:     observability.CommonTagKeys(),
+			Measure:     mCodesClaimedRatioAnomaly,
 			Aggregation: view.Count(),
 		},
 	}...)

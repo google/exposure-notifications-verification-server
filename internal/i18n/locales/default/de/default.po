@@ -296,6 +296,9 @@ msgstr "Verfällt in"
 msgid "codes.issue.countdown-expired"
 msgstr "Verfallen"
 
+msgid "codes.codes-claimed-ratio-anomalous"
+msgstr "Ihre Code-Anspruchsrate für gestern betrug %s und liegt damit unter Ihrem historischen Durchschnitt von %s."
+
 
 #
 # bulk-issue codes
