@@ -1,0 +1,56 @@
+{{define "realmadmin/_stats_sms_errors"}}
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <i class="bi bi-graph-up me-2"></i>
+    SMS errors by day
+  </div>
+  <div id="sms_errors_dashboard">
+    <div id="sms_errors_chart" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div class="chart-filter" class="text-end" style="height: 75px;"></div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-bs-toggle="modal" data-bs-target="#sms-errors-chart-modal">Learn more about this chart</a>
+    <span>
+      <span class="me-1">Export as:</span>
+      <a href="/stats/realm/sms-errors.csv" class="me-1">CSV</a>
+      <a href="/stats/realm/sms-errors.json" target="_blank">JSON</a>
+    </span>
+  </small>
+</div>
+
+<div class="modal fade" id="sms-errors-chart-modal" data-backdrop="static" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">SMS errors by day</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This chart hows the number of SMS errors reported by the upstream
+          provider by day, grouped by error code.
+        </p>
+
+        <p>
+          A small number of errors is to be expected due to the unreliability of
+          cellular networks. The most common error is <strong>handset
+          unreachable</strong>, which happens when the handset is not capable of
+          receiving SMS messages (such as a landline).
+        </p>
+
+        <p>
+          A large number of errors (or a sudden increase in the number of
+          errors) could indicate a problem with your SMS configuration. You may
+          also be subject to carrier filtering. If you manage your own SMS
+          account, you should contact the provider immediately. If you use the
+          system-supplied SMS account, contact your server operator.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{end}}

@@ -46,6 +46,10 @@
     {{if .hasKeyServerStats}}
       {{template "realmadmin/_stats_keyserver" .}}
     {{end}}
+
+    {{if $.features.EnableSMSErrorWebhook}}
+      {{template "realmadmin/_stats_sms_errors" .}}
+    {{end}}
   </main>
 
   <script type="text/javascript">
