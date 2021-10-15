@@ -474,7 +474,7 @@ func statsRoutes(r *mux.Router, c *stats.Controller) {
 
 // webhooksRoutes are the webhook routes.
 func webhooksRoutes(r *mux.Router, c *webhooks.Controller) {
-	r.Handle("/{realm_id:[0-9]+}/twilio", c.HandleTwilio()).Headers("X-Twilio-Signature").Methods(http.MethodPost)
+	r.Handle("/{realm_id:[0-9]+}/twilio", c.HandleTwilio()).Methods(http.MethodPost)
 }
 
 // realmadminRoutes are the realm admin routes.
