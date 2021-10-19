@@ -339,9 +339,9 @@ type Realm struct {
 	// deviation here likely indicates some kind of application-level issue.
 	//
 	// These fields are set by the modeler.
-	LastCodesClaimedRatio   float64 `gorm:"column:last_codes_claimed_ratio type:numeric(10,8); not null; default:0.0;"`
-	CodesClaimedRatioMean   float64 `gorm:"column:codes_claimed_ratio_mean type:numeric(10,8); not null; default:0.0;"`
-	CodesClaimedRatioStddev float64 `gorm:"column:codes_claimed_ratio_stddev type:numeric(10,8); not null; default:0.0;"`
+	LastCodesClaimedRatio   float64 `gorm:"column:last_codes_claimed_ratio; type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioMean   float64 `gorm:"column:codes_claimed_ratio_mean; type:numeric(10,8); not null; default:0.0;"`
+	CodesClaimedRatioStddev float64 `gorm:"column:codes_claimed_ratio_stddev; type:numeric(10,8); not null; default:0.0;"`
 
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
