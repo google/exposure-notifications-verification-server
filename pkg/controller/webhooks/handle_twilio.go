@@ -115,7 +115,7 @@ func (c *Controller) HandleTwilio() http.Handler {
 		// Twilio uses the auth token as the HMAC key.
 		smsConfig, err := realm.SMSConfig(c.db)
 		if err != nil {
-			logger.Warnw("failed to lookup realm's sms config", "error", err)
+			logger.Warnw("failed to lookup realm sms config", "error", err)
 
 			if database.IsNotFound(err) {
 				controller.BadRequest(w, r, c.h)
@@ -136,7 +136,7 @@ func (c *Controller) HandleTwilio() http.Handler {
 		}
 
 		// Calculate the expected signature.
-		expSignature, err := computeSignature(r, smsConfig.TwilioAuthToken)
+		expSignature, err := ComputeSignature(r, smsConfig.TwilioAuthToken)
 		if err != nil {
 			logger.Errorw("failed to compute twilio signature", "error", err)
 			controller.InternalError(w, r, c.h, err)
@@ -167,10 +167,10 @@ func (c *Controller) HandleTwilio() http.Handler {
 	})
 }
 
-// computeSignature builds the expected webhook signature from a Twilio request
+// ComputeSignature builds the expected webhook signature from a Twilio request
 // as described in
 // https://www.twilio.com/docs/usage/security#validating-requests.
-func computeSignature(r *http.Request, authToken string) (string, error) {
+func ComputeSignature(r *http.Request, authToken string) (string, error) {
 	if r.Method != http.MethodPost {
 		return "", fmt.Errorf("request is not POST")
 	}
