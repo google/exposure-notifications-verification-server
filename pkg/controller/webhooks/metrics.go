@@ -29,7 +29,7 @@ var mTwilioErrors = stats.Int64(metricPrefix+"/twilio_errors", "The number of Tw
 func init() {
 	enobs.CollectViews([]*view.View{
 		{
-			Name:        metricPrefix + "/twilio_errors_count",
+			Name:        metricPrefix + "/twilio_errors",
 			Measure:     mTwilioErrors,
 			Description: "The count of Twilio errors, tagged by realm and error_code.",
 			TagKeys:     observability.CommonTagKeys(),

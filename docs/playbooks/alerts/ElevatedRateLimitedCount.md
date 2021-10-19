@@ -1,4 +1,4 @@
-# Elevated Rate Limited Count  Alert
+# Elevated Rate Limited Count Alert
 
 This alert fires when the condition of at least one request per second has been rate limited for a sustained period of more than 5 minutes. If you are paged for this alert the first goal is to make sure the system isn’t under attack.
 
