@@ -29,7 +29,7 @@ require (
 	github.com/kelseyhightower/run v0.0.17
 	github.com/leonelquinteros/gotext v1.5.0
 	github.com/lib/pq v1.10.3
-	github.com/microcosm-cc/bluemonday v1.0.15
+	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/mikehelmick/go-chaff v0.5.0
 	github.com/nyaruka/phonenumbers v1.0.72
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
@@ -45,7 +45,7 @@ require (
 	github.com/unrolled/secure v1.0.9
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.19.1
-	golang.org/x/net v0.0.0-20211007125505-59d4e928ea9d
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.5
