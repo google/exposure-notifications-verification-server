@@ -97,9 +97,40 @@ func Server(
 
 	sub := r.PathPrefix("").Subrouter()
 
+	// Create the renderer
+	h, err := render.New(ctx, assets.ServerFS(), cfg.DevMode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create renderer: %w", err)
+	}
+
+	// Include the current URI
+	currentPath := middleware.InjectCurrentPath()
+	sub.Use(currentPath)
+
+	// Request ID injection
+	populateRequestID := middleware.PopulateRequestID(h)
+	sub.Use(populateRequestID)
+
+	// Logger injection
+	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
+	sub.Use(populateLogger)
+
+	// Recovery injection
+	recovery := middleware.Recovery(h)
+	sub.Use(recovery)
+
 	// Common observability context
 	ctx, obs := middleware.WithObservability(ctx)
 	sub.Use(obs)
+
+	// Mount and register webhooks now. We don't need locales or template parsing
+	// for webhooks, so this minimizes the middleware stack.
+	if cfg.Features.EnableSMSErrorWebhook {
+		sub := sub.PathPrefix("/webhook").Subrouter()
+
+		webhooksController := webhooks.New(cacher, db, h)
+		webhooksRoutes(sub, webhooksController)
+	}
 
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
@@ -115,24 +146,6 @@ func Server(
 	// Process localization parameters.
 	processLocale := middleware.ProcessLocale(locales)
 	sub.Use(processLocale)
-
-	// Create the renderer
-	h, err := render.New(ctx, assets.ServerFS(), cfg.DevMode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create renderer: %w", err)
-	}
-
-	// Request ID injection
-	populateRequestID := middleware.PopulateRequestID(h)
-	sub.Use(populateRequestID)
-
-	// Logger injection
-	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
-	sub.Use(populateLogger)
-
-	// Recovery injection
-	recovery := middleware.Recovery(h)
-	sub.Use(recovery)
 
 	httplimiter, err := limitware.NewMiddleware(ctx, limiterStore,
 		limitware.UserIDKeyFunc(ctx, "server:ratelimit:", cfg.RateLimit.HMACKey),
@@ -151,10 +164,6 @@ func Server(
 	// Sessions
 	requireSession := middleware.RequireSession(sessions, h)
 	sub.Use(requireSession)
-
-	// Include the current URI
-	currentPath := middleware.InjectCurrentPath()
-	sub.Use(currentPath)
 
 	// Install the CSRF protection middleware.
 	handleCSRF := middleware.HandleCSRF(h)
@@ -299,14 +308,6 @@ func Server(
 
 		statsController := stats.New(cacher, db, h)
 		statsRoutes(sub, statsController)
-	}
-
-	// webhooks
-	if cfg.Features.EnableSMSErrorWebhook {
-		sub := sub.PathPrefix("/webhook").Subrouter()
-
-		webhooksController := webhooks.New(cacher, db, h)
-		webhooksRoutes(sub, webhooksController)
 	}
 
 	// realms

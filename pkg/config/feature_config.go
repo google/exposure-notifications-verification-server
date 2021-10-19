@@ -20,7 +20,7 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 // for server operators to control their release.
 type FeatureConfig struct {
 	// NotifyAnomalies enables anomaly notification for realm admins.
-	// TOOD(sethvargo): default to true and remove in 1.0.4+.
+	// TODO(sethvargo): default to true and remove in 1.0.4+.
 	NotifyAnomalies bool `env:"NOTIFY_ANOMALIES, default=true"`
 
 	// EnableSMSErrorWebhook enables the configuration for Twilio webhooks.
