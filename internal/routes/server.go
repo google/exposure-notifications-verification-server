@@ -123,15 +123,6 @@ func Server(
 	ctx, obs := middleware.WithObservability(ctx)
 	sub.Use(obs)
 
-	// Mount and register webhooks now. We don't need locales or template parsing
-	// for webhooks, so this minimizes the middleware stack.
-	if cfg.Features.EnableSMSErrorWebhook {
-		sub := sub.PathPrefix("/webhook").Subrouter()
-
-		webhooksController := webhooks.New(cacher, db, h)
-		webhooksRoutes(sub, webhooksController)
-	}
-
 	// Inject template middleware - this needs to be first because other
 	// middlewares may add data to the template map.
 	populateTemplateVariables := middleware.PopulateTemplateVariables(cfg)
@@ -180,8 +171,15 @@ func Server(
 	processFirewall := middleware.ProcessFirewall(h, "server")
 	rateLimit := httplimiter.Handle
 
+	// health
 	{
-		sub := sub.PathPrefix("").Subrouter()
+		// We don't need locales or template parsing, minimize middleware stack by
+		// forking from r instead of sub.
+		sub := r.PathPrefix("").Subrouter()
+		sub.Use(populateRequestID)
+		sub.Use(populateLogger)
+		sub.Use(recovery)
+		sub.Use(obs)
 		sub.Handle("/health", controller.HandleHealthz(db, h, cfg.IsMaintenanceMode())).Methods(http.MethodGet)
 	}
 
@@ -336,6 +334,20 @@ func Server(
 		realmSMSkeysRoutes(sub, realmSMSKeysController)
 	}
 
+	// webhooks
+	if cfg.Features.EnableSMSErrorWebhook {
+		// We don't need locales or template parsing, minimize middleware stack by
+		// forking from r instead of sub.
+		sub := r.PathPrefix("/webhooks").Subrouter()
+		sub.Use(populateRequestID)
+		sub.Use(populateLogger)
+		sub.Use(recovery)
+		sub.Use(obs)
+
+		webhooksController := webhooks.New(cacher, db, h)
+		webhooksRoutes(sub, webhooksController)
+	}
+
 	// JWKs
 	{
 		sub := sub.PathPrefix("/jwks").Subrouter()
@@ -361,7 +373,7 @@ func Server(
 	}
 
 	// Blanket handle any missing routes.
-	sub.NotFoundHandler = populateTemplateVariables(processLocale(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.NotFoundHandler = populateTemplateVariables(processLocale(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		controller.NotFound(w, r, h)
 		return
 	})))
