@@ -294,6 +294,46 @@ resource "google_monitoring_alert_policy" "CodesClaimedRatioAnomaly" {
   ]
 }
 
+resource "google_monitoring_alert_policy" "ElevatedSMSErrors" {
+  project      = var.project
+  display_name = "ElevatedSMSErrors"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "Elevated SMS errors"
+
+    condition_threshold {
+      filter   = "metric.type = \"${local.custom_prefix}/modeler/twilio_errors\" AND resource.type = \"generic_task\""
+      duration = "${5 * local.minute}s"
+
+      comparison      = "COMPARISON_GT"
+      threshold_value = 50
+
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_DELTA"
+        group_by_fields      = ["resource.labels.realm"]
+        cross_series_reducer = "REDUCE_SUM"
+      }
+
+      trigger {
+        count = 1
+      }
+    }
+  }
+
+  documentation {
+    content   = "${local.playbook_prefix}/ElevatedSMSErrors.md"
+    mime_type = "text/markdown"
+  }
+
+  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
+
+  depends_on = [
+    null_resource.manual-step-to-enable-workspace,
+  ]
+}
+
 resource "google_monitoring_alert_policy" "UpstreamUserRecreates" {
   project      = var.project
   combiner     = "OR"

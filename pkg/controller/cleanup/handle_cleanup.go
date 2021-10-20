@@ -223,6 +223,19 @@ func (c *Controller) HandleCleanup() http.Handler {
 			}
 		}()
 
+		// SMS error stats
+		func() {
+			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
+			item = tag.Upsert(itemTagKey, "SMS_ERROR_STATS")
+			if count, err := c.db.PurgeSMSErrorStats(c.config.StatsMaxAge); err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to purge sms error stats: %w", err))
+				result = enobs.ResultError("FAILED")
+			} else {
+				logger.Infow("purged sms error stats", "count", count)
+				result = enobs.ResultOK
+			}
+		}()
+
 		// Realm stats
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)

@@ -305,6 +305,10 @@ func realMain(ctx context.Context) error {
 		if err := generateKeyServerStats(db, realm1, maxPerDay); err != nil {
 			return fmt.Errorf("failed to generate key-server stats: %w", err)
 		}
+
+		if err := generateSMSErrorStats(db, realm1); err != nil {
+			return fmt.Errorf("failed to generate sms-error stats: %w", err)
+		}
 	}
 
 	return nil
@@ -509,6 +513,29 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 	}
 
 	return tokensClaimedPerDay, nil
+}
+
+func generateSMSErrorStats(db *database.Database, realm *database.Realm) error {
+	midnight := timeutils.UTCMidnight(time.Now())
+
+	for day := 0; day < project.StatsDisplayDays; day++ {
+		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
+
+		for _, errorCode := range []string{"E30006", "E30007", "MS0005", "Q10489"} {
+			stat := &database.SMSErrorStat{
+				Date:      date,
+				RealmID:   realm.ID,
+				ErrorCode: errorCode,
+				Quantity:  uint(rand.Int63n(25)),
+			}
+
+			if err := db.RawDB().Create(stat).Error; err != nil {
+				return fmt.Errorf("failed to create sms error stats: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // generateKeyServerStats generates stats normally gathered from a key-server.

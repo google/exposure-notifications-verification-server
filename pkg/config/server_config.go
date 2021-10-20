@@ -86,6 +86,10 @@ type ServerConfig struct {
 	// Application Config
 	ServerName string `env:"SERVER_NAME,default=Exposure Notifications Verification Server"`
 
+	// ServerEndpoint is the custom endpoint for the server (scheme + host [+
+	// port]). If empty, the system will attempt to guess based on the request.
+	ServerEndpoint string `env:"SERVER_ENDPOINT"`
+
 	// Issue is configuration specific to the code issue APIs.
 	Issue IssueAPIVars
 

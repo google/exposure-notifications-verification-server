@@ -617,6 +617,9 @@ endpoints without notice.
     issued by external issuers. These statistics only include codes issued by
     the API where an `externalIssuer` field was provided.
 
+-   `/api/stats/realm/sms-errors.{csv,json}` - Daily statistics for errors
+    returned by the upstream SMS provider, grouped by error code.
+
 # User report webhooks
 
 You can use your own gateway to dispatch SMS messages for user reports. When a

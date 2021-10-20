@@ -2430,6 +2430,28 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00114-AddSMSErrorStats",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					CREATE TABLE sms_error_stats (
+						date date,
+						realm_id integer REFERENCES realms(id),
+						error_code text,
+						quantity integer,
+						CONSTRAINT sms_error_stats_pkey PRIMARY KEY (realm_id, date, error_code)
+					);
+					CREATE INDEX idx_sms_error_stats_realm_id ON sms_error_stats(realm_id);
+					CREATE INDEX idx_sms_error_stats_date ON sms_error_stats(date);
+					CREATE INDEX idx_sms_error_stats_error_code ON sms_error_stats(error_code);
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE sms_error_stats`,
+				)
+			},
+		},
 	}
 }
 

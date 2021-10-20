@@ -15,6 +15,7 @@ import (
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/user"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/userreport"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/verifyapi"
+	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/webhooks"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/database"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/ratelimit/limitware"
 )
