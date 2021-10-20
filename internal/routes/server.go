@@ -332,20 +332,20 @@ func Server(
 
 		realmSMSKeysController := smskeys.New(cfg, db, publicKeyCache, h)
 		realmSMSkeysRoutes(sub, realmSMSKeysController)
+	}
 
-		// webhooks
-		if cfg.Features.EnableSMSErrorWebhook {
-			// We don't need locales or template parsing, minimize middleware stack by
-			// forking from r instead of sub.
-			sub := r.PathPrefix("/webhooks").Subrouter()
-			sub.Use(populateRequestID)
-			sub.Use(populateLogger)
-			sub.Use(recovery)
-			sub.Use(obs)
+	// webhooks
+	if cfg.Features.EnableSMSErrorWebhook {
+		// We don't need locales or template parsing, minimize middleware stack by
+		// forking from r instead of sub.
+		sub := r.PathPrefix("/webhooks").Subrouter()
+		sub.Use(populateRequestID)
+		sub.Use(populateLogger)
+		sub.Use(recovery)
+		sub.Use(obs)
 
-			webhooksController := webhooks.New(cacher, db, h)
-			webhooksRoutes(sub, webhooksController)
-		}
+		webhooksController := webhooks.New(cacher, db, h)
+		webhooksRoutes(sub, webhooksController)
 	}
 
 	// JWKs
