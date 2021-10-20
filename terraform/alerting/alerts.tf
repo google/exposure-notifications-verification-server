@@ -303,7 +303,7 @@ resource "google_monitoring_alert_policy" "ElevatedSMSErrors" {
     display_name = "Elevated SMS errors"
 
     condition_threshold {
-      filter   = "metric.type = \"${local.custom_prefix}/modeler/twilio_errors\" AND resource.type = \"generic_task\""
+      filter   = "metric.type = \"${local.custom_prefix}/webhooks/twilio_errors\" AND resource.type = \"generic_task\""
       duration = "${5 * local.minute}s"
 
       comparison      = "COMPARISON_GT"
