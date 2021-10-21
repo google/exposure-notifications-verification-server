@@ -210,6 +210,44 @@ func RedirectToChangePassword(w http.ResponseWriter, r *http.Request, h *render.
 	return
 }
 
+// RealHostFromRequest attempts to find the "best" host for the HTTP request.
+// Sometimes, depending on the incoming request, the host will be part of the
+// URL. Other times, it could be part of the Host header. When developing
+// locally, it could be missing entirely!
+func RealHostFromRequest(r *http.Request) string {
+	u := r.URL
+	scheme := u.Scheme
+	host := u.Hostname()
+	port := u.Port()
+
+	// If the URI was not absolute, pull the host/port from the HTTP request.
+	if !u.IsAbs() {
+		u := &url.URL{Host: r.Host}
+		host, port = u.Hostname(), u.Port()
+	}
+
+	// Default to http, unless on "localhost". The localhost check isn't super
+	// robust, but it's good enough.
+	if scheme == "" {
+		if host == "localhost" || host == "127.0.0.1" {
+			scheme = "http"
+		} else {
+			scheme = "https"
+		}
+	}
+
+	// Strip default ports.
+	if (u.Scheme == "https" && port == "443") ||
+		(u.Scheme == "http" && port != "80") {
+		port = ""
+	}
+
+	if port == "" {
+		return fmt.Sprintf("%s://%s", scheme, host)
+	}
+	return fmt.Sprintf("%s://%s:%s", scheme, host, port)
+}
+
 func prefixInList(list []string, prefix string) bool {
 	for _, v := range list {
 		if strings.HasPrefix(v, prefix) {

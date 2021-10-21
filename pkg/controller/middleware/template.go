@@ -15,9 +15,7 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
@@ -63,36 +61,5 @@ func serverEndpoint(r *http.Request, given string) string {
 	if given != "" {
 		return strings.TrimSuffix(given, "/")
 	}
-
-	u := r.URL
-	scheme := u.Scheme
-	host := u.Hostname()
-	port := u.Port()
-
-	// If the URI was not absolute, pull the host/port from the HTTP request.
-	if !u.IsAbs() {
-		u := &url.URL{Host: r.Host}
-		host, port = u.Hostname(), u.Port()
-	}
-
-	// Default to http, unless on "localhost". The localhost check isn't super
-	// robust, but it's good enough.
-	if scheme == "" {
-		if host == "localhost" || host == "127.0.0.1" {
-			scheme = "http"
-		} else {
-			scheme = "https"
-		}
-	}
-
-	// Strip default ports.
-	if (u.Scheme == "https" && port == "443") ||
-		(u.Scheme == "http" && port != "80") {
-		port = ""
-	}
-
-	if port == "" {
-		return fmt.Sprintf("%s://%s", scheme, host)
-	}
-	return fmt.Sprintf("%s://%s:%s", scheme, host, port)
+	return controller.RealHostFromRequest(r)
 }

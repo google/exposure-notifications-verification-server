@@ -188,8 +188,13 @@ func ComputeSignature(r *http.Request, authToken string) (string, error) {
 	}
 	sort.Strings(keys)
 
+	// Compute the URL from the request host, managing slashes effectively.
+	host := controller.RealHostFromRequest(r)
+	pth := r.URL.Path
+	u := strings.TrimSuffix(host, "/") + "/" + strings.TrimPrefix(pth, "/")
+
 	var buf bytes.Buffer
-	buf.WriteString(r.URL.String())
+	buf.WriteString(u)
 	for _, k := range keys {
 		buf.WriteString(k)
 		buf.WriteString(r.Form.Get(k))
