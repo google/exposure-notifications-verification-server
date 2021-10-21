@@ -1,0 +1,65 @@
+{{define "alerts/new"}}
+
+{{$rap := .rap}}
+
+<!doctype html>
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
+<head>
+  {{template "head" .}}
+</head>
+
+<body id="apikeys-new" class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    <form method="POST" action="/realm/alerts">
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-key me-2"></i>
+          Details
+        </div>
+
+        <div class="card-body">
+          {{template "errorSummary" $rap}}
+
+          {{ .csrfField }}
+
+          <div class="row g-3">
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="name" name="name" class="form-control {{invalidIf ($rap.ErrorsFor "name")}}"
+                  value="{{$rap.Name}}" autofocus>
+                <label for="name">Name / Label for phone owner</label>
+                {{template "errorable" $rap.ErrorsFor "name"}}
+              </div>
+            </div>
+
+            <div class="col-lg-12">
+              <div class="form-floating">
+                <input type="text" id="phoneNumber" name="phoneNumber" class="form-control {{invalidIf ($rap.ErrorsFor "phoneNumber")}}"
+                  value="{{$rap.Name}}" autofocus>
+                <label for="name">Destination phone number</label>
+                {{template "errorable" $rap.ErrorsFor "phoneNumber"}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+          <div class="d-grid d-lg-inline">
+            <button type="submit" id="submit" class="btn btn-primary">Add phone number</button>
+          </div>
+          <div class="d-grid d-lg-inline">
+            <a href="/realm/alerts" class="btn btn-danger mt-2 mt-lg-0">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
+{{end}}

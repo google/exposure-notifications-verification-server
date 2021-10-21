@@ -1,0 +1,123 @@
+{{define "alerts/index"}}
+
+{{$currentMembership := .currentMembership}}
+{{$canWrite := $currentMembership.Can rbac.SettingsWrite}}
+
+<!doctype html>
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
+<head>
+  {{template "head" .}}
+</head>
+
+<body id="apikeys-index" class="tab-content">
+  {{template "navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+
+    {{if not .hasSMS}}
+    <div class="container">
+        <div class="alert alert-warning" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-square-fill me-3"></i>
+            <span class="alert-message">
+              There is no SMS configuration for this realm, so any enabled
+              alerts will not be sent via SMS.
+            </span>
+          </div>
+        </div>
+      </div>
+    {{end}}
+
+    <div class="card shadow-sm mt-4 mb-3">
+      <div class="card-header">
+        <i class="bi bi-key me-2"></i>
+        Realm alert destination phone numbers
+        {{if $canWrite}}
+          <a href="/realm/alerts/new" class="float-end link-secondary" data-bs-toggle="tooltip" title="New destination phone number">
+            <i class="bi bi-plus-square-fill"></i>
+          </a>
+        {{end}}
+      </div>
+
+      <div class="card-body">
+        <form method="GET" action="/realm/alerts" id="search-form">
+          <div class="input-group">
+            <input type="search" name="q" id="search" value="{{.query}}" placeholder="Search..."
+              autocomplete="off" class="form-control" />
+            <button type="submit" class="btn btn-secondary">
+              <i class="bi bi-search"></i>
+              <span class="visually-hidden">Search</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {{if .raps}}
+        <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" width="200" class="d-none d-md-table-cell">Phone Number</th>
+              {{if $canWrite}}
+                <th scope="col" width="40"></th>
+              {{end}}
+            </tr>
+          </thead>
+          <tbody>
+          {{range .raps}}
+            <tr id="rap-{{.ID}}">
+              <td>
+                {{if .DeletedAt}}
+                  <span class="bi bi-x-square-fill text-danger me-1"
+                    data-bs-toggle="tooltip" title="phone number is disabled - it will be deleted in a few days"></span>
+                {{else}}
+                  <span class="bi bi-check-square-fill text-success me-1"
+                    data-bs-toggle="tooltip" title="phone number is enabled and will receive alerts"></span>
+                {{end}}
+                <span class="text-truncate">
+                  {{.Name}}
+                </span>
+              </td>
+              <td class="text-center font-monospace d-none d-md-table-cell">
+                {{.PhoneNumber}}
+              </td>
+              {{if $canWrite}}
+                <td class="text-center">
+                  {{if .DeletedAt}}
+                  <a href="/realm/alerts/{{.ID}}/enable" id="enable-rap-{{.ID}}"
+                    class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to restore alerts to '{{.Name}}'?"
+                    data-bs-toggle="tooltip"
+                    title="Enable sending of alerts to this phone number">
+                    <i class="bi bi-recycle"></i>
+                  </a>
+                  {{else}}
+                  <a href="/realm/alerts/{{.ID}}/disable" id="disable-rap-{{.ID}}"
+                    class="d-block text-danger"
+                    data-method="patch"
+                    data-confirm="Are you sure you want to disable sending alerts to '{{.Name}}'?"
+                    data-bs-toggle="tooltip"
+                    title="Disable sending of alerts to this phone number">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                  {{end}}
+                </td>
+              {{end}}
+            </tr>
+          {{end}}
+          </tbody>
+        </table>
+      {{else}}
+        <p class="card-body text-center mb-0">
+          <em>There are no configured alerting phone numbers{{if .query}} that match the query{{end}}.</em>
+        </p>
+      {{end}}
+    </div>
+
+    {{template "shared/pagination" .}}
+  </main>
+</body>
+</html>
+{{end}}

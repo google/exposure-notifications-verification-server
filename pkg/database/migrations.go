@@ -2452,6 +2452,29 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00115-AddRealmAdminPhoneNumber",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					CREATE TABLE realm_admin_phones (
+						id BIGSERIAL PRIMARY KEY,
+						realm_id INTEGER NOT NULL REFERENCES realms(id) ON DELETE CASCADE,
+						name TEXT,
+						phone_number TEXT,
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						deleted_at TIMESTAMP WITH TIME ZONE
+					);
+					CREATE UNIQUE INDEX uix_admin_phone_name_realm ON realm_admin_phones(realm_id, name);
+					CREATE INDEX idx_realm_admin_phone_deleted_at ON realm_admin_phones(deleted_at);
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE realm_admin_phones`,
+				)
+			},
+		},
 	}
 }
 

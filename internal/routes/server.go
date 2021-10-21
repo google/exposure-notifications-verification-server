@@ -26,6 +26,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/alerts"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -278,6 +279,21 @@ func Server(
 		apikeyRoutes(sub, apikeyController)
 	}
 
+	// realm alerts
+	if cfg.Features.RealmAdminSMSAlerts {
+		sub := sub.PathPrefix("/realm/alerts").Subrouter()
+		sub.Use(requireAuth)
+		sub.Use(loadCurrentMembership)
+		sub.Use(requireMembership)
+		sub.Use(processFirewall)
+		sub.Use(requireEmailVerified)
+		sub.Use(requireMFA)
+		sub.Use(rateLimit)
+
+		alertController := alerts.New(cacher, db, h)
+		alertRoutes(sub, alertController)
+	}
+
 	// users
 	{
 		sub := sub.PathPrefix("/realm/users").Subrouter()
@@ -415,6 +431,15 @@ func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
 	r.Handle("/{id:[0-9]+}/edit", c.HandleUpdate()).Methods(http.MethodGet)
 	r.Handle("/{id:[0-9]+}", c.HandleShow()).Methods(http.MethodGet)
 	r.Handle("/{id:[0-9]+}", c.HandleUpdate()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods(http.MethodPatch)
+	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods(http.MethodPatch)
+}
+
+// alertRoutes are the realm level alerts routes
+func alertRoutes(r *mux.Router, c *alerts.Controller) {
+	r.Handle("", c.HandleIndex()).Methods(http.MethodGet)
+	r.Handle("", c.HandleCreate()).Methods(http.MethodPost)
+	r.Handle("/new", c.HandleCreate()).Methods(http.MethodGet)
 	r.Handle("/{id:[0-9]+}/disable", c.HandleDisable()).Methods(http.MethodPatch)
 	r.Handle("/{id:[0-9]+}/enable", c.HandleEnable()).Methods(http.MethodPatch)
 }

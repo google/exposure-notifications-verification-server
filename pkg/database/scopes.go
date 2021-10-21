@@ -251,3 +251,16 @@ func WithMobileAppSearch(q string) Scope {
 		return db
 	}
 }
+
+// WithRealmAdminPhoneSearch returns a scope that adds querying for realm admin
+// phone numbers by name or by phone number
+func WithRealmAdminPhoneSearch(q string) Scope {
+	return func(db *gorm.DB) *gorm.DB {
+		q = project.TrimSpace(q)
+		if q != "" {
+			q = `%` + q + `%`
+			return db.Where("realm_admin_phones.name ILIKE ? OR realm_admin_phones.phone_number ILIKE ?", q, q)
+		}
+		return db
+	}
+}
