@@ -61,7 +61,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		q := r.FormValue(QueryKeySearch)
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch(q))
 
-		raps, paginator, err := currentRealm.ListAdminPhones(c.db, pageParams, scopes...)
+		phones, paginator, err := currentRealm.ListAdminPhones(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -74,16 +74,16 @@ func (c *Controller) HandleIndex() http.Handler {
 			flash.Alert("There is no SMS configuration for this realm, so any enabled notifications will not be sent via SMS.")
 		}
 
-		c.renderIndex(ctx, w, raps, paginator, q)
+		c.renderIndex(ctx, w, phones, paginator, q)
 	})
 }
 
 // renderIndex renders the index page.
 func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter,
-	raps []*database.NotificationPhone, paginator *pagination.Paginator, query string) {
+	phones []*database.NotificationPhone, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm Notifications and Phone Numbers")
-	m["raps"] = raps
+	m["phones"] = phones
 	m["paginator"] = paginator
 	m["query"] = query
 	c.h.RenderHTML(w, "notifications/index", m)

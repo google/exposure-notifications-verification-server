@@ -135,15 +135,15 @@ func TestHandleEnable(t *testing.T) {
 		// Ensure enabled
 		var scopes []database.Scope
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch("Admin2"))
-		raps, _, err := realm.ListAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
+		phones, _, err := realm.ListAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
 		if err != nil {
 			t.Fatalf("error reading record: %v", err)
 		}
 
-		if len(raps) != 1 {
+		if len(phones) != 1 {
 			t.Fatalf("didn't find expected phone number in query")
 		}
-		record := raps[0]
+		record := phones[0]
 
 		if got := record.DeletedAt; got != nil {
 			t.Errorf("expected %v to be nil", got)

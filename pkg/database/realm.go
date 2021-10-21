@@ -1058,7 +1058,7 @@ func (r *Realm) ListSMSSigningKeys(db *Database) ([]*SMSSigningKey, error) {
 }
 
 func (r *Realm) ListAdminPhones(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*NotificationPhone, *pagination.Paginator, error) {
-	var raps []*NotificationPhone
+	var phones []*NotificationPhone
 	query := db.db.Model(&NotificationPhone{}).
 		Unscoped().
 		Scopes(scopes...).
@@ -1069,15 +1069,15 @@ func (r *Realm) ListAdminPhones(db *Database, p *pagination.PageParams, scopes .
 		p = new(pagination.PageParams)
 	}
 
-	paginator, err := Paginate(query, &raps, p.Page, p.Limit)
+	paginator, err := Paginate(query, &phones, p.Page, p.Limit)
 	if err != nil {
 		if IsNotFound(err) {
-			return raps, nil, nil
+			return phones, nil, nil
 		}
 		return nil, nil, err
 	}
 
-	return raps, paginator, nil
+	return phones, paginator, nil
 }
 
 func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*AuthorizedApp, *pagination.Paginator, error) {

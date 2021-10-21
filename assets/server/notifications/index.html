@@ -39,7 +39,7 @@
         </form>
       </div>
 
-      {{if .raps}}
+      {{if .phones}}
         <table class="table table-bordered table-striped table-fixed table-inner-border-only border-top mb-0">
           <thead>
             <tr>
@@ -51,7 +51,7 @@
             </tr>
           </thead>
           <tbody>
-          {{range .raps}}
+          {{range .phones}}
             <tr id="rap-{{.ID}}">
               <td>
                 {{if .DeletedAt}}
