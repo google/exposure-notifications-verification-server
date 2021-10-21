@@ -63,6 +63,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		hasSMS, err := currentRealm.HasSMSConfig(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		c.renderIndex(ctx, w, hasSMS, raps, paginator, q)
