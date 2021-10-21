@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package alerts contains web controllers for managing realm level alerts.
-package alerts
+// Package notifications contains web controllers for managing realm level
+// notification settings.
+package notifications
 
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"

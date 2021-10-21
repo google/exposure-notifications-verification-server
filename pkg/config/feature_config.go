@@ -23,10 +23,10 @@ type FeatureConfig struct {
 	// TODO(sethvargo): default to true and remove in 1.0.4+.
 	NotifyAnomalies bool `env:"NOTIFY_ANOMALIES"`
 
-	// RealmAdminSMSAlerts enables sending realm specific alerts
+	// RealmNotificationSMSAlerts enables sending realm specific alerts
 	// to enabled realm admins via SMS.
 	// DO NOT USE - this feature is still in development.
-	RealmAdminSMSAlerts bool `env:"REALM_ADMIN_SMS_ALERTS"`
+	RealmNotificationSMSAlerts bool `env:"REALM_NOTIFICATION_SMS_ALERTS"`
 
 	// EnableSMSErrorWebhook enables the configuration for Twilio webhooks.
 	// TODO(sethvargo): default to true and remove in 1.0.4+.

@@ -26,7 +26,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/admin"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/alerts"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/apikey"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/codes"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
@@ -34,6 +33,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/login"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/mobileapps"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/notifications"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmadmin"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/realmkeys"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/smskeys"
@@ -280,8 +280,8 @@ func Server(
 	}
 
 	// realm alerts
-	if cfg.Features.RealmAdminSMSAlerts {
-		sub := sub.PathPrefix("/realm/alerts").Subrouter()
+	if cfg.Features.RealmNotificationSMSAlerts {
+		sub := sub.PathPrefix("/realm/notifications").Subrouter()
 		sub.Use(requireAuth)
 		sub.Use(loadCurrentMembership)
 		sub.Use(requireMembership)
@@ -290,8 +290,8 @@ func Server(
 		sub.Use(requireMFA)
 		sub.Use(rateLimit)
 
-		alertController := alerts.New(cacher, db, h)
-		alertRoutes(sub, alertController)
+		notificationsController := notifications.New(cacher, db, h)
+		alertRoutes(sub, notificationsController)
 	}
 
 	// users
@@ -436,7 +436,7 @@ func apikeyRoutes(r *mux.Router, c *apikey.Controller) {
 }
 
 // alertRoutes are the realm level alerts routes
-func alertRoutes(r *mux.Router, c *alerts.Controller) {
+func alertRoutes(r *mux.Router, c *notifications.Controller) {
 	r.Handle("", c.HandleIndex()).Methods(http.MethodGet)
 	r.Handle("", c.HandleCreate()).Methods(http.MethodPost)
 	r.Handle("/new", c.HandleCreate()).Methods(http.MethodGet)

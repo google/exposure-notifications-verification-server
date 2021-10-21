@@ -1,4 +1,4 @@
-{{define "alerts/new"}}
+{{define "notifications/new"}}
 
 {{$rap := .rap}}
 
@@ -14,7 +14,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
 
-    <form method="POST" action="/realm/alerts">
+    <form method="POST" action="/realm/notifications">
       <div class="card mb-3 shadow-sm">
         <div class="card-header">
           <i class="bi bi-key me-2"></i>
@@ -52,7 +52,7 @@
             <button type="submit" id="submit" class="btn btn-primary">Add phone number</button>
           </div>
           <div class="d-grid d-lg-inline">
-            <a href="/realm/alerts" class="btn btn-danger mt-2 mt-lg-0">
+            <a href="/realm/notifications" class="btn btn-danger mt-2 mt-lg-0">
               Cancel
             </a>
           </div>

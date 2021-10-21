@@ -12,62 +12,72 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alerts
+package notifications
 
 import (
+	"context"
 	"net/http"
-	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
-	"github.com/gorilla/mux"
 )
 
-func (c *Controller) HandleDisable() http.Handler {
+const (
+	// QueryKeySearch is the query key where the search query exists.
+	QueryKeySearch = "q"
+)
+
+func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		vars := mux.Vars(r)
-
-		session := controller.SessionFromContext(ctx)
-		if session == nil {
-			controller.MissingSession(w, r, c.h)
-			return
-		}
-		flash := controller.Flash(session)
 
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
 			return
 		}
-		if !membership.Can(rbac.SettingsWrite) {
+		if !membership.Can(rbac.APIKeyRead) {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
 		currentRealm := membership.Realm
-		currentUser := membership.User
 
-		realmAdminPhone, err := currentRealm.FindAdminPhone(c.db, vars["id"])
+		pageParams, err := pagination.FromRequest(r)
 		if err != nil {
-			if database.IsNotFound(err) {
-				controller.Unauthorized(w, r, c.h)
-				return
-			}
+			controller.BadRequest(w, r, c.h)
+			return
+		}
 
+		var scopes []database.Scope
+		q := r.FormValue(QueryKeySearch)
+		scopes = append(scopes, database.WithRealmAdminPhoneSearch(q))
+
+		raps, paginator, err := currentRealm.ListAdminPhones(c.db, pageParams, scopes...)
+		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		now := time.Now().UTC()
-		realmAdminPhone.DeletedAt = &now
-		if err := c.db.SaveRealmAdminPhone(currentRealm, realmAdminPhone, currentUser); err != nil {
-			flash.Error("Failed to disable realm alerts to phone number: %v", err)
-			http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+		hasSMS, err := currentRealm.HasSMSConfig(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
 			return
 		}
 
-		flash.Alert("Successfully disabled realm alerts for '%v'", realmAdminPhone.Name)
-		http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+		c.renderIndex(ctx, w, hasSMS, raps, paginator, q)
 	})
+}
+
+// renderIndex renders the index page.
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, hasSMS bool,
+	raps []*database.NotificationPhone, paginator *pagination.Paginator, query string) {
+	m := controller.TemplateMapFromContext(ctx)
+	m.Title("Realm Alerts / Alert Phone Numbers")
+	m["hasSMS"] = hasSMS
+	m["raps"] = raps
+	m["paginator"] = paginator
+	m["query"] = query
+	c.h.RenderHTML(w, "notifications/index", m)
 }

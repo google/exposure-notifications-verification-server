@@ -174,11 +174,11 @@
               {{t $.locale "nav.users"}}
             </a>
           {{end}}
-          {{if $.features.RealmAdminSMSAlerts}}
+          {{if $.features.RealmNotificationSMSAlerts}}
             {{if $currentMembership.Can rbac.SettingsRead}}
               {{$showRealmMenu = true}}
-              <a class="dropdown-item {{if .currentPath.IsDir "/realm/alerts"}}active{{end}}" href="/realm/alerts">
-                {{t $.locale "nav.alerts"}}
+              <a class="dropdown-item {{if .currentPath.IsDir "/realm/notifications"}}active{{end}}" href="/realm/notifications">
+                {{t $.locale "nav.notifications"}}
               </a>
             {{end}}
           {{end}}

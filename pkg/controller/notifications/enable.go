@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alerts
+package notifications
 
 import (
 	"net/http"
@@ -60,12 +60,12 @@ func (c *Controller) HandleEnable() http.Handler {
 
 		realmAdminPhone.DeletedAt = nil
 		if err := c.db.SaveRealmAdminPhone(currentRealm, realmAdminPhone, currentUser); err != nil {
-			flash.Error("Failed to enable alerts to phone number: %v", err)
-			http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+			flash.Error("Failed to enable notifications to phone number: %v", err)
+			http.Redirect(w, r, "/realm/notifications", http.StatusSeeOther)
 			return
 		}
 
-		flash.Alert("Successfully enabled realm alerts for '%v'", realmAdminPhone.Name)
-		http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+		flash.Alert("Successfully enabled realm notifications for '%v'", realmAdminPhone.Name)
+		http.Redirect(w, r, "/realm/notifications", http.StatusSeeOther)
 	})
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alerts
+package notifications
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func (c *Controller) HandleCreate() http.Handler {
 		}
 
 		flash.Alert("Successfully created realm admin phone number for %q", realmAdminPhone.Name)
-		http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+		http.Redirect(w, r, "/realm/notifications", http.StatusSeeOther)
 	})
 }
 
@@ -96,5 +96,5 @@ func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, rap *
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Add realm notifications phone number")
 	m["rap"] = rap
-	c.h.RenderHTML(w, "alerts/new", m)
+	c.h.RenderHTML(w, "notifications/new", m)
 }

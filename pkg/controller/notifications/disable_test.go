@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alerts_test
+package notifications_test
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/envstest"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
-	"github.com/google/exposure-notifications-verification-server/pkg/controller/alerts"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller/notifications"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
@@ -36,7 +36,7 @@ func TestHandleDisable(t *testing.T) {
 	ctx := project.TestContext(t)
 	harness := envstest.NewServerConfig(t, testDatabaseInstance)
 
-	c := alerts.New(harness.Cacher, harness.Database, harness.Renderer)
+	c := notifications.New(harness.Cacher, harness.Database, harness.Renderer)
 	handler := harness.WithCommonMiddlewares(c.HandleDisable())
 
 	t.Run("middleware", func(t *testing.T) {
@@ -69,7 +69,7 @@ func TestHandleDisable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		c := alerts.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
+		c := notifications.New(harness.Cacher, harness.BadDatabase, harness.Renderer)
 		handler := c.HandleDisable()
 
 		ctx := ctx
