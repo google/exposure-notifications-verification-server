@@ -145,7 +145,7 @@ func TestHandleTwilio(t *testing.T) {
 		},
 		{
 			name:     "success",
-			headers:  &http.Header{"X-Twilio-Signature": []string{"BH17k0a2CdEmurDgJYArAIa6ITM="}},
+			headers:  &http.Header{"X-Twilio-Signature": []string{"Ht5oZoK1sm7KmEUfMFYfslEY+KE="}},
 			body:     "Level=error&PayloadType=application/json&Payload={\"error_code\":\"E00007\"}&AccountSid=abc123",
 			realmID:  realmWithSMS.ID,
 			wantCode: http.StatusOK,
@@ -204,7 +204,7 @@ func TestComputeSignature(t *testing.T) {
 
 	// The data in this test comes from a real webhook invocation. Yes, the auth
 	// token below is real. Yes, it has been rotated and is no longer valid.
-	expSignature := "WFIk+mfEDAoujjBhziUSmJJn3Lw="
+	expSignature := "oT6J/5wQ3mmQfOQi5cm1FoxbA70="
 	authToken := "1d2a" + "7f480d4e6913a72f2febbe63379d"
 
 	vals := make(url.Values)
