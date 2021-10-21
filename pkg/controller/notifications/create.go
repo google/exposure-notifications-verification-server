@@ -61,7 +61,7 @@ func (c *Controller) HandleCreate() http.Handler {
 			return
 		}
 
-		err := currentRealm.CreateRealmAdminPhone(c.db, &realmAdminPhone, currentUser)
+		err := currentRealm.CreateNotificationPhone(c.db, &realmAdminPhone, currentUser)
 		if err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)

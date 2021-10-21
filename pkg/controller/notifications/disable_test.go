@@ -65,7 +65,7 @@ func TestHandleDisable(t *testing.T) {
 			Name:        "Admin 1",
 			PhoneNumber: "+15551234567",
 		}
-		if err := realm.CreateRealmAdminPhone(harness.Database, rap, database.SystemTest); err != nil {
+		if err := realm.CreateNotificationPhone(harness.Database, rap, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -102,7 +102,7 @@ func TestHandleDisable(t *testing.T) {
 			Name:        "Admin2",
 			PhoneNumber: "+15005550006",
 		}
-		if err := realm.CreateRealmAdminPhone(harness.Database, rap, database.SystemTest); err != nil {
+		if err := realm.CreateNotificationPhone(harness.Database, rap, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

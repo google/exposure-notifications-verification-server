@@ -74,7 +74,7 @@ func TestHandleEnable(t *testing.T) {
 				DeletedAt: &now,
 			},
 		}
-		if err := realm.CreateRealmAdminPhone(harness.Database, rap, database.SystemTest); err != nil {
+		if err := realm.CreateNotificationPhone(harness.Database, rap, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 
@@ -112,7 +112,7 @@ func TestHandleEnable(t *testing.T) {
 				DeletedAt: &now,
 			},
 		}
-		if err := realm.CreateRealmAdminPhone(harness.Database, rap, database.SystemTest); err != nil {
+		if err := realm.CreateNotificationPhone(harness.Database, rap, database.SystemTest); err != nil {
 			t.Fatal(err)
 		}
 

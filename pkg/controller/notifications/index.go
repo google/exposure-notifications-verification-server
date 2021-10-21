@@ -33,6 +33,13 @@ func (c *Controller) HandleIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		session := controller.SessionFromContext(ctx)
+		if session == nil {
+			controller.MissingSession(w, r, c.h)
+			return
+		}
+		flash := controller.Flash(session)
+
 		membership := controller.MembershipFromContext(ctx)
 		if membership == nil {
 			controller.MissingMembership(w, r, c.h)
@@ -60,22 +67,22 @@ func (c *Controller) HandleIndex() http.Handler {
 			return
 		}
 
-		hasSMS, err := currentRealm.HasSMSConfig(c.db)
-		if err != nil {
+		if hasSMS, err := currentRealm.HasSMSConfig(c.db); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
+		} else if !hasSMS {
+			flash.Alert("There is no SMS configuration for this realm, so any enabled notifications will not be sent via SMS.")
 		}
 
-		c.renderIndex(ctx, w, hasSMS, raps, paginator, q)
+		c.renderIndex(ctx, w, raps, paginator, q)
 	})
 }
 
 // renderIndex renders the index page.
-func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, hasSMS bool,
+func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter,
 	raps []*database.NotificationPhone, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
-	m.Title("Realm Alerts / Alert Phone Numbers")
-	m["hasSMS"] = hasSMS
+	m.Title("Realm Notifications and Phone Numbers")
 	m["raps"] = raps
 	m["paginator"] = paginator
 	m["query"] = query

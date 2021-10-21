@@ -1591,7 +1591,7 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 	})
 }
 
-func (r *Realm) CreateRealmAdminPhone(db *Database, rap *NotificationPhone, actor Auditable) error {
+func (r *Realm) CreateNotificationPhone(db *Database, rap *NotificationPhone, actor Auditable) error {
 	return db.SaveRealmAdminPhone(r, rap, actor)
 }
 
