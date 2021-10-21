@@ -132,6 +132,42 @@ To dispatch verification codes / links over SMS, a realm must provide their cred
 
 ![](images/realm-sms-settings.png)
 
+
+### Twilio alerts webhook URL
+
+If your realm uses Twilio to send SMS messages and your server operator has
+enabled the **SMS Error Webhook** feature, your SMS form will include a "Twilio
+alerts webhook URL" on the page. If this webhook is configured on Twilio, the
+Verification Server will capture and present SMS errors on the statistics page.
+Like all statistics in the Verification Server, the Twilio webhook statistics
+are best-effort. This URL is unique to your realm.
+
+-   **If you manage your own Twilio account**, authenticate to the Twilio
+    console and go to `Monitor > Logs > Errors > Webhooks & Alerts`. Enter the
+    URL displayed in the Verification Server UI into the field and click save.
+
+    ![](images/twilio-alerts-webhook.png)
+
+-   **If your server operator manages your Twilio account**, work with your
+    server operator to ensure the webhook URL is registered on your Twilio
+    account.
+
+Once configured, a graph displaying the sum total of SMS errors will appear on
+the realm statistics page. Additionally, more detailed statistics are available
+via the realm statistics API, including a breakdown of failures by error code.
+
+There are many possible reasons why Twilio might be returning errors, but the most common are:
+
+-   **30003**, **30005** - The message could not be delivered because the
+    handset was unreachable. This error could also mean the message was sent to
+    a landline.
+
+-   **30006** - The message was sent to a landline or non-SMS-capable phone
+    number.
+
+Here is the [full list of possible Twilio errors](https://www.twilio.com/docs/api/errors).
+
+
 ### SMS Text Template
 
 It is possible to customize the text of the SMS message that gets sent to patients. See the help text on that page for guidance.
