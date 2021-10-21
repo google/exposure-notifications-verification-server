@@ -33,6 +33,10 @@
 
     {{template "realmadmin/_stats_codes" .}}
 
+    {{if $.features.EnableSMSErrorWebhook}}
+      {{template "realmadmin/_stats_sms_errors" .}}
+    {{end}}
+
     <div class="row">
       <div class="col-lg-6 pe-lg-2">
         {{template "realmadmin/_stats_users" .}}
@@ -45,10 +49,6 @@
 
     {{if .hasKeyServerStats}}
       {{template "realmadmin/_stats_keyserver" .}}
-    {{end}}
-
-    {{if $.features.EnableSMSErrorWebhook}}
-      {{template "realmadmin/_stats_sms_errors" .}}
     {{end}}
   </main>
 
