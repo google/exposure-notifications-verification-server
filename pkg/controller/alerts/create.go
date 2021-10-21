@@ -48,12 +48,12 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		// Requested form, stop processing.
 		if r.Method == http.MethodGet {
-			var realmAdminPhone database.RealmAdminPhone
+			var realmAdminPhone database.NotificationPhone
 			c.renderNew(ctx, w, &realmAdminPhone)
 			return
 		}
 
-		var realmAdminPhone database.RealmAdminPhone
+		var realmAdminPhone database.NotificationPhone
 		if err := bindCreateForm(r, &realmAdminPhone); err != nil {
 			realmAdminPhone.AddError("", err.Error())
 			w.WriteHeader(http.StatusUnprocessableEntity)
@@ -78,7 +78,7 @@ func (c *Controller) HandleCreate() http.Handler {
 	})
 }
 
-func bindCreateForm(r *http.Request, app *database.RealmAdminPhone) error {
+func bindCreateForm(r *http.Request, app *database.NotificationPhone) error {
 	type FormData struct {
 		Name        string `form:"name"`
 		PhoneNumber string `form:"phone_number"`
@@ -92,7 +92,7 @@ func bindCreateForm(r *http.Request, app *database.RealmAdminPhone) error {
 }
 
 // renderNew renders the edit page.
-func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, rap *database.RealmAdminPhone) {
+func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, rap *database.NotificationPhone) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Add realm notifications phone number")
 	m["rap"] = rap

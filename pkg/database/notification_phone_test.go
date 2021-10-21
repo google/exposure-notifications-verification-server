@@ -32,13 +32,13 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 
 	cases := []struct {
 		name    string
-		record  *RealmAdminPhone
+		record  *NotificationPhone
 		wantErr string
 		errors  map[string]string
 	}{
 		{
 			name: "",
-			record: &RealmAdminPhone{
+			record: &NotificationPhone{
 				RealmID:     realm.ID,
 				Name:        "",
 				PhoneNumber: "1",
@@ -48,7 +48,7 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 		},
 		{
 			name: "",
-			record: &RealmAdminPhone{
+			record: &NotificationPhone{
 				RealmID:     realm.ID,
 				Name:        "steve",
 				PhoneNumber: "",
@@ -58,7 +58,7 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 		},
 		{
 			name: "",
-			record: &RealmAdminPhone{
+			record: &NotificationPhone{
 				RealmID:     realm.ID,
 				Name:        "",
 				PhoneNumber: "",

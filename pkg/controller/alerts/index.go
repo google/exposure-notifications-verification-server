@@ -72,7 +72,7 @@ func (c *Controller) HandleIndex() http.Handler {
 
 // renderIndex renders the index page.
 func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter, hasSMS bool,
-	raps []*database.RealmAdminPhone, paginator *pagination.Paginator, query string) {
+	raps []*database.NotificationPhone, paginator *pagination.Paginator, query string) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm Alerts / Alert Phone Numbers")
 	m["hasSMS"] = hasSMS

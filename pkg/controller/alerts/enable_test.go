@@ -66,7 +66,7 @@ func TestHandleEnable(t *testing.T) {
 		}
 
 		now := time.Now().UTC().Add(-5 * time.Second)
-		rap := &database.RealmAdminPhone{
+		rap := &database.NotificationPhone{
 			RealmID:     realm.ID,
 			Name:        "Admin1",
 			PhoneNumber: "12345",
@@ -104,7 +104,7 @@ func TestHandleEnable(t *testing.T) {
 		}
 
 		now := time.Now().UTC().Add(-5 * time.Second)
-		rap := &database.RealmAdminPhone{
+		rap := &database.NotificationPhone{
 			RealmID:     realm.ID,
 			Name:        "Admin2",
 			PhoneNumber: "42",

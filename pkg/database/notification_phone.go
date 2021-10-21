@@ -21,11 +21,11 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var _ Auditable = (*RealmAdminPhone)(nil)
+var _ Auditable = (*NotificationPhone)(nil)
 
-// RealmAdminPhone represends a destination phone number for Realm Admin
+// NotificationPhone represends a destination phone number for Realm Admin
 // alerts / updates
-type RealmAdminPhone struct {
+type NotificationPhone struct {
 	gorm.Model
 	Errorable
 
@@ -44,7 +44,7 @@ type RealmAdminPhone struct {
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
-func (rap *RealmAdminPhone) BeforeSave(tx *gorm.DB) error {
+func (rap *NotificationPhone) BeforeSave(tx *gorm.DB) error {
 	rap.Name = project.TrimSpace(rap.Name)
 	rap.PhoneNumber = project.TrimSpace(rap.PhoneNumber)
 
@@ -66,16 +66,16 @@ func (rap *RealmAdminPhone) BeforeSave(tx *gorm.DB) error {
 	return rap.ErrorOrNil()
 }
 
-func (rap *RealmAdminPhone) AuditID() string {
+func (rap *NotificationPhone) AuditID() string {
 	return fmt.Sprintf("realm_admin_phone:%d", rap.ID)
 }
 
-func (rap *RealmAdminPhone) AuditDisplay() string {
+func (rap *NotificationPhone) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", rap.Name, rap.PhoneNumber)
 }
 
 // SaveRealmAdminPhone saves the realm admin phone number
-func (db *Database) SaveRealmAdminPhone(realm *Realm, rap *RealmAdminPhone, actor Auditable) error {
+func (db *Database) SaveRealmAdminPhone(realm *Realm, rap *NotificationPhone, actor Auditable) error {
 	if rap == nil {
 		return fmt.Errorf("provided realm admin phone is nil")
 	}
@@ -88,10 +88,10 @@ func (db *Database) SaveRealmAdminPhone(realm *Realm, rap *RealmAdminPhone, acto
 		rap.RealmID = realm.ID
 		rap.smsCountry = realm.SMSCountry
 
-		var existing RealmAdminPhone
+		var existing NotificationPhone
 		if err := tx.
 			Unscoped().
-			Model(&RealmAdminPhone{}).
+			Model(&NotificationPhone{}).
 			Where("id = ?", rap.ID).
 			First(&existing).
 			Error; err != nil && !IsNotFound(err) {
@@ -100,11 +100,11 @@ func (db *Database) SaveRealmAdminPhone(realm *Realm, rap *RealmAdminPhone, acto
 
 		// Save the app
 		if err := tx.Unscoped().Save(rap).Error; err != nil {
-			if IsUniqueViolation(err, "uix_admin_phone_name_realm") {
+			if IsUniqueViolation(err, "uix_notification_phone_name_realm") {
 				rap.AddError("name", "must be unique")
 				return ErrValidationFailed
 			}
-			if IsUniqueViolation(err, "uix_admin_phone_number_realm") {
+			if IsUniqueViolation(err, "uix_notification_phone_number_realm") {
 				rap.AddError("phone_number", "must be unique")
 				return ErrValidationFailed
 			}

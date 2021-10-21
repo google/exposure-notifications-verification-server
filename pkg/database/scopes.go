@@ -259,7 +259,7 @@ func WithRealmAdminPhoneSearch(q string) Scope {
 		q = project.TrimSpace(q)
 		if q != "" {
 			q = `%` + q + `%`
-			return db.Where("realm_admin_phones.name ILIKE ? OR realm_admin_phones.phone_number ILIKE ?", q, q)
+			return db.Where("notification_phones.name ILIKE ? OR notification_phones.phone_number ILIKE ?", q, q)
 		}
 		return db
 	}

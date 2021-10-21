@@ -117,7 +117,7 @@ func TestHandleCreate(t *testing.T) {
 			Permissions: rbac.SettingsWrite,
 		})
 
-		want := &database.RealmAdminPhone{
+		want := &database.NotificationPhone{
 			RealmID:     realm.ID,
 			Name:        "Jenny",
 			PhoneNumber: "5005550001", // phone number will be E164 formatted.

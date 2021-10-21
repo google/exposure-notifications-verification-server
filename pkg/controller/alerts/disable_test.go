@@ -60,7 +60,7 @@ func TestHandleDisable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		rap := &database.RealmAdminPhone{
+		rap := &database.NotificationPhone{
 			RealmID:     realm.ID,
 			Name:        "Admin 1",
 			PhoneNumber: "+15551234567",
@@ -97,7 +97,7 @@ func TestHandleDisable(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		rap := &database.RealmAdminPhone{
+		rap := &database.NotificationPhone{
 			RealmID:     realm.ID,
 			Name:        "Admin2",
 			PhoneNumber: "+15005550006",
