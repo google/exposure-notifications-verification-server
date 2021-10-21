@@ -81,7 +81,7 @@ func (c *Controller) HandleCreate() http.Handler {
 func bindCreateForm(r *http.Request, app *database.RealmAdminPhone) error {
 	type FormData struct {
 		Name        string `form:"name"`
-		PhoneNumber string `form:"phoneNumber"`
+		PhoneNumber string `form:"phone_number"`
 	}
 
 	var form FormData
@@ -94,7 +94,7 @@ func bindCreateForm(r *http.Request, app *database.RealmAdminPhone) error {
 // renderNew renders the edit page.
 func (c *Controller) renderNew(ctx context.Context, w http.ResponseWriter, rap *database.RealmAdminPhone) {
 	m := controller.TemplateMapFromContext(ctx)
-	m.Title("New realm admin phone number")
+	m.Title("Add realm notifications phone number")
 	m["rap"] = rap
 	c.h.RenderHTML(w, "alerts/new", m)
 }

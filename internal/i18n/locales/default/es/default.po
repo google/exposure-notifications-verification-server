@@ -189,6 +189,9 @@ msgstr "Usuarios"
 msgid "nav.settings"
 msgstr "Configuración"
 
+msgid "nav.notifications"
+msgstr "Notificaciones"
+
 msgid "nav.change-realm"
 msgstr "Cambiar de ámbito"
 

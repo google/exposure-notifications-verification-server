@@ -135,7 +135,7 @@ func TestHandleEnable(t *testing.T) {
 		// Ensure enabled
 		var scopes []database.Scope
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch("Admin2"))
-		raps, _, err := realm.ListRealmAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
+		raps, _, err := realm.ListAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
 		if err != nil {
 			t.Fatalf("error reading record: %v", err)
 		}

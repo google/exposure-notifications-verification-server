@@ -31,17 +31,17 @@
               <div class="form-floating">
                 <input type="text" id="name" name="name" class="form-control {{invalidIf ($rap.ErrorsFor "name")}}"
                   value="{{$rap.Name}}" autofocus>
-                <label for="name">Name / Label for phone owner</label>
+                <label for="name">Label for phone</label>
                 {{template "errorable" $rap.ErrorsFor "name"}}
               </div>
             </div>
 
             <div class="col-lg-12">
               <div class="form-floating">
-                <input type="text" id="phoneNumber" name="phoneNumber" class="form-control {{invalidIf ($rap.ErrorsFor "phoneNumber")}}"
+                <input type="text" id="phone_number" name="phone_number" class="form-control {{invalidIf ($rap.ErrorsFor "phone_number")}}"
                   value="{{$rap.Name}}" autofocus>
                 <label for="name">Destination phone number</label>
-                {{template "errorable" $rap.ErrorsFor "phoneNumber"}}
+                {{template "errorable" $rap.ErrorsFor "phone_number"}}
               </div>
             </div>
           </div>

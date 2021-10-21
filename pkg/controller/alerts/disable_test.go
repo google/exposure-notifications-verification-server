@@ -100,7 +100,7 @@ func TestHandleDisable(t *testing.T) {
 		rap := &database.RealmAdminPhone{
 			RealmID:     realm.ID,
 			Name:        "Admin2",
-			PhoneNumber: "7",
+			PhoneNumber: "+15005550006",
 		}
 		if err := realm.CreateRealmAdminPhone(harness.Database, rap, database.SystemTest); err != nil {
 			t.Fatal(err)
@@ -125,7 +125,7 @@ func TestHandleDisable(t *testing.T) {
 		// Ensure disabled
 		var scopes []database.Scope
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch("Admin2"))
-		raps, _, err := realm.ListRealmAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
+		raps, _, err := realm.ListAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
 		if err != nil {
 			t.Fatalf("error reading record: %v", err)
 		}

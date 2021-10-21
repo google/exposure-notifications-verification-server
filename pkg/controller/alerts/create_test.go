@@ -62,13 +62,13 @@ func TestHandleCreate(t *testing.T) {
 		})
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
-			"name":        []string{"steve"},
-			"phoneNumber": []string{"+12068675309"},
+			"name":         []string{"steve"},
+			"phone_number": []string{"+15005550001"},
 		})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusInternalServerError; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("expected %d to be %d", got, want)
 		}
 	})
 
@@ -90,10 +90,10 @@ func TestHandleCreate(t *testing.T) {
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusUnprocessableEntity; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("expected %d to be %d", got, want)
 		}
 		if got, want := w.Body.String(), "cannot be blank"; !strings.Contains(got, want) {
-			t.Errorf("Expected %q to contain %q", got, want)
+			t.Errorf("expected %q to contain %q", got, want)
 		}
 	})
 
@@ -120,23 +120,24 @@ func TestHandleCreate(t *testing.T) {
 		want := &database.RealmAdminPhone{
 			RealmID:     realm.ID,
 			Name:        "Jenny",
-			PhoneNumber: "+12028675309",
+			PhoneNumber: "5005550001", // phone number will be E164 formatted.
 		}
+		canonicalPhone := "+15005550001"
 
 		w, r := envstest.BuildFormRequest(ctx, t, http.MethodPost, "/", &url.Values{
-			"name":        []string{want.Name},
-			"phoneNumber": []string{want.PhoneNumber},
+			"name":         []string{want.Name},
+			"phone_number": []string{want.PhoneNumber},
 		})
 		handler.ServeHTTP(w, r)
 
 		if got, want := w.Code, http.StatusSeeOther; got != want {
-			t.Errorf("Expected %d to be %d", got, want)
+			t.Errorf("expected %d to be %d", got, want)
 		}
 
 		var scopes []database.Scope
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch(want.PhoneNumber))
 
-		raps, _, err := realm.ListRealmAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
+		raps, _, err := realm.ListAdminPhones(harness.Database, pagination.UnlimitedResults, scopes...)
 		if err != nil {
 			t.Fatalf("error reading record: %v", err)
 		}
@@ -152,7 +153,7 @@ func TestHandleCreate(t *testing.T) {
 		if got, want := record.Name, want.Name; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
-		if got, want := record.PhoneNumber, want.PhoneNumber; got != want {
+		if got, want := record.PhoneNumber, canonicalPhone; got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	})

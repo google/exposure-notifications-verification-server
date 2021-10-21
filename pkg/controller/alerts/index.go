@@ -54,7 +54,7 @@ func (c *Controller) HandleIndex() http.Handler {
 		q := r.FormValue(QueryKeySearch)
 		scopes = append(scopes, database.WithRealmAdminPhoneSearch(q))
 
-		raps, paginator, err := currentRealm.ListRealmAdminPhones(c.db, pageParams, scopes...)
+		raps, paginator, err := currentRealm.ListAdminPhones(c.db, pageParams, scopes...)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

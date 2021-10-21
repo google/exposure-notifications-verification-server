@@ -2459,13 +2459,14 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					CREATE TABLE realm_admin_phones (
 						id BIGSERIAL PRIMARY KEY,
 						realm_id INTEGER NOT NULL REFERENCES realms(id) ON DELETE CASCADE,
-						name TEXT,
+						name CITEXT,
 						phone_number TEXT,
 						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
 						updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 						deleted_at TIMESTAMP WITH TIME ZONE
 					);
 					CREATE UNIQUE INDEX uix_admin_phone_name_realm ON realm_admin_phones(realm_id, name);
+					CREATE UNIQUE INDEX uix_admin_phone_number_realm ON realm_admin_phones(realm_id, phone_number);
 					CREATE INDEX idx_realm_admin_phone_deleted_at ON realm_admin_phones(deleted_at);
 				`)
 			},

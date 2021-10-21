@@ -187,6 +187,9 @@ msgstr "İstatistikler"
 msgid "nav.users"
 msgstr "Kullanıcılar"
 
+msgid "nav.notifications"
+msgstr "Bildirimler"
+
 msgid "nav.settings"
 msgstr "Ayarlar"
 

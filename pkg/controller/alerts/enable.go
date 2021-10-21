@@ -47,7 +47,7 @@ func (c *Controller) HandleEnable() http.Handler {
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
-		realmAdminPhone, err := currentRealm.FindRealmAdminPhone(c.db, vars["id"])
+		realmAdminPhone, err := currentRealm.FindAdminPhone(c.db, vars["id"])
 		if err != nil {
 			if database.IsNotFound(err) {
 				controller.Unauthorized(w, r, c.h)
@@ -59,9 +59,10 @@ func (c *Controller) HandleEnable() http.Handler {
 		}
 
 		realmAdminPhone.DeletedAt = nil
-		if err := c.db.SaveRealmAdminPhone(realmAdminPhone, currentUser); err != nil {
+		if err := c.db.SaveRealmAdminPhone(currentRealm, realmAdminPhone, currentUser); err != nil {
 			flash.Error("Failed to enable alerts to phone number: %v", err)
 			http.Redirect(w, r, "/realm/alerts", http.StatusSeeOther)
+			return
 		}
 
 		flash.Alert("Successfully enabled realm alerts for '%v'", realmAdminPhone.Name)

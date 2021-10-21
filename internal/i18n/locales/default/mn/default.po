@@ -187,6 +187,9 @@ msgstr "Статистик"
 msgid "nav.users"
 msgstr "Хэрэглэгчид"
 
+msgid "nav.notifications"
+msgstr "Мэдэгдэл"
+
 msgid "nav.settings"
 msgstr "Тохиргоо"
 

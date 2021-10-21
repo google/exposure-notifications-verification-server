@@ -187,6 +187,9 @@ msgstr "Statistik"
 msgid "nav.users"
 msgstr "Pengguna"
 
+msgid "nav.notifications"
+msgstr "Pemberitahuan"
+
 msgid "nav.settings"
 msgstr "Pengaturan"
 

@@ -1057,13 +1057,13 @@ func (r *Realm) ListSMSSigningKeys(db *Database) ([]*SMSSigningKey, error) {
 	return keys, nil
 }
 
-func (r *Realm) ListRealmAdminPhones(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*RealmAdminPhone, *pagination.Paginator, error) {
+func (r *Realm) ListAdminPhones(db *Database, p *pagination.PageParams, scopes ...Scope) ([]*RealmAdminPhone, *pagination.Paginator, error) {
 	var raps []*RealmAdminPhone
 	query := db.db.Model(&RealmAdminPhone{}).
 		Unscoped().
 		Scopes(scopes...).
 		Where("realm_id = ?", r.ID).
-		Order("LOWER(realm_admin_phones.name)")
+		Order("realm_admin_phones.name ASC")
 
 	if p == nil {
 		p = new(pagination.PageParams)
@@ -1103,8 +1103,8 @@ func (r *Realm) ListAuthorizedApps(db *Database, p *pagination.PageParams, scope
 	return authApps, paginator, nil
 }
 
-// FindRealmAdminPhone finds the realm admin phone number by the given id associated to the realm.
-func (r *Realm) FindRealmAdminPhone(db *Database, id interface{}) (*RealmAdminPhone, error) {
+// FindAdminPhone finds the realm admin phone number by the given id associated to the realm.
+func (r *Realm) FindAdminPhone(db *Database, id interface{}) (*RealmAdminPhone, error) {
 	var app RealmAdminPhone
 	if err := db.db.
 		Unscoped().
@@ -1592,8 +1592,7 @@ func (db *Database) SaveRealm(r *Realm, actor Auditable) error {
 }
 
 func (r *Realm) CreateRealmAdminPhone(db *Database, rap *RealmAdminPhone, actor Auditable) error {
-	rap.RealmID = r.ID
-	return db.SaveRealmAdminPhone(rap, actor)
+	return db.SaveRealmAdminPhone(r, rap, actor)
 }
 
 // CreateAuthorizedApp generates a new API key and assigns it to the specified

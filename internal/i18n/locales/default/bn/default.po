@@ -187,6 +187,9 @@ msgstr "পরিসংখ্যান"
 msgid "nav.users"
 msgstr "ব্যবহারকারীরা"
 
+msgid "nav.notifications"
+msgstr "বিজ্ঞপ্তি"
+
 msgid "nav.settings"
 msgstr "সেটিংস"
 

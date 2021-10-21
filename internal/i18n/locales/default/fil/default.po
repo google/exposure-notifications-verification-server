@@ -187,6 +187,9 @@ msgstr "Statistics"
 msgid "nav.users"
 msgstr "Users"
 
+msgid "nav.notifications"
+msgstr "Mga abiso"
+
 msgid "nav.settings"
 msgstr "Settings"
 

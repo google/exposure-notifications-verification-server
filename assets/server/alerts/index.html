@@ -22,7 +22,7 @@
             <i class="bi bi-exclamation-square-fill me-3"></i>
             <span class="alert-message">
               There is no SMS configuration for this realm, so any enabled
-              alerts will not be sent via SMS.
+              notifications will not be sent via SMS.
             </span>
           </div>
         </div>
@@ -32,7 +32,7 @@
     <div class="card shadow-sm mt-4 mb-3">
       <div class="card-header">
         <i class="bi bi-key me-2"></i>
-        Realm alert destination phone numbers
+        Realm notification destination phone numbers
         {{if $canWrite}}
           <a href="/realm/alerts/new" class="float-end link-secondary" data-bs-toggle="tooltip" title="New destination phone number">
             <i class="bi bi-plus-square-fill"></i>
@@ -70,7 +70,7 @@
               <td>
                 {{if .DeletedAt}}
                   <span class="bi bi-x-square-fill text-danger me-1"
-                    data-bs-toggle="tooltip" title="phone number is disabled - it will be deleted in a few days"></span>
+                    data-bs-toggle="tooltip" title="phone number is disabled and will not receive notifications - it will be deleted in a few days"></span>
                 {{else}}
                   <span class="bi bi-check-square-fill text-success me-1"
                     data-bs-toggle="tooltip" title="phone number is enabled and will receive alerts"></span>
@@ -88,9 +88,9 @@
                   <a href="/realm/alerts/{{.ID}}/enable" id="enable-rap-{{.ID}}"
                     class="d-block text-danger"
                     data-method="patch"
-                    data-confirm="Are you sure you want to restore alerts to '{{.Name}}'?"
+                    data-confirm="Are you sure you want to resume sending alerts to '{{.Name}}'?"
                     data-bs-toggle="tooltip"
-                    title="Enable sending of alerts to this phone number">
+                    title="Re-enable sending of alerts to this phone number">
                     <i class="bi bi-recycle"></i>
                   </a>
                   {{else}}

@@ -187,6 +187,9 @@ msgstr "Statistiche"
 msgid "nav.users"
 msgstr "Utenti"
 
+msgid "nav.notifications"
+msgstr "Notifiche"
+
 msgid "nav.settings"
 msgstr "Impostazioni"
 

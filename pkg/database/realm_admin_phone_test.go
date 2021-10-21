@@ -54,7 +54,7 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 				PhoneNumber: "",
 			},
 			wantErr: "validation failed",
-			errors:  map[string]string{"phoneNumber": "cannot be blank"},
+			errors:  map[string]string{"phone_number": "cannot be blank"},
 		},
 		{
 			name: "",
@@ -65,8 +65,8 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 			},
 			wantErr: "validation failed",
 			errors: map[string]string{
-				"name":        "cannot be blank",
-				"phoneNumber": "cannot be blank",
+				"name":         "cannot be blank",
+				"phone_number": "cannot be blank",
 			},
 		},
 	}
@@ -75,7 +75,7 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := db.SaveRealmAdminPhone(tc.record, SystemTest)
+			err := db.SaveRealmAdminPhone(realm, tc.record, SystemTest)
 			errcmp.MustMatch(t, err, tc.wantErr)
 
 			for k, v := range tc.errors {

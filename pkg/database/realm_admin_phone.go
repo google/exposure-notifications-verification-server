@@ -21,7 +21,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-var _ Auditable = (*AuthorizedApp)(nil)
+var _ Auditable = (*RealmAdminPhone)(nil)
 
 // RealmAdminPhone represends a destination phone number for Realm Admin
 // alerts / updates
@@ -30,14 +30,17 @@ type RealmAdminPhone struct {
 	Errorable
 
 	// RealmAdminPhones belong to exactly one realm.
-	RealmID uint
+	RealmID uint `gorm:"column:realm_id; type: integer;"`
 
 	// Name is the name of the user who the phone belongs to.
-	Name string `gorm:"type:text"`
+	Name string `gorm:"column:name; type:text;"`
 
 	// PhoneNumber is the destination phone number to send messages to.
 	// E.164 format telephone number
-	PhoneNumber string `gorm:"type:text"`
+	PhoneNumber string `gorm:"column:phone_number; type:text;"`
+
+	// Populated to attempt to format phone number as E164
+	smsCountry string `gorm:"-"`
 }
 
 // BeforeSave runs validations. If there are errors, the save fails.
@@ -50,7 +53,14 @@ func (rap *RealmAdminPhone) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if rap.PhoneNumber == "" {
-		rap.AddError("phoneNumber", "cannot be blank")
+		rap.AddError("phone_number", "cannot be blank")
+	} else {
+		canonicalPhone, err := project.CanonicalPhoneNumber(rap.PhoneNumber, rap.smsCountry)
+		if err != nil {
+			rap.AddError("phone_number", fmt.Sprintf("invalid format: %q", err.Error()))
+		} else {
+			rap.PhoneNumber = canonicalPhone
+		}
 	}
 
 	return rap.ErrorOrNil()
@@ -65,7 +75,7 @@ func (rap *RealmAdminPhone) AuditDisplay() string {
 }
 
 // SaveRealmAdminPhone saves the realm admin phone number
-func (db *Database) SaveRealmAdminPhone(rap *RealmAdminPhone, actor Auditable) error {
+func (db *Database) SaveRealmAdminPhone(realm *Realm, rap *RealmAdminPhone, actor Auditable) error {
 	if rap == nil {
 		return fmt.Errorf("provided realm admin phone is nil")
 	}
@@ -75,6 +85,8 @@ func (db *Database) SaveRealmAdminPhone(rap *RealmAdminPhone, actor Auditable) e
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var audits []*AuditEntry
+		rap.RealmID = realm.ID
+		rap.smsCountry = realm.SMSCountry
 
 		var existing RealmAdminPhone
 		if err := tx.
@@ -92,28 +104,32 @@ func (db *Database) SaveRealmAdminPhone(rap *RealmAdminPhone, actor Auditable) e
 				rap.AddError("name", "must be unique")
 				return ErrValidationFailed
 			}
+			if IsUniqueViolation(err, "uix_admin_phone_number_realm") {
+				rap.AddError("phone_number", "must be unique")
+				return ErrValidationFailed
+			}
 			return err
 		}
 
 		// Brand new app?
 		if existing.ID == 0 {
-			audit := BuildAuditEntry(actor, "created realm admin phone", rap, rap.RealmID)
+			audit := BuildAuditEntry(actor, "created realm notification phone number", rap, rap.RealmID)
 			audits = append(audits, audit)
 		} else {
 			if existing.Name != rap.Name {
-				audit := BuildAuditEntry(actor, "updated realm admin phone name", rap, rap.RealmID)
+				audit := BuildAuditEntry(actor, "updated realm notification phone name", rap, rap.RealmID)
 				audit.Diff = stringDiff(existing.Name, rap.Name)
 				audits = append(audits, audit)
 			}
 
 			if existing.PhoneNumber != rap.PhoneNumber {
-				audit := BuildAuditEntry(actor, "updated realm admin phone value", rap, rap.RealmID)
+				audit := BuildAuditEntry(actor, "updated realm notification phone value", rap, rap.RealmID)
 				audit.Diff = stringDiff(existing.PhoneNumber, rap.PhoneNumber)
 				audits = append(audits, audit)
 			}
 
 			if existing.DeletedAt != rap.DeletedAt {
-				audit := BuildAuditEntry(actor, "updated realm admin phone enabled", rap, rap.RealmID)
+				audit := BuildAuditEntry(actor, "updated realm notification phone enabled", rap, rap.RealmID)
 				audit.Diff = boolDiff(existing.DeletedAt == nil, rap.DeletedAt == nil)
 				audits = append(audits, audit)
 			}
