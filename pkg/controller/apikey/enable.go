@@ -62,6 +62,7 @@ func (c *Controller) HandleEnable() http.Handler {
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to enable API Key: %v", err)
 			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
+			return
 		}
 
 		flash.Alert("Successfully enabled API key '%v'", authApp.Name)

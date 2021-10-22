@@ -64,6 +64,7 @@ func (c *Controller) HandleDisable() http.Handler {
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
 			flash.Error("Failed to disable API Key: %v", err)
 			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
+			return
 		}
 
 		flash.Alert("Successfully disabled API key '%v'", authApp.Name)
