@@ -41,6 +41,7 @@ func (c *Controller) HandleStats() http.Handler {
 			controller.Unauthorized(w, r, c.h)
 			return
 		}
+		currentRealm := membership.Realm
 
 		s, err := c.db.GetKeyServerStatsCached(ctx, membership.RealmID, c.cacher)
 		if err != nil && !database.IsNotFound(err) {
@@ -49,11 +50,18 @@ func (c *Controller) HandleStats() http.Handler {
 		}
 		hasKeyServerStats := err == nil && s != nil
 
+		hasSMSConfig, err := currentRealm.HasSMSConfig(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		m := controller.TemplateMapFromContext(ctx)
 		m["hasKeyServerStats"] = hasKeyServerStats
 		if hasKeyServerStats && membership.Can(rbac.SettingsRead) {
 			m["keyServerOverride"] = s.KeyServerURLOverride
 		}
+		m["hasSMSConfig"] = hasSMSConfig
 		m.Title("Realm stats")
 		c.h.RenderHTML(w, "realmadmin/stats", m)
 	})

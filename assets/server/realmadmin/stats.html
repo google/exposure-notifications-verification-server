@@ -2,6 +2,7 @@
 
 {{$currentMembership := .currentMembership}}
 {{$realm := $currentMembership.Realm}}
+{{$hasSMSConfig := .hasSMSConfig}}
 
 <!doctype html>
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
@@ -34,7 +35,9 @@
     {{template "realmadmin/_stats_codes" .}}
 
     {{if $.features.EnableSMSErrorWebhook}}
+    {{if $hasSMSConfig}}
       {{template "realmadmin/_stats_sms_errors" .}}
+    {{end}}
     {{end}}
 
     <div class="row">
