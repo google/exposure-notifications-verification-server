@@ -2476,6 +2476,33 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00116-AddNotifications",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					CREATE TABLE notifications (
+						id BIGSERIAL PRIMARY KEY,
+						realm_id INTEGER NOT NULL REFERENCES realms(id) ON DELETE CASCADE,
+						category INTEGER NOT NULL,
+						not_before TIMESTAMP WITH TIME ZONE,
+						message TEXT NOT NULL,
+						delivered boolean NOT NULL DEFAULT false,
+						delivery_status TEXT NOT NULL,
+						created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+						deleted_at TIMESTAMP WITH TIME ZONE
+					);
+					CREATE INDEX idx_notifications_realm_category_nbf ON notifications(realm_id, category, not_before);
+					CREATE INDEX idx_notifications_deletion_mark ON notifications(created_at, deleted_at);
+					CREATE INDEX idx_notifications_deleted_at ON notifications(deleted_at);
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP TABLE notifications`,
+				)
+			},
+		},
 	}
 }
 

@@ -16,11 +16,12 @@ package database
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/errcmp"
 )
 
-func TestRelamAdminPhone_Save(t *testing.T) {
+func TestNotificationPhone_Save(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
@@ -95,5 +96,39 @@ func TestRelamAdminPhone_Save(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestNotificationPhoneLifecycle(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	phone := &NotificationPhone{
+		RealmID:     realm.ID,
+		Name:        "Important phone",
+		PhoneNumber: "+15005550006",
+	}
+	if err := db.SaveRealmAdminPhone(realm, phone, SystemTest); err != nil {
+		t.Fatalf("error saving phone: %v", err)
+	}
+
+	delTime := time.Now().UTC()
+	phone.DeletedAt = &delTime
+	if err := db.SaveRealmAdminPhone(realm, phone, SystemTest); err != nil {
+		t.Fatalf("error deleting phone: %v", err)
+	}
+
+	time.Sleep(1100 * time.Millisecond)
+
+	if got, err := db.PurgeNotificationPhones(time.Second); err != nil {
+		t.Fatalf("purgeNotificationPhones: %v", err)
+	} else if got != 1 {
+		t.Fatalf("wrong number of purged phone numbers, want: 1, got: %v", got)
 	}
 }

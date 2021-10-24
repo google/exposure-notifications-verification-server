@@ -16,6 +16,7 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/jinzhu/gorm"
@@ -72,6 +73,19 @@ func (rap *NotificationPhone) AuditID() string {
 
 func (rap *NotificationPhone) AuditDisplay() string {
 	return fmt.Sprintf("%s (%s)", rap.Name, rap.PhoneNumber)
+}
+
+// PurgeNotificationPhones purged soft deleted notification phones
+// after the specified delay.
+func (db *Database) PurgeNotificationPhones(maxAge time.Duration) (int64, error) {
+	if maxAge > 0 {
+		maxAge = -1 * maxAge
+	}
+	deleteBefore := time.Now().UTC().Add(maxAge)
+	rtn := db.db.Unscoped().
+		Where("deleted_at < ?", deleteBefore).
+		Delete(&NotificationPhone{})
+	return rtn.RowsAffected, rtn.Error
 }
 
 // SaveRealmAdminPhone saves the realm admin phone number
