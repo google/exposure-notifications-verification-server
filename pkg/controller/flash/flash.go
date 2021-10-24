@@ -18,6 +18,8 @@ package flash
 import (
 	"encoding/gob"
 	"fmt"
+	"sort"
+	"strings"
 )
 
 // flashKey is a custom type for inserting data into a map.
@@ -31,6 +33,7 @@ const (
 
 func init() {
 	gob.Register(flashKey(""))
+	gob.Register(map[string]struct{}{})
 }
 
 // Flash is a collection of data that is discarded on read. It's designed to be
@@ -92,20 +95,52 @@ func (f *Flash) Clone(values map[interface{}]interface{}) {
 	}
 }
 
-// add inserts the message into the upcoming flash for the given key.
+// add inserts the message into the upcoming flash for the given key. It ensures
+// duplicate messages are not added to the flash.
 func (f *Flash) add(key flashKey, msg string, vars ...interface{}) {
-	var data []string
-	if v, ok := f.values[key]; ok {
-		data, _ = v.([]string)
+	if _, ok := f.values[key]; !ok {
+		f.values[key] = make(map[string]struct{})
 	}
-	f.values[key] = append(data, fmt.Sprintf(msg, vars...))
+
+	// Legacy implementation for when storage was []string - convert to map.
+	// TODO(sethvargo): remove slice handling in 1.1.0+.
+	switch typ := f.values[key].(type) {
+	case []string:
+		m := make(map[string]struct{}, len(typ))
+		for _, v := range typ {
+			m[v] = struct{}{}
+		}
+		f.values[key] = m
+	}
+
+	m := fmt.Sprintf(msg, vars...)
+	f.values[key].(map[string]struct{})[m] = struct{}{}
 }
 
 // get returns the messages in the key, clearing the values stored at the key.
+//
+// TODO(sethvargo): remove slice handling in 1.1.0+.
 func (f *Flash) get(key flashKey) []string {
 	if v, ok := f.values[key]; ok {
 		delete(f.values, key)
-		flashes, _ := v.([]string)
+
+		// Legacy implementation for when storage was []string.
+		// TODO(sethvargo): remove slice handling in 1.1.0+.
+		switch typ := v.(type) {
+		case []string:
+			return typ
+		}
+
+		m := v.(map[string]struct{})
+		flashes := make([]string, 0, len(m))
+		for k := range m {
+			flashes = append(flashes, k)
+		}
+
+		sort.Slice(flashes, func(i, j int) bool {
+			return strings.ToLower(flashes[i]) < strings.ToLower(flashes[j])
+		})
+
 		return flashes
 	}
 	return nil
