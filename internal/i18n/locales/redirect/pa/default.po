@@ -1,0 +1,117 @@
+msgid "" 
+msgstr ""
+"Language: pa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "login.about-exposure-notifications"
+msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਦੀਆਂ ਸੂਚਨਾਵਾਂ ਬਾਰੇ"
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "ਨਹੀਂ ਮਿਲਿਆ"
+
+msgid "static.resource-does-not-exist"
+msgstr "ਉਹ ਸਰੋਤ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।"
+
+msgid "static.redirect-not-found"
+msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਦੀਆਂ ਸੂਚਨਾਵਾਂ ਸੰਬੰਧੀ ਕੋਡ ਨੂੰ ਰੀਡੀਮ ਕਰਨ ਲਈ, ਆਪਣੇ ਮੋਬਾਈਲ ਡੀਵਾਈਸ ਤੋਂ ਲਿੰਕ ‘ਤੇ ਜਾਓ।"
+
+msgid "static.unauthorized"
+msgstr "ਅਣਅਧਿਕਾਰਿਤ"
+
+msgid "static.unauthorized-message"
+msgstr "ਤੁਸੀਂ ਇਹ ਕਾਰਵਾਈ ਕਰਨ ਲਈ ਅਧਿਕਾਰਿਤ ਨਹੀਂ ਹੋ।"
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "ਇੱਕ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਪ੍ਰਾਪਤ ਕਰੋ"
+
+msgid "user-report.navbar"
+msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਦੀਆਂ ਸੂਚਨਾਵਾਂ ਸੰਬੰਧੀ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਦੀ ਬੇਨਤੀ ਕਰੋ"
+
+msgid "user-report.request-code-from"
+msgstr "ਇੱਕ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਪ੍ਰਾਪਤ ਕਰੋ"
+
+msgid "user-report.instructions"
+msgstr "ਜੇ ਤੁਸੀਂ COVID-19 ਲਈ ਪਾਜ਼ੀਟਿਵ ਪਾਏ ਗਏ ਹੋ, ਪਰ ਤੁਹਾਨੂੰ ਸਿਹਤ ਅਧਿਕਾਰੀ ਵੱਲੋਂ ਲਿਖਤ ਸੁਨੇਹੇ ਜਾਂ ਫ਼ੋਨ ਕਾਲ ਰਾਹੀਂ ਕੋਡ ਪ੍ਰਾਪਤ ਨਹੀਂ ਹੋਇਆ ਹੈ, ਤਾਂ ਤੁਸੀਂ ਇੱਥੇ ਕੋਡ ਲਈ ਬੇਨਤੀ ਕਰ ਸਕਦੇ ਹੋ।"
+
+msgid "user-report.enter-date-instructions"
+msgstr "ਆਪਣੀ COVID-19 ਜਾਂਚ ਦੀ ਤਾਰੀਖ ਦਾਖਲ ਕਰੋ"
+
+msgid "user-report.phone-number-header"
+msgstr "ਤੁਹਾਡਾ ਮੋਬਾਈਲ ਫ਼ੋਨ ਨੰਬਰ"
+
+msgid "user-report.phone-number-instructions"
+msgstr "ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਪ੍ਰਾਪਤ ਕਰਨ ਲਈ ਤੁਹਾਨੂੰ ਇੱਕ ਵੈਧ ਫ਼ੋਨ ਨੰਬਰ ਦਾਖਲ ਕਰਨਾ ਪਏਗਾ। ਕੈਰੀਅਰ ਫ਼ੀਸਾਂ ਲਾਗੂ ਹੋ ਸਕਦੀਆਂ ਹਨ।"
+
+msgid "user-report.agreement-header"
+msgstr "ਇਕਰਾਰਨਾਮਾ"
+
+msgid "user-report.agreement"
+msgstr "ਮੈਨੂੰ ਸਵੀਕਾਰ ਹੈ ਕਿ ਮੇਰੀ COVID-19 ਦੀ ਜਾਂਚ ਦਾ ਨਤੀਜਾ ਪਾਜ਼ੀਟਿਵ ਆਇਆ ਹੈ ਅਤੇ ਮੇਰੇ ਵੱਲੋਂ ਦਿੱਤਾ ਗਿਆ ਫ਼ੋਨ ਨੰਬਰ ਮੇਰਾ ਆਪਣਾ ਹੈ ਅਤੇ ਮੇਰੀ ਆਪਣੇ ਪਾਜ਼ੀਟਿਵ ਜਾਂਚ ਨਤੀਜੇ ਦੀ ਰਿਪੋਰਟ ਕਰਨ ਲਈ ਕੋਡ ਪ੍ਰਾਪਤ ਕਰਨ ਦੀ ਇੱਛਾ ਹੈ।"
+
+msgid "user-report.request-button"
+msgstr "ਜਾਰੀ ਰੱਖੋ"
+
+msgid "user-report.code-issued"
+msgstr "ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਜਾਰੀ ਕੀਤਾ ਗਿਆ"
+
+msgid "user-report.check-mobile-device"
+msgstr "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਮੋਬਾਈਲ ਡੀਵਾਈਸ ‘ਤੇ ਆਪਣੇ ਲਿਖਤ ਸੁਨੇਹੇ ਦੇਖੋ।"
+
+msgid "user-report.invalid-request"
+msgstr "ਅਵੈਧ ਬੇਨਤੀ, ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਮੋਬਾਈਲ ਡੀਵਾਈਸ ‘ਤੇ ਆਪਣੀ ‘ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਦੀਆਂ ਸੂਚਨਾਵਾਂ’ ਐਪਲੀਕੇਸ਼ਨ ਤੋਂ ਲਾਂਚ ਕਰੋ।"
+
+msgid "user-report.not-available"
+msgstr "ਤੁਹਾਡਾ ਸਥਾਨਕ ਸਿਹਤ ਅਧਿਕਾਰੀ ਇਸ ਸਮੇਂ ਵਰਤੋਂਕਾਰ ਵੱਲੋਂ ਜਾਰੀ ਰਿਪੋਰਟਾਂ ਨੂੰ ਸਵੀਕਾਰ ਨਹੀਂ ਕਰ ਰਿਹਾ ਹੈ।"
+
+msgid "user-report.missing-agreement"
+msgstr "ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਦੀ ਬੇਨਤੀ ਕਰਨ ਲਈ ਤੁਹਾਨੂੰ ਨਿਯਮਾਂ ਨਾਲ ਸਹਿਮਤ ਹੋਣਾ ਪਏਗਾ"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 ਜਾਂਚ ਦੀ ਤਾਰੀਖ ਅਵੈਧ ਹੈ।"
+
+msgid "user-report.error-missing-phone"
+msgstr "ਮੋਬਾਈਲ ਫ਼ੋਨ ਨੰਬਰ ਲੋੜੀਂਦਾ ਹੈ।"
+
+msgid "user-report.error-invalid-phone"
+msgstr "ਮੋਬਾਈਲ ਫ਼ੋਨ ਨੰਬਰ ਅਵੈਧ ਹੈ।"
+
+msgid "user-report.quota-exceeded"
+msgstr "ਅਸਥਾਈ ਤੌਰ ‘ਤੇ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਜਾਰੀ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ, ਕਿਰਪਾ ਕਰਕੇ ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
+
+msgid "user-report.phone-not-eligible"
+msgstr "ਤੁਹਾਡਾ ਫ਼ੋਨ ਨੰਬਰ ਫ਼ਿਲਹਾਲ ਵਰਤੋਂਕਾਰ ਰਿਪੋਰਟ ਲਈ ਯੋਗ ਨਹੀਂ ਹੈ"
+
+msgid "user-report.internal-error"
+msgstr "ਕੋਈ ਅੰਦਰੂਨੀ ਗੜਬੜ ਹੋ ਗਈ ਸੀ। ਇਸ ਸਮੇਂ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਦੀ ਬੇਨਤੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ।"
+
+msgid "user-report.unable-to-issue"
+msgstr "ਅਸੀਂ ਤੁਹਾਨੂੰ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਭੇਜਣ ਵਿੱਚ ਅਸਫਲ ਰਹੇ।"
+
+msgid "user-report.code-device-throttled"
+msgstr "ਤੁਸੀਂ ਕੋਡ ਲਈ ਬਹੁਤ ਜ਼ਿਆਦਾ ਵਾਰ ਬੇਨਤੀ ਕਰ ਚੁੱਕੇ ਹੋ। ਜੇ ਤੁਹਾਨੂੰ ਹਾਲੇ ਵੀ ਕੋਡ ਦੀ ਲੋੜ ਹੈ ਤਾਂ ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਸਿਹਤ ਅਧਿਕਾਰੀ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।"
+
+msgid "user-report.testing-date-label"
+msgstr "ਤੁਹਾਡੀ COVID-19 ਜਾਂਚ ਦੀ ਤਾਰੀਖ"
+
+msgid "user-report.phone-storage"
+msgstr "ਤੁਹਾਡੇ ਫ਼ੋਨ ਨੰਬਰ ਦੇ ਇੱਕ ਕ੍ਰਿਪਟੋਗ੍ਰਾਫ਼ਿਕ ਤੌਰ ‘ਤੇ ਸੁਰੱਖਿਅਤ ਵਰਜਨ ਨੂੰ ਵਧੀਕ ਸਪੁਰਦਗੀਆਂ ਨੂੰ ਰੋਕਣ ਲਈ ਸਟੋਰ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ।"
+
+msgid "user-report.learn-more"
+msgstr "ਹੋਰ ਜਾਣੋ…"
+
+msgid "user-report.header"
+msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਬਾਰੇ ਹੋਰਾਂ ਨੂੰ ਸੂਚਿਤ ਕਰਨ ਵਿੱਚ ਮਦਦ ਕਰੋ"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
