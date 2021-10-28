@@ -388,7 +388,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.DeleteVerificationCode("12345678"); err != nil {
+	if err := db.DeleteVerificationCode(code.ID); err != nil {
 		t.Fatal(err)
 	}
 
