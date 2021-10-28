@@ -5,11 +5,32 @@
     <i class="bi bi-graph-up me-2"></i>
     Codes issued by user by day
   </div>
+
   <div id="per_user_table" class="overflow-auto" style="height:400px">
     <div class="container d-flex h-100 w-100">
       <p class="justify-content-center align-self-center text-center font-italic w-100">Loading data...</p>
     </div>
   </div>
+
+  <div id="user_row_template" class="d-none">
+    <div class="list-group list-group-flush"></div>
+    <div class="list-group-item list-group-item-action" data-bs-toggle="collapse" aria-expanded="false"></div>
+    <div class="collapse list-group-item p-0 ps-3" data-bs-parent="#per_user_table">
+      <table class="table table-bordered table-striped table-fixed table-inner-border-only border-start mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th width="80">Issued</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- filled in by javascript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <small class="card-footer d-flex justify-content-between text-muted">
     <a href="#" data-bs-toggle="modal" data-bs-target="#per-user-table-modal">Learn more about this table</a>
     <span>
@@ -49,98 +70,5 @@
     </div>
   </div>
 </div>
-
-<script type="text/javascript">
-  window.addEventListener('load', (event) => {
-    let containerChart = document.querySelector('div#per_user_table');
-
-    let request = new XMLHttpRequest();
-    request.open('GET', '/stats/realm/users.json?scope=user');
-    request.overrideMimeType('application/json');
-
-    request.onload = (event) => {
-      let pContainer = containerChart.querySelector('p');
-
-      let data = JSON.parse(request.response);
-      if (!data.statistics) {
-        pContainer.innerText = 'There is no external issuing data yet.';
-        return;
-      }
-
-      clearChildren(containerChart)
-
-      let containerListGroup = document.createElement('div');
-      containerListGroup.classList.add('list-group', 'list-group-flush');
-      containerChart.appendChild(containerListGroup);
-
-      data.statistics.forEach(function(row) {
-        let date = utcDate(row.date);
-        let id = `collapse-user-${date.getTime()}`;
-
-        let containerDateRow = document.createElement('div');
-        containerDateRow.classList.add('list-group-item', 'list-group-item-action');
-        containerDateRow.setAttribute('data-bs-toggle', 'collapse');
-        containerDateRow.setAttribute('data-target', `#${id}`);
-        containerDateRow.setAttribute('aria-expanded', false);
-        containerDateRow.setAttribute('aria-controls', id);
-        containerDateRow.innerText = date.toLocaleDateString();
-        containerListGroup.appendChild(containerDateRow);
-
-        let containerIssuerData = document.createElement('div');
-        containerIssuerData.id = id;
-        containerIssuerData.classList.add('collapse', 'list-group-item', 'p-0', 'ps-3');
-        containerIssuerData.setAttribute('data-parent', '#per_user_table');
-        containerListGroup.appendChild(containerIssuerData);
-
-        let table = document.createElement('table');
-        table.classList.add('table', 'table-bordered', 'table-striped', 'table-fixed', 'table-inner-border-only', 'border-start', 'mb-0');
-        containerIssuerData.appendChild(table);
-
-        let thead = document.createElement('thead');
-        table.appendChild(thead);
-
-        let trhead = document.createElement('tr');
-        table.appendChild(trhead);
-
-        let thID = document.createElement('th');
-        thID.innerText = 'ID';
-        trhead.appendChild(thID);
-
-        let thIssued = document.createElement('th');
-        thIssued.width = '80';
-        thIssued.innerText = 'Issued';
-        trhead.appendChild(thIssued);
-
-        let tbody = document.createElement('tbody');
-        table.appendChild(tbody);
-
-        row.issuer_data.forEach(function(issuer) {
-          let tr = document.createElement('tr');
-          tbody.appendChild(tr);
-
-          let tdName = document.createElement('td');
-          tdName.innerText = issuer.name;
-          tr.appendChild(tdName);
-
-          let tdEmail = document.createElement('td');
-          tdEmail.innerText = issuer.email;
-          tr.appendChild(tdEmail);
-
-          let tdCodesIssued = document.createElement('td');
-          tdCodesIssued.align = 'right';
-          tdCodesIssued.innerText = issuer.codes_issued;
-          tr.appendChild(tdCodesIssued);
-        });
-      });
-    };
-
-    request.onerror = (event) => {
-      console.error('error from response: ' + request.response);
-      flash.error('Failed to render user stats: ' + err);
-    }
-
-    request.send();
-  });
-</script>
 
 {{end}}
