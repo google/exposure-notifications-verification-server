@@ -1,0 +1,117 @@
+msgid "" 
+msgstr ""
+"Language: hi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "login.about-exposure-notifications"
+msgstr "एक्सपोज़र नोटिफ़िकेशन के बारे में"
+
+#
+# static pages
+# ----------
+
+msgid "static.not-found"
+msgstr "नहीं मिला"
+
+msgid "static.resource-does-not-exist"
+msgstr "वह रिसॉर्स मौजूद नहीं है."
+
+msgid "static.redirect-not-found"
+msgstr "एक्सपोज़र नोटिफ़िकेशन कोड रिडीम करने के लिए, अपने मोबाइल डिवाइस पर मौजूद लिंक खोलें."
+
+msgid "static.unauthorized"
+msgstr "अनधिकृत"
+
+msgid "static.unauthorized-message"
+msgstr "आपको इस काम की अनुमति नहीं है."
+
+#
+# User report webview
+# ----------
+
+msgid "user-report.title"
+msgstr "पुष्टि के लिए कोड पाएं"
+
+msgid "user-report.navbar"
+msgstr "एक्सपोज़र नोटिफ़िकेशन की पुष्टि करने के लिए कोड का अनुरोध करें"
+
+msgid "user-report.request-code-from"
+msgstr "पुष्टि के लिए कोड पाएं"
+
+msgid "user-report.instructions"
+msgstr "अगर आपकी COVID-19 जांच की रिपोर्ट पॉज़िटिव आई है, लेकिन आपको स्वास्थ्य विभाग से टेक्स्ट या फ़ोन के ज़रिए कोड नहीं मिला, तो यहां से कोड का अनुरोध करें."
+
+msgid "user-report.enter-date-instructions"
+msgstr "अपने COVID-19 टेस्ट की तारीख डालें"
+
+msgid "user-report.phone-number-header"
+msgstr "आपका फ़ोन नंबर"
+
+msgid "user-report.phone-number-instructions"
+msgstr "पुष्टि का कोड पाने के लिए, सही फ़ोन नंबर डालना होगा. कोड पाने के लिए आपसे शुल्क लिया जा सकता है."
+
+msgid "user-report.agreement-header"
+msgstr "समझौता"
+
+msgid "user-report.agreement"
+msgstr "मैं स्‍वीकार करता/करती हूं कि मुझे COVID-19 पॉज़िटिव होने की रिपोर्ट मिल गई है. मैंने अपना ही फ़ोन नंबर दिया है. मुझे एक कोड चाहिए, जिससे मैं अपनी पॉज़िटिव रिपोर्ट के बारे में सूचना दे सकूं."
+
+msgid "user-report.request-button"
+msgstr "जारी रखें"
+
+msgid "user-report.code-issued"
+msgstr "पुष्टि करने के लिए कोड जारी किया गया"
+
+msgid "user-report.check-mobile-device"
+msgstr "आपके डिवाइस पर भेजे गए मैसेज को पढ़ें."
+
+msgid "user-report.invalid-request"
+msgstr "अनुरोध अमान्य है. कृपया अपने फ़ोन पर मौजूद एक्सपोज़र नोटिफ़िकेशन ऐप्लिकेशन से, कोड का अनुरोध करें."
+
+msgid "user-report.not-available"
+msgstr "आपका स्थानीय स्वास्थ्य विभाग, फ़िलहाल उपयोगकर्ता की ओर से लाई गई रिपोर्ट स्वीकार नहीं कर रहा है."
+
+msgid "user-report.missing-agreement"
+msgstr "पुष्टि करने वाले कोड का अनुरोध करने के लिए,आपको सेवा की शर्तों से सहमत होना होगा."
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 की जांच की तारीख गलत है."
+
+msgid "user-report.error-missing-phone"
+msgstr "फ़ोन नंबर देना ज़रूरी है."
+
+msgid "user-report.error-invalid-phone"
+msgstr "फ़ोन नंबर गलत है."
+
+msgid "user-report.quota-exceeded"
+msgstr "फ़िलहाल, पुष्टि करने वाले कोड जारी नहीं किए जा सकते. कृपया कुछ देर बाद कोशिश करें."
+
+msgid "user-report.phone-not-eligible"
+msgstr "फ़िलहाल, आपके फ़ोन नंबर पर यूज़र रिपोर्ट नहीं भेजी जा सकती"
+
+msgid "user-report.internal-error"
+msgstr "सिस्टम में कोई गड़बड़ी हुई. फ़िलहाल, पुष्टि करने के कोड का अनुरोध नहीं किया जा सकता."
+
+msgid "user-report.unable-to-issue"
+msgstr "हम आपको पुष्टि के लिए कोड नहीं भेज पाए."
+
+msgid "user-report.code-device-throttled"
+msgstr "आपने कोड का अनुरोध कई बार किया है. अगर आपको अब भी कोड चाहिए, तो कृपया अपने स्वास्थ्य विभाग से संपर्क करें."
+
+msgid "user-report.testing-date-label"
+msgstr "आपके COVID-19 टेस्ट की तारीख"
+
+msgid "user-report.phone-storage"
+msgstr "एक से ज़्यादा बार किए जाने वाले कोड के अनुरोध को रोकने के लिए,आपके फ़ोन नंबर को क्रिप्टोग्राफ़िक तरीके से सुरक्षित करके सेव किया जा सकता है."
+
+msgid "user-report.learn-more"
+msgstr "ज़्यादा जानें..."
+
+msgid "user-report.header"
+msgstr "संक्रमित व्यक्ति से संपर्क में आने की सूचना भेजने में मदद करें"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
