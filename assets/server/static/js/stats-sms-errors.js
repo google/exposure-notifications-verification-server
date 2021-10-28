@@ -15,58 +15,62 @@
       throw new Error('missing chart filter for sms error stats');
     }
 
-    let chartData = [];
-    $(() => redrawCharts(chartData, 300));
-
     google.charts.load('current', {
       packages: ['corechart', 'controls'],
       callback: drawChart,
     });
 
     function drawChart() {
-      let request = new XMLHttpRequest();
+      const request = new XMLHttpRequest();
       request.open('GET', '/stats/realm/sms-errors.json');
       request.overrideMimeType('application/json');
 
       request.onload = (event) => {
-        let pContainer = chartContainer.querySelector('p');
+        const pContainer = chartContainer.querySelector('p');
 
-        let data = JSON.parse(request.response);
-        if (!data.statistics) {
+        const data = JSON.parse(request.response);
+        if (!data.statistics || !data.statistics[0].error_data) {
           pContainer.innerText = 'There is no sms error data yet.';
           return;
         }
 
         const dataTable = new google.visualization.DataTable();
         dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Errors');
 
         for (let i = 0; i < data.statistics.length; i++) {
           const stat = data.statistics[i];
 
-          let total = 0;
+          const row = [utcDate(stat.date)];
           for (let j = 0; j < stat.error_data.length; j++) {
-            total += stat.error_data[j].quantity;
+            const errorData = stat.error_data[j];
+
+            // On the first row, extract the column headers.
+            if (i === 0) {
+              const label = errorData.error_code;
+              dataTable.addColumn('number', label);
+            }
+
+            row.push(errorData.quantity);
           }
 
-          dataTable.addRow([utcDate(stat.date), total]);
+          dataTable.addRow(row);
         }
 
-        const tenDaysAgo = new Date(data.statistics[data.statistics.length - 10].date);
+        const startChart = new Date(data.statistics[30].date);
 
-        let dateFormatter = new google.visualization.DateFormat({
+        const dateFormatter = new google.visualization.DateFormat({
           pattern: 'MMM dd',
         });
         dateFormatter.format(dataTable, 0);
 
-        let dashboard = new google.visualization.Dashboard(dashboardContainer);
+        const dashboard = new google.visualization.Dashboard(dashboardContainer);
 
-        let filter = new google.visualization.ControlWrapper({
+        const filter = new google.visualization.ControlWrapper({
           controlType: 'ChartRangeFilter',
           containerId: chartFilter,
           state: {
             range: {
-              start: tenDaysAgo,
+              start: startChart,
             },
           },
           options: {
@@ -99,11 +103,11 @@
           },
         });
 
-        let realmChart = new google.visualization.ChartWrapper({
-          chartType: 'LineChart',
+        const realmChart = new google.visualization.ChartWrapper({
+          chartType: 'ColumnChart',
           containerId: chartContainer,
           options: {
-            colors: ['#dc3545'],
+            colors: ['#dc3545', '#5c161d', '#e83849', '#c22f3d', '#9c2531'],
             chartArea: {
               left: 60,
               right: 40,
@@ -121,10 +125,16 @@
 
         dashboard.bind(filter, realmChart);
         dashboard.draw(dataTable);
-        chartData.push({
-          chart: dashboard,
-          data: dataTable,
-        });
+
+        redrawCharts(
+          [
+            {
+              chart: dashboard,
+              data: dataTable,
+            },
+          ],
+          300
+        );
       };
 
       request.onerror = (event) => {
