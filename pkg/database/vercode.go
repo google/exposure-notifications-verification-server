@@ -307,15 +307,10 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 	})
 }
 
-// DeleteVerificationCode deletes the code if it exists. This is a hard delete.
-func (db *Database) DeleteVerificationCode(code string) error {
-	hmacedCodes, err := db.generateVerificationCodeHMACs(code)
-	if err != nil {
-		return fmt.Errorf("failed to create hmac: %w", err)
-	}
-
+// DeleteVerificationCode deletes the code by ID, this is a hard delete.
+func (db *Database) DeleteVerificationCode(id uint) error {
 	return db.db.Unscoped().
-		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
+		Where("id = ?", id).
 		Delete(&VerificationCode{}).
 		Error
 }
