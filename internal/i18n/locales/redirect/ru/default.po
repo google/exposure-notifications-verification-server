@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "О Системе уведомлений о риске инфицирования"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Не найдено"
+
+msgid "static.resource-does-not-exist"
+msgstr "Такого ресурса не существует."
+
+msgid "static.redirect-not-found"
+msgstr "Чтобы получить код для загрузки результата, откройте ссылку на мобильном устройстве."
+
+msgid "static.unauthorized"
+msgstr "Доступ запрещен"
+
+msgid "static.unauthorized-message"
+msgstr "Вы не можете выполнить это действие."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Получение кода подтверждения"
+
+msgid "user-report.navbar"
+msgstr "Запросить код подтверждения для Системы уведомлений о риске инфицирования"
+
+msgid "user-report.request-code-from"
+msgstr "Получить код подтверждения"
+
+msgid "user-report.instructions"
+msgstr "Если у вас положительный результат теста на COVID-19, но вы не получили код от органа здравоохранения по SMS или звонку, вы можете запросить его на этой странице."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Введите дату тестирования на COVID-19."
+
+msgid "user-report.phone-number-header"
+msgstr "Номер мобильного телефона"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Чтобы получить код подтверждения, укажите действительный номер телефона. Может взиматься плата согласно тарифам оператора связи."
+
+msgid "user-report.agreement-header"
+msgstr "Соглашение"
+
+msgid "user-report.agreement"
+msgstr "Я подтверждаю, что у меня положительный результат теста на COVID-19, мне принадлежит указанный номер телефона и я хочу получить код, чтобы сообщить о положительном результате теста."
+
+msgid "user-report.request-button"
+msgstr "Продолжить"
+
+msgid "user-report.code-issued"
+msgstr "Код подтверждения выдан."
+
+msgid "user-report.check-mobile-device"
+msgstr "Откройте SMS на мобильном устройстве."
+
+msgid "user-report.invalid-request"
+msgstr "Недопустимый запрос. Отправьте запрос через Систему уведомлений о риске инфицирования на мобильном устройстве."
+
+msgid "user-report.not-available"
+msgstr "В настоящее время местные органы здравоохранения не принимают отчеты, созданные пользователями."
+
+msgid "user-report.missing-agreement"
+msgstr "Чтобы запросить код подтверждения, необходимо принять условия использования."
+
+msgid "user-report.error-invalid-date"
+msgstr "Указана неверная дата тестирования на COVID-19."
+
+msgid "user-report.error-missing-phone"
+msgstr "Необходимо указать номер мобильного телефона."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Указан неверный номер мобильного телефона."
+
+msgid "user-report.quota-exceeded"
+msgstr "Коды подтверждения временно не выдаются. Повторите попытку позже."
+
+msgid "user-report.phone-not-eligible"
+msgstr "В настоящее время с вашего номера телефона нельзя отправлять пользовательские отчеты."
+
+msgid "user-report.internal-error"
+msgstr "Произошла внутренняя ошибка. В настоящее время нельзя запросить код подтверждения."
+
+msgid "user-report.unable-to-issue"
+msgstr "Не удалось отправить код подтверждения."
+
+msgid "user-report.code-device-throttled"
+msgstr "Код запрошен слишком много раз. Если он вам все ещё нужен, обратитесь в органы здравоохранения."
+
+msgid "user-report.testing-date-label"
+msgstr "Дата тестирования на COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Зашифрованная версия вашего номера телефона может храниться во избежание дополнительных отправок."
+
+msgid "user-report.learn-more"
+msgstr "Подробнее…"
+
+msgid "user-report.header"
+msgstr "Помогите уведомить окружающих о риске инфицирования"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX-XX-XX"

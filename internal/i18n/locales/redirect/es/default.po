@@ -8,113 +8,113 @@ msgstr ""
 
 
 msgid "login.about-exposure-notifications"
-msgstr "Acerca de las Exposure Notifications"
-
+msgstr "Información sobre las notificaciones de exposición"
 
 #
 # static pages
 # ----------
 
+
 msgid "static.not-found"
-msgstr "Extraviado"
+msgstr "No se ha encontrado"
 
 msgid "static.resource-does-not-exist"
-msgstr "Ese recurso no existe."
+msgstr "Este recurso no existe"
 
 msgid "static.redirect-not-found"
-msgstr "Para canjear un código Exposure Notifications, visite el vínculo en su dispositivo móvil."
+msgstr "Para canjear un código de notificaciones de exposición, accede al enlace que aparece en tu dispositivo móvil"
 
 msgid "static.unauthorized"
 msgstr "No autorizado"
 
 msgid "static.unauthorized-message"
-msgstr "No está autorizado para realizar esa acción."
-
+msgstr "No tienes autorización para realizar esta acción"
 
 #
 # User report webview
 # ----------
 
+
 msgid "user-report.title"
-msgstr "Obtén un código de verificación"
+msgstr "Obtener un código de verificación"
 
 msgid "user-report.navbar"
 msgstr "Solicitar código de verificación de notificaciones de exposición"
 
 msgid "user-report.request-code-from"
-msgstr "Obtén un código de verificación"
+msgstr "Obtener un código de verificación"
 
 msgid "user-report.instructions"
-msgstr "Si ha dado positivo por COVID-19 pero no ha recibido un código de su Autoridad de Salud por mensaje de texto o llamada telefónica, puede solicitar uno aquí"
+msgstr "Si has dado positivo en una prueba del COVID‐19, pero no has recibido un código de tu autoridad sanitaria por SMS o llamada telefónica, puedes solicitarlo aquí"
 
 msgid "user-report.enter-date-instructions"
-msgstr "Ingrese la fecha de su prueba COVID-19"
+msgstr "Introduce la fecha de tu prueba de COVID‐19"
 
 msgid "user-report.phone-number-header"
-msgstr "Tu número de teléfono"
+msgstr "Tu número de teléfono móvil"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Debes ingresar un número de teléfono válido para recibir un código de verificación. Es posible que se apliquen tarifas del operador."
+msgstr "Debes introducir un número de teléfono válido para recibir un código de verificación. Es posible que tu operador aplique algún cargo"
 
 msgid "user-report.agreement-header"
-msgstr "Acuerdo"
+msgstr "Contrato"
 
 msgid "user-report.agreement"
-msgstr "Reconozco que he recibido un resultado positivo de la prueba de COVID-19 y que el número de teléfono que he proporcionado es el mío y me gustaría recibir un código para informar el resultado positivo de mi prueba."
+msgstr "Confirmo que he recibido un resultado positivo en la prueba del COVID‐19, que el número de teléfono que he proporcionado es el mío y que quiero recibir un código para informar del resultado"
 
 msgid "user-report.request-button"
 msgstr "Continuar"
 
 msgid "user-report.code-issued"
-msgstr "Código de verificación emitido"
+msgstr "Se ha enviado el código de verificación"
 
 msgid "user-report.check-mobile-device"
-msgstr "Por favor revise sus mensajes de texto en su dispositivo móvil"
+msgstr "Consulta tus SMS en tu dispositivo móvil"
 
 msgid "user-report.invalid-request"
-msgstr "Solicitud no válida, inicie desde su aplicación de notificaciones de exposición en su dispositivo móvil"
+msgstr "Solicitud no válida; inicia la aplicación de notificaciones de exposición en tu dispositivo móvil"
 
 msgid "user-report.not-available"
-msgstr "Su autoridad sanitaria local no acepta informes iniciados por el usuario en este momento"
+msgstr "En estos momentos, la autoridad sanitaria local no acepta informes iniciados por usuarios"
 
 msgid "user-report.missing-agreement"
-msgstr "Debe aceptar los términos para solicitar un código de verificación"
+msgstr "Tienes que aceptar los términos para solicitar un código de verificación"
 
 msgid "user-report.error-invalid-date"
-msgstr "La fecha de la prueba COVID-19 no es válida."
+msgstr "Fecha de la prueba del COVID-19 no válida"
 
 msgid "user-report.error-missing-phone"
-msgstr "Se requiere el número de teléfono móvil"
+msgstr "Es obligatorio indicar un número de teléfono móvil"
 
 msgid "user-report.error-invalid-phone"
-msgstr "El número de teléfono móvil no es válido".
+msgstr "El número de teléfono móvil no es válido"
 
 msgid "user-report.quota-exceeded"
-msgstr "No se pueden emitir códigos de verificación temporalmente. Vuelve a intentarlo más tarde"
+msgstr "No se han podido emitir los códigos de verificación de forma temporal. Inténtalo de nuevo más tarde."
 
 msgid "user-report.phone-not-eligible"
-msgstr "Su número de teléfono no es actualmente apto para el informe de usuario"
+msgstr "Tu número de teléfono no se puede incluir en el informe de usuario"
 
 msgid "user-report.internal-error"
-msgstr "Hubo un error interno. No se puede solicitar un código de verificación en este momento"
+msgstr "Se ha producido un error interno. En estos momentos, no se puede solicitar un código de verificación"
 
 msgid "user-report.unable-to-issue"
-msgstr "No pudimos enviarle un código de verificación"
+msgstr "No hemos podido enviarte un código de verificación."
 
 msgid "user-report.code-device-throttled"
-msgstr "Ha solicitado un código demasiadas veces. Comuníquese con su Autoridad de Salud si aún necesita un código"
+msgstr "Has solicitado un código demasiadas veces. Si sigues necesitando un código, ponte en contacto con tu autoridad sanitaria"
 
 msgid "user-report.testing-date-label"
-msgstr "Fecha de su prueba COVID-19"
+msgstr "Fecha de tu prueba de COVID‐19"
 
 msgid "user-report.phone-storage"
-msgstr "Es posible que se almacene una versión protegida criptográficamente de su número de teléfono para evitar envíos adicionales."
+msgstr "Es posible que se almacene una versión de tu número de teléfono protegida de forma criptográfica para evitar envíos adicionales"
 
 msgid "user-report.learn-more"
-msgstr "Más información ..."
+msgstr "Más información..."
 
 msgid "user-report.header"
-msgstr "Ayude a notificar a otros sobre la exposición"
+msgstr "Ayudar a notificar a otros usuarios sobre la exposición"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"

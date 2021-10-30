@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "接触史通知简介"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "未找到"
+
+msgid "static.resource-does-not-exist"
+msgstr "该资源不存在。"
+
+msgid "static.redirect-not-found"
+msgstr "如需兑换接触史通知代码，请在移动设备上访问相应链接。"
+
+msgid "static.unauthorized"
+msgstr "未获得授权"
+
+msgid "static.unauthorized-message"
+msgstr "您无权执行该操作。"
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "获取验证码"
+
+msgid "user-report.navbar"
+msgstr "申请接触史通知验证码"
+
+msgid "user-report.request-code-from"
+msgstr "获取验证码"
+
+msgid "user-report.instructions"
+msgstr "如果您的新冠肺炎 (COVID-19) 检测结果呈阳性，但没有通过短信或电话收到卫生机构发来的验证码，则可以在此处申请。"
+
+msgid "user-report.enter-date-instructions"
+msgstr "输入您的新冠肺炎 (COVID-19) 检测日期"
+
+msgid "user-report.phone-number-header"
+msgstr "您的手机号码"
+
+msgid "user-report.phone-number-instructions"
+msgstr "您必须输入有效的手机号码，才能接收验证码。运营商可能会收取费用。"
+
+msgid "user-report.agreement-header"
+msgstr "协议"
+
+msgid "user-report.agreement"
+msgstr "我确认自己收到了新冠肺炎 (COVID-19) 阳性检测结果，并且我提供的手机号码是我本人的，我想要收到一个验证码来报告我的阳性检测结果。"
+
+msgid "user-report.request-button"
+msgstr "继续"
+
+msgid "user-report.code-issued"
+msgstr "已发出验证码"
+
+msgid "user-report.check-mobile-device"
+msgstr "请在您的移动设备上查看收到的短信。"
+
+msgid "user-report.invalid-request"
+msgstr "申请无效，请通过移动设备上的接触史通知应用提出申请。"
+
+msgid "user-report.not-available"
+msgstr "您当地的卫生部门目前不接受由用户提交的报告。"
+
+msgid "user-report.missing-agreement"
+msgstr "您必须同意条款，才能申请验证码"
+
+msgid "user-report.error-invalid-date"
+msgstr "新冠肺炎 (COVID-19) 检测日期无效。"
+
+msgid "user-report.error-missing-phone"
+msgstr "必须提供手机号码。"
+
+msgid "user-report.error-invalid-phone"
+msgstr "手机号码无效。"
+
+msgid "user-report.quota-exceeded"
+msgstr "暂时无法发出验证码，请稍后重试。"
+
+msgid "user-report.phone-not-eligible"
+msgstr "您的手机号码目前无法提交用户报告"
+
+msgid "user-report.internal-error"
+msgstr "出现内部错误。目前无法申请验证码。"
+
+msgid "user-report.unable-to-issue"
+msgstr "我们无法向您发送验证码。"
+
+msgid "user-report.code-device-throttled"
+msgstr "您申请验证码的次数过多。如果您仍然需要验证码，请与卫生机构联系。"
+
+msgid "user-report.testing-date-label"
+msgstr "新冠肺炎 (COVID-19) 检测日期"
+
+msgid "user-report.phone-storage"
+msgstr "系统可能会存储您的手机号码的加密版本，这样您就无需再次提供电话号码。"
+
+msgid "user-report.learn-more"
+msgstr "了解详情…"
+
+msgid "user-report.header"
+msgstr "帮助通知其他与您接触过的人"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"

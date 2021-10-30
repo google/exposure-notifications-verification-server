@@ -55,6 +55,10 @@ func TestI18n_matching(t *testing.T) {
 				po.ParseFile(pth)
 				pos = append(pos, po)
 
+				if po.Language == "" {
+					t.Errorf("MISSING LANGUAGE: path: %q", pth)
+				}
+
 				return nil
 			}); err != nil {
 				t.Fatal(err)
@@ -80,6 +84,29 @@ func TestI18n_matching(t *testing.T) {
 						t.Errorf("locale %q is missing translation %q", loc, k)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestFormatLangRegion(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		input  string
+		output string
+	}{
+		{input: "en-US", output: "en_US"},
+		{input: "en-GB", output: "en_GB"},
+		{input: "en", output: "en"},
+		{input: "not-a-real-thing", output: "not-a-real-thing"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			if got, want := formatLangRegion(tc.input), tc.output; got != want {
+				t.Errorf("Expected %q to be %q", got, want)
 			}
 		})
 	}

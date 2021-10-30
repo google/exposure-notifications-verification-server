@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: ne\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "सङ्क्रमित व्यक्तिको सम्पर्कमा आएको सूचना दिने प्रणालीसम्बन्धी जानकारी"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "फेला परेन"
+
+msgid "static.resource-does-not-exist"
+msgstr "उक्त स्रोत उपलब्ध छैन।"
+
+msgid "static.redirect-not-found"
+msgstr "तपाईं सङ्क्रमित व्यक्तिको सम्पर्कमा आएको सूचना दिने प्रणालीले पठाउने कोड प्रयोग गर्न चाहनुहुन्छ भने आफ्नो मोबाइल डिभाइसमार्फत यो लिंकमा जानुहोस्।"
+
+msgid "static.unauthorized"
+msgstr "अनधिकृत"
+
+msgid "static.unauthorized-message"
+msgstr "तपाईंलाई उक्त कारबाही गर्ने अनुमति दिइएको छैन।"
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "पुष्टि कोड प्राप्त गर्नुहोस्"
+
+msgid "user-report.navbar"
+msgstr "सङ्क्रमित व्यक्तिको सम्पर्कमा आएको सूचना दिने प्रणालीलाई कोड पठाइदिन भनी अनुरोध गर्नुहोस्"
+
+msgid "user-report.request-code-from"
+msgstr "पुष्टि कोड प्राप्त गर्नुहोस्"
+
+msgid "user-report.instructions"
+msgstr "COVID-19 को परीक्षण गराउँदा तपाईंको नतिजा पोजेटिभ आएको छ तर तपाईंले आफ्नो जनस्वास्थ्य प्राधिकरणबाट टेक्स्ट म्यासेज वा फोन कलमार्फत कोड प्राप्त गर्नुभएको छैन भने तपाईं यहाँ गई कोड पठाइदिन भनी अनुरोध गर्न सक्नुहुन्छ।"
+
+msgid "user-report.enter-date-instructions"
+msgstr "आफूले COVID-19 को परीक्षण गराएको मिति हाल्नुहोस्"
+
+msgid "user-report.phone-number-header"
+msgstr "तपाईंको मोबाइल फोन नम्बर"
+
+msgid "user-report.phone-number-instructions"
+msgstr "तपाईं पुष्टि कोड प्राप्त गर्न चाहनुहुन्छ भने तपाईंले अनिवार्य रूपमा वैध फोन नम्बर हाल्नु पर्छ। टेलिफोन कम्पनीले तोकेको शुल्क लाग्न पनि सक्छ।"
+
+msgid "user-report.agreement-header"
+msgstr "सम्झौता"
+
+msgid "user-report.agreement"
+msgstr "म COVID-19 को परीक्षण गराउँदा मेरो नतिजा पोजेटिभ आएको, मैले उपलब्ध गराएको फोन नम्बर मेरै हो र म आफूले COVID-19 को परीक्षण गराउँदा आएको पोजेटिभ नतिजाका बारेमा रिपोर्ट गर्ने कोड प्राप्त गर्न चाहन्छु भन्ने कुरा स्वीकार गर्छु।"
+
+msgid "user-report.request-button"
+msgstr "जारी राख्नुहोस्"
+
+msgid "user-report.code-issued"
+msgstr "पुष्टि कोड जारी गरियो"
+
+msgid "user-report.check-mobile-device"
+msgstr "कृपया आफ्नो मोबाइल डिभाइसमा टेक्स्ट म्यासेज हेर्नुहोस्।"
+
+msgid "user-report.invalid-request"
+msgstr "यो अनुरोध अवैध छ, कृपया आफ्नो मोबाइल डिभाइसमा सङ्क्रमित व्यक्तिको सम्पर्कमा आएको सूचना दिने एप लन्च गर्नुहोस्।"
+
+msgid "user-report.not-available"
+msgstr "तपाईंको स्थानीय जनस्वास्थ्य प्राधिकरणले अहिले प्रयोगकर्ताले पेस गरेका रिपोर्टहरू स्वीकार गरिरहेको छैन।"
+
+msgid "user-report.missing-agreement"
+msgstr "तपाईं पुष्टि कोड पठाइदिन भनी अनुरोध गर्न चाहनुहुन्छ भने तपाईंले अनिवार्य रूपमा यी सर्तहरूमा सहमति जनाउनु पर्छ"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 को परीक्षण गरिएको मिति अवैध छ।"
+
+msgid "user-report.error-missing-phone"
+msgstr "मोबाइल फोन नम्बर हाल्नु पर्ने हुन्छ।"
+
+msgid "user-report.error-invalid-phone"
+msgstr "मोबाइल फोन नम्बर अवैध छ।"
+
+msgid "user-report.quota-exceeded"
+msgstr "केही समयका लागि पुष्टि कोड जारी गर्न सकिँदैन, कृपया पछि फेरि प्रयास गर्नुहोस्।"
+
+msgid "user-report.phone-not-eligible"
+msgstr "तपाईं हाल आफ्नो फोन नम्बर प्रयोग गरी प्रयोगकर्ताको रिपोर्ट पेस गर्न सक्नुहुन्न"
+
+msgid "user-report.internal-error"
+msgstr "कुनै आन्तरिक त्रुटि भयो। अहिले पुष्टि कोड पठाइदिन भनी अनुरोध गर्न मिल्दैन।"
+
+msgid "user-report.unable-to-issue"
+msgstr "हामीले तपाईंलाई पुष्टि कोड पठाउन सकेनौँ।"
+
+msgid "user-report.code-device-throttled"
+msgstr "तपाईंले कोड पठाइदिन भनी अत्यन्त धेरै पटक अनुरोध गर्नुभएको छ। तपाईं अझै पनि पुष्टि कोड प्राप्त गर्न चाहनुहुन्छ भने कृपया आफ्नो जनस्वास्थ्य प्राधिकरणमा सम्पर्क गर्नुहोस्।"
+
+msgid "user-report.testing-date-label"
+msgstr "तपाईंले COVID-19 को परीक्षण गराएको मिति"
+
+msgid "user-report.phone-storage"
+msgstr "तपाईंको फोन नम्बर प्रयोग गरी फेरि रिपोर्ट पेस नगरियोस् भन्नाका खातिर उक्त फोन नम्बर क्रिप्टोग्राफी प्रयोग गरेर सुरक्षित तरिकाले भण्डारण गरिन सक्छ।"
+
+msgid "user-report.learn-more"
+msgstr "थप जान्नुहोस्..."
+
+msgid "user-report.header"
+msgstr "अन्य मान्छेहरूलाई कोरोना भाइरस सक्रमितसँगको घुलमिलका बारेमा थाहा पाउन मद्दत गर्नुहोस्"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"

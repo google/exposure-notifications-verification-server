@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Про Сповіщення про ризик зараження"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Не знайдено"
+
+msgid "static.resource-does-not-exist"
+msgstr "Такого ресурсу не існує."
+
+msgid "static.redirect-not-found"
+msgstr "Щоб активувати код Сповіщень про ризик зараження, перейдіть за посиланням на мобільному пристрої."
+
+msgid "static.unauthorized"
+msgstr "Немає авторизації"
+
+msgid "static.unauthorized-message"
+msgstr "Ви не маєте права виконувати цю дію."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Отримайте код підтвердження"
+
+msgid "user-report.navbar"
+msgstr "Надіслати запит на код підтвердження Сповіщень про ризик зараження"
+
+msgid "user-report.request-code-from"
+msgstr "Отримайте код підтвердження"
+
+msgid "user-report.instructions"
+msgstr "Якщо у вас позитивний результат тесту на COVID-19, але ви не отримали коду від органу охорони здоров’я в SMS або телефоном, можете надіслати запит на отримання такого коду тут."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Введіть дату свого тесту на COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Ваш номер мобільного телефону"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Щоб отримати код підтвердження, укажіть дійсний номер телефону. Може стягуватися плата за тарифами оператора."
+
+msgid "user-report.agreement-header"
+msgstr "Згода"
+
+msgid "user-report.agreement"
+msgstr "Я підтверджую, що маю позитивний результат тесту на COVID-19, указаний мною номер телефону справді належить мені та я хочу отримати код для повідомлення про позитивний результат тесту."
+
+msgid "user-report.request-button"
+msgstr "Продовжити"
+
+msgid "user-report.code-issued"
+msgstr "Код підтвердження випущено"
+
+msgid "user-report.check-mobile-device"
+msgstr "Перевірте SMS на своєму мобільному пристрої."
+
+msgid "user-report.invalid-request"
+msgstr "Недійсний запит. Надішліть запит у додатку Сповіщення про ризик зараження на мобільному пристрої."
+
+msgid "user-report.not-available"
+msgstr "Ваш орган охорони здоров’я зараз не приймає повідомлень, ініційованих користувачами."
+
+msgid "user-report.missing-agreement"
+msgstr "Прийміть умови, щоб надіслати запит на код підтвердження."
+
+msgid "user-report.error-invalid-date"
+msgstr "Недійсна дата тесту на COVID-19."
+
+msgid "user-report.error-missing-phone"
+msgstr "Укажіть номер мобільного телефону."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Номер мобільного телефону недійсний."
+
+msgid "user-report.quota-exceeded"
+msgstr "Тимчасово не вдається випустити коди підтвердження. Спробуйте пізніше."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Ваш номер телефону зараз непридатний для повідомлення користувача."
+
+msgid "user-report.internal-error"
+msgstr "Сталася внутрішня помилка. Зараз не можна надати код підтвердження за запитом."
+
+msgid "user-report.unable-to-issue"
+msgstr "Нам не вдалося надіслати вам код підтвердження."
+
+msgid "user-report.code-device-throttled"
+msgstr "Ви надіслали забагато запитів на код. Якщо він вам досі потрібен, зв’яжіться з органом охорони здоров’я."
+
+msgid "user-report.testing-date-label"
+msgstr "Дата вашого тесту на COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Криптографічно захищена версія вашого номера телефону може зберігатися, щоб уникнути додаткового надсилання даних."
+
+msgid "user-report.learn-more"
+msgstr "Докладніше…"
+
+msgid "user-report.header"
+msgstr "Допоможіть сповістити інших людей про ризик зараження"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"

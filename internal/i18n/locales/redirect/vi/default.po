@@ -1,0 +1,120 @@
+msgid ""
+msgstr ""
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Giới thiệu về hệ thống Thông báo tiếp xúc"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Không tìm thấy"
+
+msgid "static.resource-does-not-exist"
+msgstr "Tài nguyên đó không tồn tại."
+
+msgid "static.redirect-not-found"
+msgstr "Để sử dụng mã Thông báo tiếp xúc, hãy truy cập vào đường liên kết trên thiết bị di động của bạn."
+
+msgid "static.unauthorized"
+msgstr "Không được phép"
+
+msgid "static.unauthorized-message"
+msgstr "Bạn không được phép thực hiện thao tác đó."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Nhận mã xác minh"
+
+msgid "user-report.navbar"
+msgstr "Yêu cầu mã xác minh Thông báo tiếp xúc"
+
+msgid "user-report.request-code-from"
+msgstr "Nhận mã xác minh"
+
+msgid "user-report.instructions"
+msgstr "Nếu đã có kết quả xét nghiệm dương tính với COVID-19 nhưng chưa nhận được mã từ Cơ quan y tế qua tin nhắn văn bản hoặc cuộc gọi điện thoại, thì bạn có thể yêu cầu mã tại đây."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Nhập ngày xét nghiệm COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Số điện thoại di động"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Bạn phải nhập số điện thoại hợp lệ để nhận được mã xác minh. Bạn có thể phải trả phí của nhà mạng."
+
+msgid "user-report.agreement-header"
+msgstr "Thoả thuận"
+
+msgid "user-report.agreement"
+msgstr "Tôi xác nhận rằng tôi đã nhận được kết quả xét nghiệm dương tính với COVID-19 và số điện thoại đã cung cấp là của tôi. Tôi muốn nhận mã để báo cáo kết quả xét nghiệm dương tính của mình."
+
+msgid "user-report.request-button"
+msgstr "Tiếp tục"
+
+msgid "user-report.code-issued"
+msgstr "Đã gửi mã xác minh"
+
+msgid "user-report.check-mobile-device"
+msgstr "Vui lòng kiểm tra các tin nhắn văn bản trên thiết bị di động của bạn."
+
+msgid "user-report.invalid-request"
+msgstr "Yêu cầu không hợp lệ, vui lòng gửi yêu cầu từ ứng dụng Thông báo tiếp xúc trên thiết bị di động của bạn."
+
+msgid "user-report.not-available"
+msgstr "Cơ quan y tế địa phương của bạn hiện chưa chấp nhận báo cáo do người dùng tạo."
+
+msgid "user-report.missing-agreement"
+msgstr "Bạn phải đồng ý với các điều khoản để yêu cầu mã xác minh"
+
+msgid "user-report.error-invalid-date"
+msgstr "Ngày xét nghiệm COVID-19 không hợp lệ."
+
+msgid "user-report.error-missing-phone"
+msgstr "Bạn phải nhập số điện thoại di động."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Số điện thoại di động không hợp lệ."
+
+msgid "user-report.quota-exceeded"
+msgstr "Tạm thời không gửi được mã xác minh, vui lòng thử lại sau."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Số điện thoại của bạn hiện không đủ điều kiện để sử dụng tính năng báo cáo của người dùng"
+
+msgid "user-report.internal-error"
+msgstr "Đã xảy ra lỗi nội bộ. Hiện tại, bạn không thể yêu cầu mã xác minh."
+
+msgid "user-report.unable-to-issue"
+msgstr "Chúng tôi không gửi được mã xác minh cho bạn."
+
+msgid "user-report.code-device-throttled"
+msgstr "Bạn đã yêu cầu mã quá nhiều lần. Vui lòng liên hệ với Cơ quan y tế nếu bạn vẫn cần có mã."
+
+msgid "user-report.testing-date-label"
+msgstr "Ngày xét nghiệm COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Một phiên bản số điện thoại được bảo vệ bằng phương pháp mã hoá có thể được lưu trữ để ngăn chặn việc gửi thêm dữ liệu."
+
+msgid "user-report.learn-more"
+msgstr "Tìm hiểu thêm..."
+
+msgid "user-report.header"
+msgstr "Thông báo cho những người khác về khả năng tiếp xúc"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"

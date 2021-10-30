@@ -10,10 +10,10 @@ msgstr ""
 msgid "login.about-exposure-notifications"
 msgstr "について学ぶ Exposure Notifications"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "見つかりません"
@@ -30,10 +30,10 @@ msgstr "許可されていない"
 msgid "static.unauthorized-message"
 msgstr "そのアクションを実行する権限がありません。"
 
-
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "確認コードを取得する"

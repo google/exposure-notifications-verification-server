@@ -10,10 +10,10 @@ msgstr ""
 msgid "login.about-exposure-notifications"
 msgstr "Тухай Exposure Notifications"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Олдсонгүй"
@@ -33,6 +33,7 @@ msgstr "Та энэ үйлдлийг хийх эрхгүй байна."
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "Баталгаажуулах код авна уу"

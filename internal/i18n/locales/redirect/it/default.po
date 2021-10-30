@@ -10,10 +10,10 @@ msgstr ""
 msgid "login.about-exposure-notifications"
 msgstr "Informazioni sulle Exposure Notifications"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Non trovato"
@@ -30,10 +30,10 @@ msgstr "Non autorizzato"
 msgid "static.unauthorized-message"
 msgstr "Non sei autorizzato a eseguire tale azione."
 
-
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "Ottieni un codice di verifica"

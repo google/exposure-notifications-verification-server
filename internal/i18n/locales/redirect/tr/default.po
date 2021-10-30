@@ -10,10 +10,10 @@ msgstr ""
 msgid "login.about-exposure-notifications"
 msgstr "About Exposure Notifications"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Bulunamadı"
@@ -30,10 +30,10 @@ msgstr "Yetkisiz"
 msgid "static.unauthorized-message"
 msgstr "Bu eylemi gerçekleştirme yetkiniz yok."
 
-
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "Barlag koduny alyň"
