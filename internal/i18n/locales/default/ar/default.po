@@ -6,9 +6,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 #
 # login / account
 # ----------------
+
 
 msgid "login.email-address"
 msgstr "عنوان البريد الإلكتروني"
@@ -151,10 +153,10 @@ msgstr "تحتوي على %d أو أكثر من الأحرف الخاصة"
 msgid "password.requirements-match"
 msgstr "مطابقة كلمة المرور المؤكدة"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "رمز الإصدار"
@@ -204,10 +206,10 @@ msgstr "حسابي"
 msgid "nav.sign-out"
 msgstr "خروج"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "إنشاء رمز التحقق"
@@ -299,10 +301,10 @@ msgstr "منتهية الصلاحية"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "كان معدل المطالبة بالكود الخاص بك أمس %s ، وهو أقل من المعدل التاريخي لـ %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "قضية مجمعة"
@@ -376,10 +378,10 @@ msgstr "يوجد عدد كبير جدًا من أخطاء التعليمات ا�
 msgid "codes.bulk-issue.too-many-success"
 msgstr "تم إصدار عدد كبير جدًا من الرموز لعرض النتائج"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "غير موجود"
@@ -395,3 +397,4 @@ msgstr "غير مصرح"
 
 msgid "static.unauthorized-message"
 msgstr "أنت غير مخول للقيام بهذا الإجراء."
+

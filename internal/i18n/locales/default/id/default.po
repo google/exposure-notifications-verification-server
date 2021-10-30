@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "Alamat email"
 
@@ -152,10 +153,10 @@ msgstr "Berisi %d atau lebih karakter khusus"
 msgid "password.requirements-match"
 msgstr "Cocokkan kata sandi yang telah dikonfirmasi"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Kode terbitan"
@@ -205,10 +206,10 @@ msgstr "Akun saya"
 msgid "nav.sign-out"
 msgstr "Keluar"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Buat kode verifikasi"
@@ -300,10 +301,10 @@ msgstr "KEDALUWARSA"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Tingkat klaim kode Anda untuk kemarin adalah %s, yang kurang dari rata-rata historis Anda sebesar %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Masalah massal"
@@ -377,10 +378,10 @@ msgstr "Terlalu banyak kesalahan kode untuk menampilkan hasil"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Terlalu banyak kode yang diterbitkan untuk menampilkan hasil"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Tidak ditemukan"
@@ -396,3 +397,4 @@ msgstr "Tidak resmi"
 
 msgid "static.unauthorized-message"
 msgstr "Anda tidak diizinkan melakukan tindakan itu."
+

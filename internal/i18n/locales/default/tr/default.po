@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "E-posta adresi"
 
@@ -152,10 +153,10 @@ msgstr "%d veya daha fazla özel karakter içerir"
 msgid "password.requirements-match"
 msgstr "Eşleşen onaylanmış şifre"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Kod üretimi"
@@ -205,10 +206,10 @@ msgstr "Hesabım"
 msgid "nav.sign-out"
 msgstr "Çıkış"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Doğrulama kodu oluştur"
@@ -300,10 +301,10 @@ msgstr "SÜRESİ DOLDU"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Dün için kod talep oranınız %s idi ve bu, %s olan geçmiş ortalamanızdan daha az."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk issue"
@@ -377,10 +378,10 @@ msgstr "Too many code errors to display results"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Bulunamadı"
@@ -396,3 +397,4 @@ msgstr "Yetkisiz"
 
 msgid "static.unauthorized-message"
 msgstr "Bu eylemi gerçekleştirme yetkiniz yok."
+

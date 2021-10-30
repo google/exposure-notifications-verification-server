@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "ইমেল ঠিকানা"
 
@@ -152,10 +153,10 @@ msgstr "%d বা আরও বিশেষ অক্ষর"
 msgid "password.requirements-match"
 msgstr "ম্যাচ নিশ্চিত হওয়া পাসওয়ার্ড"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "ইস্যু কোড"
@@ -205,10 +206,10 @@ msgstr "আমার অ্যাকাউন্ট"
 msgid "nav.sign-out"
 msgstr "সাইন আউট"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "যাচাইকরণ কোড তৈরি করুন"
@@ -300,10 +301,10 @@ msgstr "মেয়াদোত্তীর্ণ"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "গতকালের জন্য আপনার কোড দাবির হার ছিল %s, যা আপনার %s এর historicalতিহাসিক গড়ের চেয়ে কম।"
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "বাল্ক ইস্যু"
@@ -377,10 +378,10 @@ msgstr "ফলাফল প্রদর্শনের জন্য অনেক
 msgid "codes.bulk-issue.too-many-success"
 msgstr "ফলাফল প্রদর্শনের জন্য প্রচুর কোড জারি করা হয়েছে"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "পাওয়া গেল না"
@@ -396,3 +397,4 @@ msgstr "অননুমোদিত"
 
 msgid "static.unauthorized-message"
 msgstr "আপনি এই ক্রিয়াটি সম্পাদনের জন্য অনুমোদিত নন।"
+

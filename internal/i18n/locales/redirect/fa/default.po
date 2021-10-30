@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "درباره اعلان تماس‌های پرخطر"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "پیدا نشد"
+
+msgid "static.resource-does-not-exist"
+msgstr "این منبع وجود ندارد."
+
+msgid "static.redirect-not-found"
+msgstr "برای مطالبه کردن کد اعلان تماس‌های پرخطر، به پیوندی که در دستگاه همراهتان است بروید."
+
+msgid "static.unauthorized"
+msgstr "غیرمجاز"
+
+msgid "static.unauthorized-message"
+msgstr "اجازه ندارید این کنش را اجرا کنید."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "دریافت کد درستی‌سنجی"
+
+msgid "user-report.navbar"
+msgstr "درخواست کد درستی‌سنجی اعلان تماس‌های پرخطر"
+
+msgid "user-report.request-code-from"
+msgstr "دریافت کد درستی‌سنجی"
+
+msgid "user-report.instructions"
+msgstr "اگر نتیجه آزمایش کووید-۱۹ شما مثبت شده است اما مقام بهداشتی‌تان کدی ازطریق پیامک یا تماس تلفنی برای شما ارسال نکرده است، می‌توانید در اینجا کدی درخواست کنید."
+
+msgid "user-report.enter-date-instructions"
+msgstr "وارد کردن تاریخ آزمایش کووید-۱۹"
+
+msgid "user-report.phone-number-header"
+msgstr "شماره تلفن همراه شما"
+
+msgid "user-report.phone-number-instructions"
+msgstr "برای دریافت کد درستی‌سنجی، باید شماره تلفن معتبری وارد کنید. ممکن است کارمزد شرکت مخابراتی اعمال شود."
+
+msgid "user-report.agreement-header"
+msgstr "قرارداد"
+
+msgid "user-report.agreement"
+msgstr "اعلام می‌کنم نتیجه آزمایش کووید-۱۹ من مثبت شده است و شماره تلفنی که ارائه داده‌ام متعلق به خودم است و مایلم کدی برای گزارش دادن نتیجه مثبت آزمایشم دریافت کنم."
+
+msgid "user-report.request-button"
+msgstr "ادامه"
+
+msgid "user-report.code-issued"
+msgstr "کد درستی‌سنجی صادر شد"
+
+msgid "user-report.check-mobile-device"
+msgstr "لطفاً پیامک‌های دستگاه همراهتان را بررسی کنید."
+
+msgid "user-report.invalid-request"
+msgstr "درخواست نامعتبر است، لطفاً از برنامه اعلان تماس‌های پرخطر در دستگاه همراهتان راه‌اندازی کنید."
+
+msgid "user-report.not-available"
+msgstr "مرجع بهداشت محلی‌تان درحال‌حاضر گزارش‌های آغازشده ازسوی کاربر را نمی‌پذیرد."
+
+msgid "user-report.missing-agreement"
+msgstr "برای درخواست کردن کد درستی‌سنجی، باید با شرایط موافقت کنید."
+
+msgid "user-report.error-invalid-date"
+msgstr "تاریخ آزمایش کووید-۱۹ نامعتبر است."
+
+msgid "user-report.error-missing-phone"
+msgstr "شماره تلفن همراه الزامی است."
+
+msgid "user-report.error-invalid-phone"
+msgstr "شماره تلفن همراه نامعتبر است."
+
+msgid "user-report.quota-exceeded"
+msgstr "موقتاً امکان صادر کردن کد درستی‌سنجی وجود ندارد، لطفاً بعداً دوباره امتحان کنید."
+
+msgid "user-report.phone-not-eligible"
+msgstr "شماره تلفنتان درحال‌حاضر برای گزارش کاربر واجدشرایط نیست."
+
+msgid "user-report.internal-error"
+msgstr "خطایی داخلی پیش آمد. درحال‌حاضر نمی‌توان کد درستی‌سنجی درخواست کرد."
+
+msgid "user-report.unable-to-issue"
+msgstr "نتوانستیم کد درستی‌سنجی برایتان ارسال کنیم."
+
+msgid "user-report.code-device-throttled"
+msgstr "بیش‌ازاندازه کد درخواست کرده‌اید. اگر هنوز به کد نیاز دارید، لطفاً با مقام بهداشتی‌تان تماس بگیرید."
+
+msgid "user-report.testing-date-label"
+msgstr "تاریخ آزمایش کووید-۱۹ شما"
+
+msgid "user-report.phone-storage"
+msgstr "ممکن است نسخه‌ای از شماره تلفنتان که با رمزگذاری محافظت شده است برای جلوگیری از ارسال‌های بیشتر ذخیره شود."
+
+msgid "user-report.learn-more"
+msgstr "بیشتر بدانید…"
+
+msgid "user-report.header"
+msgstr "کمک به مطلع کردن دیگران از تماس‌های پرخطر"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

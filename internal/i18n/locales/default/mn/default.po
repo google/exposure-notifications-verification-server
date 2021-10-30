@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "Имэйл хаяг"
 
@@ -152,10 +153,10 @@ msgstr "%d ба түүнээс дээш тусгай тэмдэгт агуулн
 msgid "password.requirements-match"
 msgstr "Тохирох нууц үг"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Асуудлын код"
@@ -205,10 +206,10 @@ msgstr "Миний данс"
 msgid "nav.sign-out"
 msgstr "Гарах"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Баталгаажуулах код үүсгэх"
@@ -300,10 +301,10 @@ msgstr "Хугацаа дууссан"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Таны өчигдрийн кодын нэхэмжлэлийн хувь %s байсан бөгөөд энэ нь таны түүхэн дунджаас %s -с бага байна."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Бөөн асуудал"
@@ -377,10 +378,10 @@ msgstr "Үр дүнг харуулахын тулд кодын алдаа хэт
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Үр дүнг харуулахын тулд хэтэрхий олон код гаргасан байна"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Олдсонгүй"
@@ -396,3 +397,4 @@ msgstr "Зөвшөөрөлгүй"
 
 msgid "static.unauthorized-message"
 msgstr "Та энэ үйлдлийг хийх эрхгүй байна."
+

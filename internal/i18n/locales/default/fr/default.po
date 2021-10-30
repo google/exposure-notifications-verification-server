@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "Adresse e-mail"
 
@@ -152,10 +153,10 @@ msgstr "Contient %d ou plus de caractères spéciaux"
 msgid "password.requirements-match"
 msgstr "Faire correspondre le mot de passe confirmé"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Émettre un code"
@@ -205,10 +206,10 @@ msgstr "Mon compte"
 msgid "nav.sign-out"
 msgstr "Déconnexion"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Créer un code de vérification"
@@ -300,10 +301,10 @@ msgstr "EXPIRÉ"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Votre taux de réclamation de code pour hier était de %s, ce qui est inférieur à votre moyenne historique de %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk issue"
@@ -377,10 +378,10 @@ msgstr "Too many code errors to display results"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Pas trouvé"
@@ -396,3 +397,4 @@ msgstr "Non autorisé"
 
 msgid "static.unauthorized-message"
 msgstr "Vous n'êtes pas autorisé à effectuer cette action."
+

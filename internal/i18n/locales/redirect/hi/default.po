@@ -1,4 +1,4 @@
-msgid "" 
+msgid ""
 msgstr ""
 "Language: hi\n"
 "MIME-Version: 1.0\n"
@@ -6,12 +6,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 msgid "login.about-exposure-notifications"
 msgstr "एक्सपोज़र नोटिफ़िकेशन के बारे में"
 
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "नहीं मिला"
@@ -31,6 +33,7 @@ msgstr "आपको इस काम की अनुमति नहीं ह
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "पुष्टि के लिए कोड पाएं"
@@ -115,3 +118,4 @@ msgstr "संक्रमित व्यक्ति से संपर्क
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

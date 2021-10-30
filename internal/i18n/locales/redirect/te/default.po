@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: te\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "వ్యాధి సోకగల అవకాశాన్ని తెలిపే నోటిఫికేషన్‌ల గురించి"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "కనుగొనబడలేదు"
+
+msgid "static.resource-does-not-exist"
+msgstr "ఆ రిసోర్స్ ఉనికిలో లేదు."
+
+msgid "static.redirect-not-found"
+msgstr "వ్యాధి సోకగల అవకాశాన్ని తెలిపే నోటిఫికేషన్‌ల కోడ్‌ను రిడీమ్ చేయడానికి, మీ మొబైల్ పరికరంలో లింక్‌కు వెళ్లండి."
+
+msgid "static.unauthorized"
+msgstr "అనధికారం"
+
+msgid "static.unauthorized-message"
+msgstr "ఆ చర్యను అమలు చేయడానికి మీకు అధికారం లేదు."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "వెరిఫికేషన్ కోడ్‌ను పొందండి"
+
+msgid "user-report.navbar"
+msgstr "వ్యాధి సోకగల అవకాశాన్ని తెలిపే నోటిఫికేషన్‌ల వెరిఫికేషన్ కోడ్‌ను రిక్వెస్ట్ చేయండి"
+
+msgid "user-report.request-code-from"
+msgstr "వెరిఫికేషన్ కోడ్‌ను పొందండి"
+
+msgid "user-report.instructions"
+msgstr "మీకు COVID-19 పరీక్షలో పాజిటివ్ వచ్చింది, కానీ మీ ప్రభుత్వ ఆరోగ్య సంస్థ నుండి టెక్స్ట్ లేదా ఫోన్ కాల్ ద్వారా కోడ్ అందకపోతే, మీరు ఇక్కడ ఒక దాన్ని రిక్వెస్ట్ చేయవచ్చు."
+
+msgid "user-report.enter-date-instructions"
+msgstr "మీ COVID-19 పరీక్ష తేదీని ఎంటర్ చేయండి"
+
+msgid "user-report.phone-number-header"
+msgstr "మీ మొబైల్ ఫోన్ నంబర్"
+
+msgid "user-report.phone-number-instructions"
+msgstr "వెరిఫికేషన్ కోడ్‌ను అందుకోవడానికి మీరు తప్పనిసరిగా చెల్లుబాటు అయ్యే ఫోన్ నంబర్‌ను ఎంటర్ చేయాలి. క్యారియర్ ఫీజులు వర్తించవచ్చు."
+
+msgid "user-report.agreement-header"
+msgstr "ఒప్పందం"
+
+msgid "user-report.agreement"
+msgstr "COVID-19 పరీక్షలో నాకు పాజిటివ్ వచ్చింది, నేను అందించిన ఫోన్ నంబర్ నాకు చెందినదే, నా పరీక్ష పాజిటివ్ ఫలితాన్ని రిపోర్ట్ చేయడానికి నేను కోడ్‌ను అందుకోవాలనుకుంటున్నాను."
+
+msgid "user-report.request-button"
+msgstr "కొనసాగించండి"
+
+msgid "user-report.code-issued"
+msgstr "వెరిఫికేషన్ కోడ్ జారీ చేయబడింది"
+
+msgid "user-report.check-mobile-device"
+msgstr "దయచేసి మీ మొబైల్ పరికరంలో టెక్స్ట్ మెసేజ్‌ను చెక్ చేయండి."
+
+msgid "user-report.invalid-request"
+msgstr "రిక్వెస్ట్ చెల్లదు, దయచేసి మీ మొబైల్ పరికరంలో మీ వ్యాధి సోకగల అవకాశాన్ని తెలిపే నోటిఫికేషన్‌ల యాప్ నుండి లాంచ్ చేయండి."
+
+msgid "user-report.not-available"
+msgstr "ప్రస్తుతానికి మీ స్థానిక ప్రభుత్వ ఆరోగ్య సంస్థ యూజర్ ప్రారంభించిన రిపోర్ట్‌లను ఆమోదించడం లేదు."
+
+msgid "user-report.missing-agreement"
+msgstr "వెరిఫికేషన్ కోడ్‌ను రిక్వెస్ట్ చేయడానికి, మీరు తప్పనిసరిగా నియమాలను అంగీకరించాలి"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 పరీక్ష తేదీ చెల్లదు."
+
+msgid "user-report.error-missing-phone"
+msgstr "మొబైల్ ఫోన్ నంబర్ అవసరం."
+
+msgid "user-report.error-invalid-phone"
+msgstr "మొబైల్ ఫోన్ నంబర్ చెల్లదు."
+
+msgid "user-report.quota-exceeded"
+msgstr "వెరిఫికేషన్ కోడ్‌లను జారీ చేయడం ప్రస్తుతానికి సాధ్యం కాలేదు, దయచేసి తర్వాత మళ్లీ ట్రై చేయండి."
+
+msgid "user-report.phone-not-eligible"
+msgstr "యూజర్ రిపోర్ట్ చేయడం కోసం ప్రస్తుతం మీ ఫోన్ నంబర్‌కు అర్హత లేదు"
+
+msgid "user-report.internal-error"
+msgstr "ఇంటర్నల్ ఎర్రర్ ఏర్పడింది. ఈ సమయంలో వెరిఫికేషన్ కోడ్‌ను రిక్వెస్ట్ చేయడం సాధ్యం కాదు."
+
+msgid "user-report.unable-to-issue"
+msgstr "మీకు వెరిఫికేషన్ కోడ్‌ను పంపలేకపోయాము."
+
+msgid "user-report.code-device-throttled"
+msgstr "మీరు అనేక సార్లు కోడ్‌ను రిక్వెస్ట్ చేశారు. మీకు ఇప్పటికీ కోడ్ అవసరమైతే, దయచేసి మీ ప్రభుత్వ ఆరోగ్య సంస్థను సంప్రదించండి."
+
+msgid "user-report.testing-date-label"
+msgstr "మీ COVID-19 పరీక్ష తేదీ"
+
+msgid "user-report.phone-storage"
+msgstr "అదనపు సమర్పణలను నిరోధించడానికి మీ ఫోన్ నంబర్ యొక్క క్రిప్టోగ్రాఫికల్ రక్షిత వెర్షన్ స్టోర్ చేయబడవచ్చు."
+
+msgid "user-report.learn-more"
+msgstr "మరింత తెలుసుకోండి..."
+
+msgid "user-report.header"
+msgstr "వ్యాధి సోకే అవకాశం ఉన్న ఇతరులకు తెలియజేసి, సహాయం చేయండి"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

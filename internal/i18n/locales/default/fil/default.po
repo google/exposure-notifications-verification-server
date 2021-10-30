@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "Email address"
 
@@ -152,10 +153,10 @@ msgstr "Naglalaman ng %d o higit pang mga espesyal na character"
 msgid "password.requirements-match"
 msgstr "Itugma ang nakumpirmang password"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Issue code"
@@ -205,10 +206,10 @@ msgstr "My account"
 msgid "nav.sign-out"
 msgstr "Sign out"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Gumawa ng verification code"
@@ -300,10 +301,10 @@ msgstr "EXPIRED"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Ang rate ng iyong claim sa code para sa kahapon ay %s, na mas mababa sa iyong average na kasaysayan ng %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk issue"
@@ -377,10 +378,10 @@ msgstr "Too many code errors to display results"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Hindi mahanap"
@@ -396,3 +397,4 @@ msgstr "Hindi pinahintulutan"
 
 msgid "static.unauthorized-message"
 msgstr "Hindi ka pinahintulutan na gawin ang aksyon na iyon."
+

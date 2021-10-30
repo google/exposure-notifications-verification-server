@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: sw\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Kuhusu Arifa Kuhusu Kukaribia Aliye na COVID-19"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Haipatikani"
+
+msgid "static.resource-does-not-exist"
+msgstr "Nyenzo hiyo haipo."
+
+msgid "static.redirect-not-found"
+msgstr "Ili utumie msimbo wa Arifa Kuhusu Kukaribia Aliye na COVID-19, tembelea kiungo kilicho kwenye kifaa chako cha mkononi."
+
+msgid "static.unauthorized"
+msgstr "Haijaidhinishwa"
+
+msgid "static.unauthorized-message"
+msgstr "Huruhusiwi kutekeleza kitendo hicho."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Pata nambari ya kuthibitisha"
+
+msgid "user-report.navbar"
+msgstr "Omba nambari ya kuthibitisha ya Arifa Kuhusu Kukaribia Aliye na COVID-19"
+
+msgid "user-report.request-code-from"
+msgstr "Pata nambari ya kuthibitisha"
+
+msgid "user-report.instructions"
+msgstr "Ikiwa umethibitisha kuwa umeambukizwa COVID-19 ila hujapokea nambari ya kuthibitisha kutoka kwa Mamlaka yako ya Afya kupitia ujumbe au simu, unaweza kuomba nambari ya kuthibitisha hapa."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Weka tarehe ambayo ulipimwa COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Nambari yako ya Simu ya Mkononi"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Ni sharti uweke nambari sahihi ya simu ili upokee nambari ya kuthibitisha. Huenda ukatozwa ada za mtoa huduma."
+
+msgid "user-report.agreement-header"
+msgstr "Makubaliano"
+
+msgid "user-report.agreement"
+msgstr "Ninakubali kuwa nimepokea matokeo yanayothibitisha kuwa nimeambukizwa COVID-19 na nambari ya simu niliyoweka ni yangu na ningependa kupokea nambari ya kuthibitisha ili niripoti matokeo yangu yanayothibitisha kuwa nimeambukizwa."
+
+msgid "user-report.request-button"
+msgstr "Endelea"
+
+msgid "user-report.code-issued"
+msgstr "Nambari ya kuthibitisha imetolewa"
+
+msgid "user-report.check-mobile-device"
+msgstr "Tafadhali angalia SMS zako kwenye kifaa chako cha mkononi."
+
+msgid "user-report.invalid-request"
+msgstr "Ombi si sahihi, tafadhali fungua katika programu yako ya Arifa Kuhusu Kukaribia Aliye na COVID-19 kwenye kifaa chako cha mkononi."
+
+msgid "user-report.not-available"
+msgstr "Mamlaka ya afya katika eneo lako haikubali ripoti zinazoanzishwa na mtumiaji kwa wakati huu."
+
+msgid "user-report.missing-agreement"
+msgstr "Ni sharti ukubali masharti ili uombe nambari ya kuthibitisha"
+
+msgid "user-report.error-invalid-date"
+msgstr "Tarehe ya kupimwa COVID-19 si sahihi."
+
+msgid "user-report.error-missing-phone"
+msgstr "Nambari ya simu ya mkononi inahitajika."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Nambari ya simu ya mkononi si sahihi."
+
+msgid "user-report.quota-exceeded"
+msgstr "Imeshindwa kutoa nambari za kuthibitisha kwa muda, tafadhali jaribu tena baadaye."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Nambari yako ya simu kwa sasa haijatimiza masharti ya kupokea ripoti ya mtumiaji"
+
+msgid "user-report.internal-error"
+msgstr "Hitilafu ya mfumo imetokea. Huwezi kuomba nambari ya kuthibitisha kwa sasa."
+
+msgid "user-report.unable-to-issue"
+msgstr "Tumeshindwa kukutumia nambari ya kuthibitisha."
+
+msgid "user-report.code-device-throttled"
+msgstr "Umetuma ombi la nambari ya kuthibitisha mara nyingi mno. Tafadhali wasiliana na Mamlaka yako ya Afya ikiwa bado unahitaji nambari ya kuthibitisha
+
+msgid "user-report.testing-date-label"
+msgstr "Tarehe ulipopimwa COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "Huenda toleo la nambari yako ya simu linalolindwa kwa usimbaji wa njia fiche likahifadhiwa ili kuzuia mawasilisho ya ziada."
+
+msgid "user-report.learn-more"
+msgstr "Pata maelezo zaidi..."
+
+msgid "user-report.header"
+msgstr "Saidia Kufahamisha wengine Kuwa Wamemkaribia Aliyeambikizwa COVID-19"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

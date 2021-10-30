@@ -6,9 +6,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 #
 # login / account
 # ----------------
+
 
 msgid "login.email-address"
 msgstr "Dirección de correo electrónico"
@@ -151,10 +153,10 @@ msgstr "Contener %d o más caracteres especiales"
 msgid "password.requirements-match"
 msgstr "Coincidir con la contraseña confirmada"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Generar código"
@@ -204,10 +206,10 @@ msgstr "Mi cuenta"
 msgid "nav.sign-out"
 msgstr "Finalizar sesión"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Crear código de verificación"
@@ -299,10 +301,10 @@ msgstr "EXPIRADO"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Su tasa de reclamos de código de ayer fue %s, que es menor que su promedio histórico de %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Generar lote de códigos"
@@ -376,10 +378,10 @@ msgstr "Demasiados errores de código para mostrar resultados"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Se emitieron demasiados códigos para mostrar los resultados"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Extraviado"
@@ -395,3 +397,4 @@ msgstr "No autorizado"
 
 msgid "static.unauthorized-message"
 msgstr "No está autorizado para realizar esa acción."
+

@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Despre Notificările privind expunerea"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Nu s-a găsit"
+
+msgid "static.resource-does-not-exist"
+msgstr "Resursa nu există."
+
+msgid "static.redirect-not-found"
+msgstr "Ca să valorificați un cod pentru Notificări privind expunerea, accesați linkul de pe dispozitivul mobil."
+
+msgid "static.unauthorized"
+msgstr "Fără autorizare"
+
+msgid "static.unauthorized-message"
+msgstr "Nu aveți autorizarea să realizați această acțiune."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Primiți un cod de verificare"
+
+msgid "user-report.navbar"
+msgstr "Solicită codul de verificare pentru Notificări privind expunerea"
+
+msgid "user-report.request-code-from"
+msgstr "Primiți un cod de verificare"
+
+msgid "user-report.instructions"
+msgstr "Dacă aveți un rezultat pozitiv al testului pentru COVID-19, dar nu ați primit un cod de la autoritatea în domeniul sănătății printr-un mesaj text sau un apel telefonic, puteți solicita unul aici."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Introduceți data testului pentru COVID-19"
+
+msgid "user-report.phone-number-header"
+msgstr "Numărul de telefon mobil"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Trebuie să introduceți un număr de telefon valid pentru a primi un cod de verificare. Se pot aplica taxe de operator."
+
+msgid "user-report.agreement-header"
+msgstr "Acord"
+
+msgid "user-report.agreement"
+msgstr "Confirm că am primit un rezultat pozitiv al testului pentru COVID-19 și că numărul de telefon pe care l-am introdus îmi aparține și doresc să primesc un cod pentru a raporta rezultatul pozitiv al testului."
+
+msgid "user-report.request-button"
+msgstr "Continuați"
+
+msgid "user-report.code-issued"
+msgstr "Codul de verificare a fost emis"
+
+msgid "user-report.check-mobile-device"
+msgstr "Verificați mesajele text de pe dispozitivul mobil."
+
+msgid "user-report.invalid-request"
+msgstr "Solicitare nevalidă. Lansați din aplicația Notificări privind expunerea de pe dispozitivul mobil."
+
+msgid "user-report.not-available"
+msgstr "Momentan, autoritatea de sănătate locală nu acceptă rapoarte inițiate de utilizatori."
+
+msgid "user-report.missing-agreement"
+msgstr "Trebuie să acceptați condițiile pentru a solicita un cod de verificare"
+
+msgid "user-report.error-invalid-date"
+msgstr "Data testului pentru COVID-19 nu este validă."
+
+msgid "user-report.error-missing-phone"
+msgstr "Numărul de telefon mobil este obligatoriu."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Numărul de telefon mobil nu este valid."
+
+msgid "user-report.quota-exceeded"
+msgstr "Momentan, nu se pot emite coduri de verificare. Încercați din nou mai târziu."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Momentan, numărul de telefon nu este eligibil pentru un raport inițiat de utilizator"
+
+msgid "user-report.internal-error"
+msgstr "A apărut o eroare internă. Momentan nu se poate solicita un cod de verificare."
+
+msgid "user-report.unable-to-issue"
+msgstr "Nu v-am putut trimite un cod de verificare."
+
+msgid "user-report.code-device-throttled"
+msgstr "Ați solicitat un cod de prea multe ori. Contactați autoritatea în domeniul sănătății dacă aveți nevoie de un cod."
+
+msgid "user-report.testing-date-label"
+msgstr "Data testului pentru COVID-19"
+
+msgid "user-report.phone-storage"
+msgstr "O versiune protejată criptografic a numărului de telefon poate fi stocată pentru a preveni trimiterile suplimentare."
+
+msgid "user-report.learn-more"
+msgstr "Aflați mai multe..."
+
+msgid "user-report.header"
+msgstr "Notificați alte persoane referitor la expunere"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

@@ -187,6 +187,11 @@ func (l *LocaleMap) Lookup(ids ...string) gotext.Translator {
 	}
 
 	for _, id := range ids {
+		// See if there is an exact match.
+		if exactLocale, ok := l.data[formatLangRegion(id)]; ok {
+			return exactLocale
+		}
+
 		// Convert the id to the "canonical" form.
 		canonical, err := l.Canonicalize(id, l.matcher)
 		if err != nil {
@@ -200,6 +205,16 @@ func (l *LocaleMap) Lookup(ids ...string) gotext.Translator {
 	}
 
 	return l.data[defaultLocale]
+}
+
+func formatLangRegion(s string) string {
+	parts := strings.Split(s, "-")
+	if len(parts) != 2 {
+		return s
+	}
+	parts[0] = strings.ToLower(parts[0])
+	parts[1] = strings.ToUpper(parts[1])
+	return strings.Join(parts, "_")
 }
 
 // Canonicalize converts the given ID to the expected name.

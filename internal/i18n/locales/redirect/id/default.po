@@ -14,6 +14,7 @@ msgstr "Tentang Exposure Notifications"
 # static pages
 # ----------
 
+
 msgid "static.not-found"
 msgstr "Tidak ditemukan"
 
@@ -29,10 +30,10 @@ msgstr "Tidak resmi"
 msgid "static.unauthorized-message"
 msgstr "Anda tidak diizinkan melakukan tindakan itu."
 
-
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "Dapatkan kode verifikasi"

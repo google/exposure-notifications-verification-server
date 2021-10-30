@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "Endereço de email"
 
@@ -152,10 +153,10 @@ msgstr "Contém %d ou mais caracteres especiais"
 msgid "password.requirements-match"
 msgstr "Senha confirmada de correspondência"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Gerar código"
@@ -205,10 +206,10 @@ msgstr "Minha conta"
 msgid "nav.sign-out"
 msgstr "Sair"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Criar código de verificação"
@@ -300,10 +301,10 @@ msgstr "EXPIRADO"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Sua taxa de reivindicação de código para ontem foi %s, que é menor do que sua média histórica de %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk issue"
@@ -377,10 +378,10 @@ msgstr "Too many code errors to display results"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Não encontrado"
@@ -396,3 +397,4 @@ msgstr "Não autorizado"
 
 msgid "static.unauthorized-message"
 msgstr "Você não está autorizado a realizar essa ação."
+

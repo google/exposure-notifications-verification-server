@@ -10,10 +10,10 @@ msgstr ""
 msgid "login.about-exposure-notifications"
 msgstr "এক্সপোজার নোটিফিকেশন সম্পর্কে"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "পাওয়া গেল না"
@@ -30,10 +30,10 @@ msgstr "অননুমোদিত"
 msgid "static.unauthorized-message"
 msgstr "আপনি এই ক্রিয়াটি সম্পাদনের জন্য অনুমোদিত নন।"
 
-
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "একটি যাচাইকরণ কোড পান"
@@ -118,3 +118,4 @@ msgstr "এক্সপোজারের অন্যদের অবহিত 
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXXXX-XXXXXX"
+

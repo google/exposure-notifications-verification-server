@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: zh_HK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "關於接觸通知"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "找不到"
+
+msgid "static.resource-does-not-exist"
+msgstr "該資源不存在。"
+
+msgid "static.redirect-not-found"
+msgstr "如要兌換「接觸通知」驗證碼，請瀏覽流動裝置上的連結。"
+
+msgid "static.unauthorized"
+msgstr "未經授權"
+
+msgid "static.unauthorized-message"
+msgstr "您無權執行該操作。"
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "獲取驗證碼"
+
+msgid "user-report.navbar"
+msgstr "要求「接觸通知」驗證碼"
+
+msgid "user-report.request-code-from"
+msgstr "獲取驗證碼"
+
+msgid "user-report.instructions"
+msgstr "如果您的 COVID-19 檢測結果呈陽性，但未收到衛生機關透過短訊或通話提供的驗證碼，可在此處要求。"
+
+msgid "user-report.enter-date-instructions"
+msgstr "輸入您的 COVID-19 檢測日期"
+
+msgid "user-report.phone-number-header"
+msgstr "您的手機號碼"
+
+msgid "user-report.phone-number-instructions"
+msgstr "您必須輸入有效的電話號碼才能接收驗證碼。流動網絡供應商可能會收費。"
+
+msgid "user-report.agreement-header"
+msgstr "協議"
+
+msgid "user-report.agreement"
+msgstr "我確認已收到 COVID-19 陽性檢測結果。我提供的電話號碼屬於我自己，而我希望收到驗證碼來報告我的陽性檢測結果。"
+
+msgid "user-report.request-button"
+msgstr "繼續"
+
+msgid "user-report.code-issued"
+msgstr "已發出驗證碼"
+
+msgid "user-report.check-mobile-device"
+msgstr "請在流動裝置上查看您的短訊。"
+
+msgid "user-report.invalid-request"
+msgstr "要求無效，請透過流動裝置上的「接觸通知」應用程式啟動。"
+
+msgid "user-report.not-available"
+msgstr "當地衛生機關目前不接受使用者發起的報告。"
+
+msgid "user-report.missing-agreement"
+msgstr "您必須同意條款才能要求驗證碼"
+
+msgid "user-report.error-invalid-date"
+msgstr "COVID-19 檢測日期無效。"
+
+msgid "user-report.error-missing-phone"
+msgstr "必須輸入手機號碼。"
+
+msgid "user-report.error-invalid-phone"
+msgstr "手機號碼無效。"
+
+msgid "user-report.quota-exceeded"
+msgstr "暫時無法發出驗證碼，請稍後再試。"
+
+msgid "user-report.phone-not-eligible"
+msgstr "您的電話號碼目前不符合資格獲取使用者報告"
+
+msgid "user-report.internal-error"
+msgstr "發生內部錯誤。目前無法要求驗證碼。"
+
+msgid "user-report.unable-to-issue"
+msgstr "我們無法向您傳送驗證碼。"
+
+msgid "user-report.code-device-throttled"
+msgstr "您要求驗證碼的次數過多。如果您仍然需要驗證碼，請聯絡衛生機關。"
+
+msgid "user-report.testing-date-label"
+msgstr "COVID-19 檢測日期"
+
+msgid "user-report.phone-storage"
+msgstr "系統可能會儲存您電話號碼的加密保護版本，讓您無需再次提供電話號碼。"
+
+msgid "user-report.learn-more"
+msgstr "瞭解詳情…"
+
+msgid "user-report.header"
+msgstr "協助系統通知曾與您接觸的人"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

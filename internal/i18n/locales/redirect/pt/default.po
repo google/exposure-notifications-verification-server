@@ -8,12 +8,12 @@ msgstr ""
 
 
 msgid "login.about-exposure-notifications"
-msgstr "Sobre Exposure Notifications"
-
+msgstr "Sobre as Notificações de Exposição"
 
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Não encontrado"
@@ -22,99 +22,100 @@ msgid "static.resource-does-not-exist"
 msgstr "Esse recurso não existe."
 
 msgid "static.redirect-not-found"
-msgstr "Para resgatar um código Exposure Notifications, visite o link em seu dispositivo móvel."
+msgstr "Para resgatar um código de Notificações de Exposição, acesse o link no seu dispositivo móvel."
 
 msgid "static.unauthorized"
-msgstr "Não autorizado"
+msgstr "Sem autorização"
 
 msgid "static.unauthorized-message"
-msgstr "Você não está autorizado a realizar essa ação."
-
+msgstr "Você não tem autorização para realizar essa ação."
 
 #
 # User report webview
 # ----------
 
+
 msgid "user-report.title"
-msgstr "Obtenha um código de verificação"
+msgstr "Receber um código de verificação"
 
 msgid "user-report.navbar"
-msgstr "Solicitar código de verificação de notificações de exposição"
+msgstr "Solicitar um código de verificação das Notificações de Exposição"
 
 msgid "user-report.request-code-from"
-msgstr "Obtenha um código de verificação"
+msgstr "Receber um código de verificação"
 
 msgid "user-report.instructions"
-msgstr "Se você testou positivo para COVID-19, mas não recebeu um código da Autoridade de Saúde por mensagem de texto ou telefone, você pode solicitar um aqui."
+msgstr "Se um teste confirmou que você tem COVID-19, mas sua autoridade de saúde não enviou um código por mensagem de texto ou chamada telefônica, solicite um aqui."
 
 msgid "user-report.enter-date-instructions"
-msgstr "Insira a data do seu teste COVID-19"
+msgstr "Informe a data do seu teste de COVID-19"
 
 msgid "user-report.phone-number-header"
 msgstr "Seu número de celular"
 
 msgid "user-report.phone-number-instructions"
-msgstr "Você deve inserir um número de telefone válido para receber um código de verificação. Taxas da operadora podem ser aplicadas."
+msgstr "Insira um número de telefone válido para receber um código de verificação. Sujeito à cobrança de tarifas da operadora."
 
 msgid "user-report.agreement-header"
-msgstr "Acordo"
+msgstr "Contrato"
 
 msgid "user-report.agreement"
-msgstr "Confirmo que recebi um resultado de teste positivo para COVID-19 e o número de telefone que indiquei é o meu próprio e gostaria de receber um código para relatar o meu resultado de teste positivo."
+msgstr "Confirmo que recebi um resultado positivo para um teste de COVID-19 e que o número de telefone fornecido é meu. Quero receber um código para informar meu resultado positivo."
 
 msgid "user-report.request-button"
-msgstr "Prosseguir"
+msgstr "Continuar"
 
 msgid "user-report.code-issued"
 msgstr "Código de verificação emitido"
 
 msgid "user-report.check-mobile-device"
-msgstr "Por favor, verifique suas mensagens de texto em seu dispositivo móvel."
+msgstr "Confira suas mensagens de texto no dispositivo móvel."
 
 msgid "user-report.invalid-request"
-msgstr "Solicitação inválida, inicie a partir de seu aplicativo de notificações de exposição em seu dispositivo móvel."
+msgstr "Solicitação inválida. Abra o app Notificações de Exposição no seu dispositivo móvel."
 
 msgid "user-report.not-available"
-msgstr "Sua autoridade de saúde local não está aceitando relatórios iniciados pelo usuário neste momento."
+msgstr "Sua autoridade local de saúde não está aceitando relatórios iniciados pelo usuário no momento."
 
 msgid "user-report.missing-agreement"
-msgstr "Você deve concordar com os termos para solicitar um código de verificação"
+msgstr "Você precisa concordar com os termos para solicitar um código de verificação"
 
 msgid "user-report.error-invalid-date"
-msgstr "Data do teste COVID-19 inválida"
+msgstr "Data de teste de COVID-19 inválida."
 
 msgid "user-report.error-missing-phone"
-msgstr "O número do celular é obrigatório."
+msgstr "É necessário fornecer um número de celular."
 
 msgid "user-report.error-invalid-phone"
-msgstr "O número do celular é inválido."
+msgstr "Número de celular inválido."
 
 msgid "user-report.quota-exceeded"
-msgstr "Temporariamente impossibilitado de emitir códigos de verificação, tente novamente mais tarde."
+msgstr "No momento, não é possível emitir códigos de verificação. Tente novamente mais tarde."
 
 msgid "user-report.phone-not-eligible"
-msgstr "Seu número de telefone não está atualmente qualificado para relatório de usuário"
+msgstr "Seu número de telefone não está qualificado para o relatório do usuário"
 
 msgid "user-report.internal-error"
-msgstr "Ocorreu um erro interno. Um código de verificação não pode ser solicitado neste momento."
+msgstr "Ocorreu um erro interno. Não é possível solicitar um código de verificação no momento."
 
 msgid "user-report.unable-to-issue"
-msgstr "Não foi possível enviar-lhe um código de verificação."
+msgstr "Não foi possível enviar um código de verificação para você."
 
 msgid "user-report.code-device-throttled"
-msgstr "Você solicitou um código muitas vezes. Entre em contato com a Autoridade de Saúde se ainda precisar de um código."
+msgstr "Você solicitou um código muitas vezes. Entre em contato com a autoridade de saúde se ainda precisar de um código."
 
 msgid "user-report.testing-date-label"
-msgstr "Data do seu teste COVID-19"
+msgstr "Data do teste de COVID-19"
 
 msgid "user-report.phone-storage"
-msgstr "Uma versão criptograficamente protegida do seu número de telefone pode ser armazenada para evitar envios adicionais."
+msgstr "Uma versão do seu número de telefone protegida por criptografia pode ser armazenada para evitar mais envios."
 
 msgid "user-report.learn-more"
-msgstr "Saiba mais ..."
+msgstr "Saiba mais…"
 
 msgid "user-report.header"
-msgstr "Ajude a notificar outras pessoas sobre a exposição"
+msgstr "Ajudar a notificar outras pessoas sobre a exposição"
 
 msgid "user-report.phone-number-placeholder"
-msgstr "XX XXXXX XXXX"
+msgstr "(XX) XXXXX-XXXX"
+

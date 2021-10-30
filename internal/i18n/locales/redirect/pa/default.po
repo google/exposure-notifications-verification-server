@@ -1,4 +1,4 @@
-msgid "" 
+msgid ""
 msgstr ""
 "Language: pa\n"
 "MIME-Version: 1.0\n"
@@ -6,12 +6,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 msgid "login.about-exposure-notifications"
 msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਦੀਆਂ ਸੂਚਨਾਵਾਂ ਬਾਰੇ"
 
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "ਨਹੀਂ ਮਿਲਿਆ"
@@ -31,6 +33,7 @@ msgstr "ਤੁਸੀਂ ਇਹ ਕਾਰਵਾਈ ਕਰਨ ਲਈ ਅਧਿਕ�
 #
 # User report webview
 # ----------
+
 
 msgid "user-report.title"
 msgstr "ਇੱਕ ਪੁਸ਼ਟੀਕਰਨ ਕੋਡ ਪ੍ਰਾਪਤ ਕਰੋ"
@@ -115,3 +118,4 @@ msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਬਾਰੇ ਹੋਰ�
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+
