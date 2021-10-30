@@ -118,3 +118,4 @@ msgstr "Helfen Sie dabei, andere bei möglichen Begegnungen mit infizierten Pers
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

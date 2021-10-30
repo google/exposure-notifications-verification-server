@@ -118,3 +118,4 @@ msgstr "다른 사용자에게 노출 여부를 알릴 수 있도록 도와주�
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

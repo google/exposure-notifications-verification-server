@@ -118,3 +118,4 @@ msgstr "Saidia Kufahamisha wengine Kuwa Wamemkaribia Aliyeambikizwa COVID-19"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

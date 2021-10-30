@@ -118,3 +118,4 @@ msgstr "ተጋላጭነትን ለሌሎች ለማሳወቅ ያግዙ"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

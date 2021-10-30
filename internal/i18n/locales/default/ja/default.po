@@ -11,6 +11,7 @@ msgstr ""
 # login / account
 # ----------------
 
+
 msgid "login.email-address"
 msgstr "メールアドレス"
 
@@ -152,10 +153,10 @@ msgstr "%d 以上の特殊文字を含む"
 msgid "password.requirements-match"
 msgstr "確認済みのパスワードと一致する"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "コードを発行"
@@ -205,10 +206,10 @@ msgstr "アカウント"
 msgid "nav.sign-out"
 msgstr "サインアウト"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "検証用コードの作成"
@@ -300,10 +301,10 @@ msgstr "期限切れ"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "昨日のコードクレーム率は%sでした。これは、過去の平均である%sよりも低くなっています."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk issue"
@@ -377,10 +378,10 @@ msgstr "Too many code errors to display results"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Too many codes issued to display results"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "見つかりません"
@@ -396,3 +397,4 @@ msgstr "許可されていない"
 
 msgid "static.unauthorized-message"
 msgstr "そのアクションを実行する権限がありません。"
+

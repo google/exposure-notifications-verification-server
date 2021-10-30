@@ -118,3 +118,4 @@ msgstr "المساعدة في إشعار الآخرين بحالات التعر�
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

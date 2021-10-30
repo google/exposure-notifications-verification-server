@@ -6,9 +6,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+
 #
 # login / account
 # ----------------
+
 
 msgid "login.email-address"
 msgstr "E-Mail-Addresse"
@@ -151,10 +153,10 @@ msgstr "Enthält %d oder mehr Sonderzeichen"
 msgid "password.requirements-match"
 msgstr "Übereinstimmendes bestätigtes Passwort"
 
-
 #
 # navigation menus
 # ----------------
+
 
 msgid "nav.issue-code"
 msgstr "Code erstellen"
@@ -204,10 +206,10 @@ msgstr "Mein Account"
 msgid "nav.sign-out"
 msgstr "Ausloggen"
 
-
 #
 # issue code
 # ----------
+
 
 msgid "codes.issue.header"
 msgstr "Verifizierungscode erstellen"
@@ -299,10 +301,10 @@ msgstr "Verfallen"
 msgid "codes.codes-claimed-ratio-anomalous"
 msgstr "Ihre Code-Anspruchsrate für gestern betrug %s und liegt damit unter Ihrem historischen Durchschnitt von %s."
 
-
 #
 # bulk-issue codes
 # ----------
+
 
 msgid "codes.bulk-issue.header"
 msgstr "Bulk veröffentlichen"
@@ -376,10 +378,10 @@ msgstr "Zu viele Codefehler, um Ergebnisse anzuzeigen"
 msgid "codes.bulk-issue.too-many-success"
 msgstr "Es wurden zu viele Codes ausgegeben, um die Ergebnisse anzuzeigen"
 
-
 #
 # static pages
 # ----------
+
 
 msgid "static.not-found"
 msgstr "Nicht gefunden"
@@ -395,3 +397,4 @@ msgstr "Nicht autorisiert"
 
 msgid "static.unauthorized-message"
 msgstr "Sie sind nicht berechtigt, diese Aktion auszuführen."
+

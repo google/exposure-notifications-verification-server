@@ -118,3 +118,4 @@ msgstr "Ajudar a notificar outras pessoas sobre a exposição"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "(XX) XXXXX-XXXX"
+

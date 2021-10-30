@@ -118,3 +118,4 @@ msgstr "Maruz Kalma Durumunda Diğerlerini Bildirmeye Yardımcı Olun"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXXX XXX XX XX"
+

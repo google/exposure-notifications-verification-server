@@ -118,3 +118,4 @@ msgstr "他のユーザーに陽性者との接触について知らせる"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

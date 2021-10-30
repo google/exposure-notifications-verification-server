@@ -118,3 +118,4 @@ msgstr "ਪ੍ਰਭਾਵਿਤ ਨੇੜੇ ਹੋਣ ਬਾਰੇ ਹੋਰ�
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

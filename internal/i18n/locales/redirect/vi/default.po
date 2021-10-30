@@ -118,3 +118,4 @@ msgstr "Thông báo cho những người khác về khả năng tiếp xúc"
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+

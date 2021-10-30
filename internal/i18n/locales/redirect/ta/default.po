@@ -118,3 +118,4 @@ msgstr "தொற்று குறித்து மற்றவர்கள�
 
 msgid "user-report.phone-number-placeholder"
 msgstr "XXX XXX XXXX"
+
