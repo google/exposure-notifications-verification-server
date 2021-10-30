@@ -20,6 +20,10 @@ import (
 	"strings"
 )
 
+// Consistently formats our translation (.po) files.
+// Individual file names need to be passed in as arguments (supports 1 or more)
+// Does NOT gracefully handle errors.
+// Best invoked from the root of the repo, vi `make pofmt`
 func main() {
 	args := os.Args[1:]
 
@@ -62,7 +66,9 @@ func main() {
 			panic(err)
 		}
 
-		output := strings.Join(outputLines, "\n")
-		os.WriteFile(fName, []byte(output), info.Mode())
+		output := fmt.Sprintf("%s\n", strings.Join(outputLines, "\n"))
+		if err := os.WriteFile(fName, []byte(output), info.Mode()); err != nil {
+			panic(err)
+		}
 	}
 }

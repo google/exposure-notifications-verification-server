@@ -16,6 +16,7 @@ GOFMT_FILES = $(shell go list -f '{{.Dir}}' ./...)
 HTML_FILES = $(shell find . -name \*.html)
 GO_FILES = $(shell find . -name \*.go)
 MD_FILES = $(shell find . -name \*.md)
+PO_FILES = $(shell find . -name \*.po)
 
 generate:
 	@go generate ./...
@@ -70,3 +71,7 @@ zapcheck:
 	@go install github.com/sethvargo/zapw/cmd/zapw
 	@zapw ./...
 .PHONY: zapcheck
+
+pofmt:
+	@go run ./tools/pofmt $(PO_FILES)
+.PHONY: pofmt
