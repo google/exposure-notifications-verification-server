@@ -726,10 +726,11 @@
           r[3] = ">1 day";
         }
 
-        r[4] =
-          "<ul class='chart-tooltip'>"+
-            "<li>Count: " + r[1] + "</li>" +
-            "<li>Percent: " + (r[1] / total * 100).toPrecision(3) + "%</li></ul>";
+        r[4] = `
+          <ul class="list-unstyled text-nowrap m-0 p-3">
+            <li>${r[1]} (${((r[1] / total) * 100).toPrecision(3)}%)</li>
+          </ul>
+        `;
 
         dataTable.addRow(r);
       }
