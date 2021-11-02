@@ -514,8 +514,8 @@ function utcDate(str) {
 }
 
 // debounce debounces the given function f for the given ts the provided event.
-// If no other resize events are created within ts, f will fire. Otherwise, f
-// will wait for another ts.
+// If no other resize events are created within ts (ms), f will fire. Otherwise,
+// f will wait for another ts.
 const debounce = (event, f, ts = 300) => {
   let t;
   window.addEventListener(event, async () => {

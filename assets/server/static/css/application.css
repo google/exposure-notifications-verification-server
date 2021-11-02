@@ -160,12 +160,6 @@ a.nav-link.active {
   }
 }
 
-ul.chart-tooltip {
-  width: 130px;
-  list-style-type: none;
-  padding: 5px;
-}
-
 .cheating-footer {
   width: calc(100% + 2rem);
   margin: 1rem -1rem -1rem -1rem;
