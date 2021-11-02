@@ -125,16 +125,7 @@
 
         dashboard.bind(filter, realmChart);
         dashboard.draw(dataTable);
-
-        redrawCharts(
-          [
-            {
-              chart: dashboard,
-              data: dataTable,
-            },
-          ],
-          300
-        );
+        debounce('resize', async () => dashboard.draw(dataTable));
       };
 
       request.onerror = (event) => {

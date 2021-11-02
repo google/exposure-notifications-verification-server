@@ -352,9 +352,6 @@
       $issueAgeSlider.trigger("input");
     });
 
-    let chartData = [];
-    $(() => redrawCharts(chartData, 300));
-
     google.charts.load('current', {
       packages: ['corechart', 'controls'],
       callback: drawRealmCharts,
@@ -549,10 +546,7 @@
 
         dashboard.bind(filter, realmChart);
         dashboard.draw(dataTable);
-        chartData.push({
-          chart: dashboard,
-          data: dataTable,
-        });
+        debounce('resize', async () => dashboard.draw(dataTable));
       }
     }
 
@@ -641,10 +635,7 @@
 
       dashboard.bind(filter, realmChart);
       dashboard.draw(dataTable);
-      chartData.push({
-        chart: dashboard,
-        data: dataTable,
-      });
+      debounce('resize', async () => dashboard.draw(dataTable));
     }
 
     let ageChart;
@@ -694,11 +685,7 @@
       ageChart = new google.visualization.ColumnChart($div.get(0));
       ageData = getClaimAgeDataTable(0);
       ageChart.draw(ageData, ageOptions);
-      chartData.push({
-        chart: ageChart,
-        data: ageData,
-        options: ageOptions,
-      });
+      debounce('resize', async () => ageChart.draw(ageData, ageOptions));
     }
 
     let ageCache = new Map();
@@ -756,11 +743,6 @@
       }
       let indx = claimStats.length - $issueAgeSlider.val();
       ageOptions.title = `${smoothing} days from ` + claimStats[indx].date.split("T")[0];
-      ageOptions.animation = {
-        startup: false,
-        duration: 500,
-        easing: 'inAndOut',
-      };
 
       ageData = getClaimAgeDataTable(indx);
       ageChart.draw(ageData, ageOptions);
