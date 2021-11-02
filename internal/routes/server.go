@@ -335,7 +335,7 @@ func Server(
 	}
 
 	// webhooks
-	if cfg.Features.EnableSMSErrorWebhook {
+	{
 		// We don't need locales or template parsing, minimize middleware stack by
 		// forking from r instead of sub.
 		sub := r.PathPrefix("/webhooks").Subrouter()
