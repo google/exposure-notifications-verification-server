@@ -513,33 +513,13 @@ function utcDate(str) {
   return new Date(d.getTime() + offset);
 }
 
-function redrawCharts(chartsData, timeout) {
-  let redrawPending = false;
-  let windowWidth = 0;
-  $(window).resize(function () {
-    let w = $(window).width();
-    if (w != windowWidth) {
-      windowWidth = w;
-    } else {
-      return;
-    }
-
-    if (!redrawPending) {
-      redrawPending = true;
-      setTimeout(function () {
-        redraw();
-        redrawPending = false;
-      }, timeout);
-    }
+// debounce debounces the given function f for the given ts the provided event.
+// If no other resize events are created within ts, f will fire. Otherwise, f
+// will wait for another ts.
+const debounce = (event, f, ts = 300) => {
+  let t;
+  window.addEventListener(event, async () => {
+    if (t) clearTimeout(t);
+    t = setTimeout(async () => f(), ts);
   });
-
-  function redraw() {
-    let c;
-    for (c of chartsData) {
-      if (c.options) {
-        c.options.animation = null;
-      }
-      c.chart.draw(c.data, c.options);
-    }
-  }
-}
+};

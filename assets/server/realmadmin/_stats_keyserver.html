@@ -190,9 +190,6 @@
     let $slider = $('#tek_slider');
     let $onsetSlider = $('#onset_slider');
 
-    let chartData = [];
-    $(() => redrawCharts(chartData, 300));
-
     let $smoothDrop = $('#smooth-drop');
     $smoothDrop.on('change', (event) => {
       smoothing = $smoothDrop.val();
@@ -341,10 +338,7 @@
 
         dashboard.bind(filter, chart);
         dashboard.draw(dataTable);
-        chartData.push({
-          chart: dashboard,
-          data: dataTable,
-        });
+        debounce('resize', async () => dashboard.draw(dataTable));
     }
 
 
@@ -494,10 +488,7 @@
 
       dashboard.bind(filter, chart);
       dashboard.draw(dataTable);
-      chartData.push({
-        chart: dashboard,
-        data: dataTable,
-      });
+      debounce('resize', async () => dashboard.draw(dataTable));
     }
 
     let tekChart;
@@ -528,11 +519,6 @@
           width: '100%',
           height: '300',
         },
-        animation:{
-          startup: false,
-          duration: 500,
-          easing: 'inAndOut',
-        },
         legend: { position: 'none' },
         hAxis: {
           title: 'TEK days old',
@@ -553,11 +539,7 @@
       tekChart = new google.visualization.ColumnChart($div.get(0));
       tekData = getTEKDataTable(0);
       tekChart.draw(tekData, tekOptions);
-      chartData.push({
-        chart: tekChart,
-        data: tekData,
-        options: tekOptions,
-      });
+      debounce('resize', async () => tekChart.draw(tekData, tekOptions));
     }
 
     let dataTableCache = new Map()
@@ -665,11 +647,7 @@
       onsetChart = new google.visualization.ColumnChart($div.get(0));
       onsetData = getOnsetDataTable(0);
       onsetChart.draw(onsetData, onsetOptions);
-      chartData.push({
-        chart: onsetChart,
-        data: onsetData,
-        options: onsetOptions,
-      });
+      debounce('resize', async () => onsetChart.draw(onsetData, onsetOptions));
     }
 
     let onsetCache = new Map();
@@ -732,11 +710,6 @@
       }
       let indx = stats.length - $slider.val();
       tekOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-      tekOptions.animation = {
-        startup: false,
-        duration: 500,
-        easing: 'inAndOut',
-      };
       tekData = getTEKDataTable(indx);
 
       tekChart.draw(tekData, tekOptions);
@@ -748,11 +721,6 @@
       }
       let indx = stats.length - $onsetSlider.val();
       onsetOptions.title = `${smoothing} days from ` + stats[indx].day.split("T")[0];
-      onsetOptions.animation = {
-        startup: false,
-        duration: 500,
-        easing: 'inAndOut',
-      };
 
       onsetData = getOnsetDataTable(indx);
       onsetChart.draw(onsetData, onsetOptions);
