@@ -1,5 +1,5 @@
 (() => {
-  window.addEventListener('load', (event) => {
+  window.addEventListener('load', async (event) => {
     const chartContainer = document.querySelector('div#apikey_stats_chart');
     if (!chartContainer) {
       return;

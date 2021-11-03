@@ -1,5 +1,5 @@
 (() => {
-  window.addEventListener('load', (event) => {
+  window.addEventListener('load', async (event) => {
     const dashboardContainer = document.querySelector('div#sms_errors_dashboard');
     if (!dashboardContainer) {
       return;
