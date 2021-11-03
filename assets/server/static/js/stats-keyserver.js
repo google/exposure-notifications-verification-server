@@ -1,5 +1,5 @@
 (() => {
-  window.addEventListener('load', async () => {
+  window.addEventListener('load', async (event) => {
     const containerChart = document.querySelector('div#keyserver_chart_div');
     if (!containerChart) {
       return;
@@ -41,7 +41,7 @@
 
       request.onerror = (event) => {
         console.error('error from response: ' + request.response);
-        flash.error('Failed to key server stats: ' + err);
+        flash.error('Failed to load key server stats: ' + err);
       };
 
       request.send();

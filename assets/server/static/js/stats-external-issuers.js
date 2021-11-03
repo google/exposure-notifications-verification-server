@@ -1,5 +1,5 @@
 (() => {
-  window.addEventListener('load', (event) => {
+  window.addEventListener('load', async (event) => {
     const container = document.querySelector('div#per_external_issuer_table');
     if (!container) {
       return;
