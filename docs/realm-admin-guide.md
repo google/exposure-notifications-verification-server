@@ -353,6 +353,17 @@ This chart shows the total number of temporary exposure keys published due to
 verification certificates issued by your public health authority.
 
 
+#### SMS errors by day
+
+This chart will only appear if you have enabled an SMS provider configuration
+for your realm. It shows the number of SMS errors reported by the upstream
+provider by day, grouped by error code.
+
+A small number of errors is to be expected due to the unreliability of cellular
+networks. A large number of errors (or a sudden increase in the number of
+errors) could indicate a problem with your SMS configuration. Y
+
+
 #### Total publish requests
 
 This chart shows a stacked bar chart of the total number of publish requests (uploads
