@@ -62,8 +62,6 @@ type RedirectConfig struct {
 	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
 	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
-	AllowUserReportGet bool `env:"USER_REPORT_GET, default=false"`
-
 	// A map of hostnames to redirect to ens:// and a mapping to the region.
 	// For example to redirect
 	//   region.example.com to region US-AA

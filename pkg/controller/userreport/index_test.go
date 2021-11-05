@@ -35,80 +35,101 @@ import (
 func TestIndex(t *testing.T) {
 	t.Parallel()
 
-	ctx := project.TestContext(t)
-	harness := envstest.NewENXRedirectServerConfig(t, testDatabaseInstance)
-
-	// Create config.
-	cfg := &config.RedirectConfig{
-		DevMode:        true,
-		HostnameConfig: map[string]string{},
-
-		Features: config.FeatureConfig{},
-	}
-	cfg.Issue.ENExpressRedirectDomain = "127.0.0.1"
-
-	// Crate a realm.
-	realm, err := harness.Database.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	realm.RegionCode = "us-wa"
-	realm.AddUserReportToAllowedTestTypes()
-	realm.AllowUserReportWebView = true
-	realm.AllowAdminUserReport = true
-	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
-		t.Fatal(err)
+	cases := []struct {
+		name   string
+		useGet bool
+	}{
+		{
+			name:   "post",
+			useGet: false,
+		},
+		{
+			name:   "get",
+			useGet: true,
+		},
 	}
 
-	authApp := &database.AuthorizedApp{
-		Name:       "test",
-		APIKeyType: database.APIKeyTypeDevice,
-	}
-	apikey, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(t.Name(), func(t *testing.T) {
+			t.Parallel()
 
-	smsConfig := &database.SMSConfig{
-		RealmID:      realm.ID,
-		ProviderType: sms.ProviderTypeNoop,
-	}
-	if err := harness.Database.SaveSMSConfig(smsConfig); err != nil {
-		t.Fatal(err)
-	}
+			ctx := project.TestContext(t)
+			harness := envstest.NewENXRedirectServerConfig(t, testDatabaseInstance)
 
-	// Build routes.
-	mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher, harness.KeyManager, harness.RateLimiter)
-	if err != nil {
-		t.Fatal(err)
-	}
+			// Create config.
+			cfg := &config.RedirectConfig{
+				DevMode:        true,
+				HostnameConfig: map[string]string{},
 
-	// Start server.
-	srv := httptest.NewServer(mux)
-	t.Cleanup(func() {
-		srv.Close()
-	})
+				Features: config.FeatureConfig{},
+			}
+			cfg.Issue.ENExpressRedirectDomain = "127.0.0.1"
 
-	// Generate the nonce
-	nonceBytes := make([]byte, database.NonceLength)
-	_, err = rand.Read(nonceBytes)
-	if err != nil {
-		t.Fatal(err)
-	}
-	nonce := base64.URLEncoding.EncodeToString(nonceBytes)
+			// Crate a realm.
+			realm, err := harness.Database.FindRealm(1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			realm.RegionCode = "us-wa"
+			realm.AddUserReportToAllowedTestTypes()
+			realm.AllowUserReportWebView = true
+			realm.AllowAdminUserReport = true
+			if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+				t.Fatal(err)
+			}
 
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-	if err != nil {
-		t.Fatal(err)
-	}
-	// initiate the request
-	redirClient, err := clients.NewENXRedirectWebClient(srv.URL, apikey,
-		clients.WithCookieJar(jar), clients.WithTimeout(5*time.Second))
-	if err != nil {
-		t.Fatal(err)
-	}
+			authApp := &database.AuthorizedApp{
+				Name:       "test",
+				APIKeyType: database.APIKeyTypeDevice,
+			}
+			apikey, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if err := redirClient.SendUserReportIndex(ctx, nonce); err != nil {
-		t.Fatalf("error requesting user report web view: %v", err)
+			smsConfig := &database.SMSConfig{
+				RealmID:      realm.ID,
+				ProviderType: sms.ProviderTypeNoop,
+			}
+			if err := harness.Database.SaveSMSConfig(smsConfig); err != nil {
+				t.Fatal(err)
+			}
+
+			// Build routes.
+			mux, err := routes.ENXRedirect(ctx, cfg, harness.Database, harness.Cacher, harness.KeyManager, harness.RateLimiter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Start server.
+			srv := httptest.NewServer(mux)
+			t.Cleanup(func() {
+				srv.Close()
+			})
+
+			// Generate the nonce
+			nonceBytes := make([]byte, database.NonceLength)
+			_, err = rand.Read(nonceBytes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			nonce := base64.URLEncoding.EncodeToString(nonceBytes)
+
+			jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// initiate the request
+			redirClient, err := clients.NewENXRedirectWebClient(srv.URL, apikey,
+				clients.WithCookieJar(jar), clients.WithTimeout(5*time.Second))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := redirClient.SendUserReportIndex(ctx, tc.useGet, nonce); err != nil {
+				t.Fatalf("error requesting user report web view: %v", err)
+			}
+		})
 	}
 }

@@ -42,8 +42,13 @@ func NewENXRedirectWebClient(base string, apiKey string, opts ...Option) (*ENXRe
 // SendUserReportIndex request "/report" on the ENX Redirect server which is the landing page
 // for a client embedded webview. This requires a client with an installed cookiejar to work correctly
 // since this will create a session cookie that embeds the nonce provided in the header.
-func (c *ENXRedirectWebClient) SendUserReportIndex(ctx context.Context, nonce string) error {
-	req, err := c.newRequest(ctx, http.MethodPost, "/report", nil)
+func (c *ENXRedirectWebClient) SendUserReportIndex(ctx context.Context, useGet bool, nonce string) error {
+	method := http.MethodPost
+	if useGet {
+		method = http.MethodGet
+	}
+
+	req, err := c.newRequest(ctx, method, "/report", nil)
 	if err != nil {
 		return err
 	}
