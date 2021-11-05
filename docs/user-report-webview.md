@@ -1,17 +1,11 @@
 <!-- TOC depthFrom:1 -->
 
-- [Experimental Notice](#experimental-notice)
 - [Access](#access)
 - [Initiate](#initiate)
 - [Client side throttling](#client-side-throttling)
 - [Validate](#validate)
 
 <!-- /TOC -->
-
-# Experimental Notice
-
-The user initiated report webview is an experimental feature. It should
-not be deployed in production environments until this notice is removed.
 
 # Access
 
@@ -22,8 +16,8 @@ To access the user report webview you need
 
 # Initiate
 
-Open a webview with a POST request to the base URL for the EN Express
-redirect service for your installation.
+Open a webview with a POST (recommended) or GET request to the base URL for the 
+EN Express redirect service for your installation, at the path `/report`.
 
 Pass in these required headers:
 
