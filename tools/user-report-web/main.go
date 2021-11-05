@@ -39,6 +39,7 @@ var (
 	timeoutFlag = flag.Duration("timeout", 5*time.Second, "request time out duration in the format: 0h0m0s")
 	apikeyFlag  = flag.String("apikey", "", "API Key to use")
 	addrFlag    = flag.String("addr", "http://localhost:8080", "protocol, address and port on which to make the API call")
+	sendGetFlag = flag.Bool("send-get", false, "If true, will use GET instead of POST to initiate the request")
 )
 
 func main() {
@@ -82,7 +83,7 @@ func realMain(ctx context.Context) error {
 		return fmt.Errorf("unable to create client: %w", err)
 	}
 
-	if err := client.SendUserReportIndex(ctx, nonce); err != nil {
+	if err := client.SendUserReportIndex(ctx, *sendGetFlag, nonce); err != nil {
 		return err
 	}
 	logger.Debugw("session established")
