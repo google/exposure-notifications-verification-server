@@ -169,7 +169,7 @@ resource "google_cloud_scheduler_job" "e2e-default-workflow" {
   name             = "e2e-default-workflow"
   region           = var.cloudscheduler_location
   schedule         = "*/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
@@ -196,7 +196,7 @@ resource "google_cloud_scheduler_job" "e2e-revise-workflow" {
   name             = "e2e-revise-workflow"
   region           = var.cloudscheduler_location
   schedule         = "2-59/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
@@ -223,7 +223,7 @@ resource "google_cloud_scheduler_job" "e2e-user-report-workflow" {
   name             = "e2e-user-report-workflow"
   region           = var.cloudscheduler_location
   schedule         = "3-59/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
@@ -250,7 +250,7 @@ resource "google_cloud_scheduler_job" "e2e-enx-redirect-workflow" {
   name             = "e2e-enx-redirect-workflow"
   region           = var.cloudscheduler_location
   schedule         = "*/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.e2e-runner.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {

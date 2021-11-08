@@ -193,7 +193,7 @@ resource "google_cloud_scheduler_job" "rotation-worker-token-signing-key" {
   name             = "rotation-worker-token-signing-key"
   region           = var.cloudscheduler_location
   schedule         = "2,32 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.rotation.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
@@ -222,7 +222,7 @@ resource "google_cloud_scheduler_job" "rotation-worker-realm-verification-keys" 
 
   // This schedule is offset from the token rotation schedule.
   schedule         = "*/15 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.rotation.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {
@@ -250,7 +250,7 @@ resource "google_cloud_scheduler_job" "rotation-worker-secrets" {
   region = var.cloudscheduler_location
 
   schedule         = "*/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.rotation.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {

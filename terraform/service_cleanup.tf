@@ -182,7 +182,7 @@ resource "google_cloud_scheduler_job" "cleanup-worker" {
   name             = "cleanup-worker"
   region           = var.cloudscheduler_location
   schedule         = "*/5 * * * *"
-  time_zone        = "America/Los_Angeles"
+  time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.cleanup.template[0].spec[0].timeout_seconds + 60}s"
 
   retry_config {

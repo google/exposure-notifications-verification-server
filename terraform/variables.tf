@@ -42,6 +42,11 @@ variable "region" {
   default = "us-central1"
 }
 
+variable "cloud_scheduler_timezone" {
+  type    = string
+  default = "Etc/UTC"
+}
+
 variable "database_tier" {
   type    = string
   default = "db-custom-8-30720"
