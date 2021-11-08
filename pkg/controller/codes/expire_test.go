@@ -249,5 +249,11 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		if now := time.Now().UTC(); record.ExpiresAt.After(now) {
 			t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
 		}
+
+		// attempt to expire the same code again
+		handler.ServeHTTP(w, r)
+		if got, want := w.Code, http.StatusBadRequest; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
 	})
 }

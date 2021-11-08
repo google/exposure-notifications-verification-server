@@ -553,14 +553,27 @@ or
 
 ## `/api/expirecode`
 
-Expires an unclaimed code. If the code has been claimed an error is returned.
+Expires an unclaimed code. If the code has been claimed or is already expired, an error is returned.
 
 **ExpireCodeRequest**
 
 ```json
+{
+  "uuid": "UUID for code to expire",
+  "padding": "<bytes>"
+}
+```
+
+* `padding` is a _recommended_ field that obfuscates the size of the request
+  body to a network observer. The client should generate and insert a random
+  number of base64-encoded bytes into this field. The server does not process
+  the padding.
+
+**ExpireCodeResponse**
+
+```json
 http 200
 {
-  "uuid": "UUID of the code to expire",
   "expiresAtTimestamp": 0,
   "longExpiresAtTimestamp": 0,
   "padding": "<bytes>"
@@ -573,11 +586,6 @@ or
   "errorCode": "well defined error code from api.go",
 }
 ```
-
-* `padding` is a _recommended_ field that obfuscates the size of the request
-  body to a network observer. The client should generate and insert a random
-  number of base64-encoded bytes into this field. The server does not process
-  the padding.
 
 The timestamps are updated to the new expiration time (which will be in the
 past).

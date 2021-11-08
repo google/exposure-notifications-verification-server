@@ -41,7 +41,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 
 		code, err := c.db.ExpireCode(request.UUID)
 		if err != nil {
-			controller.InternalError(w, r, c.h, err)
+			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrVerifyCodeInvalid))
 			return
 		}
 
