@@ -2456,29 +2456,14 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			ID: "00115-NormalizeVerificationCodeReferences",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx, `
-					DELETE FROM verification_codes WHERE realm_id IS NULL OR realm_id NOT IN (SELECT id FROM realms);
-					UPDATE verification_codes SET issuing_user_id = NULL WHERE issuing_user_id NOT IN (SELECT id FROM users);
-					UPDATE verification_codes SET issuing_app_id = NULL WHERE issuing_app_id NOT IN (SELECT id FROM authorized_apps);
-				`)
-			},
-			Rollback: func(tx *gorm.DB) error {
-				return nil
-			},
-		},
-		{
-			ID: "00116-AddVerificationCodeConstraints",
-			Migrate: func(tx *gorm.DB) error {
-				return multiExec(tx, `
 					ALTER SEQUENCE verification_codes_id_seq AS BIGINT;
 					ALTER TABLE verification_codes ALTER id TYPE BIGINT;
+					DELETE FROM verification_codes WHERE realm_id IS NULL OR realm_id NOT IN (SELECT id FROM realms);
 					ALTER TABLE verification_codes ALTER COLUMN realm_id SET NOT NULL;
-					ALTER TABLE verification_codes ADD CONSTRAINT fk_verification_codes_realms FOREIGN KEY (realm_id) REFERENCES realms(id) ON DELETE CASCADE;
 					ALTER TABLE verification_codes ALTER COLUMN code TYPE TEXT;
 					ALTER TABLE verification_codes ALTER COLUMN long_code TYPE TEXT;
 					ALTER TABLE verification_codes ALTER COLUMN test_type TYPE TEXT;
 					ALTER TABLE verification_codes ALTER COLUMN issuing_external_id TYPE TEXT;
-					ALTER TABLE verification_codes ADD CONSTRAINT fk_issuing_user_id FOREIGN KEY(issuing_user_id) REFERENCES users(id) ON DELETE SET NULL;
-					ALTER TABLE verification_codes ADD CONSTRAINT fk_issuing_app_id FOREIGN KEY(issuing_app_id) REFERENCES authorized_apps(id) ON DELETE SET NULL;
 				`)
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -2486,13 +2471,10 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					ALTER SEQUENCE verification_codes_id_seq AS INT;
 					ALTER TABLE verification_codes ALTER id TYPE INT;
 					ALTER TABLE verification_codes ALTER COLUMN realm_id DROP NOT NULL;
-					ALTER TABLE verification_codes DROP CONSTRAINT fk_verification_codes_realms;
 					ALTER TABLE verification_codes ALTER COLUMN code TYPE VARCHAR(512);
 					ALTER TABLE verification_codes ALTER COLUMN long_code TYPE VARCHAR(512);
 					ALTER TABLE verification_codes ALTER COLUMN test_type TYPE VARCHAR(20);
 					ALTER TABLE verification_codes ALTER COLUMN issuing_external_id TYPE VARCHAR(255);
-					ALTER TABLE verification_codes DROP CONSTRAINT fk_issuing_user_id;
-					ALTER TABLE verification_codes DROP CONSTRAINT fk_issuing_app_id;
 				`)
 			},
 		},
