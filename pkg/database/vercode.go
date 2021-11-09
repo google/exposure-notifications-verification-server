@@ -270,7 +270,7 @@ func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*Verific
 		vc.ExpiresAt = time.Now().UTC()
 		vc.LongExpiresAt = vc.ExpiresAt
 		if err := tx.Save(&vc).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to save verification code: %w", err)
 		}
 
 		audit := BuildAuditEntry(actor, "expired verification code", &vc, r.ID)
@@ -291,6 +291,10 @@ func (r *Realm) SaveVerificationCode(db *Database, vc *VerificationCode) error {
 	if err := vc.Validate(r); err != nil {
 		return err
 	}
+
+	// Ensure the realm is set.
+	vc.RealmID = r.ID
+
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		// If the report type is self-report, this verification code requests that
 		// the phone number not exist in the de-duplicate table.
@@ -321,7 +325,7 @@ func (r *Realm) SaveVerificationCode(db *Database, vc *VerificationCode) error {
 			vc.LongExpiresAt = vc.ExpiresAt // Self report expiration codes are all short.
 		}
 
-		if vc.Model.ID == 0 {
+		if vc.ID == 0 {
 			return tx.Create(vc).Error
 		}
 		return tx.Save(vc).Error
@@ -397,7 +401,6 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		}
 	}
 
-	// Update the per-realm stats.
 	if v.RealmID != 0 {
 		// Count the number of user initiated reports
 		userReports := 0

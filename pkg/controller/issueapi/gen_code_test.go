@@ -110,11 +110,11 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		VerCode, err := realm.FindVerificationCode(db, code)
+		verCode, err := realm.FindVerificationCode(db, code)
 		if err != nil {
-			t.Errorf("didn't find previously saved code")
+			t.Fatal("didn't find previously saved code")
 		}
-		if exp, codeType, err := db.IsCodeExpired(VerCode, code); exp || err != nil {
+		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code, %v %v", exp, err)
 		} else if codeType != database.CodeTypeShort {
 			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeShort, codeType)
@@ -122,11 +122,11 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range longCodes {
-		VerCode, err := realm.FindVerificationCode(db, code)
+		verCode, err := realm.FindVerificationCode(db, code)
 		if err != nil {
-			t.Errorf("didn't find previously saved code")
+			t.Fatal("didn't find previously saved code")
 		}
-		if exp, codeType, err := db.IsCodeExpired(VerCode, code); exp || err != nil {
+		if exp, codeType, err := db.IsCodeExpired(verCode, code); exp || err != nil {
 			t.Fatalf("loaded code doesn't match requested code")
 		} else if codeType != database.CodeTypeLong {
 			t.Errorf("wrong code type, want: %v got: %v", database.CodeTypeLong, codeType)

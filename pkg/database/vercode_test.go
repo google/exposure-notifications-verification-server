@@ -260,8 +260,8 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		}
 	}
 
-	if _, err := realm.ExpireCode(db, uuid, SystemTest); err == nil {
-		t.Errorf("Expected code already expired, got %v", err)
+	if _, err := realm.ExpireCode(db, uuid, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -487,18 +487,26 @@ func TestStatDates(t *testing.T) {
 	t.Parallel()
 
 	ctx := project.TestContext(t)
+
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm := NewRealmWithDefaults("Test Realm")
-	user := &User{
-		Model: gorm.Model{
-			ID: 100,
-		},
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	user, err := db.FindUser(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	app := &AuthorizedApp{
-		Model: gorm.Model{
-			ID: 200,
-		},
+		RealmID: realm.ID,
+		Name:    "appy",
 	}
+	if err := db.SaveAuthorizedApp(app, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	cacher, err := cache.NewInMemory(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -521,7 +529,6 @@ func TestStatDates(t *testing.T) {
 				IssuingUserID:     user.ID,    // need for RealmUserStats
 				IssuingAppID:      app.ID,     // need for AuthorizedAppStats
 				IssuingExternalID: "aa-bb-cc", // need for ExternalIssuerStats
-				RealmID:           300,        // need for RealmStats
 			},
 			nowStr,
 		},
