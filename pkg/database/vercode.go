@@ -401,7 +401,6 @@ func (db *Database) UpdateStats(ctx context.Context, codes ...*VerificationCode)
 		}
 	}
 
-	// Update the per-realm stats.
 	if v.RealmID != 0 {
 		// Count the number of user initiated reports
 		userReports := 0

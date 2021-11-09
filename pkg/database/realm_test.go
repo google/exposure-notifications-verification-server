@@ -570,14 +570,14 @@ func TestRealm_UserStats(t *testing.T) {
 	}
 
 	numDays := 7
-	endDate := timeutils.Midnight(time.Now())
-	startDate := timeutils.Midnight(endDate.Add(time.Duration(numDays) * -24 * time.Hour))
+	endDate := timeutils.UTCMidnight(time.Now())
+	startDate := timeutils.UTCMidnight(endDate.Add(time.Duration(numDays) * -24 * time.Hour))
 
 	// Create users.
 	for userIdx, name := range []string{"Rocky", "Bullwinkle", "Boris", "Natasha"} {
 		user := &User{
 			Name:  name,
-			Email: name + "@example.com",
+			Email: strings.ToLower(name) + "@example.com",
 		}
 		if err := db.SaveUser(user, SystemTest); err != nil {
 			t.Fatalf("failed to create user %q: %s", name, err)

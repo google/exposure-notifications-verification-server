@@ -72,7 +72,7 @@ func TestValidate(t *testing.T) {
 	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
 
 	maxDate := timeutils.UTCMidnight(time.Now())
-	minDate := timeutils.Midnight(maxDate.Add(-1 * harness.Config.IssueConfig().AllowedSymptomAge))
+	minDate := timeutils.UTCMidnight(maxDate.Add(-1 * harness.Config.IssueConfig().AllowedSymptomAge))
 
 	cases := []struct {
 		name           string
