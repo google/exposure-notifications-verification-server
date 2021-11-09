@@ -59,7 +59,7 @@ func TestIssue(t *testing.T) {
 		code       int
 	}{
 		{
-			name: "issue wrong request type",
+			name: "issue_wrong_request_type",
 			membership: &database.Membership{
 				Realm:       realm,
 				Permissions: rbac.CodeIssue,
@@ -69,7 +69,7 @@ func TestIssue(t *testing.T) {
 			code: http.StatusBadRequest,
 		},
 		{
-			name: "issue batch wrong request type",
+			name: "issue_batch_wrong_request_type",
 			membership: &database.Membership{
 				Realm:       realm,
 				Permissions: rbac.CodeBulkIssue,
@@ -79,7 +79,7 @@ func TestIssue(t *testing.T) {
 			code: http.StatusBadRequest,
 		},
 		{
-			name: "issue API wants authapp",
+			name: "issue_api_wants_authapp",
 			membership: &database.Membership{
 				Realm:       realm,
 				Permissions: rbac.CodeIssue,
@@ -91,7 +91,7 @@ func TestIssue(t *testing.T) {
 			code: http.StatusInternalServerError, // unauthorized at middleware
 		},
 		{
-			name: "issue batch API wants authapp",
+			name: "issue_batch_api_wants_authapp",
 			membership: &database.Membership{
 				Realm:       realm,
 				Permissions: rbac.CodeBulkIssue,
@@ -101,7 +101,7 @@ func TestIssue(t *testing.T) {
 			code: http.StatusInternalServerError, // unauthorized at middleware
 		},
 		{
-			name: "issue no permissions",
+			name: "issue_no_permissions",
 			membership: &database.Membership{
 				Realm: realm,
 				// no permissions
@@ -113,7 +113,7 @@ func TestIssue(t *testing.T) {
 			code: http.StatusUnauthorized,
 		},
 		{
-			name: "issue batch no permissions",
+			name: "issue_batch_no_permissions",
 			membership: &database.Membership{
 				Realm: realm,
 				// no permissions
@@ -123,11 +123,16 @@ func TestIssue(t *testing.T) {
 			code: http.StatusUnauthorized,
 		},
 		{
-			name: "issue batch, realm not allowed",
+			name: "issue_batch_realm_not_allowed",
 			membership: &database.Membership{
-				Realm: &database.Realm{
-					AllowBulkUpload: false,
-				},
+				Realm: func() *database.Realm {
+					realm := database.NewRealmWithDefaults("issue_batch_realm_not_allowed")
+					realm.AllowBulkUpload = false
+					if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+						t.Fatal(err, realm.ErrorMessages())
+					}
+					return realm
+				}(),
 				Permissions: rbac.CodeBulkIssue,
 			},
 			fn:   c.BatchIssueWithUIAuth,
@@ -137,9 +142,14 @@ func TestIssue(t *testing.T) {
 		{
 			name: "generated_sms_realm_not_allowed",
 			membership: &database.Membership{
-				Realm: &database.Realm{
-					AllowGeneratedSMS: false,
-				},
+				Realm: func() *database.Realm {
+					realm := database.NewRealmWithDefaults("generated_sms_realm_not_allowed")
+					realm.AllowGeneratedSMS = false
+					if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+						t.Fatal(err, realm.ErrorMessages())
+					}
+					return realm
+				}(),
 				Permissions: rbac.CodeIssue,
 			},
 			fn: c.IssueWithUIAuth,
@@ -152,15 +162,20 @@ func TestIssue(t *testing.T) {
 		{
 			name: "generated_sms_realm_allowed",
 			membership: &database.Membership{
-				Realm: &database.Realm{
-					CodeDuration:      database.FromDuration(5 * time.Minute),
-					CodeLength:        8,
-					LongCodeDuration:  database.FromDuration(15 * time.Minute),
-					LongCodeLength:    16,
-					AllowedTestTypes:  database.TestTypeConfirmed,
-					AllowGeneratedSMS: true,
-					SMSCountry:        "US",
-				},
+				Realm: func() *database.Realm {
+					realm := database.NewRealmWithDefaults("generated_sms_realm_allowed")
+					realm.CodeDuration = database.FromDuration(5 * time.Minute)
+					realm.CodeLength = 8
+					realm.LongCodeDuration = database.FromDuration(15 * time.Minute)
+					realm.LongCodeLength = 16
+					realm.AllowedTestTypes = database.TestTypeConfirmed
+					realm.AllowGeneratedSMS = true
+					realm.SMSCountry = "US"
+					if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+						t.Fatal(err, realm.ErrorMessages())
+					}
+					return realm
+				}(),
 				Permissions: rbac.CodeIssue,
 			},
 			fn: c.IssueWithUIAuth,

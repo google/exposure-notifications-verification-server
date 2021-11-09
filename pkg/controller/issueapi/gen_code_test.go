@@ -91,6 +91,7 @@ func TestCommitCode(t *testing.T) {
 	longCodes := make([]string, 0, numCodes)
 	for i := 0; i < numCodes; i++ {
 		vCode := &database.VerificationCode{
+			Realm:         realm,
 			ExpiresAt:     time.Now().Add(15 * time.Minute),
 			LongExpiresAt: time.Now().Add(24 * time.Hour),
 			TestType:      "confirmed",
