@@ -15,10 +15,12 @@
 package codes
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
 )
@@ -55,6 +57,16 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 
 		code, err := realm.ExpireCode(c.db, request.UUID, authorizedApp)
 		if err != nil {
+			if database.IsNotFound(err) {
+				controller.NotFound(w, r, c.h)
+				return
+			}
+
+			if errors.Is(err, database.ErrCodeAlreadyClaimed) {
+				controller.BadRequest(w, r, c.h)
+				return
+			}
+
 			controller.InternalError(w, r, c.h, err)
 			return
 		}

@@ -213,7 +213,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		}
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("expired", func(t *testing.T) {
 		t.Parallel()
 
 		ctx := ctx
@@ -223,6 +223,79 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 			RealmID:       realm.ID,
 			Code:          "00000001",
 			LongCode:      "00000001ABC",
+			Claimed:       false,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+			IssuingAppID:  authApp.ID,
+		}
+		if err := realm.SaveVerificationCode(harness.Database, code); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := realm.ExpireCode(harness.Database, code.UUID, database.SystemTest); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(100 * time.Millisecond)
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: code.UUID,
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusOK; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+
+		record, err := realm.FindVerificationCodeByUUID(harness.Database, code.UUID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if now := time.Now().UTC(); record.ExpiresAt.After(now) {
+			t.Errorf("expected code expired. got %s but now is %s", code.ExpiresAt, now)
+		}
+	})
+
+	t.Run("claimed", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		code := &database.VerificationCode{
+			RealmID:       realm.ID,
+			Code:          "00000002",
+			LongCode:      "00000002DEF",
+			Claimed:       true,
+			TestType:      "confirmed",
+			ExpiresAt:     time.Now().Add(time.Hour),
+			LongExpiresAt: time.Now().Add(time.Hour),
+			IssuingAppID:  authApp.ID,
+		}
+		if err := realm.SaveVerificationCode(harness.Database, code); err != nil {
+			t.Fatal(err)
+		}
+
+		w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", &api.ExpireCodeRequest{
+			UUID: code.UUID,
+		})
+		handler.ServeHTTP(w, r)
+
+		if got, want := w.Code, http.StatusBadRequest; got != want {
+			t.Errorf("Expected %d to be %d", got, want)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := ctx
+		ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+		code := &database.VerificationCode{
+			RealmID:       realm.ID,
+			Code:          "00000003",
+			LongCode:      "00000003GHI",
 			Claimed:       false,
 			TestType:      "confirmed",
 			ExpiresAt:     time.Now().Add(time.Hour),

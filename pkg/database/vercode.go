@@ -270,7 +270,7 @@ func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*Verific
 		vc.ExpiresAt = time.Now().UTC()
 		vc.LongExpiresAt = vc.ExpiresAt
 		if err := tx.Save(&vc).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to save verification code: %w", err)
 		}
 
 		audit := BuildAuditEntry(actor, "expired verification code", &vc, r.ID)
