@@ -260,8 +260,8 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		}
 	}
 
-	if _, err := realm.ExpireCode(db, uuid, SystemTest); err == nil {
-		t.Errorf("Expected code already expired, got %v", err)
+	if _, err := realm.ExpireCode(db, uuid, SystemTest); err != nil {
+		t.Fatal(err)
 	}
 }
 
