@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
@@ -69,12 +68,14 @@ type VerificationCode struct {
 	gorm.Model
 	Errorable
 
-	RealmID       uint   // VerificationCodes belong to exactly one realm when issued.
-	Code          string `gorm:"type:varchar(512)"`
-	LongCode      string `gorm:"type:varchar(512)"`
-	UUID          string `gorm:"type:uuid;default:null"`
-	Claimed       bool   `gorm:"default:false"`
-	TestType      string `gorm:"type:varchar(20)"`
+	// RealmID is the realm in which this verification code was issued. Codes belong to exactly one realm.
+	RealmID uint `gorm:"column:realm_id; type:integer; not null;"`
+
+	Code          string `gorm:"column:code; type:text"`
+	LongCode      string `gorm:"column:long_code; type:text"`
+	UUID          string `gorm:"column:uuid; type:uuid; default:null"`
+	Claimed       bool   `gorm:"column:claimed; default:false"`
+	TestType      string `gorm:"column:test_type; type:text"`
 	SymptomDate   *time.Time
 	TestDate      *time.Time
 	ExpiresAt     time.Time
@@ -89,29 +90,42 @@ type VerificationCode struct {
 	// IssuingUserID is the ID of the user in the database that created this
 	// verification code. This is only populated if the code was created via the
 	// UI.
-	IssuingUserID uint `gorm:"column:issuing_user_id; type:integer;"`
+	IssuingUserID    uint  `gorm:"-"`
+	IssuingUserIDPtr *uint `gorm:"column:issuing_user_id; type:integer;"`
 
 	// IssuingAppID is the ID of the app in the database that created this
 	// verification code. This is only populated if the code was created via the
 	// API.
-	IssuingAppID uint `gorm:"column:issuing_app_id; type:integer;"`
+	IssuingAppID    uint  `gorm:"-"`
+	IssuingAppIDPtr *uint `gorm:"column:issuing_app_id; type:integer;"`
 
 	// IssuingExternalID is an optional ID to an external system that created this
 	// verification code. This is only populated if the code was created via the
 	// API AND the API caller supplied it in the request. This ID has no meaning
 	// in this system. It can be up to 255 characters in length.
-	IssuingExternalID string `gorm:"column:issuing_external_id; type:varchar(255);"`
+	IssuingExternalID string `gorm:"column:issuing_external_id; type:text;"`
 }
 
 // BeforeSave is used by callbacks.
 func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
+	v.IssuingUserIDPtr = uintPtr(v.IssuingUserID)
+	v.IssuingAppIDPtr = uintPtr(v.IssuingAppID)
+
+	if v.RealmID == 0 {
+		v.AddError("realm_id", "is required")
+	}
+
 	if len(v.IssuingExternalID) > 255 {
 		v.AddError("issuingExternalID", "cannot exceed 255 characters")
 	}
 
-	if msgs := v.ErrorMessages(); len(msgs) > 0 {
-		return fmt.Errorf("validation failed: %s", strings.Join(msgs, ", "))
-	}
+	return v.ErrorOrNil()
+}
+
+// AfterFind runs after the verification code is found.
+func (v *VerificationCode) AfterFind(tx *gorm.DB) error {
+	v.IssuingUserID = uintValue(v.IssuingUserIDPtr)
+	v.IssuingAppID = uintValue(v.IssuingAppIDPtr)
 	return nil
 }
 
@@ -251,7 +265,8 @@ func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*Verific
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
 			Where("realm_id = ? AND uuid = ?", r.ID, uuid).
-			Find(&vc).Error; err != nil {
+			First(&vc).
+			Error; err != nil {
 			return fmt.Errorf("failed to get existing verification code: %w", err)
 		}
 
@@ -291,9 +306,6 @@ func (r *Realm) SaveVerificationCode(db *Database, vc *VerificationCode) error {
 	if err := vc.Validate(r); err != nil {
 		return err
 	}
-
-	// Ensure the realm is set.
-	vc.RealmID = r.ID
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		// If the report type is self-report, this verification code requests that
@@ -431,10 +443,11 @@ func (db *Database) RecycleVerificationCodes(maxAge time.Duration) (int64, error
 	}
 	deleteBefore := time.Now().UTC().Add(maxAge)
 	// Null out the codes where this can be done.
-	rtn := db.db.Model(&VerificationCode{}).
+	rtn := db.db.
+		Model(&VerificationCode{}).
 		Select("code", "long_code").
 		Where("expires_at < ? AND long_expires_at < ? AND (code != ? OR long_code != ?)", deleteBefore, deleteBefore, "", "").
-		Update(map[string]interface{}{"code": "", "long_code": ""})
+		UpdateColumns(map[string]interface{}{"code": "", "long_code": ""})
 	return rtn.RowsAffected, rtn.Error
 }
 
