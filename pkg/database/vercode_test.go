@@ -82,7 +82,7 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	longCode := "abcdefgh12345678"
 
 	vc := &VerificationCode{
-		Realm:         realm,
+		RealmID:       realm.ID,
 		UUID:          uuid,
 		Code:          code,
 		LongCode:      longCode,
@@ -241,7 +241,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	}
 
 	vc := &VerificationCode{
-		Realm:         realm,
+		RealmID:       realm.ID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "confirmed",
@@ -288,7 +288,7 @@ func TestSaveUserReport(t *testing.T) {
 	}
 
 	vc := &VerificationCode{
-		Realm:         realm,
+		RealmID:       realm.ID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "user-report",
@@ -392,7 +392,7 @@ func TestDeleteVerificationCode(t *testing.T) {
 	}
 
 	code := VerificationCode{
-		Realm:         realm,
+		RealmID:       realm.ID,
 		Code:          "12345678",
 		LongCode:      "12345678",
 		TestType:      "confirmed",
@@ -540,7 +540,7 @@ func TestStatDates(t *testing.T) {
 	}{
 		{
 			&VerificationCode{
-				Realm:             realm,
+				RealmID:           realm.ID,
 				Code:              "111111",
 				LongCode:          "111111",
 				TestType:          "negative",

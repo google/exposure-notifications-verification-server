@@ -70,7 +70,6 @@ type VerificationCode struct {
 
 	// RealmID is the realm in which this verification code was issued. Codes belong to exactly one realm.
 	RealmID uint `gorm:"column:realm_id; type:integer; not null;"`
-	Realm   *Realm
 
 	Code          string `gorm:"column:code; type:text"`
 	LongCode      string `gorm:"column:long_code; type:text"`
@@ -112,7 +111,7 @@ func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 	v.IssuingUserIDPtr = uintPtr(v.IssuingUserID)
 	v.IssuingAppIDPtr = uintPtr(v.IssuingAppID)
 
-	if v.RealmID == 0 && v.Realm == nil {
+	if v.RealmID == 0 {
 		v.AddError("realm_id", "is required")
 	}
 
@@ -127,11 +126,6 @@ func (v *VerificationCode) BeforeSave(tx *gorm.DB) error {
 func (v *VerificationCode) AfterFind(tx *gorm.DB) error {
 	v.IssuingUserID = uintValue(v.IssuingUserIDPtr)
 	v.IssuingAppID = uintValue(v.IssuingAppIDPtr)
-
-	if v.Realm == nil {
-		return fmt.Errorf("verification code realm is nil")
-	}
-
 	return nil
 }
 
@@ -224,8 +218,7 @@ func (r *Realm) FindVerificationCode(db *Database, code string) (*VerificationCo
 
 	var vc VerificationCode
 	if err := db.db.
-		Joins("JOIN realms ON realms.id = verification_codes.realm_id").
-		Where("verification_codes.realm_id = ? AND (verification_codes.code IN (?) OR verification_codes.long_code IN (?))", r.ID, hmacedCodes, hmacedCodes).
+		Where("realm_id = ? AND (code IN (?) OR long_code IN (?))", r.ID, hmacedCodes, hmacedCodes).
 		First(&vc).
 		Error; err != nil {
 		return nil, err
@@ -240,9 +233,8 @@ func (r *Realm) ListRecentCodes(db *Database, user *User) ([]*VerificationCode, 
 	var codes []*VerificationCode
 	if err := db.db.
 		Model(&VerificationCode{}).
-		Joins("JOIN realms ON realms.id = verification_codes.realm_id").
-		Where("verification_codes.realm_id = ? AND verification_codes.issuing_user_id = ?", r.ID, user.ID).
-		Order("verification_codes.created_at DESC").
+		Where("realm_id = ? AND issuing_user_id = ?", r.ID, user.ID).
+		Order("created_at DESC").
 		Limit(5).
 		Find(&codes).
 		Error; err != nil {
@@ -272,8 +264,7 @@ func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*Verific
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Joins("JOIN realms ON realms.id = verification_codes.realm_id").
-			Where("verification_codes.realm_id = ? AND verification_codes.uuid = ?", r.ID, uuid).
+			Where("realm_id = ? AND uuid = ?", r.ID, uuid).
 			First(&vc).
 			Error; err != nil {
 			return fmt.Errorf("failed to get existing verification code: %w", err)
