@@ -106,7 +106,7 @@ func TestHandleCleanup(t *testing.T) {
 			ExpiresAt:     time.Now().UTC().Add(24 * time.Hour),
 			LongExpiresAt: time.Now().UTC().Add(24 * time.Hour),
 		}
-		if err := db.SaveVerificationCode(code, realm); err != nil {
+		if err := realm.SaveVerificationCode(db, code); err != nil {
 			t.Fatal(err)
 		}
 		if err := db.RawDB().Model(code).UpdateColumns(&database.VerificationCode{

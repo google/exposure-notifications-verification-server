@@ -434,7 +434,7 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 			}
 
 			// If a verification code already exists, it will fail to save, and we retry.
-			if err := db.SaveVerificationCode(verificationCode, realm); err != nil {
+			if err := realm.SaveVerificationCode(db, verificationCode); err != nil {
 				return nil, fmt.Errorf("failed to create verification code: %w", err)
 			}
 			db.UpdateStats(ctx, verificationCode)

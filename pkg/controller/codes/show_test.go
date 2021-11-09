@@ -95,7 +95,7 @@ func TestHandleShow_ShowCodeStatus(t *testing.T) {
 			ExpiresAt:     time.Now().Add(time.Hour),
 			LongExpiresAt: time.Now().Add(time.Hour),
 		}
-		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+		if err := realm.SaveVerificationCode(harness.Database, code); err != nil {
 			t.Fatal(err)
 		}
 

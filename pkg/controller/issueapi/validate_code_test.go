@@ -59,7 +59,7 @@ func TestValidate(t *testing.T) {
 		ExpiresAt:     time.Now().Add(time.Hour),
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
-	if err := db.SaveVerificationCode(existingCode, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, existingCode); err != nil {
 		t.Fatal(err)
 	}
 

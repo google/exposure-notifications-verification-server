@@ -26,6 +26,20 @@ import (
 // HandleExpireAPI handles the verification code expiry API via JSON
 func (c *Controller) HandleExpireAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Get realm from context.
+		authorizedApp := controller.AuthorizedAppFromContext(ctx)
+		if authorizedApp == nil {
+			controller.Unauthorized(w, r, c.h)
+			return
+		}
+		realm, err := authorizedApp.Realm(c.db)
+		if err != nil {
+			controller.InternalError(w, r, c.h, err)
+			return
+		}
+
 		var request api.ExpireCodeRequest
 		if err := controller.BindJSON(w, r, &request); err != nil {
 			c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err))
@@ -39,7 +53,7 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 			return
 		}
 
-		code, err := c.db.ExpireCode(request.UUID)
+		code, err := realm.ExpireCode(c.db, request.UUID, authorizedApp)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
@@ -53,7 +67,8 @@ func (c *Controller) HandleExpireAPI() http.Handler {
 	})
 }
 
-// HandleExpirePage handles the verification code expiry html page
+// HandleExpirePage handles the verification code expire PATCH request made from
+// the show page.
 func (c *Controller) HandleExpirePage() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -90,7 +105,7 @@ func (c *Controller) HandleExpirePage() http.Handler {
 			return
 		}
 
-		expiredCode, err := c.db.ExpireCode(vars["uuid"])
+		expiredCode, err := currentRealm.ExpireCode(c.db, vars["uuid"], currentUser)
 		if err != nil {
 			flash.Error("Failed to process form: %v.", err)
 			expiredCode = code

@@ -62,6 +62,8 @@ var (
 	ErrRequiresPhoneNumber = errors.New("phone number is required for user report requests")
 )
 
+var _ Auditable = (*VerificationCode)(nil)
+
 // VerificationCode represents a verification code in the database.
 type VerificationCode struct {
 	gorm.Model
@@ -192,9 +194,9 @@ func (v *VerificationCode) Validate(realm *Realm) error {
 	return nil
 }
 
-// FindVerificationCode find a verification code by the code number (can be short
-// code or long code).
-func (db *Database) FindVerificationCode(code string) (*VerificationCode, error) {
+// FindVerificationCode find a verification code by the code number (can be
+// short code or long code).
+func (r *Realm) FindVerificationCode(db *Database, code string) (*VerificationCode, error) {
 	hmacedCodes, err := db.generateVerificationCodeHMACs(code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
@@ -202,7 +204,7 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 
 	var vc VerificationCode
 	if err := db.db.
-		Where("code IN (?) OR long_code IN (?)", hmacedCodes, hmacedCodes).
+		Where("realm_id = ? AND (code IN (?) OR long_code IN (?))", r.ID, hmacedCodes, hmacedCodes).
 		First(&vc).
 		Error; err != nil {
 		return nil, err
@@ -210,13 +212,14 @@ func (db *Database) FindVerificationCode(code string) (*VerificationCode, error)
 	return &vc, nil
 }
 
-// ListRecentCodes shows the last 5 recently issued codes for a given issuing user.
-// The code and longCode are removed, this is only intended to show metadata.
-func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCode, error) {
+// ListRecentCodes shows the last 5 recently issued codes for a given issuing
+// user. The code and longCode are removed, this is only intended to show
+// metadata.
+func (r *Realm) ListRecentCodes(db *Database, user *User) ([]*VerificationCode, error) {
 	var codes []*VerificationCode
 	if err := db.db.
 		Model(&VerificationCode{}).
-		Where("realm_id = ? AND issuing_user_id = ?", realm.ID, user.ID).
+		Where("realm_id = ? AND issuing_user_id = ?", r.ID, user.ID).
 		Order("created_at DESC").
 		Limit(5).
 		Find(&codes).
@@ -238,27 +241,45 @@ func (db *Database) ListRecentCodes(realm *Realm, user *User) ([]*VerificationCo
 }
 
 // ExpireCode saves a verification code as expired.
-func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
+func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*VerificationCode, error) {
+	if actor == nil {
+		return nil, fmt.Errorf("auditing actor is nil")
+	}
+
 	var vc VerificationCode
-	err := db.db.Transaction(func(tx *gorm.DB) error {
+	if err := db.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.
 			Set("gorm:query_option", "FOR UPDATE").
-			Where("uuid = ?", uuid).
+			Where("realm_id = ? AND uuid = ?", r.ID, uuid).
 			Find(&vc).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to get existing verification code: %w", err)
 		}
+
+		// We don't want to update the expiration time on an already-expired code,
+		// but this also isn't an error, so just return now.
 		if vc.IsExpired() {
-			return ErrCodeAlreadyExpired
+			return nil
 		}
+
+		// It's not possible to expire an already-claimed code.
 		if vc.Claimed {
 			return ErrCodeAlreadyClaimed
 		}
 
-		vc.ExpiresAt = time.Now()
+		oldExpires := vc.ExpiresAt
+		vc.ExpiresAt = time.Now().UTC()
 		vc.LongExpiresAt = vc.ExpiresAt
-		return tx.Save(&vc).Error
-	})
-	if err != nil {
+		if err := tx.Save(&vc).Error; err != nil {
+			return err
+		}
+
+		audit := BuildAuditEntry(actor, "expired verification code", &vc, r.ID)
+		audit.Diff = stringDiff(oldExpires.Format(time.RFC3339), vc.ExpiresAt.Format(time.RFC3339))
+		if err := tx.Save(audit).Error; err != nil {
+			return fmt.Errorf("failed to save audits: %w", err)
+		}
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 	return &vc, nil
@@ -266,8 +287,8 @@ func (db *Database) ExpireCode(uuid string) (*VerificationCode, error) {
 
 // SaveVerificationCode created or updates a verification code in the database.
 // Max age represents the maximum age of the test date [optional] in the record.
-func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) error {
-	if err := vc.Validate(realm); err != nil {
+func (r *Realm) SaveVerificationCode(db *Database, vc *VerificationCode) error {
+	if err := vc.Validate(r); err != nil {
 		return err
 	}
 	return db.db.Transaction(func(tx *gorm.DB) error {
@@ -308,11 +329,21 @@ func (db *Database) SaveVerificationCode(vc *VerificationCode, realm *Realm) err
 }
 
 // DeleteVerificationCode deletes the code by ID, this is a hard delete.
-func (db *Database) DeleteVerificationCode(id uint) error {
+func (r *Realm) DeleteVerificationCode(db *Database, id uint) error {
 	return db.db.Unscoped().
-		Where("id = ?", id).
+		Where("realm_id = ? AND id = ?", r.ID, id).
 		Delete(&VerificationCode{}).
 		Error
+}
+
+// AuditID is the id to use in audit logs.
+func (v *VerificationCode) AuditID() string {
+	return fmt.Sprintf("verification_code:%d", v.ID)
+}
+
+// AuditDisplay is the display name in audit logs.
+func (v *VerificationCode) AuditDisplay() string {
+	return v.UUID
 }
 
 // UpdateStats increments VerificationCode statistics incrementing stats but the number issued.

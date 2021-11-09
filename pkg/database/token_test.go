@@ -425,7 +425,7 @@ func TestIssueToken(t *testing.T) {
 				code = verification.LongCode
 			}
 
-			if err := db.SaveVerificationCode(verification, realm); err != nil {
+			if err := realm.SaveVerificationCode(db, verification); err != nil {
 				t.Fatalf("error creating verification code: %v", err)
 			}
 

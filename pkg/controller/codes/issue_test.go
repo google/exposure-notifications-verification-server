@@ -114,7 +114,7 @@ func TestHandleIssue_IssueCode(t *testing.T) {
 	}
 
 	// Verify the code exists.
-	dbCode, err := harness.Database.FindVerificationCode(code)
+	dbCode, err := realm.FindVerificationCode(harness.Database, code)
 	if err != nil {
 		t.Fatal(err)
 	}

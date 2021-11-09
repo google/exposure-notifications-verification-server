@@ -89,13 +89,13 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatalf("error creating verification code: %v", err)
 	}
 
 	{
 		// Find by raw code
-		got, err := db.FindVerificationCode(code)
+		got, err := realm.FindVerificationCode(db, code)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -106,7 +106,7 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 
 	{
 		// Find by raw long code
-		got, err := db.FindVerificationCode(longCode)
+		got, err := realm.FindVerificationCode(db, longCode)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +116,7 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	}
 
 	vc.Claimed = true
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -145,7 +145,7 @@ func TestVerificationCode_FindVerificationCodeByUUID(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -203,7 +203,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -214,7 +214,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 
 	{
 		u := &User{Model: gorm.Model{ID: userID}}
-		got, err := db.ListRecentCodes(realm, u)
+		got, err := realm.ListRecentCodes(db, u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -238,7 +238,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(2 * time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -248,7 +248,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	}
 
 	{
-		got, err := db.ExpireCode(uuid)
+		got, err := realm.ExpireCode(db, uuid, SystemTest)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -260,7 +260,7 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 		}
 	}
 
-	if _, err := db.ExpireCode(uuid); err == nil {
+	if _, err := realm.ExpireCode(db, uuid, SystemTest); err == nil {
 		t.Errorf("Expected code already expired, got %v", err)
 	}
 }
@@ -287,7 +287,7 @@ func TestSaveUserReport(t *testing.T) {
 		NonceRequired: true,
 	}
 
-	if err := db.SaveVerificationCode(vc, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, vc); err != nil {
 		t.Fatal(err)
 	}
 
@@ -384,15 +384,15 @@ func TestDeleteVerificationCode(t *testing.T) {
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	if err := db.SaveVerificationCode(&code, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, &code); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := db.DeleteVerificationCode(code.ID); err != nil {
+	if err := realm.DeleteVerificationCode(db, code.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := db.FindVerificationCode("12345678"); !errors.Is(err, gorm.ErrRecordNotFound) {
+	if _, err := realm.FindVerificationCode(db, "12345678"); !errors.Is(err, gorm.ErrRecordNotFound) {
 		t.Fatal(err)
 	}
 }
@@ -418,7 +418,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 		{Code: "333333", LongCode: "333333ABCDEF", RealmID: realm.ID, TestType: "negative", ExpiresAt: now.Add(time.Minute), LongExpiresAt: now.Add(time.Hour)},
 	}
 	for _, rec := range testData {
-		if err := db.SaveVerificationCode(rec, realm); err != nil {
+		if err := realm.SaveVerificationCode(db, rec); err != nil {
 			t.Fatalf("can't save test data: %v", err)
 		}
 	}
@@ -528,7 +528,7 @@ func TestStatDates(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		if err := db.SaveVerificationCode(test.code, realm); err != nil {
+		if err := realm.SaveVerificationCode(db, test.code); err != nil {
 			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 

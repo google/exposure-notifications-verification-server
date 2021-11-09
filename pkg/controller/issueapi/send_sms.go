@@ -140,7 +140,7 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 		}
 
 		// Delete the token
-		if err := c.db.DeleteVerificationCode(result.VerCode.ID); err != nil {
+		if err := realm.DeleteVerificationCode(c.db, result.VerCode.ID); err != nil {
 			logger.Errorw("failed to delete verification code", "error", err)
 			// fallthrough to the error
 		}

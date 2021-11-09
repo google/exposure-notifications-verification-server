@@ -134,7 +134,7 @@ func (c *Controller) CommitCode(ctx context.Context, vCode *database.Verificatio
 		vCode.LongCode = longCode
 
 		// If a verification code already exists, it will fail to save, and we retry.
-		err = c.db.SaveVerificationCode(vCode, realm)
+		err = realm.SaveVerificationCode(c.db, vCode)
 		switch {
 		case err == nil:
 			// These are stored encrypted, but here we need to tell the user about them.

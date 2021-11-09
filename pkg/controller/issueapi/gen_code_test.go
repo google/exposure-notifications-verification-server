@@ -110,7 +110,7 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		VerCode, err := db.FindVerificationCode(code)
+		VerCode, err := realm.FindVerificationCode(db, code)
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
@@ -122,7 +122,7 @@ func TestCommitCode(t *testing.T) {
 	}
 
 	for _, code := range longCodes {
-		VerCode, err := db.FindVerificationCode(code)
+		VerCode, err := realm.FindVerificationCode(db, code)
 		if err != nil {
 			t.Errorf("didn't find previously saved code")
 		}
@@ -208,7 +208,7 @@ func TestIssueCode(t *testing.T) {
 				ExpiresAt:     time.Now().Add(time.Hour),
 				LongExpiresAt: time.Now().Add(time.Hour),
 			}
-			if err := db.SaveVerificationCode(existingCode, realm); err != nil {
+			if err := realm.SaveVerificationCode(db, existingCode); err != nil {
 				t.Fatal(err)
 			}
 

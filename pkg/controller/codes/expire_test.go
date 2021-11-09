@@ -96,7 +96,7 @@ func TestHandleExpire_ExpireCode(t *testing.T) {
 			ExpiresAt:     time.Now().Add(time.Hour),
 			LongExpiresAt: time.Now().Add(time.Hour),
 		}
-		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+		if err := realm.SaveVerificationCode(harness.Database, code); err != nil {
 			t.Fatal(err)
 		}
 
@@ -229,7 +229,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 			LongExpiresAt: time.Now().Add(time.Hour),
 			IssuingAppID:  authApp.ID,
 		}
-		if err := harness.Database.SaveVerificationCode(code, realm); err != nil {
+		if err := realm.SaveVerificationCode(harness.Database, code); err != nil {
 			t.Fatal(err)
 		}
 

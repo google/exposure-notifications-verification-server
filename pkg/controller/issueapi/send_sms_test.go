@@ -150,7 +150,7 @@ func TestSMS_sendSMS(t *testing.T) {
 			LongExpiresAt: time.Now().Add(time.Hour),
 		},
 	}
-	if err := db.SaveVerificationCode(result.VerCode, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, result.VerCode); err != nil {
 		t.Fatal(err)
 	}
 	// un-hmac the codes so rollback can find them.

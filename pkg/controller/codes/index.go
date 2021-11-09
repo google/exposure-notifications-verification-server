@@ -61,7 +61,7 @@ func (c *Controller) renderStatus(
 	realm *database.Realm,
 	user *database.User,
 	code *database.VerificationCode) error {
-	recentCodes, err := c.db.ListRecentCodes(realm, user)
+	recentCodes, err := realm.ListRecentCodes(c.db, user)
 	if err != nil {
 		return err
 	}

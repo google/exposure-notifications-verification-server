@@ -631,7 +631,7 @@ func TestRealm_FindVerificationCodeByUUID(t *testing.T) {
 		ExpiresAt:     time.Now().UTC().Add(5 * time.Minute),
 		LongExpiresAt: time.Now().UTC().Add(24 * time.Hour),
 	}
-	if err := db.SaveVerificationCode(verificationCode, realm); err != nil {
+	if err := realm.SaveVerificationCode(db, verificationCode); err != nil {
 		t.Fatal(err)
 	}
 
