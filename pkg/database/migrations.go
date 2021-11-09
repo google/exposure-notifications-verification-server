@@ -2453,7 +2453,20 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			},
 		},
 		{
-			ID: "00115-AddVerificationCodeConstraints",
+			ID: "00115-NormalizeVerificationCodeReferences",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					DELETE FROM verification_codes WHERE realm_id IS NULL OR realm_id NOT IN (SELECT id FROM realms);
+					UPDATE verification_codes SET issuing_user_id = NULL WHERE issuing_user_id NOT IN (SELECT id FROM users);
+					UPDATE verification_codes SET issuing_app_id = NULL WHERE issuing_app_id NOT IN (SELECT id FROM authorized_apps);
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "00116-AddVerificationCodeConstraints",
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx, `
 					ALTER SEQUENCE verification_codes_id_seq AS BIGINT;
