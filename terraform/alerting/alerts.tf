@@ -270,9 +270,9 @@ resource "google_monitoring_alert_policy" "CodesClaimedRatioAnomaly" {
       threshold_value = 1
 
       aggregations {
-        alignment_period     = "60s"
+        alignment_period     = "${8 * local.hour + 10 * local.minute}s"
         per_series_aligner   = "ALIGN_DELTA"
-        group_by_fields      = ["resource.labels.realm"]
+        group_by_fields      = ["metric.realm"]
         cross_series_reducer = "REDUCE_SUM"
       }
 
@@ -310,9 +310,9 @@ resource "google_monitoring_alert_policy" "ElevatedSMSErrors" {
       threshold_value = 50
 
       aggregations {
-        alignment_period     = "60s"
+        alignment_period     = "${5 * local.minute}s"
         per_series_aligner   = "ALIGN_DELTA"
-        group_by_fields      = ["resource.labels.realm"]
+        group_by_fields      = ["metric.realm"]
         cross_series_reducer = "REDUCE_SUM"
       }
 
