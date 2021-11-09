@@ -94,7 +94,7 @@ func (c *Controller) IssueCode(ctx context.Context, vCode *database.Verification
 				ErrorReturn: api.Errorf("phone number is required when initiating a user report").WithCode(api.ErrMissingPhone),
 			}
 		}
-		logger.Errorw("failed to issue code", "error", err, "verification_code_errors", vCode.ErrorMessages())
+		logger.Errorw("failed to issue code", "error", err)
 		return &IssueResult{
 			obsResult:   enobs.ResultError("FAILED_TO_ISSUE_CODE"),
 			HTTPCode:    http.StatusInternalServerError,

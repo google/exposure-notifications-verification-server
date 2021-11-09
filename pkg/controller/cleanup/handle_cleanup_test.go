@@ -100,7 +100,6 @@ func TestHandleCleanup(t *testing.T) {
 		c := New(config, db, keyManagerSigner, h)
 
 		code := &database.VerificationCode{
-			RealmID:       realm.ID,
 			Code:          "12345678",
 			LongCode:      "12345678901122334455",
 			TestType:      "confirmed",

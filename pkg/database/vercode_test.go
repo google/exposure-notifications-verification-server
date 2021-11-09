@@ -23,6 +23,8 @@ import (
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
@@ -72,17 +74,13 @@ func TestVerificationCode_FindVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	realm := NewRealmWithDefaults("Test Realm")
 
 	uuid := "5148c75c-2bc5-4874-9d1c-f9185d0e1b8a"
 	code := "12345678"
 	longCode := "abcdefgh12345678"
 
 	vc := &VerificationCode{
-		RealmID:       realm.ID,
 		UUID:          uuid,
 		Code:          code,
 		LongCode:      longCode,
@@ -191,19 +189,13 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	realm := NewRealmWithDefaults("Test Realm")
 
-	user, err := db.FindUser(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	var userID uint = 456
 
 	vc := &VerificationCode{
 		RealmID:       realm.ID,
-		IssuingUserID: user.ID,
+		IssuingUserID: userID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "confirmed",
@@ -212,7 +204,7 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	}
 
 	if err := realm.SaveVerificationCode(db, vc); err != nil {
-		t.Fatal(err, vc.ErrorMessages())
+		t.Fatal(err)
 	}
 
 	uuid := vc.UUID
@@ -221,7 +213,8 @@ func TestVerificationCode_ListRecentCodes(t *testing.T) {
 	}
 
 	{
-		got, err := realm.ListRecentCodes(db, user)
+		u := &User{Model: gorm.Model{ID: userID}}
+		got, err := realm.ListRecentCodes(db, u)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -235,13 +228,9 @@ func TestVerificationCode_ExpireVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	realm := NewRealmWithDefaults("Test Realm")
 
 	vc := &VerificationCode{
-		RealmID:       realm.ID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "confirmed",
@@ -288,7 +277,6 @@ func TestSaveUserReport(t *testing.T) {
 	}
 
 	vc := &VerificationCode{
-		RealmID:       realm.ID,
 		Code:          "123456",
 		LongCode:      "defghijk329024",
 		TestType:      "user-report",
@@ -300,7 +288,7 @@ func TestSaveUserReport(t *testing.T) {
 	}
 
 	if err := realm.SaveVerificationCode(db, vc); err != nil {
-		t.Fatal(err, vc.ErrorMessages())
+		t.Fatal(err)
 	}
 
 	var userReport *UserReport
@@ -386,13 +374,9 @@ func TestDeleteVerificationCode(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-	realm, err := db.FindRealm(1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	realm := NewRealmWithDefaults("Test Realm")
 
 	code := VerificationCode{
-		RealmID:       realm.ID,
 		Code:          "12345678",
 		LongCode:      "12345678",
 		TestType:      "confirmed",
@@ -420,8 +404,8 @@ func TestVerificationCodesCleanup(t *testing.T) {
 
 	now := time.Now()
 
-	realm, err := db.FindRealm(1)
-	if err != nil {
+	realm := NewRealmWithDefaults("realmy")
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
@@ -435,7 +419,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	}
 	for _, rec := range testData {
 		if err := realm.SaveVerificationCode(db, rec); err != nil {
-			t.Fatal(err, rec.ErrorMessages())
+			t.Fatalf("can't save test data: %v", err)
 		}
 	}
 
@@ -443,7 +427,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	if count, err := db.RecycleVerificationCodes(time.Millisecond * 500); err != nil {
-		t.Fatal(err)
+		t.Fatalf("error doing purge: %v", err)
 	} else if count != 2 {
 		t.Fatalf("purge record count mismatch, want: 2, got: %v", count)
 	}
@@ -452,7 +436,7 @@ func TestVerificationCodesCleanup(t *testing.T) {
 	for i, vc := range testData {
 		got, err := realm.FindVerificationCodeByUUID(db, vc.UUID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("can't read back code by UUID")
 		}
 
 		if i <= cleanUpTo {
@@ -489,11 +473,8 @@ func TestVerificationCodesCleanup(t *testing.T) {
 				t.Fatalf("wrong error, want: %v got: %v", gorm.ErrRecordNotFound, err)
 			}
 		} else {
-			if got, want := got.Code, testData[i].Code; got != want {
-				t.Errorf("expected %q to be %q", got, want)
-			}
-			if got, want := got.LongCode, testData[i].LongCode; got != want {
-				t.Errorf("expected %q to be %q", got, want)
+			if diff := cmp.Diff(testData[i], got, ApproxTime, cmpopts.IgnoreUnexported(VerificationCode{}), cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", diff)
 			}
 		}
 	}
@@ -540,7 +521,6 @@ func TestStatDates(t *testing.T) {
 	}{
 		{
 			&VerificationCode{
-				RealmID:           realm.ID,
 				Code:              "111111",
 				LongCode:          "111111",
 				TestType:          "negative",
@@ -556,7 +536,7 @@ func TestStatDates(t *testing.T) {
 
 	for i, test := range tests {
 		if err := realm.SaveVerificationCode(db, test.code); err != nil {
-			t.Fatal(err, test.code.ErrorMessages())
+			t.Fatalf("[%d] error saving code: %v", i, err)
 		}
 
 		test.code.Code = "111111"
