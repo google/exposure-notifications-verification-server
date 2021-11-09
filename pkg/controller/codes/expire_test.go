@@ -16,6 +16,7 @@ package codes_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -251,6 +252,7 @@ func TestHandleExpireAPI_ExpireCode(t *testing.T) {
 		}
 
 		// attempt to expire the same code again
+		w = httptest.NewRecorder()
 		handler.ServeHTTP(w, r)
 		if got, want := w.Code, http.StatusBadRequest; got != want {
 			t.Errorf("Expected %d to be %d", got, want)
