@@ -2452,6 +2452,32 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00115-NormalizeVerificationCodeReferences",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					ALTER SEQUENCE verification_codes_id_seq AS BIGINT;
+					ALTER TABLE verification_codes ALTER id TYPE BIGINT;
+					DELETE FROM verification_codes WHERE realm_id IS NULL OR realm_id NOT IN (SELECT id FROM realms);
+					ALTER TABLE verification_codes ALTER COLUMN realm_id SET NOT NULL;
+					ALTER TABLE verification_codes ALTER COLUMN code TYPE TEXT;
+					ALTER TABLE verification_codes ALTER COLUMN long_code TYPE TEXT;
+					ALTER TABLE verification_codes ALTER COLUMN test_type TYPE TEXT;
+					ALTER TABLE verification_codes ALTER COLUMN issuing_external_id TYPE TEXT;
+				`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx, `
+					ALTER SEQUENCE verification_codes_id_seq AS INT;
+					ALTER TABLE verification_codes ALTER id TYPE INT;
+					ALTER TABLE verification_codes ALTER COLUMN realm_id DROP NOT NULL;
+					ALTER TABLE verification_codes ALTER COLUMN code TYPE VARCHAR(512);
+					ALTER TABLE verification_codes ALTER COLUMN long_code TYPE VARCHAR(512);
+					ALTER TABLE verification_codes ALTER COLUMN test_type TYPE VARCHAR(20);
+					ALTER TABLE verification_codes ALTER COLUMN issuing_external_id TYPE VARCHAR(255);
+				`)
+			},
+		},
 	}
 }
 
