@@ -18,6 +18,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 const thirtyDays = 30 * 24 * time.Hour
@@ -76,7 +79,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now := time.Now()
+	now := timeutils.UTCMidnight(time.Now())
 
 	err = db.SaveKeyServerStatsDay(&KeyServerStatsDay{
 		RealmID:            realm.ID,
@@ -92,6 +95,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if got, want := stats[0].TotalTEKsPublished, int64(50); got != want {
 		t.Errorf("failed retrieving KeyServerStats. got %d, wanted %d", got, want)
 	}
@@ -113,7 +117,7 @@ func TestSaveKeyServerStatsDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := len(stats), 2; got != want {
+	if got, want := len(stats), project.StatsDisplayDays+1; got != want {
 		t.Errorf("incorrect number of stats. got %d, want %d", got, want)
 	}
 

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	keyserver "github.com/google/exposure-notifications-server/pkg/api/v1"
+	"github.com/google/exposure-notifications-server/pkg/timeutils"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 
@@ -200,14 +201,33 @@ func (db *Database) ListKeyServerStatsDaysCached(ctx context.Context, realmID ui
 
 // ListKeyServerStatsDays retrieves the last 90 days of key-server statistics
 func (db *Database) ListKeyServerStatsDays(realmID uint) ([]*KeyServerStatsDay, error) {
+	stop := timeutils.UTCMidnight(time.Now())
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	sql := `
+		SELECT
+			d.day AS day,
+			$1 AS realm_id,
+			COALESCE(s.publish_requests, array[0,0,0]::bigint[]) AS publish_requests,
+			COALESCE(s.total_teks_published, 0) AS total_teks_published,
+			COALESCE(s.revision_requests, 0) AS revision_requests,
+			COALESCE(s.tek_age_distribution, array[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]::bigint[]) AS tek_age_distribution,
+			COALESCE(s.onset_to_upload_distribution, array[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]::bigint[]) AS onset_to_upload_distribution,
+			COALESCE(s.request_missing_onset_date, 0) AS request_missing_onset_date
+		FROM (
+			SELECT day::date FROM generate_series($2, $3, '1 day'::interval) day
+		) d
+		LEFT JOIN key_server_stats_days s ON s.realm_id = $1 AND s.day = d.day
+		ORDER BY day DESC`
+
 	var stats []*KeyServerStatsDay
-	if err := db.db.
-		Model(&KeyServerStatsDay{}).
-		Where("realm_id = ?", realmID).
-		Order("day DESC").
-		Limit(project.StatsDisplayDays).
-		Find(&stats).
-		Error; err != nil {
+	if err := db.db.Raw(sql, realmID, start, stop).Scan(&stats).Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
 		return nil, err
 	}
 	return stats, nil

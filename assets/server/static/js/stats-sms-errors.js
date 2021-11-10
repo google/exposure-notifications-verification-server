@@ -29,7 +29,7 @@
         const pContainer = chartContainer.querySelector('p');
 
         const data = JSON.parse(request.response);
-        if (!data.statistics || !data.statistics[0].error_data) {
+        if (!data.statistics || !data.statistics[0] || !data.statistics[0].error_data) {
           pContainer.innerText = 'There is no sms error data yet.';
           return;
         }
@@ -56,7 +56,8 @@
           dataTable.addRow(row);
         }
 
-        const startChart = new Date(data.statistics[30].date);
+        const win = Math.min(30, data.statistics.length - 1);
+        const startChart = new Date(data.statistics[win].date);
 
         const dateFormatter = new google.visualization.DateFormat({
           pattern: 'MMM dd',
