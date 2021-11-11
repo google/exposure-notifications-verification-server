@@ -69,7 +69,8 @@
         dataTable.addRow([utcDate(stat.day), stat.total_teks_published]);
       }
 
-      const startChart = new Date(data[30].day);
+      const win = Math.min(30, data.length - 1);
+      const startChart = new Date(data[win].day);
 
       const dateFormatter = new google.visualization.DateFormat({
         pattern: 'MMM dd',
@@ -154,6 +155,9 @@
         return;
       }
 
+      const win = Math.min(30, data.length - 1);
+      const startChart = new Date(data[win].day);
+
       const dataTable = new google.visualization.DataTable();
       dataTable.addColumn('date', 'Date');
       dataTable.addColumn('number', 'Total');
@@ -214,8 +218,6 @@
         );
         dataTable.addRow(row);
       }
-
-      const startChart = new Date(data[30].day);
 
       const dateFormatter = new google.visualization.DateFormat({
         pattern: 'MMM dd',

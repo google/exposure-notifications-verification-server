@@ -1,6 +1,6 @@
 (() => {
   window.addEventListener('load', async (event) => {
-    const containerChart = document.querySelector('div#keyserver_chart_div');
+    const containerChart = document.querySelector('div#realm_chart_div');
     if (!containerChart) {
       return;
     }
@@ -156,7 +156,8 @@
         }
 
         const hasKeyServerStats = data.has_key_server_stats;
-        const startChart = new Date(data.statistics[30].date);
+        const win = Math.min(30, data.statistics.length - 1);
+        const startChart = new Date(data.statistics[win].date);
 
         const dataTable = new google.visualization.DataTable();
         chart.headerFunc(dataTable, hasKeyServerStats);
@@ -241,7 +242,8 @@
         return;
       }
 
-      const startChart = new Date(data.statistics[30].date);
+      const win = Math.min(30, data.statistics.length - 1);
+      const startChart = new Date(data.statistics[win].date);
 
       const dataTable = new google.visualization.DataTable();
       dataTable.addColumn('date', 'Date');
