@@ -2478,6 +2478,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				`)
 			},
 		},
+		{
+			ID: "00116-IndexUserReportReferences",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`CREATE INDEX idx_vercode_user_report_ids ON verification_codes (user_report_id)`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`DROP INDEX IF EXISTS idx_vercode_user_report_ids`)
+			},
+		},
 	}
 }
 

@@ -57,7 +57,7 @@ func (c *Controller) handleEndToEnd(cfg *config.E2ERunnerConfig, m *stats.Int64M
 		logger := logging.FromContext(ctx)
 
 		if cfg.DoUserReport {
-			if err := c.db.DeleteUserReport(project.TestPhoneNumber); err != nil {
+			if err := c.db.DeleteUserReport(project.TestPhoneNumber, nil); err != nil {
 				logger.Errorw("error deleting previous user report for test phone number", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, err)
 				return
