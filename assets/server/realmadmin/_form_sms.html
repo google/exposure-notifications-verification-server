@@ -102,7 +102,7 @@
       </div>
     </div>
 
-    <div class="form-floating">
+    <div class="form-floating mb-3">
       <select name="sms_country" id="sms-country" class="form-control form-select {{invalidIf ($realm.ErrorsFor "smsCountry")}}">
         <option selected disabled>Choose...</option>
         {{range $name, $value := $countries}}
@@ -118,8 +118,7 @@
       </small>
     </div>
 
-    {{if $.features.EnableSMSErrorWebhook}}
-    <div class="col-lg-12 mt-3"> {{/* TODO(sethvargo): move mt-3 to mb-3 above once revealed */}}
+    <div class="col-lg-12">
       <div class="form-label-group">
         <div class="input-group">
           <input type="text" readonly id="twilio-alerts-webhook-url" class="form-control font-monospace"
@@ -138,7 +137,6 @@
         </small>
       </div>
     </div>
-    {{end}}
   </div>
 
   <div class="bg-light border rounded p-3 mb-3">

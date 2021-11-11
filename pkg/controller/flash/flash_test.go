@@ -169,20 +169,6 @@ func TestFlash_add(t *testing.T) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	})
-
-	// Legacy implementation for when storage was []string.
-	// TODO(sethvargo): remove slice handling in 1.1.0+.
-	t.Run("slice", func(t *testing.T) {
-		t.Parallel()
-
-		f := New(nil)
-		f.values[flashKeyError] = []string{"b", "c"}
-		f.add(flashKeyError, "a")
-
-		if got, want := f.values[flashKeyError], map[string]struct{}{"a": {}, "b": {}, "c": {}}; !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-	})
 }
 
 func TestFlash_get(t *testing.T) {
@@ -193,19 +179,6 @@ func TestFlash_get(t *testing.T) {
 		f.values[flashKeyError] = map[string]struct{}{"b": {}, "c": {}, "a": {}}
 
 		if got, want := f.get(flashKeyError), []string{"a", "b", "c"}; !reflect.DeepEqual(got, want) {
-			t.Errorf("expected %v to be %v", got, want)
-		}
-	})
-
-	// Legacy implementation for when storage was []string.
-	// TODO(sethvargo): remove slice handling in 1.1.0+.
-	t.Run("slice", func(t *testing.T) {
-		t.Parallel()
-
-		f := New(nil)
-		f.values[flashKeyError] = []string{"b", "c", "a"}
-
-		if got, want := f.get(flashKeyError), []string{"b", "c", "a"}; !reflect.DeepEqual(got, want) {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	})

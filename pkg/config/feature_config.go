@@ -18,15 +18,7 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 
 // FeatureConfig represents features that are introduced as off by default allowing
 // for server operators to control their release.
-type FeatureConfig struct {
-	// NotifyAnomalies enables anomaly notification for realm admins.
-	// TODO(sethvargo): remove in 1.0.4+
-	NotifyAnomalies bool `env:"NOTIFY_ANOMALIES, default=true"`
-
-	// EnableSMSErrorWebhook enables the configuration for Twilio webhooks.
-	// TODO(sethvargo): remove in 1.0.4+
-	EnableSMSErrorWebhook bool `env:"ENABLE_SMS_ERROR_WEBHOOK, default=true"`
-}
+type FeatureConfig struct{}
 
 // AddToTemplate takes TemplateMap and writes the status of all known
 // feature flags for use in HTML templates.
