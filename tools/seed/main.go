@@ -25,6 +25,10 @@ import (
 	"fmt"
 	"math/rand"
 	"os/signal"
+	"runtime"
+	"strconv"
+	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -39,6 +43,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/jinzhu/gorm"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/google/exposure-notifications-server/pkg/keys"
 	"github.com/google/exposure-notifications-server/pkg/logging"
@@ -297,16 +302,21 @@ func realMain(ctx context.Context) error {
 	}
 
 	if *flagStats {
-		maxPerDay, err := generateCodesAndStats(db, realm1)
+		// Temporarily disable gorm logging, it's very chatty and increases the seed
+		// time significantly.
+		db.RawDB().LogMode(false)
+		defer db.RawDB().LogMode(true)
+
+		maxPerDay, err := generateCodesAndStats(ctx, db, realm1)
 		if err != nil {
 			return fmt.Errorf("failed to generate stats: %w", err)
 		}
 
-		if err := generateKeyServerStats(db, realm1, maxPerDay); err != nil {
+		if err := generateKeyServerStats(ctx, db, realm1, maxPerDay); err != nil {
 			return fmt.Errorf("failed to generate key-server stats: %w", err)
 		}
 
-		if err := generateSMSErrorStats(db, realm1); err != nil {
+		if err := generateSMSErrorStats(ctx, db, realm1); err != nil {
 			return fmt.Errorf("failed to generate sms-error stats: %w", err)
 		}
 	}
@@ -317,7 +327,7 @@ func realMain(ctx context.Context) error {
 // generateCodesAndStats exercises the system for the past N days with random
 // values to simulate data that might appear in the real world. This is
 // primarily used to test statistics and graphs.
-func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[string]int, error) {
+func generateCodesAndStats(ctx context.Context, db *database.Database, realm *database.Realm) (map[string]int, error) {
 	now := time.Now().UTC()
 
 	users, _, err := db.ListUsers(pagination.UnlimitedResults)
@@ -358,194 +368,210 @@ func generateCodesAndStats(db *database.Database, realm *database.Realm) (map[st
 		return externalIDs[rand.Intn(len(externalIDs))]
 	}
 
-	// Temporarily disable gorm logging, it's very chatty and increases the seed
-	// time significantly.
-	db.RawDB().LogMode(false)
-	defer db.RawDB().LogMode(true)
-
 	phoneNumber := uint64(10000000000)
 	nonce := make([]byte, database.NonceLength)
 	allowsUserReport := realm.AllowsUserReport()
-	ctx := context.Background()
 
 	tokensClaimedPerDay := make(map[string]int)
 
 	for day := 1; day <= project.StatsDisplayDays; day++ {
 		max := rand.Intn(50) + rand.Intn(10)
-		totalClaimed := 0
 		date := now.Add(time.Duration(day) * -24 * time.Hour)
+
+		totalClaimed := int64(0)
+
+		workers := int64(runtime.NumCPU())
+		if workers < 3 {
+			workers = 3
+		}
+		sem := semaphore.NewWeighted(workers)
+
 		for i := 0; i < max; i++ {
 			// create local version for use for this sequence.
 			date := date
 
-			issuingUserID := uint(0)
-			issuingAppID := uint(0)
-			issuingExternalID := ""
-			isUserReport := false
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return nil, fmt.Errorf("failed to acquire semaphore: %w", err)
+			}
 
-			// Random determine if this was issued by an app.
-			if percentChance(50) {
-				issuingAppID = randomAdminAuthorizedApp().ID
+			go func() {
+				defer sem.Release(1)
 
-				// Random determine if the code had an external audit.
-				if rand.Intn(2) == 0 {
-					b := make([]byte, 8)
-					if _, err := rand.Read(b); err != nil {
-						return nil, fmt.Errorf("failed to read rand: %w", err)
+				issuingUserID := uint(0)
+				issuingAppID := uint(0)
+				issuingExternalID := ""
+				isUserReport := false
+
+				// Random determine if this was issued by an app.
+				if percentChance(50) {
+					issuingAppID = randomAdminAuthorizedApp().ID
+
+					// Random determine if the code had an external audit.
+					if rand.Intn(2) == 0 {
+						b := make([]byte, 8)
+						if _, err := rand.Read(b); err != nil {
+							panic(fmt.Errorf("failed to read rand: %w", err))
+						}
+						issuingExternalID = randomExternalID()
 					}
-					issuingExternalID = randomExternalID()
-				}
-			} else if allowsUserReport && percentChance(30) {
-				// Random chance that this is a user report.
-				isUserReport = true
-			} else {
-				issuingUserID = randomUser().ID
-			}
-
-			code := fmt.Sprintf("%08d", rand.Intn(99999999))
-			longCode := fmt.Sprintf("%015d", rand.Intn(999999999999999))
-			testDate := now.Add(-48 * time.Hour)
-			testType := "confirmed"
-
-			verificationCode := &database.VerificationCode{
-				Model: gorm.Model{
-					CreatedAt: date,
-				},
-				RealmID:       realm.ID,
-				Code:          code,
-				ExpiresAt:     now.Add(15 * time.Minute),
-				LongCode:      longCode,
-				LongExpiresAt: now.Add(15 * 24 * time.Hour),
-				TestType:      testType,
-				SymptomDate:   &testDate,
-				TestDate:      &testDate,
-
-				IssuingUserID:     issuingUserID,
-				IssuingAppID:      issuingAppID,
-				IssuingExternalID: issuingExternalID,
-			}
-			if isUserReport {
-				phoneNumber++
-				verificationCode.PhoneNumber = fmt.Sprintf("+%d", phoneNumber)
-				verificationCode.Nonce = nonce
-				verificationCode.NonceRequired = true
-				verificationCode.TestType = api.TestTypeUserReport
-				testType = api.TestTypeUserReport
-			}
-
-			// If a verification code already exists, it will fail to save, and we retry.
-			if err := realm.SaveVerificationCode(db, verificationCode); err != nil {
-				return nil, fmt.Errorf("failed to create verification code: %w", err)
-			}
-			db.UpdateStats(ctx, verificationCode)
-
-			// Determine if a code is claimed.
-			if percentChance(90) {
-				accept := map[string]struct{}{
-					api.TestTypeConfirmed:  {},
-					api.TestTypeLikely:     {},
-					api.TestTypeNegative:   {},
-					api.TestTypeUserReport: {},
-				}
-
-				// Some percentage of codes will fail to claim - force this by changing
-				// the allowed test types to exclude "confirmed".
-				if percentChance(30) {
-					delete(accept, api.TestTypeConfirmed)
-				}
-
-				app := randomDeviceAuthorizedApp()
-
-				// randomize issue to claim time
-				if percentChance(25) {
-					date = date.Add(time.Duration(rand.Intn(12))*time.Hour + time.Second)
+				} else if allowsUserReport && percentChance(30) {
+					// Random chance that this is a user report.
+					isUserReport = true
 				} else {
-					date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
+					issuingUserID = randomUser().ID
 				}
 
-				os := database.OSTypeUnknown
-				if percentChance(99) {
-					if percentChance(50) {
-						os = database.OSTypeAndroid
-					} else {
-						os = database.OSTypeIOS
-					}
-				}
+				code := fmt.Sprintf("%08d", rand.Intn(99999999))
+				longCode := fmt.Sprintf("%015d", rand.Intn(999999999999999))
+				testDate := now.Add(-48 * time.Hour)
+				testType := "confirmed"
 
-				request := &database.IssueTokenRequest{
-					Time:        date,
-					AuthApp:     app,
-					VerCode:     longCode,
-					AcceptTypes: accept,
-					ExpireAfter: 24 * time.Hour,
-					OS:          os,
+				verificationCode := &database.VerificationCode{
+					Model: gorm.Model{
+						CreatedAt: date,
+					},
+					RealmID:       realm.ID,
+					Code:          code,
+					ExpiresAt:     now.Add(15 * time.Minute),
+					LongCode:      longCode,
+					LongExpiresAt: now.Add(15 * 24 * time.Hour),
+					TestType:      testType,
+					SymptomDate:   &testDate,
+					TestDate:      &testDate,
+
+					IssuingUserID:     issuingUserID,
+					IssuingAppID:      issuingAppID,
+					IssuingExternalID: issuingExternalID,
 				}
 				if isUserReport {
-					request.Nonce = nonce
-				}
-				token, err := db.VerifyCodeAndIssueToken(request)
-				if err != nil {
-					continue
+					phoneNumber++
+					verificationCode.PhoneNumber = fmt.Sprintf("+%d", phoneNumber)
+					verificationCode.Nonce = nonce
+					verificationCode.NonceRequired = true
+					verificationCode.TestType = api.TestTypeUserReport
+					testType = api.TestTypeUserReport
 				}
 
-				// Determine if token is exchanged.
-				if percentChance(75) {
-					testType := testType
+				// If a verification code already exists, it will fail to save, and we retry.
+				if err := realm.SaveVerificationCode(db, verificationCode); err != nil {
+					panic(fmt.Errorf("failed to create verification code: %w", err))
+				}
+				db.UpdateStats(ctx, verificationCode)
 
-					// Determine if token claim should fail. Override the testType to
-					// force the subject to mismatch.
-					if percentChance(20) {
-						testType = "likely"
+				// Determine if a code is claimed.
+				if percentChance(90) {
+					accept := map[string]struct{}{
+						api.TestTypeConfirmed:  {},
+						api.TestTypeLikely:     {},
+						api.TestTypeNegative:   {},
+						api.TestTypeUserReport: {},
 					}
 
-					if err := db.ClaimToken(date, app, token.TokenID, &database.Subject{
-						TestType:    testType,
-						SymptomDate: &testDate,
-						TestDate:    &testDate,
-					}); err != nil {
-						continue
+					// Some percentage of codes will fail to claim - force this by changing
+					// the allowed test types to exclude "confirmed".
+					if percentChance(30) {
+						delete(accept, api.TestTypeConfirmed)
 					}
-					totalClaimed++
+
+					app := randomDeviceAuthorizedApp()
+
+					// randomize issue to claim time
+					if percentChance(25) {
+						date = date.Add(time.Duration(rand.Intn(12))*time.Hour + time.Second)
+					} else {
+						date = date.Add(time.Duration(rand.Intn(60))*time.Minute + time.Second)
+					}
+
+					os := database.OSTypeUnknown
+					if percentChance(99) {
+						if percentChance(50) {
+							os = database.OSTypeAndroid
+						} else {
+							os = database.OSTypeIOS
+						}
+					}
+
+					request := &database.IssueTokenRequest{
+						Time:        date,
+						AuthApp:     app,
+						VerCode:     longCode,
+						AcceptTypes: accept,
+						ExpireAfter: 24 * time.Hour,
+						OS:          os,
+					}
+					if isUserReport {
+						request.Nonce = nonce
+					}
+					token, err := db.VerifyCodeAndIssueToken(request)
+					if err != nil {
+						return
+					}
+
+					// Determine if token is exchanged.
+					if percentChance(75) {
+						testType := testType
+
+						// Determine if token claim should fail. Override the testType to
+						// force the subject to mismatch.
+						if percentChance(20) {
+							testType = "likely"
+						}
+
+						if err := db.ClaimToken(date, app, token.TokenID, &database.Subject{
+							TestType:    testType,
+							SymptomDate: &testDate,
+							TestDate:    &testDate,
+						}); err != nil {
+							return
+						}
+
+						atomic.AddInt64(&totalClaimed, 1)
+					}
 				}
-			}
+			}()
 		}
-		tokensClaimedPerDay[date.Format("2006-01-02")] = totalClaimed
+
+		if err := sem.Acquire(ctx, workers); err != nil {
+			return nil, fmt.Errorf("failed to wait for semaphore: %w", err)
+		}
+
+		tokensClaimedPerDay[date.Format("2006-01-02")] = int(totalClaimed)
 	}
 
 	return tokensClaimedPerDay, nil
 }
 
-func generateSMSErrorStats(db *database.Database, realm *database.Realm) error {
+func generateSMSErrorStats(ctx context.Context, db *database.Database, realm *database.Realm) error {
 	midnight := timeutils.UTCMidnight(time.Now())
 
+	stats := make([]string, 0, project.StatsDisplayDays*4)
 	for day := 0; day < project.StatsDisplayDays; day++ {
 		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
 		for _, errorCode := range []string{"E30006", "E30007", "MS0005", "Q10489"} {
-			stat := &database.SMSErrorStat{
-				Date:      date,
-				RealmID:   realm.ID,
-				ErrorCode: errorCode,
-				Quantity:  uint(rand.Int63n(25)),
-			}
-
-			if err := db.RawDB().Create(stat).Error; err != nil {
-				return fmt.Errorf("failed to create sms error stats: %w", err)
-			}
+			line := fmt.Sprintf(`('%s'::TIMESTAMPTZ, %d, '%s', %d)`,
+				date.Format(time.RFC3339), realm.ID, errorCode, rand.Int63n(25))
+			stats = append(stats, line)
 		}
 	}
 
+	sql := `INSERT INTO sms_error_stats (date, realm_id, error_code, quantity) VALUES ` + strings.Join(stats, ",\n")
+	if err := db.RawDB().Exec(sql).Error; err != nil {
+		return fmt.Errorf("failed to create stats: %w", err)
+	}
 	return nil
 }
 
 // generateKeyServerStats generates stats normally gathered from a key-server.
 // This is primarily used to test statistics and graphs.
-func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPerDay map[string]int) error {
+func generateKeyServerStats(ctx context.Context, db *database.Database, realm *database.Realm, maxPerDay map[string]int) error {
 	if err := db.SaveKeyServerStats(&database.KeyServerStats{RealmID: realm.ID}); err != nil {
 		return fmt.Errorf("failed create stats config: %w", err)
 	}
 
 	midnight := timeutils.UTCMidnight(time.Now())
+
+	stats := make([]string, 0, project.StatsDisplayDays)
 	for day := 0; day < project.StatsDisplayDays; day++ {
 		date := midnight.Add(time.Duration(day) * -24 * time.Hour)
 
@@ -566,22 +592,33 @@ func generateKeyServerStats(db *database.Database, realm *database.Realm, maxPer
 			missingOnset = rand.Int63n(int64(limit))
 		}
 
-		day := &database.KeyServerStatsDay{
-			RealmID:                   realm.ID,
-			Day:                       date,
-			PublishRequests:           randArr63n(int64(max), 3),
-			TotalTEKsPublished:        teksPublished,
-			RevisionRequests:          revisions,
-			TEKAgeDistribution:        randArr63n(int64(max), 16),
-			OnsetToUploadDistribution: randArr63n(15, 31),
-			RequestsMissingOnsetDate:  missingOnset,
-		}
-		if err := db.SaveKeyServerStatsDay(day); err != nil {
-			return fmt.Errorf("failed create stats day: %w", err)
-		}
+		publishRequests := randArr63n(int64(max), 3)
+		tekAgeDist := randArr63n(int64(max), 16)
+		onsetDist := randArr63n(15, 31)
+
+		line := fmt.Sprintf(`(%d, '%s'::TIMESTAMPTZ, %s::BIGINT[], %d, %d, %s::BIGINT[], %s::BIGINT[], %d)`,
+			realm.ID, date.Format(time.RFC3339), int64SliceToPostgres(publishRequests), teksPublished, revisions, int64SliceToPostgres(tekAgeDist), int64SliceToPostgres(onsetDist), missingOnset)
+		stats = append(stats, line)
 	}
 
+	sql := `INSERT INTO key_server_stats_days (realm_id, day, publish_requests, total_teks_published, revision_requests, tek_age_distribution, onset_to_upload_distribution, request_missing_onset_date) VALUES ` + strings.Join(stats, ",\n")
+	if err := db.RawDB().Exec(sql).Error; err != nil {
+		return fmt.Errorf("failed to create stats: %w", err)
+	}
 	return nil
+}
+
+func int64SliceToPostgres(in []int64) string {
+	var b strings.Builder
+	b.WriteString("array[")
+	for i, v := range in {
+		if i != 0 {
+			b.WriteString(",")
+		}
+		b.WriteString(strconv.FormatInt(v, 10))
+	}
+	b.WriteString("]")
+	return b.String()
 }
 
 func randArr63n(n, length int64) []int64 {
