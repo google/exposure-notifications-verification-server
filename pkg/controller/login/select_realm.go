@@ -89,6 +89,7 @@ func (c *Controller) HandleSelectRealm() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error(err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderSelect(ctx, w, memberships)
 			return
 		}

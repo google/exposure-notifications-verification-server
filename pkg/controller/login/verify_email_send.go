@@ -64,6 +64,7 @@ func (c *Controller) HandleSubmitVerifyEmail() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to verify email: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderEmailVerify(ctx, w)
 			return
 		}

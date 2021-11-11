@@ -62,8 +62,9 @@ func (c *Controller) HandleDisable() http.Handler {
 		now := time.Now().UTC()
 		authApp.DeletedAt = &now
 		if err := c.db.SaveAuthorizedApp(authApp, currentUser); err != nil {
-			flash.Error("Failed to disable API Key: %v", err)
-			http.Redirect(w, r, "/realm/apikeys", http.StatusSeeOther)
+			authApp.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			c.renderShow(ctx, w, authApp)
 			return
 		}
 

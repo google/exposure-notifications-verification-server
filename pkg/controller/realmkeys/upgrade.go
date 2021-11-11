@@ -48,7 +48,8 @@ func (c *Controller) HandleUpgrade() http.Handler {
 		if currentRealm.CanUpgradeToRealmSigningKeys() {
 			currentRealm.UseRealmCertificateKey = true
 			if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-				flash.Error("Error upgrading realm: %v", err)
+				currentRealm.AddError("", err.Error())
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				c.renderShow(ctx, w, r, currentRealm)
 				return
 			}

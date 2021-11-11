@@ -124,7 +124,9 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			var realm database.Realm
 			realm.UseRealmCertificateKey = true
-			flash.Error("Failed to process form: %v", err)
+
+			realm.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderNewRealm(ctx, w, &realm, smsConfig, emailConfig)
 			return
 		}
@@ -274,7 +276,8 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+			realm.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderEditRealm(ctx, w, realm, membership, smsConfig, emailConfig, chaffEvents, quotaLimit, quotaRemaining, realmTranslations)
 			return
 		}

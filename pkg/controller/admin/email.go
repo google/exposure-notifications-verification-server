@@ -63,7 +63,8 @@ func (c *Controller) HandleEmailUpdate() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+			emailConfig.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShowEmail(ctx, w, emailConfig)
 			return
 		}
