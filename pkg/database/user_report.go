@@ -126,7 +126,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 		return fmt.Errorf("failed to create hmac: %w", err)
 	}
 	if actor == nil {
-		return fmt.Errorf("actor cannot be nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
