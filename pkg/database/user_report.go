@@ -60,7 +60,7 @@ func (ur *UserReport) AuditID() string {
 }
 
 func (ur *UserReport) AuditDisplay() string {
-	return fmt.Sprintf("hash: %q claimed: %v", ur.PhoneHash, ur.CodeClaimed)
+	return fmt.Sprintf("hash: %q claimed: %v", ur.PhoneHash[0:8], ur.CodeClaimed)
 }
 
 // NewUserReport creates a new UserReport by calculating the current HMAC of the
