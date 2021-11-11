@@ -316,7 +316,7 @@ func (r *Realm) SaveVerificationCode(db *Database, vc *VerificationCode) error {
 			if len(vc.PhoneNumber) == 0 {
 				return ErrRequiresPhoneNumber
 			}
-			userReport, err = db.FindUserReport(tx, vc.PhoneNumber)
+			userReport, err = db.FindUserReportInTx(tx, vc.PhoneNumber)
 			if err != nil && !IsNotFound(err) {
 				return fmt.Errorf("findUserReport: %w", err)
 			}

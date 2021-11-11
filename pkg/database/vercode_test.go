@@ -303,12 +303,7 @@ func TestSaveUserReport(t *testing.T) {
 		t.Fatal(err, vc.ErrorMessages())
 	}
 
-	var userReport *UserReport
-	var err error
-	err = db.db.Transaction(func(tx *gorm.DB) error {
-		userReport, err = db.FindUserReport(tx, vc.PhoneNumber)
-		return err
-	})
+	userReport, err := db.FindUserReport(vc.PhoneNumber)
 	if err != nil {
 		t.Fatal(err)
 	}
