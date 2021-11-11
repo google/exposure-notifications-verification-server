@@ -12,7 +12,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
     
-    <form method="DELETE" action="/admin/user-report" id="new-form">
+    <form method="POST" action="/admin/user-report" id="purge-form">
       {{ .csrfField }}
 
       <div class="card mb-3 shadow-sm">
@@ -52,6 +52,7 @@
         let phone = document.querySelector('#phone');
         let iti = window.intlTelInput(phone, {
           nationalMode: true,
+          hiddenInput: "phone_number[full]",          
           initialCountry: 'US',
           utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.2/js/utils.js',
         });

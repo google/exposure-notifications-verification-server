@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"github.com/nyaruka/phonenumbers"
 )
 
 func (c *Controller) HandleUserReportIndex() http.Handler {
@@ -32,7 +33,7 @@ func (c *Controller) HandleUserReportIndex() http.Handler {
 
 func (c *Controller) HandleUserReportPurge() http.Handler {
 	type FormData struct {
-		PhoneNumber string `form:"phone_number"`
+		PhoneNumber string `form:"phone_number[full]"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,9 +59,11 @@ func (c *Controller) HandleUserReportPurge() http.Handler {
 			return
 		}
 
-		// The default region needs to be left blank here, requiring the user
-		// to fully specify the international number.
-		parsedPhone, err := project.CanonicalPhoneNumber(form.PhoneNumber, "")
+		// In this form, we're using the input library to get the fully internationalized
+		// phone number, so set the default region to unknown. If an invalid number, incomplete
+		// number is entered in the selected region, the input won't validate in the JS and then
+		// will send an empty string through to here which will fail.
+		parsedPhone, err := project.CanonicalPhoneNumber(form.PhoneNumber, phonenumbers.UNKNOWN_REGION)
 		if err != nil {
 			flash.Error("Failed to decode phone number: %v", err)
 			c.renderUserReport(ctx, w)
