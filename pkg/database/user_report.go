@@ -60,7 +60,11 @@ func (ur *UserReport) AuditID() string {
 }
 
 func (ur *UserReport) AuditDisplay() string {
-	return fmt.Sprintf("hash: %q claimed: %v", ur.PhoneHash[0:8], ur.CodeClaimed)
+	phoneHash := ur.PhoneHash
+	if len(phoneHash) > 9 {
+		phoneHash = phoneHash[0:8]
+	}
+	return fmt.Sprintf("%s (claimed: %t)", phoneHash, ur.CodeClaimed)
 }
 
 // NewUserReport creates a new UserReport by calculating the current HMAC of the
@@ -168,7 +172,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			}
 		}
 
-		if actor != nil {
+		if !IsNullActor(actor) {
 			audit := BuildAuditEntry(actor, "purged user report phone", &ur, 0)
 			if err := tx.Save(audit).Error; err != nil {
 				return fmt.Errorf("failed to save audits: %w", err)
