@@ -257,7 +257,7 @@ func (r *Realm) ListRecentCodes(db *Database, user *User) ([]*VerificationCode, 
 // ExpireCode saves a verification code as expired.
 func (r *Realm) ExpireCode(db *Database, uuid string, actor Auditable) (*VerificationCode, error) {
 	if actor == nil {
-		return nil, fmt.Errorf("auditing actor is nil")
+		return nil, ErrMissingActor
 	}
 
 	var vc VerificationCode

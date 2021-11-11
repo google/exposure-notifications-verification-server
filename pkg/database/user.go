@@ -179,7 +179,7 @@ func (u *User) FindMembership(db *Database, realmID interface{}) (*Membership, e
 // permissions.
 func (u *User) AddToRealm(db *Database, r *Realm, permissions rbac.Permission, actor Auditable) error {
 	if actor == nil {
-		return fmt.Errorf("auditable actor cannot be nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
@@ -244,7 +244,7 @@ func (u *User) AddToRealm(db *Database, r *Realm, permissions rbac.Permission, a
 // exist in the realm, no action is taken.
 func (u *User) DeleteFromRealm(db *Database, r *Realm, actor Auditable) error {
 	if actor == nil {
-		return fmt.Errorf("auditable actor cannot be nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
@@ -408,7 +408,7 @@ func (db *Database) DeleteUser(u *User, actor Auditable) error {
 	}
 
 	if actor == nil {
-		return fmt.Errorf("auditing actor is nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
@@ -447,7 +447,7 @@ func (db *Database) SaveUser(u *User, actor Auditable) error {
 	}
 
 	if actor == nil {
-		return fmt.Errorf("auditing actor is nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
