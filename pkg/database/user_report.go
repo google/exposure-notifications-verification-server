@@ -188,7 +188,6 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 
 		return tx.Delete(&ur).Error
 	})
-
 }
 
 // PurgeUnclaimedUserReports deletes record from the database
