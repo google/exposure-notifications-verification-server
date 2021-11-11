@@ -166,7 +166,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			if IsNotFound(err) {
 				vc = nil
 			} else {
-				return fmt.Errorf("unable to search for related verification codes: %w", err)
+				return fmt.Errorf("failed to find related verification codes: %w", err)
 			}
 		}
 		if vc != nil && !vc.IsExpired() {
@@ -176,7 +176,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			vc.ExpiresAt = exp
 			vc.LongExpiresAt = exp
 			if err := tx.Save(vc).Error; err != nil {
-				return fmt.Errorf("unable to expire code: %w", err)
+				return fmt.Errorf("failed to expire code: %w", err)
 			}
 		}
 
