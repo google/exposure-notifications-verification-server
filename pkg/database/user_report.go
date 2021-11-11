@@ -120,9 +120,6 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 
 // DeleteUserReport removes a specific phone number from the user report
 // de-duplication table.
-// The actor may be nil on this operation, if it's the result of a
-// natural delete (SMS failure).
-// Otherwise this is an administrative action.
 func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error {
 	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
 	if err != nil {

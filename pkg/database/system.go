@@ -44,6 +44,8 @@ func (s *systemTest) AuditDisplay() string {
 
 // NullActor represents system actions that should not write event logs.
 // Usage should be inspected closely and restricted to very narrow use cases.
+// Not ALL access points respect the NullActor, if they don't, it will look
+// like the System actor.
 var NullActor Auditable = new(nullActor)
 
 type nullActor struct{}
