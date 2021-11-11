@@ -58,6 +58,7 @@ func (c *Controller) HandleSubmitResetPassword() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to reset password: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderResetPassword(ctx, w, "")
 			return
 		}

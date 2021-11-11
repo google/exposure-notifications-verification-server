@@ -47,7 +47,8 @@ func (c *Controller) HandleCreateKey() http.Handler {
 
 		kid, err := currentRealm.CreateSigningKeyVersion(ctx, c.db, currentUser)
 		if err != nil {
-			flash.Error("Unable to create a new signing key: %v", err)
+			currentRealm.AddError("", err.Error())
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
 		}

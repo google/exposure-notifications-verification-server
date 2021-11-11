@@ -84,6 +84,7 @@ func (c *Controller) HandleSend() http.Handler {
 		if err := controller.BindForm(w, r, &form); err != nil {
 			logger.Warn("error binding form", "error", err)
 			m["error"] = []string{locale.Get("user-report.invalid-request")}
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderIndex(w, realm, m)
 			return
 		}

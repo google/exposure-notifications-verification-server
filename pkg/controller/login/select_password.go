@@ -85,6 +85,7 @@ func (c *Controller) HandleSubmitNewPassword() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Select password failed: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShowSelectPassword(ctx, w, "", code, false)
 			return
 		}

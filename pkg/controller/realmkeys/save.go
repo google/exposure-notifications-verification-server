@@ -54,7 +54,7 @@ func (c *Controller) HandleSave() http.Handler {
 
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
-			flash.Error("Failed to process form: %v", err)
+			currentRealm.AddError("", err.Error())
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
 			return
@@ -70,9 +70,10 @@ func (c *Controller) HandleSave() http.Handler {
 		currentRealm.CertificateDuration.AsString = form.DurationString
 
 		if err := c.db.SaveRealm(currentRealm, currentUser); err != nil {
-			flash.Error("Failed to update realm: %v", err)
+			currentRealm.AddError("", err.Error())
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderShow(ctx, w, r, currentRealm)
+			return
 		}
 
 		flash.Alert("Updated realm certificate settings.")
