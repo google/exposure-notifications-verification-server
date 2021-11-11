@@ -122,7 +122,7 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 // de-duplication table.
 // The actor may be nil on this operation, if it's the result of a
 // natural delete (SMS failure).
-// Otherwise this is an administrative acction.
+// Otherwise this is an administrative action.
 func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error {
 	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
 	if err != nil {
@@ -151,8 +151,9 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 						return fmt.Errorf("failed to save audits: %w", err)
 					}
 				}
+				// Nothing to do - return success.
+				return nil
 			}
-			return nil
 		}
 
 		vc := &VerificationCode{}
@@ -165,7 +166,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			if IsNotFound(err) {
 				vc = nil
 			} else {
-				return err
+				return fmt.Errorf("unable to search for related verification codes: %w", err)
 			}
 		}
 		if vc != nil && !vc.IsExpired() {

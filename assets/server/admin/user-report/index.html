@@ -12,7 +12,7 @@
   <main role="main" class="container">
     {{template "flash" .}}
     
-    <form method="POST" action="/admin/user-report" id="new-form">
+    <form method="DELETE" action="/admin/user-report" id="new-form">
       {{ .csrfField }}
 
       <div class="card mb-3 shadow-sm">
@@ -25,8 +25,7 @@
             <div class="row g-3">
                 <div class="col-lg-12">
                   <div class="form-floating">
-                    <input type="text" id="phone_number" name="phone_number" class="form-control" value="" placeholder="+XX XXX XXX XXXX" autofocus />
-                    <label for="phone_number">Phone number</label>
+                    <input type="tel" id="phone" name="phone_number" class="form-control w-100" autocomplete="off" />
                     <small class="form-text text-muted">
                       This allows you to remove a phone number from the user report abuse prevention list. 
                       A phone number is on this list do prevent a user from self reporting multiple times in
@@ -47,6 +46,17 @@
         </div>
       </div>
     </form>
+
+    <script>
+      window.addEventListener('load', (event) => {
+        let phone = document.querySelector('#phone');
+        let iti = window.intlTelInput(phone, {
+          nationalMode: true,
+          initialCountry: 'US',
+          utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.2/js/utils.js',
+        });
+      });
+    </script>
 
 </body>
 </html>

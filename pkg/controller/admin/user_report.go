@@ -17,8 +17,8 @@ package admin
 import (
 	"context"
 	"net/http"
-	"strings"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -58,7 +58,15 @@ func (c *Controller) HandleUserReportPurge() http.Handler {
 			return
 		}
 
-		form.PhoneNumber = strings.TrimSpace(form.PhoneNumber)
+		// The default region needs to be left blank here, requiring the user
+		// to fully specify the international number.
+		parsedPhone, err := project.CanonicalPhoneNumber(form.PhoneNumber, "")
+		if err != nil {
+			flash.Error("Failed to decode phone number: %v", err)
+			c.renderUserReport(ctx, w)
+			return
+		}
+		form.PhoneNumber = parsedPhone
 		if err := c.db.DeleteUserReport(form.PhoneNumber, currentUser); err != nil {
 			if !database.IsNotFound(err) {
 				flash.Error("Failed to purge phone number")
@@ -67,13 +75,13 @@ func (c *Controller) HandleUserReportPurge() http.Handler {
 			}
 		}
 
-		flash.Alert("Purged phone number from user report database.")
+		flash.Alert("Successfully purged phone number from user report database.")
 		c.renderUserReport(ctx, w)
 	})
 }
 
 func (c *Controller) renderUserReport(ctx context.Context, w http.ResponseWriter) {
 	m := controller.TemplateMapFromContext(ctx)
-	m.Title("User Report - System Admin")
+	m.Title("User report - System Admin")
 	c.h.RenderHTML(w, "admin/user-report/index", m)
 }

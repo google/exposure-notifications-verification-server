@@ -134,7 +134,7 @@ func TestDeleteUserReport(t *testing.T) {
 	}
 
 	phoneNumber := "+8128675309"
-	verCode := VerificationCode{
+	verCode := &VerificationCode{
 		RealmID:       realm.ID,
 		Code:          "12345678",
 		LongCode:      "12345678",
@@ -144,7 +144,7 @@ func TestDeleteUserReport(t *testing.T) {
 		LongExpiresAt: time.Now().Add(time.Hour),
 	}
 
-	if err := realm.SaveVerificationCode(db, &verCode); err != nil {
+	if err := realm.SaveVerificationCode(db, verCode); err != nil {
 		t.Fatalf("unable to save code and user report: %v", err)
 	}
 

@@ -75,7 +75,7 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest 
 
 	// Parse and canonicalize phone numbers.
 	if request.Phone != "" {
-		canonicalPhone, err := CanonicalPhoneNumber(request.Phone, realm.SMSCountry)
+		canonicalPhone, err := project.CanonicalPhoneNumber(request.Phone, realm.SMSCountry)
 		if err != nil {
 			return nil, &IssueResult{
 				obsResult:   enobs.ResultError("INVALID_PHONE"),
