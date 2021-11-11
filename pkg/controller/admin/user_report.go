@@ -55,6 +55,7 @@ func (c *Controller) HandleUserReportPurge() http.Handler {
 		var form FormData
 		if err := controller.BindForm(w, r, &form); err != nil {
 			flash.Error("Failed to process form: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderUserReport(ctx, w)
 			return
 		}
