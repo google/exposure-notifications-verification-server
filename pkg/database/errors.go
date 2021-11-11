@@ -28,6 +28,10 @@ var (
 	// ErrValidationFailed is the error returned when validation failed. This
 	// should always be considered user error.
 	ErrValidationFailed = errors.New("validation failed")
+
+	// ErrMissingActor is the error that is returned when a function that wants an
+	// Auditable actor passes nil for the actor.
+	ErrMissingActor = errors.New("missing auditable error")
 )
 
 // Errorable defines an embeddable struct for managing errors on models.

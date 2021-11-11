@@ -222,7 +222,7 @@ func (db *Database) SaveMobileApp(a *MobileApp, actor Auditable) error {
 	}
 
 	if actor == nil {
-		return fmt.Errorf("auditing actor is nil")
+		return ErrMissingActor
 	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
