@@ -1,0 +1,64 @@
+{{define "admin/user-report/index"}}
+
+<!doctype html>
+<html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
+<head>
+  {{template "head" .}}
+</head>
+
+<body class="tab-content">
+  {{template "admin/navbar" .}}
+
+  <main role="main" class="container">
+    {{template "flash" .}}
+    
+    <form method="POST" action="/admin/user-report" id="purge-form">
+      {{ .csrfField }}
+
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header">
+          <i class="bi bi-house-door"></i>
+          User report phone number purge
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-lg-12">
+                  <div class="form-floating">
+                    <input type="tel" id="phone" name="phone_number" class="form-control w-100" autocomplete="off" />
+                    <small class="form-text text-muted">
+                      This allows you to remove a phone number from the user report abuse prevention list. 
+                      A phone number is on this list do prevent a user from self reporting multiple times in
+                      a narrow time window. <strong>This should generally only be used for testing.</strong>
+                      <br/>
+                      Enter the full <a href="https://en.wikipedia.org/wiki/E.164">E.164</a>
+                      format phone number. For example <code>+12068675309</code>.
+                    </small>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex flex-column align-items-stretch align-items-lg-center flex-lg-row-reverse justify-content-lg-between">
+            <div class="d-grid d-lg-inline">
+              <button type="submit" class="btn btn-primary">Remove phone number</button>
+            </div>
+        </div>
+      </div>
+    </form>
+
+    <script>
+      window.addEventListener('load', (event) => {
+        let phone = document.querySelector('#phone');
+        let iti = window.intlTelInput(phone, {
+          nationalMode: true,
+          hiddenInput: "phone_number[full]",          
+          initialCountry: 'US',
+          utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.2/js/utils.js',
+        });
+      });
+    </script>
+
+</body>
+</html>
+{{end}}

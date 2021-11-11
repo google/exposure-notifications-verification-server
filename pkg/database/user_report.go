@@ -31,6 +31,8 @@ const (
 	NonceLength = 256
 )
 
+var _ Auditable = (*UserReport)(nil)
+
 // UserReport is used to de-duplicate phone numbers for user-initiated reporting.
 type UserReport struct {
 	Errorable
@@ -51,6 +53,14 @@ type UserReport struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func (ur *UserReport) AuditID() string {
+	return fmt.Sprintf("user_report:%d", ur.ID)
+}
+
+func (ur *UserReport) AuditDisplay() string {
+	return fmt.Sprintf("hash: %q claimed: %v", ur.PhoneHash[0:8], ur.CodeClaimed)
 }
 
 // NewUserReport creates a new UserReport by calculating the current HMAC of the
@@ -110,13 +120,63 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 
 // DeleteUserReport removes a specific phone number from the user report
 // de-duplication table.
-func (db *Database) DeleteUserReport(phoneNumber string) error {
+func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error {
 	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
 	if err != nil {
 		return fmt.Errorf("failed to create hmac: %w", err)
 	}
+	if actor == nil {
+		return ErrMissingActor
+	}
 
-	return db.db.Where("phone_hash IN (?)", hmacedCodes).Delete(&UserReport{}).Error
+	return db.db.Transaction(func(tx *gorm.DB) error {
+		var ur UserReport
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Model(&UserReport{}).
+			Where("phone_hash IN (?)", hmacedCodes).
+			First(&ur).
+			Error; err != nil {
+			if IsNotFound(err) {
+				// Nothing to do - return success.
+				return nil
+			}
+			return fmt.Errorf("failed to find user report: %w", err)
+		}
+
+		vc := &VerificationCode{}
+		if err := tx.
+			Set("gorm:query_option", "FOR UPDATE").
+			Model(&VerificationCode{}).
+			Where("user_report_id = ?", ur.ID).
+			First(vc).
+			Error; err != nil {
+			if IsNotFound(err) {
+				vc = nil
+			} else {
+				return fmt.Errorf("failed to find related verification codes: %w", err)
+			}
+		}
+		if vc != nil && !vc.IsExpired() {
+			// The associated code needs to be expired so that
+			// the code can't be used by anyone else.
+			exp := time.Now().UTC()
+			vc.ExpiresAt = exp
+			vc.LongExpiresAt = exp
+			if err := tx.Save(vc).Error; err != nil {
+				return fmt.Errorf("failed to expire code: %w", err)
+			}
+		}
+
+		if actor != nil {
+			audit := BuildAuditEntry(actor, "purged user report phone", &ur, 0)
+			if err := tx.Save(audit).Error; err != nil {
+				return fmt.Errorf("failed to save audits: %w", err)
+			}
+		}
+
+		return tx.Delete(&ur).Error
+	})
 }
 
 // PurgeUnclaimedUserReports deletes record from the database

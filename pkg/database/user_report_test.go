@@ -124,21 +124,49 @@ func TestDeleteUserReport(t *testing.T) {
 	t.Parallel()
 
 	db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-	phoneNumber := "+8128675309"
-	userReport, err := db.NewUserReport(phoneNumber, generateNonce(t), true)
+	realm, err := db.FindRealm(1)
 	if err != nil {
-		t.Fatalf("error creating user report: %v", err)
+		t.Fatal(err)
 	}
-	if err := db.db.Save(userReport).Error; err != nil {
-		t.Fatalf("error writing user report: %v", err)
-	}
-
-	if err := db.DeleteUserReport(phoneNumber); err != nil {
+	realm.AddUserReportToAllowedTestTypes()
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
 		t.Fatal(err)
 	}
 
+	phoneNumber := "+8128675309"
+	verCode := &VerificationCode{
+		RealmID:       realm.ID,
+		Code:          "12345678",
+		LongCode:      "12345678",
+		TestType:      "user-report",
+		PhoneNumber:   phoneNumber,
+		ExpiresAt:     time.Now().Add(time.Hour),
+		LongExpiresAt: time.Now().Add(time.Hour),
+	}
+
+	if err := realm.SaveVerificationCode(db, verCode); err != nil {
+		t.Fatalf("unable to save code and user report: %v", err)
+	}
+
 	var got *UserReport
+	if err := db.db.Transaction(
+		func(tx *gorm.DB) error {
+			got, err = db.FindUserReport(tx, phoneNumber)
+			if err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+		t.Fatalf("error finding user report: %v", err)
+	}
+	if got == nil {
+		t.Fatal("didn't find expected user_report record")
+	}
+
+	if err := db.DeleteUserReport(phoneNumber, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
 	err = db.db.Transaction(func(tx *gorm.DB) error {
 		got, err = db.FindUserReport(tx, phoneNumber)
 		if err != nil {

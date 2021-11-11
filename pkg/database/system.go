@@ -41,3 +41,25 @@ func (s *systemTest) AuditID() string {
 func (s *systemTest) AuditDisplay() string {
 	return "SystemTest"
 }
+
+// NullActor represents system actions that should not write event logs.
+// Usage should be inspected closely and restricted to very narrow use cases.
+// Not ALL access points respect the NullActor, if they don't, it will look
+// like the System actor.
+var NullActor Auditable = new(nullActor)
+
+type nullActor struct{}
+
+func (s *nullActor) AuditID() string {
+	return "system:1"
+}
+
+func (s *nullActor) AuditDisplay() string {
+	return "System"
+}
+
+// IsNullActor returns true if the given Auditable is the null actor.
+func IsNullActor(a Auditable) bool {
+	_, ok := a.(*nullActor)
+	return ok
+}
