@@ -138,22 +138,10 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			First(&ur).
 			Error; err != nil {
 			if IsNotFound(err) {
-				// Log an audit record on attempted purges as well.
-				if !IsNullActor(actor) {
-					// Created to furfill the audit requirements.
-					ur = UserReport{
-						ID:          0,
-						PhoneHash:   hmacedCodes[0],
-						CodeClaimed: false,
-					}
-					audit := BuildAuditEntry(actor, "attempted to purge user report phone", &ur, 0)
-					if err := tx.Save(audit).Error; err != nil {
-						return fmt.Errorf("failed to save audits: %w", err)
-					}
-				}
 				// Nothing to do - return success.
 				return nil
 			}
+			return fmt.Errorf("failed to find user report: %w", err)
 		}
 
 		vc := &VerificationCode{}
