@@ -128,6 +128,9 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 	if err != nil {
 		return fmt.Errorf("failed to create hmac: %w", err)
 	}
+	if actor == nil {
+		return fmt.Errorf("actor cannot be nil")
+	}
 
 	return db.db.Transaction(func(tx *gorm.DB) error {
 		var ur UserReport
@@ -139,7 +142,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			Error; err != nil {
 			if IsNotFound(err) {
 				// Log an audit record on attempted purges as well.
-				if actor != nil {
+				if !IsNullActor(actor) {
 					// Created to furfill the audit requirements.
 					ur = UserReport{
 						ID:          0,

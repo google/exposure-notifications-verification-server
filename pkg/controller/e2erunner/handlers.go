@@ -21,6 +21,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/clients"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"go.opencensus.io/stats"
 )
 
@@ -57,7 +58,8 @@ func (c *Controller) handleEndToEnd(cfg *config.E2ERunnerConfig, m *stats.Int64M
 		logger := logging.FromContext(ctx)
 
 		if cfg.DoUserReport {
-			if err := c.db.DeleteUserReport(project.TestPhoneNumber, nil); err != nil {
+			// no audit record for e2e test cleaning up after itself.
+			if err := c.db.DeleteUserReport(project.TestPhoneNumber, database.NullActor); err != nil {
 				logger.Errorw("error deleting previous user report for test phone number", "error", err)
 				c.h.RenderJSON(w, http.StatusInternalServerError, err)
 				return

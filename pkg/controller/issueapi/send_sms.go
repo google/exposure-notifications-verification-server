@@ -134,7 +134,8 @@ func (c *Controller) doSend(ctx context.Context, realm *database.Realm, smsProvi
 	if err := smsProvider.SendSMS(ctx, request.Phone, message); err != nil {
 		// Delete the user report record.
 		if result.VerCode.UserReportID != nil {
-			if err := c.db.DeleteUserReport(request.Phone, nil); err != nil {
+			// No audit record since this is a recall of an action that can't happen inside the transaction.
+			if err := c.db.DeleteUserReport(request.Phone, database.NullActor); err != nil {
 				logger.Errorw("failed to delete the user report record", "error", err)
 			}
 		}
