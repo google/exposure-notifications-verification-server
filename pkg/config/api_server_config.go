@@ -47,7 +47,8 @@ type APIServerConfig struct {
 	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
 	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
-	Port string `env:"PORT,default=8080"`
+	Port              string `env:"PORT,default=8080"`
+	ChaffMaxLatencyMs uint64 `env:"CHAFF_MAX_LATENCY_MS, default=1000"`
 
 	APIKeyCacheDuration time.Duration `env:"API_KEY_CACHE_DURATION,default=5m"`
 

@@ -102,7 +102,10 @@ func APIServer(
 	r.Handle("/health", controller.HandleHealthz(db, h, cfg.IsMaintenanceMode())).Methods(http.MethodGet)
 
 	// Make verify chaff tracker.
-	verifyChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeVerifyResponse), chaff.DefaultCapacity)
+	verifyChaffTracker, err := chaff.NewTracker(
+		chaff.NewJSONResponder(encodeVerifyResponse),
+		chaff.DefaultCapacity,
+		chaff.WithMaxLatency(cfg.ChaffMaxLatencyMs))
 	if err != nil {
 		return nil, closer, fmt.Errorf("error creating verify chaffer: %w", err)
 	}
@@ -111,7 +114,10 @@ func APIServer(
 	}
 
 	// Make cert chaff tracker.
-	certChaffTracker, err := chaff.NewTracker(chaff.NewJSONResponder(encodeCertificateResponse), chaff.DefaultCapacity)
+	certChaffTracker, err := chaff.NewTracker(
+		chaff.NewJSONResponder(encodeCertificateResponse),
+		chaff.DefaultCapacity,
+		chaff.WithMaxLatency(cfg.ChaffMaxLatencyMs))
 	if err != nil {
 		return nil, closer, fmt.Errorf("error creating cert chaffer: %w", err)
 	}
