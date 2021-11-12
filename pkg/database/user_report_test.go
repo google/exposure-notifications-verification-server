@@ -152,12 +152,8 @@ func TestDeleteUserReport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err = db.FindUserReport(phoneNumber)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != nil {
-		t.Fatalf("found record that should have been deleted: %+v", *got)
+	if _, err = db.FindUserReport(phoneNumber); !IsNotFound(err) {
+		t.Errorf("expected not found, got %#v", err)
 	}
 }
 
