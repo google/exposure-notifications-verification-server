@@ -23,7 +23,6 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/errcmp"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jinzhu/gorm"
 )
 
 func generateNonce(t testing.TB) []byte {
@@ -56,16 +55,9 @@ func TestFindUserReport(t *testing.T) {
 			t.Fatalf("error writing user report: %v", err)
 		}
 
-		var got *UserReport
-		err = db.db.Transaction(func(tx *gorm.DB) error {
-			got, err = db.FindUserReport(tx, phoneNumber)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
+		got, err := db.FindUserReport(phoneNumber)
 		if err != nil {
-			t.Fatalf("error finding user reports: %v", err)
+			t.Fatal(err)
 		}
 
 		if diff := cmp.Diff(userReport, got, ApproxTime, cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
@@ -148,16 +140,9 @@ func TestDeleteUserReport(t *testing.T) {
 		t.Fatalf("unable to save code and user report: %v", err)
 	}
 
-	var got *UserReport
-	if err := db.db.Transaction(
-		func(tx *gorm.DB) error {
-			got, err = db.FindUserReport(tx, phoneNumber)
-			if err != nil {
-				return err
-			}
-			return nil
-		}); err != nil {
-		t.Fatalf("error finding user report: %v", err)
+	got, err := db.FindUserReport(phoneNumber)
+	if err != nil {
+		t.Fatal(err)
 	}
 	if got == nil {
 		t.Fatal("didn't find expected user_report record")
@@ -167,18 +152,8 @@ func TestDeleteUserReport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = db.db.Transaction(func(tx *gorm.DB) error {
-		got, err = db.FindUserReport(tx, phoneNumber)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil && !IsNotFound(err) {
-		t.Fatalf("error finding user reports: %v", err)
-	}
-	if got != nil {
-		t.Fatalf("found record that should have been deleted: %+v", *got)
+	if _, err = db.FindUserReport(phoneNumber); !IsNotFound(err) {
+		t.Errorf("expected not found, got %#v", err)
 	}
 }
 
@@ -240,13 +215,9 @@ func TestPurgeUserReports(t *testing.T) {
 				t.Fatalf("error writing user report: %v", err)
 			}
 
-			var got *UserReport
-			err = db.db.Transaction(func(tx *gorm.DB) error {
-				got, err = db.FindUserReport(tx, phoneNumber)
-				return err
-			})
+			got, err := db.FindUserReport(phoneNumber)
 			if err != nil {
-				t.Fatalf("error reading back user report: %v", err)
+				t.Fatal(err)
 			}
 			if diff := cmp.Diff(userReport, got, ApproxTime, cmpopts.IgnoreUnexported(Errorable{})); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)

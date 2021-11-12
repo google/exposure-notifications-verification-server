@@ -519,7 +519,7 @@ func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	r.Handle("/realms/{id:[0-9]+}", c.HandleRealmsUpdate()).Methods(http.MethodPatch)
 
 	r.Handle("/user-report", c.HandleUserReportIndex()).Methods(http.MethodGet)
-	r.Handle("/user-report", c.HandleUserReportPurge()).Methods(http.MethodPost)
+	r.Handle("/user-report", c.HandleUserReportPurge()).Methods(http.MethodDelete)
 
 	r.Handle("/users", c.HandleUsersIndex()).Methods(http.MethodGet)
 	r.Handle("/users/{id:[0-9]+}", c.HandleUserShow()).Methods(http.MethodGet)

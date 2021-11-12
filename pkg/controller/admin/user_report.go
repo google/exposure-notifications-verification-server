@@ -67,6 +67,7 @@ func (c *Controller) HandleUserReportPurge() http.Handler {
 		parsedPhone, err := project.CanonicalPhoneNumber(form.PhoneNumber, phonenumbers.UNKNOWN_REGION)
 		if err != nil {
 			flash.Error("Failed to decode phone number: %v", err)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			c.renderUserReport(ctx, w)
 			return
 		}

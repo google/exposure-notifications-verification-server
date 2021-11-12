@@ -60,7 +60,11 @@ func (ur *UserReport) AuditID() string {
 }
 
 func (ur *UserReport) AuditDisplay() string {
-	return fmt.Sprintf("hash: %q claimed: %v", ur.PhoneHash[0:8], ur.CodeClaimed)
+	phoneHash := ur.PhoneHash
+	if len(phoneHash) > 9 {
+		phoneHash = phoneHash[0:8]
+	}
+	return fmt.Sprintf("%s (claimed: %t)", phoneHash, ur.CodeClaimed)
 }
 
 // NewUserReport creates a new UserReport by calculating the current HMAC of the
@@ -100,9 +104,9 @@ func (ur *UserReport) BeforeSave(tx *gorm.DB) error {
 	return ur.ErrorOrNil()
 }
 
-// FindUserReport finds a user report by phone number using any of the currently valid
+// FindUserReportInTx finds a user report by phone number using any of the currently valid
 // HMAC keys.
-func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport, error) {
+func (db *Database) FindUserReportInTx(tx *gorm.DB, phoneNumber string) (*UserReport, error) {
 	hmacedCodes, err := db.generatePhoneNumberHMACs(phoneNumber)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
@@ -113,9 +117,15 @@ func (db *Database) FindUserReport(tx *gorm.DB, phoneNumber string) (*UserReport
 		Where("phone_hash IN (?)", hmacedCodes).
 		First(&ur).
 		Error; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find user report: %w", err)
 	}
 	return &ur, nil
+}
+
+// FindUserReport finds a user report by phone number using any of the currently valid
+// HMAC keys.
+func (db *Database) FindUserReport(phoneNumber string) (*UserReport, error) {
+	return db.FindUserReportInTx(db.db, phoneNumber)
 }
 
 // DeleteUserReport removes a specific phone number from the user report
@@ -168,7 +178,7 @@ func (db *Database) DeleteUserReport(phoneNumber string, actor Auditable) error 
 			}
 		}
 
-		if actor != nil {
+		if !IsNullActor(actor) {
 			audit := BuildAuditEntry(actor, "purged user report phone", &ur, 0)
 			if err := tx.Save(audit).Error; err != nil {
 				return fmt.Errorf("failed to save audits: %w", err)
