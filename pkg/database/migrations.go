@@ -2493,6 +2493,34 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00117-E2ERealmFlag",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS is_e2e BOOLEAN NOT NULL DEFAULT FALSE`,
+					`CREATE UNIQUE INDEX uix_realms_is_e2e ON realms (is_e2e) WHERE is_e2e IS TRUE`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS is_e2e`,
+					`DROP INDEX IF EXISTS uix_realms_is_e2e`,
+				)
+			},
+		},
+		{
+			ID: "00118-E2ESetFlag",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`UPDATE realms SET is_e2e = TRUE WHERE id = (SELECT id FROM realms WHERE region_code ILIKE 'E2E-%' OR name ILIKE 'e2e-test-%' LIMIT 1 FOR UPDATE) RETURNING id`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`UPDATE realms SET is_e2e = FALSE`,
+				)
+			},
+		},
 	}
 }
 

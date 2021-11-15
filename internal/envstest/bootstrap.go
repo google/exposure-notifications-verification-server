@@ -69,6 +69,7 @@ func Bootstrap(ctx context.Context, db *database.Database) (*BootstrapResponse, 
 
 		realm = database.NewRealmWithDefaults(RealmName)
 		realm.RegionCode = RegionCode
+		realm.IsE2E = true
 	}
 
 	logger := logging.FromContext(ctx)

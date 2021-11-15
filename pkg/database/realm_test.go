@@ -160,6 +160,22 @@ func TestRealm_BeforeSave(t *testing.T) {
 			Error: "regionCode cannot be more than 10 characters",
 		},
 		{
+			Name: "name_e2e_not_e2e",
+			Input: &Realm{
+				Name:  "E2E-TEST",
+				IsE2E: false,
+			},
+			Error: `name cannot start with "e2e-"`,
+		},
+		{
+			Name: "region_code_e2e_not_e2e",
+			Input: &Realm{
+				RegionCode: "E2E-TEST",
+				IsE2E:      false,
+			},
+			Error: `regionCode cannot start with "E2E-"`,
+		},
+		{
 			Name: "enx_region_code_mismatch",
 			Input: &Realm{
 				RegionCode:      " ",
@@ -420,83 +436,11 @@ func TestRealm_BeforeSave(t *testing.T) {
 						t.Errorf("Expected %q to be %q", got, want)
 					}
 				} else {
-					t.Errorf("bad error: %s", err)
+					t.Errorf("bad error: %s: %q", err, tc.Input.ErrorMessages())
 				}
 			}
 		})
 	}
-}
-
-func TestDatabase_E2ERealm(t *testing.T) {
-	t.Parallel()
-
-	t.Run("none", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		if _, err := db.E2ERealm(); !IsNotFound(err) {
-			t.Errorf("expected not found, got %#v", err)
-		}
-	})
-
-	t.Run("none_matching", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		realm := NewRealmWithDefaults("not-the-e2e-realm")
-		realm.RegionCode = "NOT-E2E"
-		if err := db.SaveRealm(realm, SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		if _, err := db.E2ERealm(); !IsNotFound(err) {
-			t.Errorf("expected not found, got %#v", err)
-		}
-	})
-
-	t.Run("by_region_code", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		realm := NewRealmWithDefaults("apple")
-		realm.RegionCode = "E2E-TEST"
-		if err := db.SaveRealm(realm, SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		record, err := db.E2ERealm()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if record.ID != realm.ID {
-			t.Errorf("expected %#v to be %#v", record, realm)
-		}
-	})
-
-	t.Run("by_name", func(t *testing.T) {
-		t.Parallel()
-
-		db, _ := testDatabaseInstance.NewDatabase(t, nil)
-
-		realm := NewRealmWithDefaults("e2e-test-realm")
-		realm.RegionCode = "TEST"
-		if err := db.SaveRealm(realm, SystemTest); err != nil {
-			t.Fatal(err)
-		}
-
-		record, err := db.E2ERealm()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if record.ID != realm.ID {
-			t.Errorf("expected %#v to be %#v", record, realm)
-		}
-	})
 }
 
 func TestRealm_BuildSMSText(t *testing.T) {
