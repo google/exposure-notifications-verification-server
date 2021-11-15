@@ -82,6 +82,7 @@ resource "google_cloud_run_service" "modeler" {
 
         dynamic "env" {
           for_each = merge(
+            local.anomaly_config,
             local.cache_config,
             local.database_config,
             local.gcp_config,
