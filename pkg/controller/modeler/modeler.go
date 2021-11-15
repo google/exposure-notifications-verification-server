@@ -303,8 +303,9 @@ func (c *Controller) rebuildAnomaliesModel(ctx context.Context, realm *database.
 		return fmt.Errorf("failed to save model: %w, errors: %q", err, realm.ErrorMessages())
 	}
 
-	// If the new ratio is anomalous, emit a metric.
-	if realm.CodesClaimedRatioAnomalous() {
+	// If the new ratio is anomalous and it's not the e2e realm, emit a metric.
+	// The e2e realm has its own existing monitoring for successes.
+	if realm.CodesClaimedRatioAnomalous() && !realm.IsE2ERealm() {
 		ctx = observability.WithRealmID(ctx, uint64(realm.ID))
 		stats.Record(ctx, mCodesClaimedRatioAnomaly.M(1))
 	}
