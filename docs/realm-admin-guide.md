@@ -154,7 +154,9 @@ are best-effort. This URL is unique to your realm.
 
 Once configured, a graph displaying the sum total of SMS errors will appear on
 the realm statistics page. Additionally, more detailed statistics are available
-via the realm statistics API, including a breakdown of failures by error code.
+via the realm statistics API, including a breakdown of failures by error code:
+
+![](images/realm-sms-errors-chart.png)
 
 There are many possible reasons why Twilio might be returning errors, but the most common are:
 
