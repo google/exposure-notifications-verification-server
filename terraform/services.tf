@@ -13,6 +13,10 @@
 # limitations under the License.
 
 locals {
+  anomaly_config = {
+    ANOMALY_ALLOWED_STDEVS = "2.0"
+  }
+
   appsync_config = {
     APP_SYNC_URL = "https://www.gstatic.com/exposurenotifications/apps.json"
   }

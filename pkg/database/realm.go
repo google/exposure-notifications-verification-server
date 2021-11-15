@@ -109,6 +109,23 @@ var (
 
 	ENXRedirectDomain = os.Getenv("ENX_REDIRECT_DOMAIN")
 
+	AnomalyAllowedStdevs = func() float64 {
+		v := os.Getenv("ANOMALY_ALLOWED_STDEVS")
+		if v == "" {
+			v = "2.0"
+		}
+
+		f, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			panic(fmt.Errorf("failed to parse ANOMALY_ALLOWED_STDEVS as float: %w", err))
+		}
+
+		if f <= 0 {
+			f = 1.0
+		}
+		return f
+	}()
+
 	colorRegex = regexp.MustCompile(`\A#[0-9a-f]{6}\z`)
 )
 
@@ -734,7 +751,7 @@ func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 // claimed is less than the predicted mean by more than one standard deviation.
 func (r *Realm) CodesClaimedRatioAnomalous() bool {
 	return r.LastCodesClaimedRatio < r.CodesClaimedRatioMean &&
-		r.CodesClaimedRatioMean-r.LastCodesClaimedRatio > r.CodesClaimedRatioStddev
+		r.CodesClaimedRatioMean-r.LastCodesClaimedRatio > r.CodesClaimedRatioStddev*AnomalyAllowedStdevs
 }
 
 // FindVerificationCodeByUUID find a verification codes by UUID. It returns
