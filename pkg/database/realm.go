@@ -453,6 +453,12 @@ func (db *Database) E2ERealm() (*Realm, error) {
 	return &realm, nil
 }
 
+// IsE2ERealm returns true if this realm is the "e2e" realm, false otherwise.
+func (r *Realm) IsE2ERealm() bool {
+	return strings.HasPrefix(strings.ToUpper(r.RegionCode), "E2E-") ||
+		strings.HasPrefix(strings.ToLower(r.Name), "e2e-test-")
+}
+
 // AllowsUserReport returns true if this realm has enabled user initiated
 // test reporting.
 func (r *Realm) AllowsUserReport() bool {
