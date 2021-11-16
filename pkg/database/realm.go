@@ -183,6 +183,9 @@ type Realm struct {
 	RegionCode    string  `gorm:"-"`
 	RegionCodePtr *string `gorm:"column:region_code; type:varchar(10);"`
 
+	// IsE2E returns true if this realm is the e2e realm, or false otherwise.
+	IsE2E bool `gorm:"column:is_e2e; type:boolean; default:false; not null;"`
+
 	// WelcomeMessage is arbitrary realm-defined data to display to users after
 	// selecting this realm. If empty, nothing is displayed. The format is
 	// markdown. Do not modify WelcomeMessagePtr directly.
@@ -435,30 +438,6 @@ func (r *Realm) SMSTemplateExpansionMax() int {
 	return SMSTemplateExpansionMax
 }
 
-// E2ERealm gets the end-to-end realm. The end-to-end realm is defined as the
-// realm that has a region_code beginning with E2E-* or a name beginning with
-// e2e-test-*.
-//
-// If no e2e realm is defined, it returns NotFound.
-func (db *Database) E2ERealm() (*Realm, error) {
-	var realm Realm
-	if err := db.db.
-		Model(&Realm{}).
-		Where("region_code ILIKE 'E2E-%' OR name ILIKE 'e2e-test-%'").
-		Order("created_at ASC").
-		First(&realm).
-		Error; err != nil {
-		return nil, fmt.Errorf("failed to find e2e realm: %w", err)
-	}
-	return &realm, nil
-}
-
-// IsE2ERealm returns true if this realm is the "e2e" realm, false otherwise.
-func (r *Realm) IsE2ERealm() bool {
-	return strings.HasPrefix(strings.ToUpper(r.RegionCode), "E2E-") ||
-		strings.HasPrefix(strings.ToLower(r.Name), "e2e-test-")
-}
-
 // AllowsUserReport returns true if this realm has enabled user initiated
 // test reporting.
 func (r *Realm) AllowsUserReport() bool {
@@ -502,6 +481,18 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("regionCode", "cannot be more than 10 characters")
 	}
 	r.RegionCodePtr = stringPtr(r.RegionCode)
+
+	// Ensure e2e naming uniqueness. This isn't strictly required - uniqueness is
+	// enforced by a boolean column - but it makes the UI clearer if we forbid
+	// similar names.
+	if !r.IsE2E {
+		if strings.HasPrefix(strings.ToLower(r.Name), "e2e-") {
+			r.AddError("name", `cannot start with "e2e-"`)
+		}
+		if strings.HasPrefix(strings.ToLower(r.RegionCode), "e2e-") {
+			r.AddError("regionCode", `cannot start with "E2E-"`)
+		}
+	}
 
 	r.WelcomeMessage = project.TrimSpace(r.WelcomeMessage)
 	r.WelcomeMessagePtr = stringPtr(r.WelcomeMessage)
@@ -755,7 +746,12 @@ func (r *Realm) EffectiveMFAMode(t time.Time) AuthRequirement {
 
 // CodesClaimedRatioAnomalous returns true if the ratio of codes issued to codes
 // claimed is less than the predicted mean by more than one standard deviation.
+// This always returns false for the E2E realm.
 func (r *Realm) CodesClaimedRatioAnomalous() bool {
+	if r.IsE2E {
+		return false
+	}
+
 	return r.LastCodesClaimedRatio < r.CodesClaimedRatioMean &&
 		r.CodesClaimedRatioMean-r.LastCodesClaimedRatio > r.CodesClaimedRatioStddev*AnomalyAllowedStdevs
 }
