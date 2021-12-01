@@ -32,7 +32,7 @@ const (
 	QueryKeyLimit = "limit"
 
 	// DefaultLimit is the default pagination limit, if one is not provided.
-	DefaultLimit = uint64(14)
+	DefaultLimit = uint64(24)
 
 	// MaxLimit is the maximum size for a single pagination. If a limit higher
 	// than this is provided, it's capped.
