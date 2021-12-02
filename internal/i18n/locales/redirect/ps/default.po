@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: ps\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "د فشا خبرتېاو په اړه"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "ونه موندل شو"
+
+msgid "static.resource-does-not-exist"
+msgstr "دا سرچینه شتون نلري."
+
+msgid "static.redirect-not-found"
+msgstr "د افشا کولو خبرتېاو کوډ ترلاسه کولو لپاره، په خپل موبایل کې لینک ته لاړشئ."
+
+msgid "static.unauthorized"
+msgstr "اجازه نه لري"
+
+msgid "static.unauthorized-message"
+msgstr"تاسو د دې عمل د ترسره کولو اجازه نه لرئ."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "ېو تایید کوډ ترلاسه کړئ"
+
+msgid "user-report.navbar"
+msgstr "د   د افشا کولو خبرتېاو خبرتېاو د تصدیق کوډ غوښتنه وکړئ"
+
+msgid "user-report.request-code-from"
+msgstr "ېو تایید کوډ ترلاسه کړئ"
+
+msgid "user-report.instructions"
+msgstr "که ستاسو د COVID-19 لپاره معاېنه مثبته راغلې وي خو که د متن یا تلیفون له لارې ستاسو د روغتیا ادارې څخه کوډ نه وي ترلاسه کړی، تاسو کولی شئ دلته یو غوښتنه وکړئ."
+
+msgid "user-report.enter-date-instructions"
+msgstr "د خپلې COVID-19 معاېنې نیټه دننه کړئ"
+
+msgid "user-report.phone-number-header"
+msgstr "ستاسو د موباېل شمیره"
+
+msgid "user-report.phone-number-instructions"
+msgstr "تاسو باید د تایید کوډ ترلاسه کولو لپاره یو باوري تلیفون شمیره دننه کړئ. د لېږدولو فیس ښايي پلي شي."
+
+msgid "user-report.agreement-header"
+msgstr "تړون"
+
+msgid "user-report.agreement"
+msgstr "زه دا منم چې ما د COVID-19 لپاره د مثبتې معاېنې پایله ترلاسه کړې او د تلیفون شمیره چې ما ورکړې ده زما خپله ده او زه غواړم یو کوډ ترلاسه کړم ترڅو زما د معاېنې مثبته پایلې راپور راکړي."
+
+msgid "user-report.request-button"
+msgstr "دوام ورکړئ"
+
+msgid "user-report.code-issued"
+msgstr "د تایید کوډ صادر شو"
+
+msgid "user-report.check-mobile-device"
+msgstr "مهرباني وکړئ خپل متن پیغامونه په خپل موباېل کې وګورئ."
+
+msgid "user-report.invalid-request"
+msgstr "ناسمه غوښتنه، مهرباني وکړئ په خپل موباېل کې د خپل  د افشا کولو خبرتېا آپ څخه پیل کړئ."
+
+msgid "user-report.not-available"
+msgstr "ستاسو سیمه ایز روغتیا اداره اوس مهال د کارونکي پیل شوي راپورونه نه مني."
+
+msgid "user-report.missing-agreement"
+msgstr "تاسو باید د تایید کوډ غوښتنه کولو شرایطو سره موافق یاست"
+
+msgid "user-report.error-invalid-date"
+msgstr "د COVID-19 د معاېنې نیټه ناسمه ده."
+
+msgid "user-report.error-missing-phone"
+msgstr "د موباېل شمیره اړینه ده."
+
+msgid "user-report.error-invalid-phone"
+msgstr "د موباېل شمیره ناسمه ده."
+
+msgid "user-report.quota-exceeded"
+msgstr "په موقتي ډول نشي کولی د تایید کوډونه جاري کړي، مهرباني وکړئ وروسته بیا هڅه وکړئ."
+
+msgid "user-report.phone-not-eligible"
+msgstr "ستاسو د تلیفون شمیره اوس مهال د کارن راپور لپاره وړ نه ده"
+
+msgid "user-report.internal-error"
+msgstr "یوه داخلي تېروتنه شتون درلود. په دې وخت کې د تایید کوډ غوښتنه نشي کیدی."
+
+msgid "user-report.unable-to-issue"
+msgstr "موږ ونشو کولی تاسو ته د تایید کوډ واستوو."
+
+msgid "user-report.code-device-throttled"
+msgstr "تاسو څو ځله د کوډ غوښتنه کړې ده. که تاسو لاهم کوډ ته اړتیا لرئ مهرباني وکړئ د خپل روغتیا ادارې سره اړیکه ونیسئ."
+
+msgid "user-report.testing-date-label"
+msgstr "ستاسو د COVID-19 معاېنې نیټه"
+
+msgid "user-report.phone-storage"
+msgstr "ستاسو د تلیفون شمیره په کریپټوګرافیک توګه خوندي نسخه ښايي د اضافي سپارښتنو مخنیوي لپاره زیرمه شي."
+
+msgid "user-report.learn-more"
+msgstr "نور معلومات ترلاسه کړئ..."
+
+msgid "user-report.header"
+msgstr "نورو ته د افشا کیدو خبرتیا کې مرسته وکړئ"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+
