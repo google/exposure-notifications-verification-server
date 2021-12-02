@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: om\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "Waa'ee Beeksisoota Saaxilamuu"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "Hin argamu"
+
+msgid "static.resource-does-not-exist"
+msgstr "Qabeenyi sun hin jiru."
+
+msgid "static.redirect-not-found"
+msgstr "Koodii Beeksisoota Saaxilamuu deebistanii argachuuf, geessituu meeshaa mobaayilaa keessan irra jiru daawwadhaa."
+
+msgid "static.unauthorized"
+msgstr "Kan hin eeyyamamne"
+
+msgid "static.unauthorized-message"
+msgstr "Gocha san raawwachuuf eeyyama hin qabdan."
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "Koodii Mirkaneessituu argadhaa"
+
+msgid "user-report.navbar"
+msgstr "Koodii mirkaneessituu Beeksisoota Saaxilamuu gaafadhaa"
+
+msgid "user-report.request-code-from"
+msgstr "Koodii Mirkaneessituu argadhaa"
+
+msgid "user-report.instructions"
+msgstr "Yoo qorannoo COVID-19 tiif poositivi taatan, garuu ergaa barruutin ykn bilbilaan Health Authority (Abbaa Taayitaa Fayyaa) irraa koodiin kan isin hingeenye ta'e, asitti gaafachuu dandeessu."
+
+msgid "user-report.enter-date-instructions"
+msgstr "Guyyaa qorannoo COVID-19 keessan galchaa"
+
+msgid "user-report.phone-number-header"
+msgstr "Lakkoofsa bilbilaa mobaayilaa keessan"
+
+msgid "user-report.phone-number-instructions"
+msgstr "Koodii Mirkaneessituun akka isin gahu lakkoofsa bilbila hojjatuu galchuu qabdu. Kaffaltiiwwan tajaajila dhiyeessaadhaf hojiirra ooluu mala."
+
+msgid "user-report.agreement-header"
+msgstr "Waliigaltee"
+
+msgid "user-report.agreement"
+msgstr" Ani bu'aa qorannoo poositivii kan COVID-19 fudhachuu kiyyaa fi lakkoofsi bilbilaa ani kenne kiyya ta'uu isaa akkasumas bu'aa qorannoo poositivii kiyya gabaasuuf koodiin argachuu akkan barbaaduu beekamtiin kenna."
+
+msgid "user-report.request-button"
+msgstr "Itti fufi"
+
+msgid "user-report.code-issued"
+msgstr "Koodii Mirkaneessituu ergameera"
+
+msgid "user-report.check-mobile-device"
+msgstr "Maaloo ergaawwan barruu meeshaa mobaayilaa keessan irra ilaalaa."
+
+msgid "user-report.invalid-request"
+msgstr "Gaaffii hin hojjanne, maaloo aplikeeshinii beeksisoota saaxilamuu keessan meeshaa mobaayilaa keessan irra jiruu irraa eegalchiisa."
+
+msgid "user-report.not-available"
+msgstr "Abbaan taayitaa fayyaa naannoo keessanii yeroo kana gabaasoota fayyadamaadhan eegalaman fudhachaa hin jiru."
+
+msgid "user-report.missing-agreement"
+msgstr "Koodii Mirkaneessituu gaafachuudhaf danbiiwwan irratti walii galuu qabdu"
+
+msgid "user-report.error-invalid-date"
+msgstr "Guyyaan qorannoo COVID-19 sirrii miti."
+
+msgid "user-report.error-missing-phone"
+msgstr "Lakkoofsa bilbilaa mobaayilaa ni barbaachisa."
+
+msgid "user-report.error-invalid-phone"
+msgstr "Lakkoofsa bilbilaa mobaayilaa kan hin hojjanne."
+
+msgid "user-report.quota-exceeded"
+msgstr "Yeroodhaf koodiiwwan mirkaneessituu erguun hin danda'amu, maaloo booda irra deebin yaalaaa."
+
+msgid "user-report.phone-not-eligible"
+msgstr "Lakkoofsi bilbilaa keessan gabaasa fayyadamaatif ammaaf ulaagaa hin guutuu"
+
+msgid "user-report.internal-error"
+msgstr "Dogoggora keessaatu ture. Koodiin Mirkaneessituu yeroo kana gaafatamuu hin danda'u."
+
+msgid "user-report.unable-to-issue"
+msgstr "Nuti koodii mirkaneessituu isinif erguu hin dandeenye turre."
+
+msgid "user-report.code-device-throttled"
+msgstr "Koodii hammaa ol yeroo baay'ee gaafattaniirtu. Koodiin ammas kan isin barbaachisuu yoo ta'e, maaloo Abbaa Taayitaa Fayyaa keessan dubbisaa."
+
+msgid "user-report.testing-date-label"
+msgstr "Guyyaa Qorannoo COVID-19 Keessan"
+
+msgid "user-report.phone-storage"
+msgstr "Lakkoofsi bilbilaa keessan icciitidhaan eegamu kan dabalataan galfaman dhorkuudhaf kuusamuu mala. "
+
+msgid "user-report.learn-more"
+msgstr "Caalmatti hubachuuf..."
+
+msgid "user-report.header"
+msgstr "Saaxilamuu Warreen Birootti Beeksisuu Gargaaraa"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+

@@ -1,0 +1,121 @@
+msgid ""
+msgstr ""
+"Language: ti\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+
+msgid "login.about-exposure-notifications"
+msgstr "ብዛዕባ ምቅላዕ ምልክታታት"
+
+#
+# static pages
+# ----------
+
+
+msgid "static.not-found"
+msgstr "ኣይተረኸበን"
+
+msgid "static.resource-does-not-exist"
+msgstr "እዚ ምንጪ ኣብዚ የለን"
+
+msgid "static.redirect-not-found"
+msgstr "ናይ ምቕላዕ ምልክታ ኮድ ንምዉናን፣ ኣብ ሞባይልካ ናብቲ ሊንክ ብጻሕ።"
+
+msgid "static.unauthorized"
+msgstr "ዘይተፈቕደ"
+
+msgid "static.unauthorized-message"
+msgstr "ነቲ ስጉምቲ ክትገበሮ ኣይተፈቕደልካን።"
+
+#
+# User report webview
+# ----------
+
+
+msgid "user-report.title"
+msgstr "ኮድ መረጋገጺ ዉሰድ"
+
+msgid "user-report.navbar"
+msgstr "ኮድ መረጋገጺ ናይ ምቕላዕ ምልክታ ሕተት"
+
+msgid "user-report.request-code-from"
+msgstr "ኮድ መረጋገጺ ዉሰድ"
+
+msgid "user-report.instructions"
+msgstr "ን COVID-19 ኣወንታዊ መርመራ ምስ ዝህልወካ ግናኸ ብመልእኽቲ ወይ ብተሌፎን ካብ ትካል ጥዕናኻ ኮድ እንተ ዘይረኺብካ፣ ኣብዚ ክትሓትት ትኽእል ኢኻ።"
+
+msgid "user-report.enter-date-instructions"
+msgstr "ናይ COVID-19 ምርመራ ዝገበርካሉ ዕለት ኣእቱ"
+
+msgid "user-report.phone-number-header"
+msgstr "ናይ ቴሌፎን ቊጽርኻ"
+
+msgid "user-report.phone-number-instructions"
+msgstr "ናይ መረጋገጺ ኮድ ንምቕባል ቕቡል ዝኾነ ቊጽሪ ተሌፎን ከተእቱ ኣለካ። ናይ ስራሕ ክፍሊታት ክሕተቱ እኽእሉ እዮም።"
+
+msgid "user-report.agreement-header"
+msgstr "ስምምዕ"
+
+msgid "user-report.agreement"
+msgstr "ን COVID-19 ፖዘቲቭ ውጽኢት ፈተና ኸም ዝረኸብኩ ከምኡ’ውን እቲ ዘቕረብክዎ ቊጽሪ ተሌፎን ናተይ ምዃኑን ኣፍልጦ እህብ እየ፣ ብዛዕባ እቲ ዝረኸብክዎ ኣወንታዊ ውጽኢት ዝገልጽ ኮድ ድማ ክቕበል እደሊ እየ።"
+
+msgid "user-report.request-button"
+msgstr "ቀጽል"
+
+msgid "user-report.code-issued"
+msgstr "መረጋገጺ ኮድ ተፈቕደ"
+
+msgid "user-report.check-mobile-device"
+msgstr "ብኽብረትካ ነቲ ኣብ ሞባይልካ ዘሎ ብሞባይል ዝለኣኽ መልእኽቲ ርኣዮ።"
+
+msgid "user-report.invalid-request"
+msgstr "ዘይቕቡል ሕቶ፣ ብኽብረትካ ካብቲ ኣብ ሞባይልካ ዝርከብ ምቕላዕ ምልክታ መተግበሪ ስደድ።"
+
+msgid "user-report.not-available"
+msgstr "ኣብቲ ኸባቢካ ዘሎ ናይ ጥዕና ብዓል-ስልጣን ነቲ ኣብዚ እዋን እዚ ካብ ተጠቀምቲ ዘበገስዎ ጸብጻብ ኣይቅበሎን ኢዩ ዘሎ።"
+
+msgid "user-report.missing-agreement"
+msgstr "መረጋገጺ ኮድ ንምሕታት ነቲ ዅነታት ክትሰማምዓሉ ኣሎካ"
+
+msgid "user-report.error-invalid-date"
+msgstr "ዘይቕቡል ናይ COVID-19 ናይ ምርመራ ዕለት።"
+
+msgid "user-report.error-missing-phone"
+msgstr "ቊጽሪ ሞባይል የድሊ።"
+
+msgid "user-report.error-invalid-phone"
+msgstr "ዘይቕቡል ቊጽሪ ሞባይል።"
+
+msgid "user-report.quota-exceeded"
+msgstr "ንግዜኡ መረጋገጺ ኮድ ክፍቐድ ስለ ዘይክኣል፣ ብኽብረትካ ጸኒሕካ እንደገና ፈትን።"
+
+msgid "user-report.phone-not-eligible"
+msgstr "ቍጽሪ ተሌፎንካ ኣብዚ እዋን እዚ ጸብጻብ ተጠቃሚ ንምርካብ ብቑዕ ኣይኰነን"
+
+msgid "user-report.internal-error"
+msgstr "ናይ ዉሽጣዊ ጌጋ ነይሩ። ኣብዚ እዋን እዚ መረጋገጺ ኮድ ክሕተት ኣይከኣልን እዩ።"
+
+msgid "user-report.unable-to-issue"
+msgstr "ናይ መረጋገጺ ኮድ ክንሰደልካ ኣይከኣልናን።"
+
+msgid "user-report.code-device-throttled"
+msgstr "ኮድ ብዙሕ ግዜ ሓቲትካ ኣለኻ። ኮድ ዘድልየካ እንተ ኮይኑ ብኽብረትካ ምስ ብዓል-ስልጣን ጥዕናኻ ተራኸብ።"
+
+msgid "user-report.testing-date-label"
+msgstr "ዕለት ናይ COVID-19 ምርመራኻ"
+
+msgid "user-report.phone-storage"
+msgstr "ተወሰኽቲ ምፍቓድ ምእንቲ ከይህልወካ ብክሪፕቶግራፍ እተዓቀበ ቅዳሕ ቍጽሪ ተሌፎንካ ክዕቈር ይከኣል እዩ።"
+
+msgid "user-report.learn-more"
+msgstr "ብዙሕ ተማሃር..."
+
+msgid "user-report.header"
+msgstr "ንኻልኦት ምቕላዕ ከምዘሎ ኣብ ምሕባር ሓግዝ"
+
+msgid "user-report.phone-number-placeholder"
+msgstr "XXX XXX XXXX"
+
