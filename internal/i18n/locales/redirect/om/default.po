@@ -60,7 +60,7 @@ msgid "user-report.agreement-header"
 msgstr "Waliigaltee"
 
 msgid "user-report.agreement"
-msgstr" Ani bu'aa qorannoo poositivii kan COVID-19 fudhachuu kiyyaa fi lakkoofsi bilbilaa ani kenne kiyya ta'uu isaa akkasumas bu'aa qorannoo poositivii kiyya gabaasuuf koodiin argachuu akkan barbaaduu beekamtiin kenna."
+msgstr "Ani bu'aa qorannoo poositivii kan COVID-19 fudhachuu kiyyaa fi lakkoofsi bilbilaa ani kenne kiyya ta'uu isaa akkasumas bu'aa qorannoo poositivii kiyya gabaasuuf koodiin argachuu akkan barbaaduu beekamtiin kenna."
 
 msgid "user-report.request-button"
 msgstr "Itti fufi"
