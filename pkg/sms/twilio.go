@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/sethvargo/go-retry"
 )
 
@@ -41,9 +42,10 @@ type Twilio struct {
 
 // NewTwilio creates a new Twilio SMS sender with the given auth.
 func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provider, error) {
+	transport := project.DefaultHTTPTransport()
 	client := &http.Client{
 		Timeout:   5 * time.Second,
-		Transport: &twilioAuthRoundTripper{accountSid, authToken},
+		Transport: &twilioAuthRoundTripper{transport, accountSid, authToken},
 	}
 
 	return &Twilio{
@@ -104,6 +106,7 @@ func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
 // twilioAuthRoundTripper is an http.RoundTripper that updates the
 // authentication and headers to match Twilio's API.
 type twilioAuthRoundTripper struct {
+	transport             *http.Transport
 	accountSid, authToken string
 }
 
@@ -119,7 +122,7 @@ func (rt *twilioAuthRoundTripper) RoundTrip(r *http.Request) (*http.Response, er
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	return http.DefaultTransport.RoundTrip(r)
+	return rt.transport.RoundTrip(r)
 }
 
 // TwilioError represents an error returned from the Twilio API.

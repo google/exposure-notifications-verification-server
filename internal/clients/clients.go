@@ -25,6 +25,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
 // Option is a customization option for the client.
@@ -113,7 +115,8 @@ func newClient(base, apiKey string, opts ...Option) (*client, error) {
 
 	client := &client{
 		httpClient: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout:   5 * time.Second,
+			Transport: project.DefaultHTTPTransport(),
 		},
 		baseURL:     u,
 		apiKey:      apiKey,
