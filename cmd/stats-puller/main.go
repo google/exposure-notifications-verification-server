@@ -110,6 +110,10 @@ func realMain(ctx context.Context) error {
 	populateRequestID := middleware.PopulateRequestID(h)
 	r.Use(populateRequestID)
 
+	// Trace ID injection
+	populateTraceID := middleware.PopulateTraceID()
+	r.Use(populateTraceID)
+
 	// Logger injection
 	populateLogger := middleware.PopulateLogger(logger)
 	r.Use(populateLogger)

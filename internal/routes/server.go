@@ -111,6 +111,10 @@ func Server(
 	populateRequestID := middleware.PopulateRequestID(h)
 	sub.Use(populateRequestID)
 
+	// Trace ID injection
+	populateTraceID := middleware.PopulateTraceID()
+	r.Use(populateTraceID)
+
 	// Logger injection
 	populateLogger := middleware.PopulateLogger(logging.FromContext(ctx))
 	sub.Use(populateLogger)

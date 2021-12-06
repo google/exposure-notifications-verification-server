@@ -22,7 +22,7 @@ import (
 )
 
 // DefaultHTTPTransport returns a clean, non-globally-modifiable HTTP transport
-// with the same defaults as http.DefaultTransport.
+// with similar defaults as http.DefaultTransport.
 func DefaultHTTPTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

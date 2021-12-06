@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -61,10 +60,7 @@ func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfi
 
 	localCache, _ := memcache.New(30 * time.Second)
 
-	httpClient := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: project.DefaultHTTPTransport(),
-	}
+	httpClient := controller.TracedHTTPClient(10 * time.Second)
 
 	return &Controller{
 		locales:          locales,

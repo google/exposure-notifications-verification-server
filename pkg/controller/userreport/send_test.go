@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
@@ -79,10 +80,7 @@ func TestSendWebhookRequest(t *testing.T) {
 
 	ctx := project.TestContext(t)
 
-	client := &http.Client{
-		Timeout:   2 * time.Second,
-		Transport: project.DefaultHTTPTransport(),
-	}
+	client := controller.TracedHTTPClient(2 * time.Second)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()

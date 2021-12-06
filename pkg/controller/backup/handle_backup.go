@@ -25,7 +25,7 @@ import (
 	"path"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/kelseyhightower/run"
 	"go.opencensus.io/stats"
 )
@@ -119,10 +119,7 @@ func (c *Controller) authorizationToken(ctx context.Context) (string, error) {
 // executeBackup calls the backup API. This is a *blocking* operation that can
 // take O(minutes) in some cases.
 func (c *Controller) executeBackup(req *http.Request) error {
-	client := &http.Client{
-		Timeout:   c.config.Timeout,
-		Transport: project.DefaultHTTPTransport(),
-	}
+	client := controller.TracedHTTPClient(c.config.Timeout)
 
 	resp, err := client.Do(req)
 	if err != nil {
