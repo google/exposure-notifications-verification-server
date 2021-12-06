@@ -28,6 +28,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 )
 
 // Option is a customization option for the client.
@@ -136,10 +137,7 @@ func newClient(base, apiKey string, opts ...Option) (*client, error) {
 	}
 
 	client := &client{
-		httpClient: &http.Client{
-			Timeout:   5 * time.Second,
-			Transport: project.DefaultHTTPTransport(),
-		},
+		httpClient:  controller.TracedHTTPClient(5 * time.Second),
 		baseURL:     u,
 		apiKey:      apiKey,
 		maxBodySize: 65536, // 64 KiB

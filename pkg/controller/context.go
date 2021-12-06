@@ -32,16 +32,17 @@ type contextKey string
 const (
 	contextKeyAuthorizedApp = contextKey("authorizedApp")
 	contextKeyFirebaseUser  = contextKey("firebaseUser")
+	contextKeyLocale        = contextKey("locale")
 	contextKeyMembership    = contextKey("membership")
 	contextKeyMemberships   = contextKey("memberships")
+	contextKeyNonce         = contextKey("nonce")
+	contextKeyOS            = contextKey("os")
 	contextKeyRealm         = contextKey("realm")
 	contextKeyRequestID     = contextKey("requestID")
 	contextKeySession       = contextKey("session")
 	contextKeyTemplate      = contextKey("template")
+	contextKeyTraceID       = contextKey("traceID")
 	contextKeyUser          = contextKey("user")
-	contextKeyOS            = contextKey("os")
-	contextKeyNonce         = contextKey("nonce")
-	contextKeyLocale        = contextKey("locale")
 )
 
 // WithOperatingSystem stores the operating system enum in the context.
@@ -330,6 +331,30 @@ func FirebaseUserFromContext(ctx context.Context) *auth.UserRecord {
 	t, ok := v.(*auth.UserRecord)
 	if !ok {
 		return nil
+	}
+	return t
+}
+
+// WithTraceID stores the trace ID on the context.
+func WithTraceID(ctx context.Context, id string) context.Context {
+	m := TemplateMapFromContext(ctx)
+	m["traceID"] = id
+	ctx = WithTemplateMap(ctx, m)
+
+	return context.WithValue(ctx, contextKeyTraceID, id)
+}
+
+// TraceIDFromContext retrieves the trace ID from the context. If no value
+// exists, it returns the empty string.
+func TraceIDFromContext(ctx context.Context) string {
+	v := ctx.Value(contextKeyTraceID)
+	if v == nil {
+		return ""
+	}
+
+	t, ok := v.(string)
+	if !ok {
+		return ""
 	}
 	return t
 }

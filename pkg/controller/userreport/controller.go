@@ -50,7 +50,6 @@ type Controller struct {
 	issueController *issueapi.Controller
 }
 
-// New creates a new login controller.
 func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	cfgMap, err := cfg.HostnameToRegion()
 	if err != nil {

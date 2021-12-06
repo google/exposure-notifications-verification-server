@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -28,9 +27,6 @@ import (
 )
 
 const (
-	// googleCloudTraceHeader is the header with trace data.
-	googleCloudTraceHeader = "X-Cloud-Trace-Context"
-
 	// googleCloudTraceKey is the key in the structured log where trace information
 	// is expected to be present.
 	googleCloudTraceKey = "logging.googleapis.com/trace"
@@ -40,7 +36,8 @@ const (
 // deployment.
 var googleCloudProjectID = os.Getenv("PROJECT_ID")
 
-// PopulateLogger populates the logger onto the context.
+// PopulateLogger populates the logger onto the context. This must come AFTER
+// PopulateRequestID and PopulateTraceID.
 func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -61,12 +58,9 @@ func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
 			}
 
 			// On Google Cloud, extract the trace context and add it to the logger.
-			if v := r.Header.Get(googleCloudTraceHeader); v != "" && googleCloudProjectID != "" {
-				parts := strings.Split(v, "/")
-				if len(parts) > 0 && len(parts[0]) > 0 {
-					val := fmt.Sprintf("projects/%s/traces/%s", googleCloudProjectID, parts[0])
-					logger = logger.With(googleCloudTraceKey, val)
-				}
+			if id := controller.TraceIDFromContext(ctx); id != "" && googleCloudProjectID != "" {
+				val := fmt.Sprintf("projects/%s/traces/%s", googleCloudProjectID, id)
+				logger = logger.With(googleCloudTraceKey, val)
 			}
 
 			ctx = logging.WithLogger(ctx, logger)

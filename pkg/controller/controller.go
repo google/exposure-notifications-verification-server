@@ -21,8 +21,10 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/api"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 )
@@ -246,6 +248,38 @@ func RealHostFromRequest(r *http.Request) string {
 		return fmt.Sprintf("%s://%s", scheme, host)
 	}
 	return fmt.Sprintf("%s://%s:%s", scheme, host, port)
+}
+
+// TracedHTTPClient returns a new HTTP client with the given timeout that
+// automatically injects trace and and request ID tokens to correlate requests
+// that span mutiple services. This should only be used for service-to-service
+// communication and NOT with upstream APIs.
+func TracedHTTPClient(timeout time.Duration) *http.Client {
+	ot := project.DefaultHTTPTransport()
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: &withInjectedDataRoundTripper{ot},
+	}
+}
+
+type withInjectedDataRoundTripper struct {
+	original http.RoundTripper
+}
+
+func (t *withInjectedDataRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	ctx := r.Context()
+
+	requestID := RequestIDFromContext(ctx)
+	if requestID != "" {
+		r.Header.Set("X-Request-ID", requestID)
+	}
+
+	traceID := TraceIDFromContext(ctx)
+	if traceID != "" {
+		r.Header.Set("X-Cloud-Trace-Context", traceID)
+	}
+
+	return t.original.RoundTrip(r)
 }
 
 func prefixInList(list []string, prefix string) bool {

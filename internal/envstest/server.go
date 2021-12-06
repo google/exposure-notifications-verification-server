@@ -295,6 +295,7 @@ func (r *ServerConfigResponse) WithCommonMiddlewares(next http.Handler) http.Han
 		middleware.PopulateTemplateVariables(r.Config),
 		middleware.ProcessLocale(r.Locales),
 		middleware.PopulateRequestID(r.Renderer),
+		middleware.PopulateTraceID(),
 		middleware.InjectCurrentPath(),
 	}
 
