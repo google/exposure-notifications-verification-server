@@ -34,6 +34,11 @@ var SkipE2ESMS, _ = strconv.ParseBool(os.Getenv("E2E_SKIP_SMS"))
 // devMode indicates whether the project is running in development mode.
 var devMode, _ = strconv.ParseBool(os.Getenv("DEV_MODE"))
 
+// DebugGoogleCloudResponses controls whether HTTP requests should request GFE
+// debug headers. This should be off by default as it greatly increases the size
+// of response payloads.
+var DebugGoogleCloudResponses, _ = strconv.ParseBool(os.Getenv("DEBUG_GOOGLE_CLOUD_RESPONSES"))
+
 // TestPhoneNumber is a test phone number to use for tests. It's a "real" phone
 // number (Google's support phone number), but none of the tests actually send
 // SMS.
