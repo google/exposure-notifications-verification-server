@@ -28,6 +28,7 @@ type AdminAPIServerClient struct {
 
 // NewAdminAPIServerClient creates a new admin API server http client.
 func NewAdminAPIServerClient(base, apiKey string, opts ...Option) (*AdminAPIServerClient, error) {
+	opts = append([]Option{WithUserAgent("en/adminapi-client")}, opts...)
 	client, err := newClient(base, apiKey, opts...)
 	if err != nil {
 		return nil, err

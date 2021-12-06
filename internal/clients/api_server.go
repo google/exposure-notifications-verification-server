@@ -28,6 +28,7 @@ type APIServerClient struct {
 
 // NewAPIServerClient creates a new API server http client.
 func NewAPIServerClient(base, apiKey string, opts ...Option) (*APIServerClient, error) {
+	opts = append([]Option{WithUserAgent("en/apiserver-client")}, opts...)
 	client, err := newClient(base, apiKey, opts...)
 	if err != nil {
 		return nil, err

@@ -28,6 +28,7 @@ type AppSyncClient struct {
 
 // NewAppSyncClient creates a new app sync service http client.
 func NewAppSyncClient(base string, opts ...Option) (*AppSyncClient, error) {
+	opts = append([]Option{WithUserAgent("en/appsync-client")}, opts...)
 	client, err := newClient(base, "", opts...)
 	if err != nil {
 		return nil, err
