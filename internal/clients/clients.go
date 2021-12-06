@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 )
 
@@ -63,10 +64,7 @@ func WithMaxBodySize(max int64) Option {
 func WithHostOverride(host string) Option {
 	return func(c *client) *client {
 		ot := c.httpClient.Transport
-		c.httpClient.Transport = &hostOverrideRoundTripper{
-			host: host,
-			def:  ot,
-		}
+		c.httpClient.Transport = &hostOverrideRoundTripper{ot, host}
 		return c
 	}
 }
@@ -79,22 +77,39 @@ func WithUserAgent(userAgent string) Option {
 	}
 }
 
-type hostOverrideRoundTripper struct {
-	host string
-	def  http.RoundTripper
+// WithCustomRequestHeaders injects the given headers into the request. It can
+// be called multiple times.
+func WithCustomRequestHeaders(headers http.Header) Option {
+	return func(c *client) *client {
+		ot := c.httpClient.Transport
+		c.httpClient.Transport = &headerInjectorRoundTripper{ot, headers}
+		return c
+	}
 }
 
-func (h *hostOverrideRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	if h.host != "" {
-		r = r.Clone(context.Background())
-		r.Host = h.host
+type hostOverrideRoundTripper struct {
+	original http.RoundTripper
+	host     string
+}
+
+func (t *hostOverrideRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if t.host != "" {
+		r.Host = t.host
+	}
+	return t.original.RoundTrip(r)
+}
+
+type headerInjectorRoundTripper struct {
+	original http.RoundTripper
+	headers  http.Header
+}
+
+func (t *headerInjectorRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	for k := range t.headers {
+		r.Header.Set(k, t.headers.Get(k))
 	}
 
-	def := h.def
-	if def == nil {
-		def = http.DefaultTransport
-	}
-	return def.RoundTrip(r)
+	return t.original.RoundTrip(r)
 }
 
 // client is a private client that handles the heavy lifting.
@@ -111,6 +126,13 @@ func newClient(base, apiKey string, opts ...Option) (*client, error) {
 	u, err := url.Parse(base)
 	if err != nil {
 		return nil, err
+	}
+
+	// Enable debug response logging.
+	if project.DebugGoogleCloudResponses {
+		opts = append([]Option{WithCustomRequestHeaders(http.Header{
+			"X-Return-Encrypted-Headers": []string{"all_response"},
+		})}, opts...)
 	}
 
 	client := &client{
@@ -167,6 +189,11 @@ func (c *client) doOK(req *http.Request, out interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if project.DebugGoogleCloudResponses {
+		logger := logging.FromContext(req.Context())
+		logger.Debug("response headers", "response_headers", resp.Header)
+	}
 
 	if resp.StatusCode > 299 {
 		return fmt.Errorf("expected 200 response, got %d", resp.StatusCode)
