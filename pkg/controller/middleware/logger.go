@@ -36,7 +36,8 @@ const (
 // deployment.
 var googleCloudProjectID = os.Getenv("PROJECT_ID")
 
-// PopulateLogger populates the logger onto the context.
+// PopulateLogger populates the logger onto the context. This must come AFTER
+// PopulateRequestID and PopulateTraceID.
 func PopulateLogger(originalLogger *zap.SugaredLogger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

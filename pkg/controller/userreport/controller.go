@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
+	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -49,7 +50,6 @@ type Controller struct {
 	issueController *issueapi.Controller
 }
 
-// New creates a new login controller.
 func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) (*Controller, error) {
 	cfgMap, err := cfg.HostnameToRegion()
 	if err != nil {
@@ -60,7 +60,10 @@ func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfi
 
 	localCache, _ := memcache.New(30 * time.Second)
 
-	httpClient := controller.TracedHTTPClient(10 * time.Second)
+	httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: project.DefaultHTTPTransport(),
+	}
 
 	return &Controller{
 		locales:          locales,
