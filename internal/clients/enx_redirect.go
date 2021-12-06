@@ -30,6 +30,7 @@ type ENXRedirectClient struct {
 
 // NewENXRedirectClient creates a new enx-redirect service http client.
 func NewENXRedirectClient(base string, opts ...Option) (*ENXRedirectClient, error) {
+	opts = append([]Option{WithUserAgent("en/enxredirect-client")}, opts...)
 	client, err := newClient(base, "", opts...)
 	if err != nil {
 		return nil, err

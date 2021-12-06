@@ -30,6 +30,7 @@ type KeyServerClient struct {
 
 // NewKeyServerClient creates a new key-server http client.
 func NewKeyServerClient(base string, opts ...Option) (*KeyServerClient, error) {
+	opts = append([]Option{WithUserAgent("en/keyserver-client")}, opts...)
 	client, err := newClient(base, "", opts...)
 	if err != nil {
 		return nil, err

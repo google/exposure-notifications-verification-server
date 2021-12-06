@@ -82,19 +82,22 @@ func RunEndToEnd(ctx context.Context, cfg *config.E2ERunnerConfig) error {
 	logger := logging.FromContext(ctx)
 
 	adminAPIClient, err := NewAdminAPIServerClient(cfg.VerificationAdminAPIServer, cfg.VerificationAdminAPIKey,
-		WithTimeout(timeout))
+		WithTimeout(timeout),
+		WithUserAgent("en/e2e-client"))
 	if err != nil {
 		return fmt.Errorf("failed to make adminapi server client: %w", err)
 	}
 
 	apiServerClient, err := NewAPIServerClient(cfg.VerificationAPIServer, cfg.VerificationAPIServerKey,
-		WithTimeout(timeout))
+		WithTimeout(timeout),
+		WithUserAgent("en/e2e-client"))
 	if err != nil {
 		return fmt.Errorf("failed to make apiserver client: %w", err)
 	}
 
 	keyServerClient, err := NewKeyServerClient(cfg.KeyServer,
-		WithTimeout(timeout))
+		WithTimeout(timeout),
+		WithUserAgent("en/e2e-client"))
 	if err != nil {
 		return fmt.Errorf("failed to make keyserver client: %w", err)
 	}

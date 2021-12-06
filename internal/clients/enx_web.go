@@ -29,6 +29,7 @@ type ENXRedirectWebClient struct {
 
 // NewENXRedirectWebClient creates a new enx-redirect service http client for user-report.
 func NewENXRedirectWebClient(base string, apiKey string, opts ...Option) (*ENXRedirectWebClient, error) {
+	opts = append([]Option{WithUserAgent("en/enxweb-client")}, opts...)
 	client, err := newClient(base, apiKey, opts...)
 	if err != nil {
 		return nil, err
