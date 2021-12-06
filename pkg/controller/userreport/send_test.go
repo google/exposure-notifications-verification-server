@@ -80,7 +80,8 @@ func TestSendWebhookRequest(t *testing.T) {
 	ctx := project.TestContext(t)
 
 	client := &http.Client{
-		Timeout: 2 * time.Second,
+		Timeout:   2 * time.Second,
+		Transport: project.DefaultHTTPTransport(),
 	}
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
