@@ -190,7 +190,7 @@ func (c *client) doOK(req *http.Request, out interface{}) error {
 
 	if project.DebugGoogleCloudResponses {
 		logger := logging.FromContext(req.Context())
-		logger.Debug("response headers", "response_headers", resp.Header)
+		logger.Debugw("response headers", "response_headers", resp.Header)
 	}
 
 	if resp.StatusCode > 299 {
