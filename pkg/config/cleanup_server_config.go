@@ -51,9 +51,9 @@ type CleanupConfig struct {
 	MobileAppMaxAge     time.Duration `env:"MOBILE_APP_MAX_AGE, default=168h"`
 
 	// StatsMaxAge is the maximum amount of time to retain statistics. The default
-	// value is 31d. It can be extended up to 120 days and cannot be less than 30
+	// value is 91d. It can be extended up to 120 days and cannot be less than 30
 	// days.
-	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=2160h"`
+	StatsMaxAge time.Duration `env:"STATS_MAX_AGE, default=2184h"`
 
 	// RealmChaffEventMaxAge is the maximum amount of time to store whether a
 	// realm had received a chaff request.
