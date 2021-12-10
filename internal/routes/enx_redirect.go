@@ -184,7 +184,7 @@ func ENXRedirect(
 
 			// This allows developers to send GET requests in a browser with query params
 			// to test the UI. Normally these fields must be set in HTTP headers.
-			if cfg.DevMode {
+			if cfg.DevMode || cfg.UserReportAllowQuery {
 				sub.Use(middleware.QueryHeaderInjection(middleware.APIKeyHeader, "apikey"))
 				sub.Use(middleware.QueryHeaderInjection(middleware.NonceHeader, "nonce"))
 			}

@@ -45,6 +45,12 @@ type RedirectConfig struct {
 	// auto-reload is enabled.
 	DevMode bool `env:"DEV_MODE"`
 
+	// UserReportAllowQuery defines if a GET request with query params should
+	// be allow for user report. This OR dev mode is needed.
+	// DEV_MODE can't be used in a deployed environment, but this can.
+	// This should NOT be enabled in production.
+	UserReportAllowQuery bool `env:"USER_REPORT_DEBUG_QUERY_PARAMS, default=false"`
+
 	SessionDuration    time.Duration `env:"SESSION_DURATION, default=1h"`
 	SessionIdleTimeout time.Duration `env:"SESSION_IDLE_TIMEOUT, default=20m"`
 
