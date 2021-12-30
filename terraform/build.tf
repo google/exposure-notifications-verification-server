@@ -36,7 +36,7 @@ resource "google_storage_bucket" "cloudbuild-cache" {
   }
 
   depends_on = [
-    google_project_service.services["storage.googleaips.com"],
+    google_project_service.services["storage.googleapis.com"],
   ]
 }
 
