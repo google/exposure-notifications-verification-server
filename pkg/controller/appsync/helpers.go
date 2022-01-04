@@ -52,7 +52,11 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 			continue
 		}
 
+		// TODO(mikehelmick): Remove AgencyColor once AgencyHeaderTextColor is fully rolled out
 		realm.AgencyBackgroundColor = strings.ToLower(app.AgencyColor)
+		if app.AgencyHeaderTextColor != "" {
+			realm.AgencyBackgroundColor = strings.ToLower(app.AgencyHeaderTextColor)
+		}
 		realm.AgencyImage = app.AgencyImage
 		realm.DefaultLocale = app.DefaultLocale
 		realm.UserReportLearnMoreURL = app.WebReportLearnMoreURL
