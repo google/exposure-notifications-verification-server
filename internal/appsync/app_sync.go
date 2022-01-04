@@ -39,6 +39,7 @@ type App struct {
 	IsEnx                 bool   `json:"is_enx,omitempty"`
 	AndroidTarget         `json:"android_target"`
 	AgencyColor           string          `json:"agency_color"`
+	AgencyHeaderTextColor string          `json:"agency_header_text_color"`
 	AgencyImage           string          `json:"agency_image"`
 	DefaultLocale         string          `json:"default_locale"`
 	WebReportLearnMoreURL string          `json:"web_report_learn_more_url"`
