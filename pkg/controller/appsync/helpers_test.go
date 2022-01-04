@@ -55,7 +55,6 @@ func Test_syncApps(t *testing.T) {
 		}
 
 		agencyColor := "#000000"
-		agencyBackgroundColor := "#ffffff"
 		agencyImage := "https://example.com/logo.png"
 
 		resp := &appsync.AppsResponse{
@@ -77,7 +76,6 @@ func Test_syncApps(t *testing.T) {
 						SHA256CertFingerprints: "BB:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
 					},
 					AgencyColor:           agencyColor,
-					AgencyHeaderTextColor: agencyBackgroundColor,
 					AgencyImage:           agencyImage,
 					DefaultLocale:         "en_US",
 					WebReportLearnMoreURL: "https://g.co/ens",
@@ -119,8 +117,8 @@ func Test_syncApps(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if gotRealm.AgencyBackgroundColor != agencyBackgroundColor {
-			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyBackgroundColor, agencyBackgroundColor)
+		if gotRealm.AgencyBackgroundColor != agencyColor {
+			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyBackgroundColor, agencyColor)
 		}
 		if gotRealm.AgencyImage != agencyImage {
 			t.Errorf("wrong agency color, got %q want %q", gotRealm.AgencyImage, agencyImage)
