@@ -1,9 +1,12 @@
 # Elevated SMS Errors Alert
 
-This alert fires when one or more realms have an increased number of errors returned from the Twilio API.
+This alert fires when one or more realms have an increased number of errors
+returned from the Twilio API. Specifically, if there are more than 50 errors in
+a 5 minute period.
 
 **This alert can have false positives**. There could be legitimate reasons why
-the percentage of codes claimed decreases by more than one standard deviation.
+SMS messages might be failing, such as invalid phone numbers, which do not
+indicate an issue in the system.
 
 
 ## Triage Steps
@@ -26,3 +29,25 @@ In the event the phone number or message is being filtered as spam, immediately
 file a ticket with Twilio and communicate with the PHA to stop issuing codes
 until the issue resolves. Note, sometimes this can take up to 72 hours to
 resolve.
+
+
+## Tuning
+
+You may find that particular error codes are the source of false positives.
+Specifically, `30003` and `30006` can be noisy if the input data is not properly
+checked. These error codes generally mean that the PHA tried to send a text
+message to a non-SMS capable phone such as a landline (home phone). It may be
+helpful to _exclude_ these particular error codes from the alerting threshold.
+To do this, edit the Terraform configuration for the `en-alerting` module and
+set the "ignored_twilio_error_codes" value to an array of codes to ignore:
+
+```terraform
+module "en-alerting" {
+  // ...
+
+  ignored_twilio_error_codes = ["30003", "30006"]
+}
+```
+
+Error codes added to this list will still appear in the PHA's statistics
+dashboard, but they will not trigger an alert.
