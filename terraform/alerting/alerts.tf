@@ -72,6 +72,10 @@ locals {
     # stats-puller runs every 15m, alert after 2 failures
     "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
   }, var.forward_progress_indicators)
+
+  # To ensure the query condition always compiles, ensure the list always has at
+  # least one element. "empty" will never match a Twilio error code.
+  ignored_twilio_error_codes = sort(distinct(concat(["empty"], var.ignored_twilio_error_codes)))
 }
 
 resource "google_monitoring_alert_policy" "probers" {
@@ -303,7 +307,11 @@ resource "google_monitoring_alert_policy" "ElevatedSMSErrors" {
     display_name = "Elevated SMS errors"
 
     condition_threshold {
-      filter   = "metric.type = \"${local.custom_prefix}/webhooks/twilio_errors\" AND resource.type = \"generic_task\""
+      filter   = <<-EOF
+        resource.type = "generic_task"
+        AND metric.type = "${local.custom_prefix}/webhooks/twilio_errors"
+        AND metric.label.error_code != monitoring.regex.full_match("^${join("|", local.ignored_twilio_error_codes)}$")
+      EOF
       duration = "${5 * local.minute}s"
 
       comparison      = "COMPARISON_GT"
