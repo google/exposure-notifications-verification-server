@@ -54,7 +54,7 @@
       <div class="col-lg-12">
         <div class="form-floating">
           <textarea name="welcome_message" id="welcome-message" class="form-control font-monospace{{if $realm.ErrorsFor "welcomeMessage"}} is-invalid{{end}}"
-            rows="5" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
+            style="height:10em;" placeholder="Welcome message">{{$realm.WelcomeMessage}}</textarea>
           <label for="welcome-message">Welcome message</label>
           {{template "errorable" $realm.ErrorsFor "welcomeMessage"}}
           <small class="form-text text-muted">
@@ -65,6 +65,22 @@
           </small>
         </div>
       </div>
+
+      {{if $.features.EnableEmailer}}
+      <div class="col-lg-12">
+        <div class="form-floating">
+          <textarea name="contact_email_addresses" id="contact-email-addresses" class="form-control font-monospace{{if $realm.ErrorsFor "contactEmailAddresses"}} is-invalid{{end}}"
+            style="height:10em;" placeholder="Contact email addresses">{{joinStrings $realm.ContactEmailAddresses "\n"}}</textarea>
+          <label for="contact-email-addresses">Contact email addresses</label>
+          {{template "errorable" $realm.ErrorsFor "contactEmailAddresses"}}
+          <small class="form-text text-muted">
+            A list of email addresses (one per line) to receive critical system
+            notifications. Email addresses must be of the format "<span
+            class="font-monospace">user@example.com</span>".
+          </small>
+        </div>
+      </div>
+      {{end}}
     </div>
   </div>
 

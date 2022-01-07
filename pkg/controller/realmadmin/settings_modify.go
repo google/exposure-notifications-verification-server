@@ -17,6 +17,7 @@ package realmadmin
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -52,10 +53,11 @@ func init() {
 }
 
 type formData struct {
-	General        bool   `form:"general"`
-	Name           string `form:"name"`
-	RegionCode     string `form:"region_code"`
-	WelcomeMessage string `form:"welcome_message"`
+	General               bool   `form:"general"`
+	Name                  string `form:"name"`
+	RegionCode            string `form:"region_code"`
+	WelcomeMessage        string `form:"welcome_message"`
+	ContactEmailAddresses string `form:"contact_email_addresses"`
 
 	AllowKeyServerStats       bool   `form:"allow_key_server_stats"`
 	KeyServerURLOverride      string `form:"key_server_url"`
@@ -193,6 +195,10 @@ func (c *Controller) HandleSettings() http.Handler {
 			currentRealm.Name = form.Name
 			currentRealm.RegionCode = form.RegionCode
 			currentRealm.WelcomeMessage = form.WelcomeMessage
+
+			if c.config.Features.EnableEmailer {
+				currentRealm.ContactEmailAddresses = explodeSortAndDedupe(form.ContactEmailAddresses)
+			}
 
 			if form.AllowKeyServerStats {
 				if statsConfig == nil {
@@ -498,4 +504,33 @@ func parseSMSTextTemplates(r *http.Request, form *formData) {
 			}
 		}
 	}
+}
+
+// explodeSortAndDedupe explodes the given string on commas and newlines,
+// iterates over each result and removes spaces and commas, removes duplicates,
+// and returns a sorted result.
+func explodeSortAndDedupe(in string) []string {
+	pieces := strings.FieldsFunc(in, func(r rune) bool {
+		return r == '\n' || r == ','
+	})
+
+	m := make(map[string]struct{}, len(pieces))
+	for _, piece := range pieces {
+		piece := project.TrimSpaceAndNonPrintable(piece)
+		piece = strings.Trim(piece, ",")
+		piece = project.TrimSpaceAndNonPrintable(piece)
+		if piece == "" {
+			continue
+		}
+
+		m[piece] = struct{}{}
+	}
+
+	uniques := make([]string, 0, len(m))
+	for k := range m {
+		uniques = append(uniques, k)
+	}
+	sort.Strings(uniques)
+
+	return uniques
 }

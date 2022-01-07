@@ -110,7 +110,7 @@ func (r *Renderer) executeHTMLTemplate(w io.Writer, name string, data interface{
 	defer r.templatesLock.RUnlock()
 
 	if r.templates == nil {
-		return fmt.Errorf("no templates are defined")
+		return fmt.Errorf("no html templates are defined")
 	}
 
 	return r.templates.ExecuteTemplate(w, name, data)
@@ -121,8 +121,8 @@ func (r *Renderer) executeTextTemplate(w io.Writer, name string, data interface{
 	r.templatesLock.RLock()
 	defer r.templatesLock.RUnlock()
 
-	if r.templates == nil {
-		return fmt.Errorf("no templates are defined")
+	if r.textTemplates == nil {
+		return fmt.Errorf("no text templates are defined")
 	}
 
 	return r.textTemplates.ExecuteTemplate(w, name, data)
@@ -406,7 +406,16 @@ func pwdSentinel() string {
 
 func (r *Renderer) textFuncs() texttemplate.FuncMap {
 	return map[string]interface{}{
-		"trimSpace": project.TrimSpace,
+		"joinStrings":    joinStrings,
+		"toSentence":     toSentence,
+		"trimSpace":      project.TrimSpace,
+		"stringContains": strings.Contains,
+		"toLower":        strings.ToLower,
+		"toUpper":        strings.ToUpper,
+		"toJSON":         json.Marshal,
+		"humanizeTime":   humanizeTime,
+		"toBase64":       base64.StdEncoding.EncodeToString,
+		"toPercent":      toPercent,
 	}
 }
 

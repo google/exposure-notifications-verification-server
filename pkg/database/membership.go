@@ -35,8 +35,9 @@ type Membership struct {
 	// DefaultSMSTemplateLabel is the label of realm.SMSTextAlternateTemplates or "Default SMS template"
 	// that the user last used to issue codes. This helps the UI remember the default user preference.
 	// Note: This label may not exist if it has been deleted or modified on the realm.
-	DefaultSMSTemplateLabel string `gorm:"type:varchar(255);"`
+	DefaultSMSTemplateLabel string
 
+	// Permissions are the compiled RBAC permissions the user has on the realm.
 	Permissions rbac.Permission
 
 	// CreatedAt is when the user was added to the realm. UpdatedAt is when the

@@ -59,6 +59,12 @@ locals {
     DB_USER        = google_sql_user.user.name
   }
 
+  emailer_config = {
+    SERVER_ENDPOINT = trimsuffix(local.enable_lb ? "https://${var.server_hosts[0]}" : google_cloud_run_service.server.status.0.url, "/")
+    FROM_ADDRESS    = var.emailer_from_address
+    MAIL_DOMAIN     = var.emailer_mail_domain
+  }
+
   firebase_config = {
     FIREBASE_API_KEY           = data.google_firebase_web_app_config.default.api_key
     FIREBASE_APP_ID            = google_firebase_web_app.default.app_id
@@ -105,6 +111,10 @@ locals {
     VERIFICATION_ADMIN_API  = local.enable_lb ? "https://${var.adminapi_hosts[0]}" : google_cloud_run_service.adminapi.status.0.url
     VERIFICATION_SERVER_API = local.enable_lb ? "https://${var.apiserver_hosts[0]}" : google_cloud_run_service.apiserver.status.0.url
     E2E_SKIP_SMS            = var.e2e_skip_sms
+  }
+
+  feature_config = {
+    ENABLE_EMAILER = var.enable_emailer
   }
 
   issue_config = {

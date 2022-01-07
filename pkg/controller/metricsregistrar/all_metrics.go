@@ -8,6 +8,7 @@ import (
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/certapi"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/cleanup"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/e2erunner"
+	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/emailer"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/issueapi"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/modeler"
 	_ "github.com/google/exposure-notifications-verification-server/pkg/controller/rotation"

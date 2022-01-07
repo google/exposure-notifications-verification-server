@@ -420,6 +420,20 @@ func TestRealm_BeforeSave(t *testing.T) {
 			},
 			Error: "userReportWebhookSecret must be at least 12 characters",
 		},
+		{
+			Name: "contact_email_addresses_too_long",
+			Input: &Realm{
+				ContactEmailAddresses: []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"},
+			},
+			Error: "contactEmailAddresses must have less than 10 entries",
+		},
+		{
+			Name: "contact_email_addresses_invalid",
+			Input: &Realm{
+				ContactEmailAddresses: []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"},
+			},
+			Error: "contactEmailAddresses includes invalid email address \"a\"",
+		},
 	}
 
 	for _, tc := range cases {

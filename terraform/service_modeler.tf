@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-modeler" {
   service_account_id = google_service_account.modeler.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "modeler-observability" {
@@ -85,6 +89,7 @@ resource "google_cloud_run_service" "modeler" {
             local.anomaly_config,
             local.cache_config,
             local.database_config,
+            local.feature_config,
             local.gcp_config,
             local.rate_limit_config,
             local.observability_config,

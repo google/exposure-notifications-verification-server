@@ -143,6 +143,26 @@ steps:
   - '-'
 
 #
+# emailer
+#
+- id: 'promote-emailer'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  args:
+  - 'bash'
+  - '-eEuo'
+  - 'pipefail'
+  - '-c'
+  - |-
+    gcloud run services update-traffic "emailer" \
+      --quiet \
+      --project "${PROJECT_ID}" \
+      --platform "managed" \
+      --region "${_REGION}" \
+      --to-revisions "${_REVISION}=${_PERCENTAGE}"
+  waitFor:
+  - '-'
+
+#
 # enx-redirect
 #
 - id: 'promote-enx-redirect'

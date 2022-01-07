@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-metrics-registra
   service_account_id = google_service_account.metrics-registrar.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "metrics-registrar-observability" {
@@ -62,6 +66,7 @@ resource "google_cloud_run_service" "metrics-registrar" {
 
         dynamic "env" {
           for_each = merge(
+            local.feature_config,
             local.gcp_config,
             local.observability_config,
             local.metrics_registrar_config,

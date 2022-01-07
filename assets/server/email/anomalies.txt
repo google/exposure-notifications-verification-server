@@ -1,0 +1,19 @@
+{{- define "email/anomalies" -}}
+
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Subject: Exposure Notifications code claim rate anomaly detected
+To: {{.ToEmail | trimSpace}}
+From: {{.FromEmail | trimSpace}}
+
+Hello,
+
+The code claim rate for {{.Realm.Name}} yesterday was {{.Realm.LastCodesClaimedRatio | toPercent}}, which is less than your historical average of {{.Realm.CodesClaimedRatioMean | toPercent}}. This could indicate a problem with your configuration.
+
+Consider reviewing the statistics page for {{.Realm.Name}} at {{.RootURL}}/realm/stats.
+
+---
+
+You received this email because you are listed as a contact email address for Exposure Notifications for {{.Realm.Name}}. To be removed from these emails, contact your realm administrator.
+
+{{end}}

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"net/mail"
 	"net/url"
 	"os"
 	"reflect"
@@ -363,6 +364,12 @@ type Realm struct {
 	CodesClaimedRatioMean   float64 `gorm:"column:codes_claimed_ratio_mean; type:numeric(10,8); not null; default:0.0;"`
 	CodesClaimedRatioStddev float64 `gorm:"column:codes_claimed_ratio_stddev; type:numeric(10,8); not null; default:0.0;"`
 
+	// ContactEmailAddresses is a list of string email addresses of the form
+	// "user@example.com" that will be parsed as a `net/mail.Address`. Members in
+	// this list will receive email notifications from the system, if and only if
+	// the Google Workspace SMTP relay is configured.
+	ContactEmailAddresses pq.StringArray `gorm:"column:contact_email_addresses; type:text[]; not null; default:'{}';"`
+
 	// Relations to items that belong to a realm.
 	Codes  []*VerificationCode `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
 	Tokens []*Token            `gorm:"PRELOAD:false; SAVE_ASSOCIATIONS:false; ASSOCIATION_AUTOUPDATE:false, ASSOCIATION_SAVE_REFERENCE:false;"`
@@ -656,6 +663,15 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 	if r.CertificateDuration.AsString != "" {
 		if err := r.CertificateDuration.Update(); err != nil {
 			r.AddError("certificateDuration", "invalid certificate duration")
+		}
+	}
+
+	if limit := 10; len(r.ContactEmailAddresses) > limit {
+		r.AddError("contactEmailAddresses", fmt.Sprintf("must have less than %d entries", limit))
+	}
+	for _, email := range r.ContactEmailAddresses {
+		if _, err := mail.ParseAddress(email); err != nil {
+			r.AddError("contactEmailAddresses", fmt.Sprintf("includes invalid email address %q", email))
 		}
 	}
 

@@ -354,6 +354,34 @@ variable "e2e_skip_sms" {
   description = "Skip SMS tests when executing the e2e runner. Set this to true to not send SMS. You must also configure the e2e realm with proper test credentials."
 }
 
+variable "enable_emailer" {
+  type    = bool
+  default = false
+
+  description = "Enable the email sending service."
+}
+
+variable "emailer_from_address" {
+  type    = string
+  default = ""
+
+  description = "Email address from which the emailer will send emails. This must be a domain in your Google Workspace account and you must follow the instructions for configuring the Google Workspace SMTP relay."
+}
+
+variable "emailer_mail_domain" {
+  type    = string
+  default = ""
+
+  description = "Domain against which to authenticate to send email. This should be your Google Workspace root domain (no https://)."
+}
+
+variable "num_serverless_egress_ips" {
+  type    = number
+  default = 2
+
+  description = "Number of serverless egress IP addresses to create."
+}
+
 terraform {
   required_version = "~> 1.0"
 

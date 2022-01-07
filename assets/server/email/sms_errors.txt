@@ -1,0 +1,22 @@
+{{- define "email/sms_errors" -}}
+
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Subject: Exposure Notifications SMS error rate exceeded
+To: {{.ToEmail | trimSpace}}
+From: {{.FromEmail | trimSpace}}
+
+Hello,
+
+{{/* TODO(sethvargo): Pipe value from Realm */}}
+The number of SMS errors for {{.Realm.Name}} in the past 24 hours is {{.Realm.TODO}}, which exceeds the typical value. This could indicate a problem with your Twilio configuration.
+
+Consider reviewing the statistics page for {{.Realm.Name}} at {{.RootURL}}/realm/stats.
+
+If you manage your own Twilio account, you can also review any logs in the Twilio console. If you are using a sponsored Twilio account, please contact your server operator for support.
+
+---
+
+You received this email because you are listed as a contact email address for Exposure Notifications for {{.Realm.Name}}. To be removed from these emails, contact your realm administrator.
+
+{{end}}
