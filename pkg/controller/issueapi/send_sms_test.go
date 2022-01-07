@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -218,4 +219,98 @@ func TestSMS_sendSMS(t *testing.T) {
 	if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
 		t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)
 	}
+}
+
+func TestSMS_sendSMS_integration(t *testing.T) {
+	t.Parallel()
+
+	if testing.Short() {
+		t.Skipf("🚧 Skipping twilio tests (short)!")
+	}
+
+	accountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+	authToken := os.Getenv("TWILIO_AUTH_TOKEN")
+	if accountSid == "" || authToken == "" {
+		t.Skipf("🚧 🚧 Skipping twilio tests (missing TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN)")
+	}
+
+	ctx := project.TestContext(t)
+
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+	db := harness.Database
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	realm.AllowBulkUpload = true
+	if err := db.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatalf("failed to save realm: %v", err)
+	}
+
+	smsConfig := &database.SMSConfig{
+		RealmID:          realm.ID,
+		ProviderType:     sms.ProviderTypeTwilio,
+		TwilioAccountSid: accountSid,
+		TwilioFromNumber: "+15005550008", // magic number
+		TwilioAuthToken:  authToken,
+	}
+	if err := db.SaveSMSConfig(smsConfig); err != nil {
+		t.Fatal(err)
+	}
+
+	smsProvider, err := realm.SMSProvider(harness.Database)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	membership := &database.Membership{
+		RealmID:     realm.ID,
+		Realm:       realm,
+		Permissions: rbac.CodeBulkIssue,
+	}
+
+	ctx = controller.WithMembership(ctx, membership)
+
+	harness.Config.SMSSigning.FailClosed = true
+	c := issueapi.New(harness.Config, db, harness.RateLimiter, harness.KeyManager, harness.Renderer)
+
+	t.Run("queue_full", func(t *testing.T) {
+		t.Parallel()
+
+		request := &api.IssueCodeRequest{
+			TestType:    "confirmed",
+			SymptomDate: time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date),
+			TZOffset:    0,
+			Phone:       project.TestPhoneNumber,
+		}
+		result := &issueapi.IssueResult{
+			HTTPCode: http.StatusOK,
+			VerCode: &database.VerificationCode{
+				RealmID:       realm.ID,
+				Code:          "00000001",
+				LongCode:      "00000001ABC",
+				Claimed:       true,
+				TestType:      "confirmed",
+				ExpiresAt:     time.Now().Add(time.Hour),
+				LongExpiresAt: time.Now().Add(time.Hour),
+			},
+		}
+		if err := realm.SaveVerificationCode(db, result.VerCode); err != nil {
+			t.Fatal(err)
+		}
+		// un-hmac the codes so rollback can find them.
+		result.VerCode.Code = "00000001"
+		result.VerCode.LongCode = "00000001ABC"
+
+		c.SendSMS(ctx, realm, smsProvider, nil, "", request, result)
+		if result.ErrorReturn == nil {
+			t.Fatal("expected failed SMS, but got no error response")
+		} else if result.ErrorReturn.ErrorCode != api.ErrSMSQueueFull {
+			t.Fatal("expected SMS failure code")
+		}
+		if _, err := realm.FindVerificationCodeByUUID(db, result.VerCode.UUID); !database.IsNotFound(err) {
+			t.Errorf("expected SMS failure to roll-back and delete code. got %v", err)
+		}
+	})
 }
