@@ -73,7 +73,7 @@ func (c *Controller) SendSMS(ctx context.Context, realm *database.Realm, smsProv
 	if err := c.doSend(ctx, realm, smsProvider, signer, keyID, request, result); err != nil {
 		result.HTTPCode = http.StatusBadRequest
 		if sms.IsSMSQueueFull(err) {
-			result.ErrorReturn = result.ErrorReturn.WithCode(api.ErrSMSQueueFull)
+			result.ErrorReturn = api.Errorf("failed to send sms: queue is full: %s", err).WithCode(api.ErrSMSQueueFull)
 		} else {
 			result.ErrorReturn = api.Errorf("failed to send sms: %s", err).WithCode(api.ErrSMSFailure)
 		}
