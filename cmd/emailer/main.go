@@ -31,7 +31,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-server/pkg/server"
 
 	"github.com/gorilla/mux"
@@ -93,16 +92,6 @@ func realMain(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	// Get secret manager.
-	secretManager, err := secrets.SecretManagerFor(ctx, &cfg.Secrets)
-	if err != nil {
-		return fmt.Errorf("failed to get secret manager: %w", err)
-	}
-	secretManagerTyp, ok := secretManager.(secrets.SecretVersionManager)
-	if !ok {
-		return fmt.Errorf("secret manager is not a secret version manager (is %T)", secretManager)
-	}
-
 	// Create the router
 	r := mux.NewRouter()
 
@@ -138,7 +127,7 @@ func realMain(ctx context.Context) error {
 	processDebug := middleware.ProcessDebug()
 	r.Use(processDebug)
 
-	emailerController := emailer.New(cfg, db, secretManagerTyp, h)
+	emailerController := emailer.New(cfg, db, h)
 	r.Handle("/anomalies", emailerController.HandleAnomalies()).Methods(http.MethodGet)
 	r.Handle("/sms-errors", emailerController.HandleSMSErrors()).Methods(http.MethodGet)
 

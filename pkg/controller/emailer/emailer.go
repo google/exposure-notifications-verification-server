@@ -21,7 +21,6 @@ import (
 	"net/mail"
 	"net/smtp"
 
-	"github.com/google/exposure-notifications-server/pkg/secrets"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -33,18 +32,16 @@ const (
 )
 
 type Controller struct {
-	config        *config.EmailerConfig
-	db            *database.Database
-	secretManager secrets.SecretVersionManager
-	h             *render.Renderer
+	config *config.EmailerConfig
+	db     *database.Database
+	h      *render.Renderer
 }
 
-func New(cfg *config.EmailerConfig, db *database.Database, secretManager secrets.SecretVersionManager, h *render.Renderer) *Controller {
+func New(cfg *config.EmailerConfig, db *database.Database, h *render.Renderer) *Controller {
 	return &Controller{
-		config:        cfg,
-		db:            db,
-		secretManager: secretManager,
-		h:             h,
+		config: cfg,
+		db:     db,
+		h:      h,
 	}
 }
 

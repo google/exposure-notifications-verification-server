@@ -60,7 +60,7 @@ A member of the realm should be responsible for monitoring the number of codes i
 
 ## Settings, enabling EN Express
 
-Go to the realm setting by selecting the `settings` drop down menu (shown under your name).
+Go to the realm settings by selecting the `settings` drop down menu (shown under your name).
 
 Under general settings, confirm the `Name` (display name only) and `Region code` settings.
 
@@ -73,6 +73,22 @@ for the geographic region that you cover.
 Once that is confirmed and saved, click the `Enable EN Express` button.
 
 ![](images/settings-enable-enx.png)
+
+
+## Settings, adding system contacts
+
+Go to the realm settings by selecting the `settings` drop down menu (shown under
+your name).
+
+Under general settings, you can add up to 10 system contacts ("emergency
+contacts") which will receive automated alerts when the system detects critical
+issues with your realm. These issues include a sudden drop in code claim rate or
+potential issues with your SMS configuration.
+
+Although recommended, the email addresses in this list do not need to be users
+in the system. To alert more than 10 contacts, consider creating a Google Group
+or similar mailing list system.
+
 
 ## Settings, code settings
 
@@ -218,6 +234,10 @@ create, update, and delete permissions. Always practice the Principle of Least
 Privilege and only grant the most minimal set of permissions.
 
 Note, you can only grant permissions at or below your current level.
+
+Note, you may also want to configure [System
+contacts](#settings-adding-system-contacts), which is a list of contacts to
+receive critical system notifications.
 
 ## API keys
 

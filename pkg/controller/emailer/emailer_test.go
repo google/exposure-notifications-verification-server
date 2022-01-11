@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 var testDatabaseInstance *database.TestInstance
@@ -26,4 +27,17 @@ func TestMain(m *testing.M) {
 	testDatabaseInstance = database.MustTestInstance()
 	defer testDatabaseInstance.MustClose()
 	m.Run()
+}
+
+func testExpectLog(tb testing.TB, lo *observer.ObservedLogs, msg string) {
+	logs := lo.All()
+	msgs := make([]string, 0, len(logs))
+	for _, message := range logs {
+		msgs = append(msgs, message.Message)
+		if got, want := message.Message, msg; got == want {
+			return
+		}
+	}
+
+	tb.Errorf("expected one of %q to contain %q", msgs, msg)
 }

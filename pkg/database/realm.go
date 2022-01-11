@@ -1930,6 +1930,40 @@ func (r *Realm) ExternalIssuerStatsCached(ctx context.Context, db *Database, cac
 	return stats, nil
 }
 
+// RecentSMSErrorsCount returns the number of SMS errors that have occurred in
+// the current UTC day, excluding any of the ignored codes.
+func (r *Realm) RecentSMSErrorsCount(db *Database, ignored []string) (int64, error) {
+	today := timeutils.UTCMidnight(time.Now())
+
+	sql := `
+		SELECT
+			SUM(quantity) AS quantity
+		FROM sms_error_stats
+		WHERE
+			realm_id = $1
+			AND date = $2`
+
+	// This is super annoying, but gorm doesn't properly handle a slice (or map)
+	// with raw sql, so we need to build and quote this ourselves.
+	if len(ignored) > 0 {
+		sort.Strings(ignored)
+		for i := range ignored {
+			ignored[i] = "'" + strings.ReplaceAll(ignored[i], "'", "\\'") + "'"
+		}
+		toIgnore := strings.Join(ignored, ", ")
+
+		sql += fmt.Sprintf(` AND error_code NOT IN (%s)`, toIgnore)
+	}
+
+	var result struct {
+		Quantity int64 `gorm:"column:quantity;"`
+	}
+	if err := db.db.Raw(sql, r.ID, today).Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Quantity, nil
+}
+
 // SMSErrorStats returns the sms error stats for this realm.
 func (r *Realm) SMSErrorStats(db *Database) (SMSErrorStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())

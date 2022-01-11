@@ -57,6 +57,12 @@ locals {
     # e2e-redirect runs every 5 minutes, alert after 2 failures
     "e2e-redirect" = { metric = "e2e/redirect/success", window = 10 * local.minute + 1 * local.minute },
 
+    # emailer-anomalies runs on the 18th hour, alert after 1 failure
+    "emailer-anomalies" = { metric = "emailer/anomalies/success", window = 24 * local.hour + 15 * local.minute },
+
+    # emailer-sms-errors runs every 12 hours, alert after 2 failures
+    "emailer-sms-errors" = { metric = "emailer/sms_errors/success", window = 24 * local.hour + 15 * local.minute },
+
     # modeler runs every 4h, alert after 2 failures
     "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
@@ -72,10 +78,6 @@ locals {
     # stats-puller runs every 15m, alert after 2 failures
     "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
   }, var.forward_progress_indicators)
-
-  # To ensure the query condition always compiles, ensure the list always has at
-  # least one element. "empty" will never match a Twilio error code.
-  ignored_twilio_error_codes = sort(distinct(concat(["empty"], var.ignored_twilio_error_codes)))
 }
 
 resource "google_monitoring_alert_policy" "probers" {
@@ -250,92 +252,6 @@ resource "google_monitoring_alert_policy" "ForwardProgress" {
   }
 
   notification_channels = [for x in values(google_monitoring_notification_channel.paging) : x.id]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
-}
-
-resource "google_monitoring_alert_policy" "CodesClaimedRatioAnomaly" {
-  project      = var.project
-  display_name = "CodesClaimedRatioAnomaly"
-  combiner     = "OR"
-
-  conditions {
-    display_name = "Codes issued to codes claimed ratio is anomalous"
-
-    condition_threshold {
-      filter = "metric.type = \"${local.custom_prefix}/modeler/codes_claimed_ratio_anomaly\" AND resource.type = \"generic_task\""
-      // modeler runs every 4h, alert on the second failure (to avoid situations
-      // where the UTC day just passed).
-      duration = "${8 * local.hour + 10 * local.minute}s"
-
-      comparison      = "COMPARISON_GT"
-      threshold_value = 1
-
-      aggregations {
-        alignment_period     = "${8 * local.hour + 10 * local.minute}s"
-        per_series_aligner   = "ALIGN_DELTA"
-        group_by_fields      = ["metric.realm"]
-        cross_series_reducer = "REDUCE_SUM"
-      }
-
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = "${local.playbook_prefix}/CodesClaimedRatioAnomaly.md"
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
-
-  depends_on = [
-    null_resource.manual-step-to-enable-workspace,
-  ]
-}
-
-resource "google_monitoring_alert_policy" "ElevatedSMSErrors" {
-  project      = var.project
-  display_name = "ElevatedSMSErrors"
-  combiner     = "OR"
-
-  conditions {
-    display_name = "Elevated SMS errors"
-
-    condition_threshold {
-      filter   = <<-EOF
-        resource.type = "generic_task"
-        AND metric.type = "${local.custom_prefix}/webhooks/twilio_errors"
-        AND metric.label.error_code != monitoring.regex.full_match("^${join("|", local.ignored_twilio_error_codes)}$")
-      EOF
-      duration = "${5 * local.minute}s"
-
-      comparison      = "COMPARISON_GT"
-      threshold_value = 50
-
-      aggregations {
-        alignment_period     = "${5 * local.minute}s"
-        per_series_aligner   = "ALIGN_DELTA"
-        group_by_fields      = ["metric.realm"]
-        cross_series_reducer = "REDUCE_SUM"
-      }
-
-      trigger {
-        count = 1
-      }
-    }
-  }
-
-  documentation {
-    content   = "${local.playbook_prefix}/ElevatedSMSErrors.md"
-    mime_type = "text/markdown"
-  }
-
-  notification_channels = [for x in values(google_monitoring_notification_channel.non-paging) : x.id]
 
   depends_on = [
     null_resource.manual-step-to-enable-workspace,

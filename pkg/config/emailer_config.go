@@ -64,6 +64,19 @@ type EmailerConfig struct {
 	// default values should be appropriate for most situations.
 	SMTPRelayHost string `env:"SMTP_RELAY_HOST, default=smtp-relay.gmail.com"`
 	SMTPRelayPort string `env:"SMTP_RELAY_PORT, default=587"`
+
+	// SMSIgnoredErrorCodes is a list of SMS error codes to ignore.
+	//
+	// 30003 - Phone is off
+	// 30004 - User blocked receiving messages from this number
+	// 30005 - Invalid phone number
+	// 30006 - Landline error
+	SMSIgnoredErrorCodes []string `env:"SMS_IGNORED_ERROR_CODES, default=30003,30004,30005,30006"`
+
+	// SMSErrorsEmailThreshold is the number of SMS errors in a given 24 hour UTC
+	// period at which email alerts will begin being generated. This applies to
+	// all realms on the system.
+	SMSErrorsEmailThreshold int64 `env:"SMS_ERRORS_EMAIL_THRESHOLD, default=50"`
 }
 
 // NewEmailerConfig returns the config for the emailer service.

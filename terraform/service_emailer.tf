@@ -193,7 +193,6 @@ resource "google_cloud_scheduler_job" "emailer-sms-errors" {
   name   = "emailer-sms-errors"
   region = var.cloudscheduler_location
 
-  // This schedule is offset from the token emailer schedule.
   schedule         = "5 */12 * * *"
   time_zone        = var.cloud_scheduler_timezone
   attempt_deadline = "${google_cloud_run_service.emailer.template[0].spec[0].timeout_seconds + 60}s"

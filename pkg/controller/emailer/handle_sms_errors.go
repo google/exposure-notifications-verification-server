@@ -85,21 +85,25 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		return nil
 	}
 
-	// TODO(sethvargo): build a metric on which to alert, probably correlate
-	// errors to codes issued and also have a max cap of like 50 errors. "If more
-	// than 20% of messages of today have failed...". Probably need to exclude
-	// error codes for landlines.
-	if true {
+	count, err := realm.RecentSMSErrorsCount(c.db, c.config.SMSIgnoredErrorCodes)
+	if err != nil {
+		return fmt.Errorf("failed to get recent sms errors count: %w", err)
+	}
+	if minimum := c.config.SMSErrorsEmailThreshold; count < minimum {
+		logger.Debugw("sms errors is less than minimum value, skipping",
+			"count", count,
+			"minimum", minimum)
 		return nil
 	}
 
 	var merr *multierror.Error
 	for _, addr := range realm.ContactEmailAddresses {
 		msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
-			"ToEmail":   addr,
-			"FromEmail": c.config.FromAddress,
-			"Realm":     realm,
-			"RootURL":   c.config.ServerEndpoint,
+			"ToEmail":      addr,
+			"FromEmail":    c.config.FromAddress,
+			"Realm":        realm,
+			"RootURL":      c.config.ServerEndpoint,
+			"NumSMSErrors": count,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to render template: %w", err)
