@@ -339,7 +339,7 @@ This chart shows all of the process points involved in issuing and using a verif
 
 * The delta between codes issued and codes claimed can be used as a rudimentary measure of adoption.
 * The delta between codes claimed and tokens claimed indicates users that enter a valid verification code but don't get through the consent to share data screen.
-* The delta between tokens claimed and publish requests indicates that a user got past the consent screen but keys were not uploaded.
+* The delta between tokens claimed and publish requests indicates that a user got past the consent screen but keys were not uploaded. Note that an iOS device that has previously published based on a confirmed report and subsequently attempts a self-report will claim a token but fail to publish.
 
 #### Code usage latency
 
