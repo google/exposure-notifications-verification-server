@@ -517,8 +517,6 @@ func explodeSortAndDedupe(in string) []string {
 	m := make(map[string]struct{}, len(pieces))
 	for _, piece := range pieces {
 		piece := project.TrimSpaceAndNonPrintable(piece)
-		piece = strings.Trim(piece, ",")
-		piece = project.TrimSpaceAndNonPrintable(piece)
 		if piece == "" {
 			continue
 		}
