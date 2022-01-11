@@ -292,7 +292,10 @@
           {{if .hasKeyServerStats}}
           <li>
             The delta between tokens claimed and publish requests indicates that
-            a user got past the consent screen but keys were not uploaded.
+            a user got past the consent screen but keys were not uploaded. Note
+            that an iOS device that has previously published based on a confirmed
+            report and subsequently attempts a self-report will claim a token but
+            fail to publish.
           </li>
           {{end}}
         </ul>
