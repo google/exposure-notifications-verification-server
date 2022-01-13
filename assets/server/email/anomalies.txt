@@ -1,0 +1,43 @@
+{{- define "email/anomalies" -}}
+{{- $fontFamily := "system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans',sans-serif" -}}
+{{- $fontFamilyMono := "SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace" -}}
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Subject: Exposure Notifications code claim rate anomaly detected
+To: {{.ToEmail | trimSpace}}
+From: {{.FromEmail | trimSpace}}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Exposure Notifications code claim rate anomaly detected</title>
+  </head>
+
+  <body style="font-family:{{$fontFamily}};">
+    <p style="font-family:{{$fontFamily}};">
+      Hello,
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      The code claim rate for <strong>{{.Realm.Name}}</strong> yesterday was <strong style="font-family:{{$fontFamilyMono}};">{{.Realm.LastCodesClaimedRatio | toPercent}}</strong>, which is less than your historical average of <strong style="font-family:{{$fontFamilyMono}};">{{.Realm.CodesClaimedRatioMean | toPercent}}</strong>. This could indicate a problem with your configuration.
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      Consider reviewing the statistics page for <strong>{{.Realm.Name}}</strong> at <a href="{{.RootURL}}/realm/stats" rel="noopener noreferrer" target="_blank">{{.RootURL}}/realm/stats</a>.
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      For more information, please see the <a href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts/CodesClaimedRatioAnomaly.md#codesclaimedratioanomaly" rel="noopener noreferrer" target="_blank">playbook for Codes Claimed Ratio anomalies</a>.
+    </p>
+
+    <hr style="border:none; border-top:1px solid #cccccc; width:75%; margin:1.5em auto;">
+
+    <p style="font-family:{{$fontFamily}}; font-style:italic;">
+      You received this email because you are listed as a contact for Exposure Notifications for {{.Realm.Name}}. To be removed from these emails, contact your realm administrator.
+    </p>
+  </body>
+</html>
+
+{{end}}

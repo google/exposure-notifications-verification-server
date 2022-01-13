@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-backup" {
   service_account_id = google_service_account.backup.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "backup-observability" {
@@ -88,6 +92,7 @@ resource "google_cloud_run_service" "backup" {
             local.gcp_config,
             local.backup_config,
             local.database_config,
+            local.feature_config,
 
             // This MUST come last to allow overrides!
             lookup(var.service_environment, "_all", {}),

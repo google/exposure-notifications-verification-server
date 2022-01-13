@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-stats-puller" {
   service_account_id = google_service_account.stats-puller.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "stats-puller-observability" {
@@ -90,6 +94,7 @@ resource "google_cloud_run_service" "stats-puller" {
         dynamic "env" {
           for_each = merge(
             local.database_config,
+            local.feature_config,
             local.gcp_config,
             local.signing_config,
             local.observability_config,

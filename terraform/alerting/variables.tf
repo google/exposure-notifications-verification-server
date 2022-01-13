@@ -102,13 +102,6 @@ variable "forward_progress_indicators" {
   default     = {}
 }
 
-variable "ignored_twilio_error_codes" {
-  type = list(string)
-
-  description = "List of error codes to exclude from the alerting condition."
-  default     = []
-}
-
 terraform {
   required_version = "~> 1.0"
 

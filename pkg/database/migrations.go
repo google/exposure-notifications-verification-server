@@ -2521,6 +2521,32 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00119-MembershipsSMSLabelText",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE memberships ALTER COLUMN default_sms_template_label TYPE TEXT`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE memberships ALTER COLUMN default_sms_template_label TYPE VARCHAR(255)`,
+				)
+			},
+		},
+		{
+			ID: "00120-AddRealmContacts",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS contact_email_addresses TEXT[] NOT NULL DEFAULT '{}'`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS contact_email_addresses`,
+				)
+			},
+		},
 	}
 }
 

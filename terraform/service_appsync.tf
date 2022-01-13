@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-appsync" {
   service_account_id = google_service_account.appsync.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "appsync-observability" {
@@ -86,6 +90,7 @@ resource "google_cloud_run_service" "appsync" {
             local.appsync_config,
             local.cache_config,
             local.database_config,
+            local.feature_config,
             local.firebase_config,
             local.gcp_config,
             local.signing_config,

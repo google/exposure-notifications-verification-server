@@ -17,8 +17,6 @@ package render
 import (
 	"bytes"
 	"fmt"
-
-	"github.com/microcosm-cc/bluemonday"
 )
 
 // RenderEmail renders the given email HTML template by name. It attempts to
@@ -44,5 +42,5 @@ func (r *Renderer) RenderEmail(tmpl string, data interface{}) ([]byte, error) {
 	if err := r.executeTextTemplate(b, tmpl, data); err != nil {
 		return nil, fmt.Errorf("error executing email template: %w", err)
 	}
-	return bluemonday.UGCPolicy().SanitizeBytes(b.Bytes()), nil
+	return b.Bytes(), nil
 }

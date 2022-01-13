@@ -420,6 +420,20 @@ func TestRealm_BeforeSave(t *testing.T) {
 			},
 			Error: "userReportWebhookSecret must be at least 12 characters",
 		},
+		{
+			Name: "contact_email_addresses_too_long",
+			Input: &Realm{
+				ContactEmailAddresses: []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"},
+			},
+			Error: "contactEmailAddresses must have less than 10 entries",
+		},
+		{
+			Name: "contact_email_addresses_invalid",
+			Input: &Realm{
+				ContactEmailAddresses: []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"},
+			},
+			Error: "contactEmailAddresses includes invalid email address \"a\"",
+		},
 	}
 
 	for _, tc := range cases {
@@ -929,6 +943,66 @@ func TestRealm_ListMemberships(t *testing.T) {
 	}
 	if got, want := memberships[0].UserID, user.ID; got != want {
 		t.Errorf("Expected %d to be %d", got, want)
+	}
+}
+
+func TestRealm_RecentSMSErrorsCount(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherRealm := NewRealmWithDefaults("other")
+	if err := db.SaveRealm(otherRealm, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	// Initial value should be 0
+	{
+		qty, err := realm.RecentSMSErrorsCount(db, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := qty, int64(0); got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	}
+
+	// Create some errors
+	for i := 0; i < 5; i++ {
+		code := fmt.Sprintf("3000%d", i)
+		if err := db.InsertSMSErrorStat(realm.ID, code); err != nil {
+			t.Fatal(err)
+		}
+		if err := db.InsertSMSErrorStat(otherRealm.ID, code); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Now there should be 5
+	{
+		qty, err := realm.RecentSMSErrorsCount(db, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := qty, int64(5); got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
+	}
+
+	// There's 3 if we exclude 2 codes
+	{
+		qty, err := realm.RecentSMSErrorsCount(db, []string{"30000", "30003"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := qty, int64(3); got != want {
+			t.Errorf("expected %d to be %d", got, want)
+		}
 	}
 }
 

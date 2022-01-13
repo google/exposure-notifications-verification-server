@@ -14,6 +14,10 @@ This alert fires when background jobs have not made forward progress in an accep
 
 - `e2e-revise` - Runs the same end to end test to the revise endpoint.
 
+- `emailer-anomalies` - Generates and sends emails to realm contacts if the code claim ratio drops below the historical average.
+
+- `emailer-sms-errors` - Generates and sends emails to realm contacts if the number of SMS errors in the current UTC day exceeds a provided threshold.
+
 - `modeler-worker` - Implements periodic statistical calculations.
 
 - `realm-key-rotation-worker` - Rotates realm signing keys.
@@ -43,3 +47,9 @@ resource.labels.service_name="appsync"
 ```
 
 Check for errors in the logs.
+
+### Service-specific triage steps
+
+- `emailer-anomalies` - The most likely reason this job is failing is because one of the email addresses provided by a realm admin is invalid or inaccessible. The logs will show the invalid email address(es). You can remove the invalid email address(es) or ask the other realm administrators to update their configuration.
+
+- `emailer-sms-errors` - Same as `emailer-anomalies`.

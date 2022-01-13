@@ -22,6 +22,10 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-apiserver" {
   service_account_id = google_service_account.apiserver.id
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${local.cloudbuild_email}"
+
+  depends_on = [
+    google_project_service.services["cloudbuild.googleapis.com"],
+  ]
 }
 
 resource "google_project_iam_member" "apiserver-observability" {
@@ -90,6 +94,7 @@ resource "google_cloud_run_service" "apiserver" {
           for_each = merge(
             local.cache_config,
             local.database_config,
+            local.feature_config,
             local.firebase_config,
             local.gcp_config,
             local.issue_config,

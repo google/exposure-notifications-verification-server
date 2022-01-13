@@ -1,0 +1,43 @@
+{{- define "email/sms_errors" -}}
+{{- $fontFamily := "system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans',sans-serif" -}}
+{{- $fontFamilyMono := "SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace" -}}
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Subject: Exposure Notifications SMS error rate exceeded
+To: {{.ToEmail | trimSpace}}
+From: {{.FromEmail | trimSpace}}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Exposure Notifications SMS error rate exceeded</title>
+  </head>
+
+  <body style="font-family:{{$fontFamily}};">
+    <p style="font-family:{{$fontFamily}};">
+      Hello,
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      The number of SMS errors for <strong>{{.Realm.Name}}</strong> is <strong style="font-family:{{$fontFamilyMono}};">{{.NumSMSErrors}}</strong>, which exceeds the typical value. This could indicate a problem with your Twilio configuration or a potential upstream carrier filtering issue.
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      Consider reviewing the statistics page for <strong>{{.Realm.Name}}</strong> at <a href="{{.RootURL}}/realm/stats" rel="noopener noreferrer" target="_blank">{{.RootURL}}/realm/stats</a>.
+    </p>
+
+    <p style="font-family:{{$fontFamily}};">
+      If you manage your own Twilio account, review any logs in the Twilio console. If you are using a sponsored or national Twilio account, please contact your server operator for support. For more information, please see the <a href="https://github.com/google/exposure-notifications-verification-server/blob/main/docs/playbooks/alerts/ElevatedSMSErrors.md#elevated-sms-errors-alert" rel="noopener noreferrer" target="_blank">playbook for Elevated SMS Errors</a>.
+    </p>
+
+    <hr style="border:none; border-top:1px solid #cccccc; width:75%; margin:1.5em auto;">
+
+    <p style="font-family:{{$fontFamily}}; font-style:italic;">
+      You received this email because you are listed as a contact for Exposure Notifications for {{.Realm.Name}}. To be removed from these emails, contact your realm administrator.
+    </p>
+  </body>
+</html>
+
+{{end}}

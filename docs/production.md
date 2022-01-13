@@ -311,6 +311,58 @@ The verification server uses the Google Identity Platform for authorization.
 
 3. Visit [Google Identity Platform Settings](https://console.cloud.google.com/customer-identity/settings) and ensure that 'Enable create (sign-up)' and 'Enable delete' are unchecked. This system is intended to be invite-only and these flows are handled by administrators.
 
+## Setup system emails
+
+The verification server is capable of sending email through a Google Workspace SMTP relay. You must have administrator permissions on the Google Workspace Account to enable this setting. More detailed instructions are available in the [Google Workspace SMTP relay documentation](https://support.google.com/a/answer/2956491).
+
+1. Visit https://admin.google.com and authenticate as a Google Workspace administrator account.
+
+1. From the sidebar, navigate to `Apps > Google Workspace > Gmail` and then click on the `Routing` box.
+
+1. Scroll down to the "SMTP relay service" option and click `Configure`.
+
+    1. Enter a description (e.g. "Exposure Notifications").
+
+    1. Under "Allowed Senders", choose "Only addresses in my domains".
+
+    1. Under "Authentication", choose "Only accept mail from the specified IP address.
+
+    1. In the "IP addresses / ranges" table, click "Add" and enter the egress IP address(es) for your installation. These can be obtained from the Google Cloud Console or the Terraform configurations. **Only enter these IP addresses!** Requests originating from these IP addresses will automatically be considered "trusted".
+
+    1. Check the "Require TLS encryption" box.
+
+    1. Click save. Note, it can take up to 24 hours for the configuration to finish, but it is usually less than 5 minutes.
+
+1. After configured, update the Terraform configuration to enable the emailer service:
+
+    ```terraform
+    module "en" {
+      // ...
+
+      enable_emailer = true
+      emailer_from_address = "no-reply@your-domain.com"
+      emailer_mail_domain = "your-domain.com"
+    }
+    ```
+
+1. Optionally override the defaults for ignored SMS error codes and the SMS
+   errors alerting threshold. Do this by setting `SMS_IGNORED_ERROR_CODES` or
+   `SMS_ERRORS_EMAIL_THRESHOLD` respectively on the `emailer` service:
+
+    ```terraform
+    module "en" {
+      // ...
+
+      service_environment = {
+        emailer = {
+          SMS_IGNORED_ERROR_CODES    = "30003,30004,30005,30008"
+          SMS_ERRORS_EMAIL_THRESHOLD = "50"
+        }
+      }
+    }
+    ```
+
+
 ## End-to-end (e2e) test runner
 
 Log in as a system admin and view realms, select the `e2e-test-realm`. If this

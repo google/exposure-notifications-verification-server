@@ -18,7 +18,9 @@ import "github.com/google/exposure-notifications-verification-server/pkg/control
 
 // FeatureConfig represents features that are introduced as off by default allowing
 // for server operators to control their release.
-type FeatureConfig struct{}
+type FeatureConfig struct {
+	EnableEmailer bool `env:"ENABLE_EMAILER, default=false"`
+}
 
 // AddToTemplate takes TemplateMap and writes the status of all known
 // feature flags for use in HTML templates.

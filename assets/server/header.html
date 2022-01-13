@@ -101,6 +101,30 @@
 
 {{if $currentMembership}}
   {{$realm := $currentMembership.Realm}}
+
+  {{if $.features.EnableEmailer}}
+  {{if and (not $realm.ContactEmailAddresses) ($currentMembership.Can rbac.SettingsWrite)}}
+    <div class="container">
+      <div class="alert alert-warning" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-square-fill me-3"></i>
+            <span class="alert-message">
+              Please configure at least one contact email address to receive
+              system notifications.
+            </span>
+          </div>
+          <div>
+            <a href="/realm/settings#general" class="text-reset py-3 ps-2">
+              <i class="bi bi-arrow-right-square-fill"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {{end}}
+  {{end}}
+
   {{if and $realm.CodesClaimedRatioAnomalous ($currentMembership.Can rbac.StatsRead)}}
     <div class="container">
       <div class="alert alert-warning" role="alert">

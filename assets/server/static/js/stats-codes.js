@@ -149,6 +149,10 @@
         const dashboardContainer = document.querySelector(chart.dashboardDiv);
         const filterContainer = document.querySelector(chart.filterDiv);
 
+        if (!chartContainer || !dashboardContainer || !filterContainer) {
+          continue;
+        }
+
         if (!data || !data.statistics) {
           const pContainer = chartContainer.querySelector('p');
           pContainer.innerText = 'No data yet.';
