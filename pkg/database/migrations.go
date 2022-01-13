@@ -2560,6 +2560,22 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00122-SMSConfigNumberColumns",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs ALTER COLUMN provider_type TYPE TEXT`,
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_account_sid TYPE TEXT`,
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_from_number TYPE TEXT`,
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_user_report_from_number TYPE TEXT`,
+					`ALTER TABLE sms_configs ALTER COLUMN twilio_auth_token TYPE TEXT`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				// no rollback needed
+				return nil
+			},
+		},
 	}
 }
 
