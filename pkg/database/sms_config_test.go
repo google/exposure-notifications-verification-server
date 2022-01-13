@@ -221,7 +221,7 @@ func TestSMSProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	provider, err := realm.SMSProvider(db, false)
+	provider, err := realm.SMSProvider(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestSMSProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	provider, err = realm.SMSProvider(db, false)
+	provider, err = realm.SMSProvider(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestSMSProvider(t *testing.T) {
 		t.Errorf("expected %v to be not nil", provider)
 	}
 
-	urProvider, err := realm.SMSProvider(db, true)
+	urProvider, err := realm.SMSProvider(db, &SMSProviderUserReport{})
 	if err != nil {
 		t.Fatal(err)
 	}
