@@ -898,13 +898,16 @@ func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
 	return len(id) > 0, nil
 }
 
+// SMSProviderOption specifies options that can be used when
+// requesting SMS providers.
 type SMSProviderOption interface {
 	Apply(smsConfig *SMSConfig, modify *sms.Config)
 	Name() string
 }
 
-type SMSProviderUserReport struct {
-}
+// SMSProviderUSerReport is an SMSProviderOption that will utilize a separate
+// from number for user-report if one exists.
+type SMSProviderUserReport struct{}
 
 func (s *SMSProviderUserReport) Apply(smsConfig *SMSConfig, modify *sms.Config) {
 	if smsConfig.TwilioUserReportFromNumber != "" {
@@ -937,6 +940,9 @@ func (r *Realm) SMSProvider(db *Database, opts ...SMSProviderOption) (sms.Provid
 
 	// Resolve options. Last writer wins
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		o.Apply(smsConfig, config)
 	}
 

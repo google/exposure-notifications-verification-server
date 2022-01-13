@@ -191,6 +191,9 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, opts ...database.SMSProviderOption) (sms.Provider, error) {
 	appendKey := ""
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		appendKey = fmt.Sprintf("%s:%s", appendKey, o.Name())
 	}
 
