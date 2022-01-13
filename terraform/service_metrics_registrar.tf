@@ -29,10 +29,17 @@ resource "google_service_account_iam_member" "cloudbuild-deploy-metrics-registra
 }
 
 resource "google_project_iam_member" "metrics-registrar-observability" {
-  for_each = local.observability_iam_roles
-  project  = var.project
-  role     = each.key
-  member   = "serviceAccount:${google_service_account.metrics-registrar.email}"
+  for_each = setunion(
+    local.observability_iam_roles,
+
+    // The metrics-registrar needs permissions to delete metrics, which is only
+    // available in this role.
+    toset(["roles/monitoring.editor"]),
+  )
+
+  project = var.project
+  role    = each.key
+  member  = "serviceAccount:${google_service_account.metrics-registrar.email}"
 }
 
 resource "google_cloud_run_service" "metrics-registrar" {
