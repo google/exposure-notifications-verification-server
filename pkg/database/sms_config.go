@@ -32,22 +32,22 @@ type SMSConfig struct {
 
 	// ProviderType is the SMS provider type - it's used to determine the
 	// underlying configuration.
-	ProviderType sms.ProviderType `gorm:"type:varchar(100)"`
+	ProviderType sms.ProviderType `gorm:"type:text"`
 
 	// Twilio configuration options.
-	TwilioAccountSid string `gorm:"type:varchar(250)"`
+	TwilioAccountSid string `gorm:"type:text"`
 	// E.164 format telephone number or
 	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
-	TwilioFromNumber string `gorm:"type:varchar(255)"`
+	TwilioFromNumber string `gorm:"type:text"`
 
 	// E.164 format telephone number or
 	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
 	// If present, used for user report only.
-	TwilioUserReportFromNumber string `gorm:"type:varchar(255)"`
+	TwilioUserReportFromNumber string `gorm:"type:text"`
 
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
-	TwilioAuthToken                string `gorm:"type:varchar(250)" json:"-"` // ignored by zap's JSON formatter
+	TwilioAuthToken                string `gorm:"text" json:"-"` // ignored by zap's JSON formatter
 	TwilioAuthTokenPlaintextCache  string `gorm:"-"`
 	TwilioAuthTokenCiphertextCache string `gorm:"-"`
 
