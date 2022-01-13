@@ -73,7 +73,21 @@
           reduce the chance that your message will be flagged as spam.
         </small>
       </div>
+
+      {{if $realm.AllowsUserReport}}
+      <div class="form-floating mb-3">
+        <input type="tel" name="twilio_user_report_from_number" id="twilio-user-report-from-number" class="form-control font-monospace {{invalidIf ($smsConfig.ErrorsFor "twilioUserReportFromNumber")}}"
+          placeholder="Twilio user report number" value="{{$smsConfig.TwilioUserReportFromNumber}}">
+        <label for="twilio-user-report-from-number">Twilio user report number</label>
+        {{template "errorable" $smsConfig.ErrorsFor "twilioUserReportFromNumber"}}
+        <small class="form-text text-muted">
+          This is the Twilio From Number only for <strong>User Report</strong>. If present, user report codes will be
+          sent on a different queue from regular and bulk issue codes.
+        </small>
+      </div>
+      {{end}}
     </div>
+
 
     <div class="sms-system-form collapse{{if $realm.UseSystemSMSConfig}} show{{end}}">
       <div class="form-floating mb-3">

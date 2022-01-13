@@ -40,6 +40,11 @@ type SMSConfig struct {
 	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
 	TwilioFromNumber string `gorm:"type:varchar(255)"`
 
+	// E.164 format telephone number or
+	// Twilio messaging service identifier see: https://support.twilio.com/hc/en-us/articles/223134387-What-is-a-Message-SID-
+	// If present, used for user report only.
+	TwilioUserReportFromNumber string `gorm:"type:varchar(255)"`
+
 	// TwilioAuthToken is encrypted/decrypted automatically by callbacks. The
 	// cache fields exist as optimizations.
 	TwilioAuthToken                string `gorm:"type:varchar(250)" json:"-"` // ignored by zap's JSON formatter
@@ -59,22 +64,28 @@ func (s *SMSConfig) BeforeSave(tx *gorm.DB) error {
 	}
 
 	if s.TwilioAccountSid != "" {
-		if s.TwilioFromNumber != "" {
-			switch {
-			case strings.HasPrefix(s.TwilioFromNumber, sms.TwilioMessagingServiceSidPrefix):
-				if len(s.TwilioFromNumber) != 34 {
-					s.AddError("twilioFromNumber", `a valid twilio messaging service sid should be 34 characters`)
+		phones := map[string]string{
+			"twilioFromNumber":           s.TwilioFromNumber,
+			"twilioUserReportFromNumber": s.TwilioUserReportFromNumber,
+		}
+		for k, fromNumber := range phones {
+			if fromNumber != "" {
+				switch {
+				case strings.HasPrefix(fromNumber, sms.TwilioMessagingServiceSidPrefix):
+					if len(fromNumber) != 34 {
+						s.AddError(k, `a valid twilio messaging service sid should be 34 characters`)
+					}
+				case strings.HasPrefix(fromNumber, "+"):
+					if !project.AllDigits(fromNumber[1:]) {
+						s.AddError(k, `an E.164 format phone number should begin with "+" followed by digits`)
+					}
+				case len(fromNumber) <= 6:
+					if !project.AllDigits(fromNumber) && len(fromNumber) <= 6 {
+						s.AddError(k, `a short code should contain only digits`)
+					}
+				default:
+					s.AddError(k, `an E.164 format phone number should begin with "+" followed by digits`)
 				}
-			case strings.HasPrefix(s.TwilioFromNumber, "+"):
-				if !project.AllDigits(s.TwilioFromNumber[1:]) {
-					s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+" followed by digits`)
-				}
-			case len(s.TwilioFromNumber) <= 6:
-				if !project.AllDigits(s.TwilioFromNumber) && len(s.TwilioFromNumber) <= 6 {
-					s.AddError("twilioFromNumber", `a short code should contain only digits`)
-				}
-			default:
-				s.AddError("twilioFromNumber", `an E.164 format phone number should begin with "+" followed by digits`)
 			}
 		}
 	}

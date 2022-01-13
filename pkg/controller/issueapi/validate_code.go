@@ -109,7 +109,7 @@ func (c *Controller) BuildVerificationCode(ctx context.Context, internalRequest 
 	var smsProvider sms.Provider
 	if !request.OnlyGenerateSMS && request.Phone != "" {
 		var err error
-		smsProvider, err = realm.SMSProvider(c.db)
+		smsProvider, err = realm.SMSProvider(c.db, vCode.IsUserReport())
 		if err != nil {
 			logger.Errorw("failed to get sms provider", "error", err)
 			return nil, &IssueResult{

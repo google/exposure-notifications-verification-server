@@ -111,7 +111,7 @@ func TestSMS_sendSMS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	smsProvider, err := realm.SMSProvider(harness.Database)
+	smsProvider, err := realm.SMSProvider(harness.Database, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestSMS_sendSMS_integration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	smsProvider, err := realm.SMSProvider(harness.Database)
+	smsProvider, err := realm.SMSProvider(harness.Database, false)
 	if err != nil {
 		t.Fatal(err)
 	}

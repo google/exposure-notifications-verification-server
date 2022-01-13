@@ -44,13 +44,17 @@ const (
 	CodeTypeLong
 )
 
+const (
+	userReportTestType = "user-report"
+)
+
 var (
 	// ValidTestTypes is a map containing the valid test types.
 	ValidTestTypes = map[string]struct{}{
-		"confirmed":   {},
-		"likely":      {},
-		"negative":    {},
-		"user-report": {},
+		"confirmed":        {},
+		"likely":           {},
+		"negative":         {},
+		userReportTestType: {},
 	}
 
 	ErrInvalidTestType     = errors.New("invalid test type, must be confirmed, likely, negative, or self_report")
@@ -135,6 +139,10 @@ func (v *VerificationCode) FormatSymptomDate() string {
 		return ""
 	}
 	return v.SymptomDate.Format(project.RFC3339Date)
+}
+
+func (v *VerificationCode) IsUserReport() bool {
+	return v.TestType == userReportTestType
 }
 
 // IsCodeExpired checks to see if the actual code provided is the short or long

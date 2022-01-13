@@ -901,7 +901,7 @@ func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
 // SMSProvider returns the SMS provider for the realm. If no sms configuration
 // exists, it returns nil. If any errors occur creating the provider, they are
 // returned.
-func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
+func (r *Realm) SMSProvider(db *Database, userReport bool) (sms.Provider, error) {
 	smsConfig, err := r.SMSConfig(db)
 	if err != nil {
 		if IsNotFound(err) {
@@ -910,12 +910,17 @@ func (r *Realm) SMSProvider(db *Database) (sms.Provider, error) {
 		return nil, err
 	}
 
+	fromNumber := smsConfig.TwilioFromNumber
+	if userReport && smsConfig.TwilioUserReportFromNumber != "" {
+		fromNumber = smsConfig.TwilioUserReportFromNumber
+	}
+
 	ctx := context.Background()
 	provider, err := sms.ProviderFor(ctx, &sms.Config{
 		ProviderType:     smsConfig.ProviderType,
 		TwilioAccountSid: smsConfig.TwilioAccountSid,
 		TwilioAuthToken:  smsConfig.TwilioAuthToken,
-		TwilioFromNumber: smsConfig.TwilioFromNumber,
+		TwilioFromNumber: fromNumber,
 	})
 	if err != nil {
 		return nil, err

@@ -106,9 +106,16 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 	defer c.recordStats(ctx, results)
 
 	// Send SMS messages if there's an SMS provider.
-	smsProvider, err := c.smsProviderFor(ctx, realm)
+	smsProvider, err := c.smsProviderFor(ctx, realm, false)
 	if err != nil {
 		logger.Errorw("failed to get sms provider", "error", err)
+		errorAll(results, api.InternalError())
+		return results
+	}
+	// If there is no user report SMS provider, it will be the same as the regular provider.
+	smsProviderUserReport, err := c.smsProviderFor(ctx, realm, true)
+	if err != nil {
+		logger.Errorw("failed to get user report sms provider", "error", err)
 		errorAll(results, api.InternalError())
 		return results
 	}
@@ -155,6 +162,10 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
+				if request.TestType == api.TestTypeUserReport {
+					c.SendSMS(ctx, realm, smsProviderUserReport, smsSigner, keyID, request, r)
+					return
+				}
 				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
 			}(issueReq, result)
 		}
@@ -177,10 +188,10 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 
 // smsProviderFor returns the sms provider for the given realm. It pulls the
 // value from a local in-memory cache.
-func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) (sms.Provider, error) {
-	key := fmt.Sprintf("realm:%d:sms_provider", realm.ID)
+func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, userReport bool) (sms.Provider, error) {
+	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, userReport)
 	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
-		return realm.SMSProvider(c.db)
+		return realm.SMSProvider(c.db, userReport)
 	})
 	if err != nil {
 		return nil, err
