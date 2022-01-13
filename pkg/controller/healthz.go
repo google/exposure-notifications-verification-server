@@ -40,12 +40,9 @@ func HandleHealthz(pinger driver.Pinger, h *render.Renderer, isMaintenanceMode b
 			// Do nothing and continue rendering - this is a basic HTTP health check
 		case "database":
 			// Attempt to ping for up to 1s.
-			b, err := retry.NewConstant(200 * time.Millisecond)
-			if err != nil {
-				InternalError(w, r, h, fmt.Errorf("failed to create backoff: %w", err))
-				return
-			}
-			if err := retry.Do(ctx, retry.WithMaxRetries(5, b), func(ctx context.Context) error {
+			b := retry.NewConstant(200 * time.Millisecond)
+			b = retry.WithMaxRetries(5, b)
+			if err := retry.Do(ctx, b, func(ctx context.Context) error {
 				if err := pinger.Ping(ctx); err != nil {
 					return retry.RetryableError(err)
 				}
