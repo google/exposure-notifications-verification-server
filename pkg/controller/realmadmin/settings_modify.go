@@ -77,16 +77,17 @@ type formData struct {
 	LongCodeLength          uint              `form:"long_code_length"`
 	LongCodeDurationHours   int64             `form:"long_code_duration"`
 
-	SMS                       bool               `form:"sms"`
-	UseSystemSMSConfig        bool               `form:"use_system_sms_config"`
-	SMSCountry                string             `form:"sms_country"`
-	SMSFromNumberID           uint               `form:"sms_from_number_id"`
-	TwilioAccountSid          string             `form:"twilio_account_sid"`
-	TwilioAuthToken           string             `form:"twilio_auth_token"`
-	TwilioFromNumber          string             `form:"twilio_from_number"`
-	SMSTextTemplate           string             `form:"-"`
-	SMSTextAlternateTemplates map[string]*string `form:"-"`
-	SMSTextUserReportAppend   string             `form:"sms_text_user_report_append"`
+	SMS                        bool               `form:"sms"`
+	UseSystemSMSConfig         bool               `form:"use_system_sms_config"`
+	SMSCountry                 string             `form:"sms_country"`
+	SMSFromNumberID            uint               `form:"sms_from_number_id"`
+	TwilioAccountSid           string             `form:"twilio_account_sid"`
+	TwilioAuthToken            string             `form:"twilio_auth_token"`
+	TwilioFromNumber           string             `form:"twilio_from_number"`
+	TwilioUserReportFromNumber string             `form:"twilio_user_report_from_number"`
+	SMSTextTemplate            string             `form:"-"`
+	SMSTextAlternateTemplates  map[string]*string `form:"-"`
+	SMSTextUserReportAppend    string             `form:"sms_text_user_report_append"`
 
 	Email                      bool   `form:"email"`
 	UseSystemEmailConfig       bool   `form:"use_system_email_config"`
@@ -374,15 +375,17 @@ func (c *Controller) HandleSettings() http.Handler {
 					smsConfig.TwilioAuthToken = form.TwilioAuthToken
 				}
 				smsConfig.TwilioFromNumber = form.TwilioFromNumber
+				smsConfig.TwilioUserReportFromNumber = form.TwilioUserReportFromNumber
 			} else {
 				// There's no record or the existing record was the system config so we
 				// want to create our own.
 				smsConfig = &database.SMSConfig{
-					RealmID:          currentRealm.ID,
-					ProviderType:     sms.ProviderTypeTwilio,
-					TwilioAccountSid: form.TwilioAccountSid,
-					TwilioAuthToken:  form.TwilioAuthToken,
-					TwilioFromNumber: form.TwilioFromNumber,
+					RealmID:                    currentRealm.ID,
+					ProviderType:               sms.ProviderTypeTwilio,
+					TwilioAccountSid:           form.TwilioAccountSid,
+					TwilioAuthToken:            form.TwilioAuthToken,
+					TwilioFromNumber:           form.TwilioFromNumber,
+					TwilioUserReportFromNumber: form.TwilioUserReportFromNumber,
 				}
 			}
 

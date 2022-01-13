@@ -2547,6 +2547,19 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				)
 			},
 		},
+		{
+			ID: "00121-UserReportFromNumber",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs ADD COLUMN IF NOT EXISTS twilio_user_report_from_number VARCHAR(255) NOT NULL DEFAULT ''`,
+				)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE sms_configs DROP COLUMN IF EXISTS twilio_user_report_from_number`,
+				)
+			},
+		},
 	}
 }
 

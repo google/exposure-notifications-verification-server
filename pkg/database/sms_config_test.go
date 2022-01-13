@@ -230,11 +230,12 @@ func TestSMSProvider(t *testing.T) {
 	}
 
 	smsConfig := &SMSConfig{
-		RealmID:          realm.ID,
-		ProviderType:     sms.ProviderType("TWILIO"),
-		TwilioAccountSid: "abc123",
-		TwilioAuthToken:  "my-secret-ref",
-		TwilioFromNumber: "+11234567890",
+		RealmID:                    realm.ID,
+		ProviderType:               sms.ProviderType("TWILIO"),
+		TwilioAccountSid:           "abc123",
+		TwilioAuthToken:            "my-secret-ref",
+		TwilioFromNumber:           "+11234567890",
+		TwilioUserReportFromNumber: "+11234567891",
 	}
 	if err := db.SaveSMSConfig(smsConfig); err != nil {
 		t.Fatal(err)
@@ -246,6 +247,14 @@ func TestSMSProvider(t *testing.T) {
 	}
 	if provider == nil {
 		t.Errorf("expected %v to be not nil", provider)
+	}
+
+	urProvider, err := realm.SMSProvider(db, &SMSProviderUserReport{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if urProvider == nil {
+		t.Errorf("expected %v to be not nil", urProvider)
 	}
 }
 

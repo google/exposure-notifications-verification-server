@@ -112,6 +112,13 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 		errorAll(results, api.InternalError())
 		return results
 	}
+	// If there is no user report SMS provider, it will be the same as the regular provider.
+	smsProviderUserReport, err := c.smsProviderFor(ctx, realm, &database.SMSProviderUserReport{})
+	if err != nil {
+		logger.Errorw("failed to get user report sms provider", "error", err)
+		errorAll(results, api.InternalError())
+		return results
+	}
 
 	// Sign messages if the realm has it enabled.
 	smsSigner, keyID, err := c.smsSignerFor(ctx, realm)
@@ -155,7 +162,11 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
-				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
+				provider := smsProvider
+				if request.TestType == api.TestTypeUserReport {
+					provider = smsProviderUserReport
+				}
+				c.SendSMS(ctx, realm, provider, smsSigner, keyID, request, r)
 			}(issueReq, result)
 		}
 	}
@@ -177,10 +188,18 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 
 // smsProviderFor returns the sms provider for the given realm. It pulls the
 // value from a local in-memory cache.
-func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm) (sms.Provider, error) {
-	key := fmt.Sprintf("realm:%d:sms_provider", realm.ID)
+func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, opts ...database.SMSProviderOption) (sms.Provider, error) {
+	appendKey := ""
+	for _, o := range opts {
+		if o == nil {
+			continue
+		}
+		appendKey = fmt.Sprintf("%s:%s", appendKey, o.Name())
+	}
+
+	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, appendKey)
 	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
-		return realm.SMSProvider(c.db)
+		return realm.SMSProvider(c.db, opts...)
 	})
 	if err != nil {
 		return nil, err
