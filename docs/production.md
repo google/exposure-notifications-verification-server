@@ -2,15 +2,16 @@
 
 This page includes helpful tips for configuring things in production.
 
-<!-- TOC depthFrom:2 depthTo:2 -->
+<!-- TOC depthfrom:2 depthto:2 -->
 
 - [Key management](#key-management)
-- [Observability (tracing and metrics)](#observability-tracing-and-metrics)
+- [Observability tracing and metrics](#observability-tracing-and-metrics)
 - [User administration](#user-administration)
 - [Rotating secrets](#rotating-secrets)
 - [SMS with Twilio](#sms-with-twilio)
 - [Identity Platform setup](#identity-platform-setup)
-- [End-to-end (e2e) test runner](#end-to-end-e2e-test-runner)
+- [Setup system emails](#setup-system-emails)
+- [End-to-end e2e test runner](#end-to-end-e2e-test-runner)
 - [Architecture](#architecture)
 
 <!-- /TOC -->
@@ -343,7 +344,26 @@ The verification server is capable of sending email through a Google Workspace S
       emailer_from_address = "no-reply@your-domain.com"
       emailer_mail_domain = "your-domain.com"
     }
+
+    module "en-alerting" {
+      // ...
+
+      enable_emailer = true
+    }
     ```
+
+1. Ensure the emailer service is set to allow ingress traffic from "all"
+   sources:
+
+   ```terraform
+    module "en" {
+      // ...
+
+      service_annotations = {
+        emailer = { "run.googleapis.com/ingress" : "all" }
+      }
+    }
+   ```
 
 1. Optionally override the defaults for ignored SMS error codes and the SMS
    errors alerting threshold. Do this by setting `SMS_IGNORED_ERROR_CODES` or

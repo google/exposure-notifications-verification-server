@@ -102,6 +102,13 @@ variable "forward_progress_indicators" {
   default     = {}
 }
 
+variable "enable_emailer" {
+  type    = bool
+  default = false
+
+  description = "Enable alerts for the email sending service."
+}
+
 terraform {
   required_version = "~> 1.0"
 
