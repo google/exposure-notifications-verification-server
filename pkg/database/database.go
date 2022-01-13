@@ -739,10 +739,7 @@ func getFieldString(scope *gorm.Scope, name string) (*gorm.Field, string, bool) 
 // withRetries is a helper for creating a backoff with capped retries, useful
 // for retrying database queries.
 func withRetries(ctx context.Context, f retry.RetryFunc) error {
-	b, err := retry.NewConstant(1 * time.Second)
-	if err != nil {
-		return fmt.Errorf("failed to configure backoff: %w", err)
-	}
+	b := retry.NewConstant(1 * time.Second)
 	b = retry.WithMaxRetries(30, b)
 
 	return retry.Do(ctx, b, f)

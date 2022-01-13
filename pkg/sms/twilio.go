@@ -56,10 +56,7 @@ func NewTwilio(ctx context.Context, accountSid, authToken, from string) (Provide
 
 // SendSMS sends a message using the Twilio API.
 func (p *Twilio) SendSMS(ctx context.Context, to, message string) error {
-	b, err := retry.NewFibonacci(250 * time.Millisecond)
-	if err != nil {
-		return fmt.Errorf("failed to create backoff: %w", err)
-	}
+	b := retry.NewFibonacci(250 * time.Millisecond)
 	b = retry.WithMaxRetries(4, b)
 
 	return retry.Do(ctx, b, func(ctx context.Context) error {

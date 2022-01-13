@@ -93,10 +93,7 @@ func TestRedis(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Wait for the container to be ready.
-	b, err := retry.NewFibonacci(500 * time.Millisecond)
-	if err != nil {
-		t.Fatal(err)
-	}
+	b := retry.NewFibonacci(500 * time.Millisecond)
 	b = retry.WithMaxRetries(5, b)
 	b = retry.WithCappedDuration(2*time.Second, b)
 

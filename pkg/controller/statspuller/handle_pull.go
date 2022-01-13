@@ -146,7 +146,7 @@ func (c *Controller) pullOneStat(ctx context.Context, realmStat *database.KeySer
 	// same JWT because it's valid for 5min and don't want the overhead of
 	// reconstructing and signing it.
 	var resp *v1.StatsResponse
-	b, _ := retry.NewConstant(500 * time.Millisecond)
+	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxRetries(3, b)
 	if err := retry.Do(ctx, b, func(ctx context.Context) error {
 		var err error
