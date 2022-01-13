@@ -35,49 +35,53 @@ locals {
     ]
   ))
 
-  forward_progress_indicators = merge({
-    # appsync runs every 4h, alert after 2 failures
-    "appsync" = { metric = "appsync/success", window = 8 * local.hour + 10 * local.minute },
+  forward_progress_indicators = merge(
+    {
+      # appsync runs every 4h, alert after 2 failures
+      "appsync" = { metric = "appsync/success", window = 8 * local.hour + 10 * local.minute },
 
-    # backup runs every 4h, alert after 2 failures
-    "backup" = { metric = "backup/success", window = 8 * local.hour + 10 * local.minute },
+      # backup runs every 4h, alert after 2 failures
+      "backup" = { metric = "backup/success", window = 8 * local.hour + 10 * local.minute },
 
-    # cleanup runs every 1h, alert after 4 failures
-    "cleanup" = { metric = "cleanup/success", window = 4 * local.hour + 10 * local.minute },
+      # cleanup runs every 1h, alert after 4 failures
+      "cleanup" = { metric = "cleanup/success", window = 4 * local.hour + 10 * local.minute },
 
-    # e2e-default runs every 5 minutes, alert after 2 failures
-    "e2e-default" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
+      # e2e-default runs every 5 minutes, alert after 2 failures
+      "e2e-default" = { metric = "e2e/default/success", window = 10 * local.minute + 1 * local.minute },
 
-    # e2e-revision runs every 5 minutes, alert after 2 failures
-    "e2e-revision" = { metric = "e2e/revision/success", window = 10 * local.minute + 1 * local.minute },
+      # e2e-revision runs every 5 minutes, alert after 2 failures
+      "e2e-revision" = { metric = "e2e/revision/success", window = 10 * local.minute + 1 * local.minute },
 
-    # e2e-user-report runs every 5 minutes, alert after 2 failures
-    "e2e-user-report" = { metric = "e2e/user-report/success", window = 10 * local.minute + 1 * local.minute },
+      # e2e-user-report runs every 5 minutes, alert after 2 failures
+      "e2e-user-report" = { metric = "e2e/user-report/success", window = 10 * local.minute + 1 * local.minute },
 
-    # e2e-redirect runs every 5 minutes, alert after 2 failures
-    "e2e-redirect" = { metric = "e2e/redirect/success", window = 10 * local.minute + 1 * local.minute },
+      # e2e-redirect runs every 5 minutes, alert after 2 failures
+      "e2e-redirect" = { metric = "e2e/redirect/success", window = 10 * local.minute + 1 * local.minute },
 
-    # emailer-anomalies runs on the 18th hour, alert after 1 failure
-    "emailer-anomalies" = { metric = "emailer/anomalies/success", window = 24 * local.hour + 15 * local.minute },
+      # modeler runs every 4h, alert after 2 failures
+      "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
 
-    # emailer-sms-errors runs every 12 hours, alert after 2 failures
-    "emailer-sms-errors" = { metric = "emailer/sms_errors/success", window = 24 * local.hour + 15 * local.minute },
+      # rotation-secrets runs every 5m, alert after 2 failures
+      "rotation-secrets" = { metric = "rotation/secrets/success", window = 10 * local.minute + 1 * local.minute }
 
-    # modeler runs every 4h, alert after 2 failures
-    "modeler" = { metric = "modeler/success", window = 8 * local.hour + 10 * local.minute },
+      # rotation-token runs every 30m, alert after 2 failures
+      "rotation-token" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
 
-    # rotation-secrets runs every 5m, alert after 2 failures
-    "rotation-secrets" = { metric = "rotation/secrets/success", window = 10 * local.minute + 1 * local.minute }
+      # rotation-realm-key runs every 15m, alert after 2 failures
+      "rotation-realm-key" = { metric = "rotation/verification/success", window = 30 * local.minute + 5 * local.minute }
 
-    # rotation-token runs every 30m, alert after 2 failures
-    "rotation-token" = { metric = "rotation/token/success", window = 60 * local.minute + 10 * local.minute }
+      # stats-puller runs every 15m, alert after 2 failures
+      "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
+    },
+    var.enable_emailer ? {
+      # emailer-anomalies runs on the 18th hour, alert after 1 failure
+      "emailer-anomalies" = { metric = "emailer/anomalies/success", window = 24 * local.hour + 15 * local.minute },
 
-    # rotation-realm-key runs every 15m, alert after 2 failures
-    "rotation-realm-key" = { metric = "rotation/verification/success", window = 30 * local.minute + 5 * local.minute }
-
-    # stats-puller runs every 15m, alert after 2 failures
-    "stats-puller" = { metric = "statspuller/success", window = 30 * local.minute + 5 * local.minute }
-  }, var.forward_progress_indicators)
+      # emailer-sms-errors runs every 12 hours, alert after 2 failures
+      "emailer-sms-errors" = { metric = "emailer/sms_errors/success", window = 24 * local.hour + 15 * local.minute },
+    } : {},
+    var.forward_progress_indicators
+  )
 }
 
 resource "google_monitoring_alert_policy" "probers" {
