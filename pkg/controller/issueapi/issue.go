@@ -106,14 +106,14 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 	defer c.recordStats(ctx, results)
 
 	// Send SMS messages if there's an SMS provider.
-	smsProvider, err := c.smsProviderFor(ctx, realm, false)
+	smsProvider, err := c.smsProviderFor(ctx, realm)
 	if err != nil {
 		logger.Errorw("failed to get sms provider", "error", err)
 		errorAll(results, api.InternalError())
 		return results
 	}
 	// If there is no user report SMS provider, it will be the same as the regular provider.
-	smsProviderUserReport, err := c.smsProviderFor(ctx, realm, true)
+	smsProviderUserReport, err := c.smsProviderFor(ctx, realm, &database.SMSProviderUserReport{})
 	if err != nil {
 		logger.Errorw("failed to get user report sms provider", "error", err)
 		errorAll(results, api.InternalError())
@@ -162,11 +162,11 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 			wg.Add(1)
 			go func(request *api.IssueCodeRequest, r *IssueResult) {
 				defer wg.Done()
+				provider := smsProvider
 				if request.TestType == api.TestTypeUserReport {
-					c.SendSMS(ctx, realm, smsProviderUserReport, smsSigner, keyID, request, r)
-					return
+					provider = smsProviderUserReport
 				}
-				c.SendSMS(ctx, realm, smsProvider, smsSigner, keyID, request, r)
+				c.SendSMS(ctx, realm, provider, smsSigner, keyID, request, r)
 			}(issueReq, result)
 		}
 	}
@@ -188,10 +188,15 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 
 // smsProviderFor returns the sms provider for the given realm. It pulls the
 // value from a local in-memory cache.
-func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, userReport bool) (sms.Provider, error) {
-	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, userReport)
+func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, opts ...database.SMSProviderOption) (sms.Provider, error) {
+	append := ""
+	for _, o := range opts {
+		append = fmt.Sprintf("%s:%s", append, o.Name())
+	}
+
+	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, append)
 	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
-		return realm.SMSProvider(c.db, userReport)
+		return realm.SMSProvider(c.db, opts...)
 	})
 	if err != nil {
 		return nil, err

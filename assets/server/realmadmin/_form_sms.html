@@ -82,7 +82,8 @@
         {{template "errorable" $smsConfig.ErrorsFor "twilioUserReportFromNumber"}}
         <small class="form-text text-muted">
           This is the Twilio From Number only for <strong>User Report</strong>. If present, user report codes will be
-          sent on a different queue from regular and bulk issue codes.
+          sent on a different queue from regular and bulk issue codes. If unspecified, user report will use the same
+          queue and phone number as regular and bulk issue codes.
         </small>
       </div>
       {{end}}

@@ -898,10 +898,28 @@ func (r *Realm) HasSMSConfig(db *Database) (bool, error) {
 	return len(id) > 0, nil
 }
 
+type SMSProviderOption interface {
+	Apply(smsConfig *SMSConfig, modify *sms.Config)
+	Name() string
+}
+
+type SMSProviderUserReport struct {
+}
+
+func (s *SMSProviderUserReport) Apply(smsConfig *SMSConfig, modify *sms.Config) {
+	if smsConfig.TwilioUserReportFromNumber != "" {
+		modify.TwilioFromNumber = smsConfig.TwilioUserReportFromNumber
+	}
+}
+
+func (s *SMSProviderUserReport) Name() string {
+	return "sms-provider-user-report"
+}
+
 // SMSProvider returns the SMS provider for the realm. If no sms configuration
 // exists, it returns nil. If any errors occur creating the provider, they are
 // returned.
-func (r *Realm) SMSProvider(db *Database, userReport bool) (sms.Provider, error) {
+func (r *Realm) SMSProvider(db *Database, opts ...SMSProviderOption) (sms.Provider, error) {
 	smsConfig, err := r.SMSConfig(db)
 	if err != nil {
 		if IsNotFound(err) {
@@ -910,18 +928,20 @@ func (r *Realm) SMSProvider(db *Database, userReport bool) (sms.Provider, error)
 		return nil, err
 	}
 
-	fromNumber := smsConfig.TwilioFromNumber
-	if userReport && smsConfig.TwilioUserReportFromNumber != "" {
-		fromNumber = smsConfig.TwilioUserReportFromNumber
-	}
-
-	ctx := context.Background()
-	provider, err := sms.ProviderFor(ctx, &sms.Config{
+	config := &sms.Config{
 		ProviderType:     smsConfig.ProviderType,
 		TwilioAccountSid: smsConfig.TwilioAccountSid,
 		TwilioAuthToken:  smsConfig.TwilioAuthToken,
-		TwilioFromNumber: fromNumber,
-	})
+		TwilioFromNumber: smsConfig.TwilioFromNumber,
+	}
+
+	// Resolve options. Last writer wins
+	for _, o := range opts {
+		o.Apply(smsConfig, config)
+	}
+
+	ctx := context.Background()
+	provider, err := sms.ProviderFor(ctx, config)
 	if err != nil {
 		return nil, err
 	}
