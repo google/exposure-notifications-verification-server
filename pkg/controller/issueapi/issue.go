@@ -189,12 +189,12 @@ func (c *Controller) recordStats(ctx context.Context, results []*IssueResult) {
 // smsProviderFor returns the sms provider for the given realm. It pulls the
 // value from a local in-memory cache.
 func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, opts ...database.SMSProviderOption) (sms.Provider, error) {
-	append := ""
+	appendKey := ""
 	for _, o := range opts {
-		append = fmt.Sprintf("%s:%s", append, o.Name())
+		appendKey = fmt.Sprintf("%s:%s", appendKey, o.Name())
 	}
 
-	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, append)
+	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, appendKey)
 	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
 		return realm.SMSProvider(c.db, opts...)
 	})
