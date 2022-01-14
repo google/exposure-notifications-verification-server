@@ -64,6 +64,10 @@
                   <span class="small bi bi-exclamation-triangle-fill text-warning"
                     data-bs-toggle="tooltip" title="The ratio between codes issued and codes claimed has deviated from the historical norm"></span>
                 {{end}}
+                {{if not .ContactEmailAddresses}}
+                  <span class="small bi bi-envelope-x-fill text-danger"
+                    data-bs-toggle="tooltip" title="There are no contact email addresses for this realm"></span>
+                {{end}}
               </td>
               <td class="text-center d-none d-md-table-cell">
                 {{if (index $realmChaffEvents .ID)}}

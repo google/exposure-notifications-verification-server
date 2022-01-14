@@ -81,8 +81,12 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		With("realm_id", realm.ID)
 
 	if len(realm.ContactEmailAddresses) == 0 {
-		logger.Debugw("no contact email addresses registered, skipping")
-		return nil
+		logger.Warnw("no contact email addresses registered")
+
+		if len(c.config.EmailCC) == 0 && len(c.config.EmailBCC) == 0 {
+			logger.Warnw("no cc or bcc emails registered either, skipping")
+			return nil
+		}
 	}
 
 	count, err := realm.RecentSMSErrorsCount(c.db, c.config.SMSIgnoredErrorCodes)
@@ -101,6 +105,8 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
 			"ToEmail":      addr,
 			"FromEmail":    c.config.FromAddress,
+			"CCEmail":      c.config.EmailCC,
+			"BCCEmail":     c.config.EmailBCC,
 			"Realm":        realm,
 			"RootURL":      c.config.ServerEndpoint,
 			"NumSMSErrors": count,
