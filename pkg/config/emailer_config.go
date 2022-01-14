@@ -56,6 +56,11 @@ type EmailerConfig struct {
 	// domain (no https:// or port).
 	MailDomain string `env:"MAIL_DOMAIN"`
 
+	// EmailCC and EmailBCC is the address to CC and BCC (respectively) on all
+	// emails.
+	EmailCC  string `env:"EMAIL_CC"`
+	EmailBCC string `env:"EMAIL_BCC"`
+
 	// ServerEndpoint is the URL to the main verification server component - the
 	// UI server. It should be the full URL with no trailing slash.
 	ServerEndpoint string `env:"SERVER_ENDPOINT"`

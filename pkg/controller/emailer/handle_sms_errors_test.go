@@ -64,7 +64,7 @@ func TestSendSMSErrorsEmails(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		testExpectLog(t, logObserver, "no contact email addresses registered, skipping")
+		testExpectLog(t, logObserver, "no contact email addresses registered")
 	})
 
 	t.Run("no_errors", func(t *testing.T) {
@@ -112,18 +112,41 @@ func TestSendSMSErrorsEmails(t *testing.T) {
 
 		c := New(cfg, db, h)
 
-		msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
-			"ToEmail":   "to@example.com",
-			"FromEmail": "from@example.com",
-			"Realm":     realm,
-			"RootURL":   "http://example.com",
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Run("without_ccs", func(t *testing.T) {
+			t.Parallel()
 
-		if got, want := string(msg), "exceeds the typical value"; !strings.Contains(got, want) {
-			t.Errorf("expectd %q to be %q", got, want)
-		}
+			msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
+				"ToEmail":   "to@example.com",
+				"FromEmail": "from@example.com",
+				"Realm":     realm,
+				"RootURL":   "http://example.com",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := string(msg), "exceeds the typical value"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+		})
+
+		t.Run("with_cc", func(t *testing.T) {
+			t.Parallel()
+
+			msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
+				"ToEmail":   "to@example.com",
+				"FromEmail": "from@example.com",
+				"CCEmail":   "cc@example.com",
+				"Realm":     realm,
+				"RootURL":   "http://example.com",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := string(msg), "CC: cc@example.com"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+		})
 	})
 }

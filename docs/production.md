@@ -382,6 +382,21 @@ The verification server is capable of sending email through a Google Workspace S
     }
     ```
 
+1. Optionally CC or BCC your help desk or support staff on all outbound emails:
+
+    ```terraform
+      module "en" {
+      // ...
+
+      service_environment = {
+        emailer = {
+          EMAIL_CC  = "cc@example.com"
+          EMAIL_BCC = "bcc@example.com"
+        }
+      }
+    }
+    ```
+
 
 ## End-to-end (e2e) test runner
 

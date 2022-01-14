@@ -6,6 +6,12 @@ Content-Type: text/html; charset="utf-8"
 Subject: Exposure Notifications SMS error rate exceeded
 To: {{.ToEmail | trimSpace}}
 From: {{.FromEmail | trimSpace}}
+{{- if .CCEmail }}
+CC: {{.CCEmail | trimSpace}}
+{{- end }}
+{{- if .BCCEmail }}
+BCC: {{.BCCEmail | trimSpace}}
+{{- end }}
 
 <!DOCTYPE html>
 <html>
