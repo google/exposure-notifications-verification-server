@@ -16,6 +16,8 @@ package config
 
 import (
 	"context"
+	"fmt"
+	"net/mail"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -105,6 +107,24 @@ func (c *EmailerConfig) Validate() error {
 	for _, f := range fields {
 		if err := checkPositiveDuration(f.Var, f.Name); err != nil {
 			return err
+		}
+	}
+
+	if from := c.FromAddress; from != "" {
+		if _, err := mail.ParseAddress(from); err != nil {
+			return fmt.Errorf("invalid FROM_ADDRESS: %w", err)
+		}
+	}
+
+	for _, addr := range c.CCAddresses {
+		if _, err := mail.ParseAddress(addr); err != nil {
+			return fmt.Errorf("invalid CC_ADDRESSES %q: %w", addr, err)
+		}
+	}
+
+	for _, addr := range c.BCCAddresses {
+		if _, err := mail.ParseAddress(addr); err != nil {
+			return fmt.Errorf("invalid BCC_ADDRESSES %q: %w", addr, err)
 		}
 	}
 
