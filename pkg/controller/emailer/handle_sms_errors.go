@@ -80,10 +80,15 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 	logger := logging.FromContext(ctx).Named("emailer.sendSMSErrorsEmails").
 		With("realm_id", realm.ID)
 
-	if len(realm.ContactEmailAddresses) == 0 {
+	from := c.config.FromAddress
+	tos := realm.ContactEmailAddresses
+	ccs := c.config.CCAddresses
+	bccs := c.config.BCCAddresses
+
+	if len(tos) == 0 {
 		logger.Warnw("no contact email addresses registered")
 
-		if len(c.config.EmailCC) == 0 && len(c.config.EmailBCC) == 0 {
+		if len(ccs) == 0 && len(bccs) == 0 {
 			logger.Warnw("no cc or bcc emails registered either, skipping")
 			return nil
 		}
@@ -100,26 +105,25 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		return nil
 	}
 
-	var merr *multierror.Error
-	for _, addr := range realm.ContactEmailAddresses {
-		msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
-			"ToEmail":      addr,
-			"FromEmail":    c.config.FromAddress,
-			"CCEmail":      c.config.EmailCC,
-			"BCCEmail":     c.config.EmailBCC,
-			"Realm":        realm,
-			"RootURL":      c.config.ServerEndpoint,
-			"NumSMSErrors": count,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to render template: %w", err)
-		}
-
-		logger.Debugw("sending email", "email", addr)
-		if err := c.sendMail(addr, msg); err != nil {
-			merr = multierror.Append(merr, fmt.Errorf("failed to send to %q: %w", addr, err))
-		}
+	msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
+		"FromAddress":  from,
+		"ToAddresses":  tos,
+		"CCAddresses":  ccs,
+		"BCCAddresses": bccs,
+		"Realm":        realm,
+		"RootURL":      c.config.ServerEndpoint,
+		"NumSMSErrors": count,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
 	}
 
-	return merr.ErrorOrNil()
+	logger.Debugw("sending email",
+		"tos", realm.ContactEmailAddresses,
+		"ccs", c.config.CCAddresses,
+		"bccs", c.config.BCCAddresses)
+	if err := c.sendMail(tos, msg); err != nil {
+		return fmt.Errorf("failed to send: %w", err)
+	}
+	return nil
 }

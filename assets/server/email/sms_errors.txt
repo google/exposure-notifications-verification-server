@@ -4,13 +4,15 @@
 MIME-Version: 1.0
 Content-Type: text/html; charset="utf-8"
 Subject: Exposure Notifications SMS error rate exceeded
-To: {{.ToEmail | trimSpace}}
-From: {{.FromEmail | trimSpace}}
-{{- if .CCEmail }}
-CC: {{.CCEmail | trimSpace}}
+From: {{.FromAddress | trimSpace}}
+{{- if .ToAddresses }}
+To: {{(joinStrings .ToAddresses ",") | trimSpace}}
 {{- end }}
-{{- if .BCCEmail }}
-BCC: {{.BCCEmail | trimSpace}}
+{{- if .CCAddresses }}
+CC: {{(joinStrings .CCAddresses ",") | trimSpace}}
+{{- end }}
+{{- if .BCCAddresses }}
+BCC: {{(joinStrings .BCCAddresses ",") | trimSpace}}
 {{- end }}
 
 <!DOCTYPE html>

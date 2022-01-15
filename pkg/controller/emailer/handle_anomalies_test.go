@@ -117,15 +117,21 @@ func TestSendAnomaliesEmail(t *testing.T) {
 			t.Parallel()
 
 			msg, err := c.h.RenderEmail("email/anomalies", map[string]interface{}{
-				"ToEmail":   "to@example.com",
-				"FromEmail": "from@example.com",
-				"Realm":     realm,
-				"RootURL":   "http://example.com",
+				"FromAddress": "from@example.com",
+				"ToAddresses": []string{"to1@example.com", "to2@example.com"},
+				"Realm":       realm,
+				"RootURL":     "https://example.com",
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			if got, want := string(msg), "From: from@example.com\n"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+			if got, want := string(msg), "To: to1@example.com,to2@example.com\n"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
 			if got, want := string(msg), "less than your historical average"; !strings.Contains(got, want) {
 				t.Errorf("expectd %q to contain %q", got, want)
 			}
@@ -135,17 +141,27 @@ func TestSendAnomaliesEmail(t *testing.T) {
 			t.Parallel()
 
 			msg, err := c.h.RenderEmail("email/anomalies", map[string]interface{}{
-				"ToEmail":   "to@example.com",
-				"FromEmail": "from@example.com",
-				"CCEmail":   "cc@example.com",
-				"Realm":     realm,
-				"RootURL":   "http://example.com",
+				"FromAddress":  "from@example.com",
+				"ToAddresses":  []string{"to1@example.com", "to2@example.com"},
+				"CCAddresses":  []string{"cc1@example.com", "cc2@example.com"},
+				"BCCAddresses": []string{"bcc1@example.com", "bcc2@example.com"},
+				"Realm":        realm,
+				"RootURL":      "https://example.com",
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if got, want := string(msg), "CC: cc@example.com"; !strings.Contains(got, want) {
+			if got, want := string(msg), "From: from@example.com\n"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+			if got, want := string(msg), "To: to1@example.com,to2@example.com\n"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+			if got, want := string(msg), "CC: cc1@example.com,cc2@example.com\n"; !strings.Contains(got, want) {
+				t.Errorf("expectd %q to contain %q", got, want)
+			}
+			if got, want := string(msg), "BCC: bcc1@example.com,bcc2@example.com\n"; !strings.Contains(got, want) {
 				t.Errorf("expectd %q to contain %q", got, want)
 			}
 		})

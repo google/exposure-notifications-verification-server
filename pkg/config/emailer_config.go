@@ -58,8 +58,8 @@ type EmailerConfig struct {
 
 	// EmailCC and EmailBCC is the address to CC and BCC (respectively) on all
 	// emails.
-	EmailCC  string `env:"EMAIL_CC"`
-	EmailBCC string `env:"EMAIL_BCC"`
+	CCAddresses  []string `env:"CC_ADDRESSES"`
+	BCCAddresses []string `env:"BCC_ADDRESSES"`
 
 	// ServerEndpoint is the URL to the main verification server component - the
 	// UI server. It should be the full URL with no trailing slash.
