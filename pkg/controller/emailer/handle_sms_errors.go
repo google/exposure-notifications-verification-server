@@ -122,7 +122,7 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		"tos", realm.ContactEmailAddresses,
 		"ccs", c.config.CCAddresses,
 		"bccs", c.config.BCCAddresses)
-	if err := c.sendMail(tos, msg); err != nil {
+	if err := c.sendMail(ctx, tos, msg); err != nil {
 		return fmt.Errorf("failed to send: %w", err)
 	}
 	return nil
