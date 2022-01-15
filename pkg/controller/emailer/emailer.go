@@ -16,11 +16,13 @@
 package emailer
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/mail"
 	"net/smtp"
 
+	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
@@ -46,10 +48,21 @@ func New(cfg *config.EmailerConfig, db *database.Database, h *render.Renderer) *
 }
 
 // sendMail sends a single message through the Google Workspace SMTP relay.
-func (c *Controller) sendMail(to string, msg []byte) error {
-	toAddr, err := mail.ParseAddress(to)
-	if err != nil {
-		return fmt.Errorf("failed to parse to address %q: %w", to, err)
+func (c *Controller) sendMail(ctx context.Context, tos []string, msg []byte) error {
+	logger := logging.FromContext(ctx).Named("sendMail")
+
+	toAddrs := make([]*mail.Address, 0, len(tos))
+	for _, to := range tos {
+		toAddr, err := mail.ParseAddress(to)
+		if err != nil {
+			// We do input validation on all email addresses, so this should
+			// theoretically never happen.
+			logger.Errorw("failed to parse to address",
+				"address", to,
+				"error", err)
+			continue
+		}
+		toAddrs = append(toAddrs, toAddr)
 	}
 
 	from := c.config.FromAddress
@@ -79,8 +92,10 @@ func (c *Controller) sendMail(to string, msg []byte) error {
 		return fmt.Errorf("failed to set FROM: %w", err)
 	}
 
-	if err := client.Rcpt(toAddr.Address); err != nil {
-		return fmt.Errorf("failed to set TO: %w", err)
+	for _, toAddr := range toAddrs {
+		if err := client.Rcpt(toAddr.Address); err != nil {
+			return fmt.Errorf("failed to set TO: %w", err)
+		}
 	}
 
 	w, err := client.Data()

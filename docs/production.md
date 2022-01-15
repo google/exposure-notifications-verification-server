@@ -390,8 +390,8 @@ The verification server is capable of sending email through a Google Workspace S
 
       service_environment = {
         emailer = {
-          EMAIL_CC  = "cc@example.com"
-          EMAIL_BCC = "bcc@example.com"
+          CC_ADDRESSES  = "cc@example.com"
+          BCC_ADDRESSES = "bcc@example.com"
         }
       }
     }
