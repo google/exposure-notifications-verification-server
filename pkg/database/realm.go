@@ -1977,11 +1977,12 @@ func (r *Realm) RecentSMSErrorsCount(db *Database, ignored []string) (int64, err
 	// This is super annoying, but gorm doesn't properly handle a slice (or map)
 	// with raw sql, so we need to build and quote this ourselves.
 	if len(ignored) > 0 {
-		sort.Strings(ignored)
+		newIgnored := make([]string, len(ignored))
 		for i := range ignored {
-			ignored[i] = "'" + strings.ReplaceAll(ignored[i], "'", "\\'") + "'"
+			newIgnored[i] = "'" + strings.ReplaceAll(ignored[i], "'", "\\'") + "'"
 		}
-		toIgnore := strings.Join(ignored, ", ")
+		sort.Strings(newIgnored)
+		toIgnore := strings.Join(newIgnored, ", ")
 
 		sql += fmt.Sprintf(` AND error_code NOT IN (%s)`, toIgnore)
 	}
