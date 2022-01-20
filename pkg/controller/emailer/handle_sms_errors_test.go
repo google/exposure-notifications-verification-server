@@ -140,12 +140,11 @@ func TestSendSMSErrorsEmails(t *testing.T) {
 			t.Parallel()
 
 			msg, err := c.h.RenderEmail("email/sms_errors", map[string]interface{}{
-				"FromAddress":  "from@example.com",
-				"ToAddresses":  []string{"to1@example.com", "to2@example.com"},
-				"CCAddresses":  []string{"cc1@example.com", "cc2@example.com"},
-				"BCCAddresses": []string{"bcc1@example.com", "bcc2@example.com"},
-				"Realm":        realm,
-				"RootURL":      "http://example.com",
+				"FromAddress": "from@example.com",
+				"ToAddresses": []string{"to1@example.com", "to2@example.com"},
+				"CCAddresses": []string{"cc1@example.com", "cc2@example.com"},
+				"Realm":       realm,
+				"RootURL":     "http://example.com",
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -157,10 +156,7 @@ func TestSendSMSErrorsEmails(t *testing.T) {
 			if got, want := string(msg), "To: to1@example.com,to2@example.com\n"; !strings.Contains(got, want) {
 				t.Errorf("expectd %q to contain %q", got, want)
 			}
-			if got, want := string(msg), "CC: cc1@example.com,cc2@example.com\n"; !strings.Contains(got, want) {
-				t.Errorf("expectd %q to contain %q", got, want)
-			}
-			if got, want := string(msg), "BCC: bcc1@example.com,bcc2@example.com\n"; !strings.Contains(got, want) {
+			if got, want := string(msg), "Cc: cc1@example.com,cc2@example.com\n"; !strings.Contains(got, want) {
 				t.Errorf("expectd %q to contain %q", got, want)
 			}
 		})

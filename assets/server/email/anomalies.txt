@@ -9,10 +9,7 @@ From: {{.FromAddress | trimSpace}}
 To: {{(joinStrings .ToAddresses ",") | trimSpace}}
 {{- end }}
 {{- if .CCAddresses }}
-CC: {{(joinStrings .CCAddresses ",") | trimSpace}}
-{{- end }}
-{{- if .BCCAddresses }}
-BCC: {{(joinStrings .BCCAddresses ",") | trimSpace}}
+Cc: {{(joinStrings .CCAddresses ",") | trimSpace}}
 {{- end }}
 
 <!DOCTYPE html>

@@ -113,7 +113,6 @@ func (c *Controller) sendSMSErrorsEmails(ctx context.Context, realm *database.Re
 		"FromAddress":  from,
 		"ToAddresses":  tos,
 		"CCAddresses":  ccs,
-		"BCCAddresses": bccs,
 		"Realm":        realm,
 		"RootURL":      c.config.ServerEndpoint,
 		"NumSMSErrors": count,
