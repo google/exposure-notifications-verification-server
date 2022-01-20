@@ -104,12 +104,11 @@ func (c *Controller) sendAnomaliesEmails(ctx context.Context, realm *database.Re
 	}
 
 	msg, err := c.h.RenderEmail("email/anomalies", map[string]interface{}{
-		"FromAddress":  from,
-		"ToAddresses":  tos,
-		"CCAddresses":  ccs,
-		"BCCAddresses": bccs,
-		"Realm":        realm,
-		"RootURL":      c.config.ServerEndpoint,
+		"FromAddress": from,
+		"ToAddresses": tos,
+		"CCAddresses": ccs,
+		"Realm":       realm,
+		"RootURL":     c.config.ServerEndpoint,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to render template: %w", err)
