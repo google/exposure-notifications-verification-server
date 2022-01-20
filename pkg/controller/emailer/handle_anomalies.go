@@ -93,6 +93,10 @@ func (c *Controller) sendAnomaliesEmails(ctx context.Context, realm *database.Re
 			return nil
 		}
 	}
+	var addresses []string
+	addresses = append(addresses, tos...)
+	addresses = append(addresses, ccs...)
+	addresses = append(addresses, bccs...)
 
 	if !realm.CodesClaimedRatioAnomalous() {
 		logger.Debugw("codes claimed ratio is not anomalous, skipping")
@@ -115,7 +119,7 @@ func (c *Controller) sendAnomaliesEmails(ctx context.Context, realm *database.Re
 		"tos", realm.ContactEmailAddresses,
 		"ccs", c.config.CCAddresses,
 		"bccs", c.config.BCCAddresses)
-	if err := c.sendMail(ctx, tos, msg); err != nil {
+	if err := c.sendMail(ctx, addresses, msg); err != nil {
 		return fmt.Errorf("failed to send: %w", err)
 	}
 	return nil

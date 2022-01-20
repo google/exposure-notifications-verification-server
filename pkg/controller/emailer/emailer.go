@@ -47,22 +47,24 @@ func New(cfg *config.EmailerConfig, db *database.Database, h *render.Renderer) *
 	}
 }
 
-// sendMail sends a single message through the Google Workspace SMTP relay.
-func (c *Controller) sendMail(ctx context.Context, tos []string, msg []byte) error {
+// sendMail sends a single message through the Google Workspace SMTP relay. Note
+// that the "addresses" should include TO, CC, and BCC addresses. This value is
+// for the RCPT TO, not the TO header.
+func (c *Controller) sendMail(ctx context.Context, addresses []string, msg []byte) error {
 	logger := logging.FromContext(ctx).Named("sendMail")
 
-	toAddrs := make([]*mail.Address, 0, len(tos))
-	for _, to := range tos {
-		toAddr, err := mail.ParseAddress(to)
+	addrs := make([]*mail.Address, 0, len(addresses))
+	for _, s := range addresses {
+		addr, err := mail.ParseAddress(s)
 		if err != nil {
 			// We do input validation on all email addresses, so this should
 			// theoretically never happen.
 			logger.Errorw("failed to parse to address",
-				"address", to,
+				"address", s,
 				"error", err)
 			continue
 		}
-		toAddrs = append(toAddrs, toAddr)
+		addrs = append(addrs, addr)
 	}
 
 	from := c.config.FromAddress
@@ -92,8 +94,8 @@ func (c *Controller) sendMail(ctx context.Context, tos []string, msg []byte) err
 		return fmt.Errorf("failed to set FROM: %w", err)
 	}
 
-	for _, toAddr := range toAddrs {
-		if err := client.Rcpt(toAddr.Address); err != nil {
+	for _, addr := range addrs {
+		if err := client.Rcpt(addr.Address); err != nil {
 			return fmt.Errorf("failed to set TO: %w", err)
 		}
 	}
