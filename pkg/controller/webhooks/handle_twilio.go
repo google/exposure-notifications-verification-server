@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
@@ -42,6 +43,8 @@ type TwilioWebhookPayload struct {
 // HandleTwilio handles secrets rotation.
 func (c *Controller) HandleTwilio() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		now := time.Now().UTC()
+
 		ctx := r.Context()
 		logger := logging.FromContext(ctx).Named("webhooks.HandleTwilio")
 		vars := mux.Vars(r)
@@ -157,7 +160,7 @@ func (c *Controller) HandleTwilio() http.Handler {
 		ctx = observability.WithErrorCode(ctx, payload.ErrorCode)
 		defer stats.Record(ctx, mTwilioErrors.M(1))
 
-		if err := c.db.InsertSMSErrorStat(realm.ID, payload.ErrorCode); err != nil {
+		if err := c.db.InsertSMSErrorStat(now, realm.ID, payload.ErrorCode); err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return
 		}

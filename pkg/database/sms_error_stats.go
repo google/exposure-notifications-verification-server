@@ -43,7 +43,7 @@ type SMSErrorStat struct {
 
 // InsertSMSErrorStat inserts a new SMS error stat for the given realm and error
 // code.
-func (db *Database) InsertSMSErrorStat(realmID uint, errorCode string) error {
+func (db *Database) InsertSMSErrorStat(t time.Time, realmID uint, errorCode string) error {
 	date := timeutils.UTCMidnight(time.Now())
 
 	sql := `

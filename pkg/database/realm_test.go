@@ -517,6 +517,44 @@ func TestRealm_BuildVerifyEmail(t *testing.T) {
 	}
 }
 
+func TestRealm_SMSErrorStats(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm, err := db.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	numDays := 7
+	numHours := 24
+	nowUTC := timeutils.UTCMidnight(time.Now())
+
+	for _, code := range []string{"30004", "30005", "30006", "10005", "86753"} {
+		for i := 0; i < numDays; i++ {
+			for j := 0; j < numHours; j++ {
+				now := nowUTC.Add(time.Duration(-24*i+j) * time.Hour)
+
+				if err := db.InsertSMSErrorStat(now, realm.ID, code); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+	}
+
+	stats, err := realm.SMSErrorStats(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, stat := range stats {
+		if got, want := stat.RealmID, realm.ID; got != want {
+			t.Errorf("realm ID mismiatch for %d: expected %q to be %q", i, got, want)
+		}
+	}
+}
+
 func TestRealm_UserStats(t *testing.T) {
 	t.Parallel()
 
@@ -973,12 +1011,13 @@ func TestRealm_RecentSMSErrorsCount(t *testing.T) {
 	}
 
 	// Create some errors
+	now := time.Now().UTC()
 	for i := 0; i < 5; i++ {
 		code := fmt.Sprintf("3000%d", i)
-		if err := db.InsertSMSErrorStat(realm.ID, code); err != nil {
+		if err := db.InsertSMSErrorStat(now, realm.ID, code); err != nil {
 			t.Fatal(err)
 		}
-		if err := db.InsertSMSErrorStat(otherRealm.ID, code); err != nil {
+		if err := db.InsertSMSErrorStat(now, otherRealm.ID, code); err != nil {
 			t.Fatal(err)
 		}
 	}
