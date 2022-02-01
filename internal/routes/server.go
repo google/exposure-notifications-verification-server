@@ -81,6 +81,9 @@ func Server(
 
 	r.Use(middleware.GzipResponse())
 
+	// Install common security headers
+	r.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
+
 	// Mount and register static assets before any middleware.
 	{
 		sub := r.PathPrefix("").Subrouter()
@@ -148,9 +151,6 @@ func Server(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create limiter middleware: %w", err)
 	}
-
-	// Install common security headers
-	sub.Use(middleware.SecureHeaders(cfg.DevMode, "html"))
 
 	// Enable debug headers
 	processDebug := middleware.ProcessDebug()
