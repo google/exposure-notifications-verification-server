@@ -1,33 +1,37 @@
 <!-- TOC depthFrom:2 -->
 
 - [Access protection recommendations](#access-protection-recommendations)
-  - [Account protection](#account-protection)
-  - [API key protection](#api-key-protection)
+    - [Account protection](#account-protection)
+    - [API key protection](#api-key-protection)
 - [Settings, enabling EN Express](#settings-enabling-en-express)
+- [Settings, adding system contacts](#settings-adding-system-contacts)
 - [Settings, code settings](#settings-code-settings)
-  - [Bulk Issue Codes](#bulk-issue-codes)
-  - [Allowed Test Types](#allowed-test-types)
-  - [Date Configuration](#date-configuration)
-  - [Code Length & Expiration](#code-length--expiration)
+    - [Bulk Issue Codes](#bulk-issue-codes)
+    - [Allowed Test Types](#allowed-test-types)
+    - [User Report](#user-report)
+    - [Date Configuration](#date-configuration)
+    - [Code Length & Expiration](#code-length--expiration)
 - [Settings, SMS](#settings-sms)
-  - [SMS Text Template](#sms-text-template)
+    - [Twilio alerts webhook URL](#twilio-alerts-webhook-url)
+    - [SMS Text Template](#sms-text-template)
 - [Authenticated SMS](#authenticated-sms)
 - [Adding users](#adding-users)
 - [API keys](#api-keys)
 - [ENX redirector service](#enx-redirector-service)
 - [Mobile apps](#mobile-apps)
 - [Statistics](#statistics)
-  - [Key server statistics](#key-server-statistics)
-  - [All charts available](#all-charts-available)
-    - [Codes issued and used](#codes-issued-and-used)
-    - [Code usage latency](#code-usage-latency)
-    - [Total TEKs published](#total-teks-published)
-    - [Total publish requests](#total-publish-requests)
-    - [EN days active before upload](#en-days-active-before-upload)
-    - [Onset to upload](#onset-to-upload)
+    - [Key server statistics](#key-server-statistics)
+    - [All charts available](#all-charts-available)
+        - [Codes issued and used](#codes-issued-and-used)
+        - [Code usage latency](#code-usage-latency)
+        - [Total TEKs published](#total-teks-published)
+        - [SMS errors by day](#sms-errors-by-day)
+        - [Total publish requests](#total-publish-requests)
+        - [EN days active before upload](#en-days-active-before-upload)
+        - [Onset to upload](#onset-to-upload)
 - [Rotating certificate signing keys](#rotating-certificate-signing-keys)
-  - [Automatic Rotation](#automatic-rotation)
-  - [Manual Rotation](#manual-rotation)
+    - [Automatic Rotation](#automatic-rotation)
+    - [Manual Rotation](#manual-rotation)
 
 <!-- /TOC -->
 
@@ -121,6 +125,26 @@ Also under realm settings `settings` from the drop down menu, there are several 
   Showing all diagnosis - including `negative` through the app upon code issuance is a more powerful way to
   drive adoption of this system and can be more secure because the receipt of an SMS from this system does not
   reveal the diagnosis outcome.
+
+### User Report
+
+The system also supports user initiated reporting (self report). This feature is especially useful
+if a large percentage of tests in our jurisdiction are at home (self test) or if there is significant
+delay in labs reporting results to the public health authority in the region.
+
+To enable, select the "Allow user initiated report" setting. As an anti abuse measure, phone numbers
+provided by users to request verification codes may be temporarily stored on the server to deduplicate
+future requests. The default retention period is 90 days, but contact your server operator for specific
+configuration.
+
+If you are an Exposure Notifications Express (ENX) customer, you will also want to select 
+"Enable user report webview" which is the UI used on iOS ENX. ENX customers should work directly
+with Apple and Google on enabling user report.
+
+![](images/realm-user-report.png)
+
+The "Admin API can issue user-report codes" setting generally does not need to be used,
+please discuss with Apple and Google before enabling.
 
 ### Date Configuration
 
