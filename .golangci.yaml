@@ -38,7 +38,6 @@ linters:
   - 'exhaustive'
   - 'exportloopref'
   - 'gofmt'
-  - 'gofumpt'
   - 'goheader'
   - 'goimports'
   - 'gomodguard'
@@ -71,6 +70,7 @@ issues:
   exclude:
   - '^S1023:' # staticcheck: redundant returns help with http handlers
   - '^SA3000:' # staticcheck: not required in Go 11.4+
+  - '^G101:' # gosec: many false positives
   - '^G102:' # gosec: we have to bind to all ifaces
   - '^G203:' # gosec: we sanitize HTML
   - '^G505:' # gosec: we use crypto/sha1 for some HMACs
