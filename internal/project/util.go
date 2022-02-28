@@ -25,7 +25,7 @@ import (
 
 const (
 	// PasswordSentinel is the password string inserted into forms.
-	PasswordSentinel = "very-nice-try-maybe-next-time" //nolint:gosec
+	PasswordSentinel = "very-nice-try-maybe-next-time"
 )
 
 // SkipE2ESMS controls whether the e2e runners use SMS.
