@@ -126,8 +126,8 @@ func TestHandleCreate(t *testing.T) {
 			t.Errorf("Expected %d to be %d", got, want)
 		}
 
-		apiKey, ok := session.Values["apiKey"].(string)
-		if !ok {
+		apiKey := controller.APIKeyFromSession(session)
+		if apiKey == "" {
 			t.Fatalf("expected apiKey in session: %#v", session.Values)
 		}
 

@@ -77,7 +77,7 @@ func (c *Controller) HandleCreate() http.Handler {
 
 		// Store the API key on the session temporarily so it can be displayed on
 		// the next page.
-		session.Values["apiKey"] = apiKey
+		controller.StoreSessionAPIKey(session, apiKey)
 
 		flash.Alert("Successfully created API Key for %q", authApp.Name)
 		http.Redirect(w, r, fmt.Sprintf("/realm/apikeys/%d", authApp.ID), http.StatusSeeOther)
