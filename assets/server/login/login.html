@@ -28,15 +28,15 @@
                   <div class="col-lg-12">
                     <div class="form-floating">
                       <input type="email" id="email" name="email" class="form-control" placeholder="{{t $.locale "login.email-address"}}"
-                        autocomplete="username" required autofocus {{if $currentUser}}disabled value="{{$currentUser.Email}}"{{end}}/>
+                        autocomplete="username" autocorrect="off" spellcheck="off" required autofocus {{if $currentUser}}disabled value="{{$currentUser.Email}}"{{end}}/>
                       <label for="email">{{t $.locale "login.email-address"}}</label>
                     </div>
                   </div>
 
                   <div class="col-lg-12">
                     <div class="form-floating">
-                      <input type="password" id="password" name="password" class="form-control"
-                        placeholder="{{t $.locale "login.password"}}" autocomplete="password" required />
+                      <input type="password" id="password" name="password" class="form-control" placeholder="{{t $.locale "login.password"}}"
+                        autocomplete="password"  autocorrect="off" spellcheck="off" required />
                       <label for="password">{{t $.locale "login.password"}}</label>
                     </div>
                   </div>
