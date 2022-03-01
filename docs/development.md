@@ -18,8 +18,7 @@ represent best practices.
 1.  Configure gcloud:
 
     ```sh
-    gcloud auth login && \
-    gcloud auth application-default login && \
+    gcloud auth login --update-adc && \
     gcloud auth application-default set-quota-project "${PROJECT_ID}"
     ```
 
@@ -103,7 +102,7 @@ represent best practices.
     # output in the previous step.
     export TOKEN_KEY_MANAGER="FILESYSTEM"
     export TOKEN_KEY_FILESYSTEM_ROOT="$(pwd)/local"
-    export TOKEN_SIGNING_KEY="TODO" # (e.g. "/system/token-signing/1122334455")
+    export TOKEN_SIGNING_KEY="TODO" # (e.g. "/system/token-signing")
 
     # Configure the database key manager. The DB_KEYRING and DB_ENCRYPTION_KEY
     # should be the values output in the previous step.
@@ -116,6 +115,10 @@ represent best practices.
     # your own encryption key with `openssl rand -base64 64`.
     export KEY_MANAGER="IN_MEMORY"
     export DB_ENCRYPTION_KEY="O04ZjG4WuoceRd0k2pTqDN0r8omr6sbFL0U3T5b12Lo="
+
+    # Secrets.
+    export SECRET_MANAGER="FILESYSTEM"
+    export SECRET_FILESYSTEM_ROOT="$(pwd)/local/secrets"
 
     # Configure database pooling.
     export DB_POOL_MIN_CONNS="2"
