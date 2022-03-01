@@ -30,6 +30,7 @@ const (
 	emailVerificationPrompted         = sessionKey("emailVerificationPrompted")
 	mfaPrompted                       = sessionKey("mfaPrompted")
 	passwordExpireWarned              = sessionKey("passwordExpireWarned")
+	sessionKeyAPIKey                  = sessionKey("apiKey")
 	sessionKeyCSRFToken               = sessionKey("csrfToken")
 	sessionKeyLastActivity            = sessionKey("lastActivity")
 	sessionKeyRealmID                 = sessionKey("realmID")
@@ -86,6 +87,35 @@ func RegionFromSession(session *sessions.Session) string {
 		return ""
 	}
 	return strVal
+}
+
+// StoreSessionAPIKey stores the API key on the session.
+func StoreSessionAPIKey(session *sessions.Session, apiKey string) {
+	if session == nil || len(apiKey) == 0 {
+		return
+	}
+	session.Values[sessionKeyAPIKey] = apiKey
+}
+
+// ClearSessionAPIKey clears the API key from the session.
+func ClearSessionAPIKey(session *sessions.Session) {
+	sessionClear(session, sessionKeyAPIKey)
+}
+
+// APIKeyFromSession extracts the API key from the session.
+func APIKeyFromSession(session *sessions.Session) string {
+	v := sessionGet(session, sessionKeyAPIKey)
+	if v == nil {
+		return ""
+	}
+
+	t, ok := v.(string)
+	if !ok {
+		delete(session.Values, sessionKeyAPIKey)
+		return ""
+	}
+
+	return t
 }
 
 // StoreSessionCSRFToken stores the CSRF token on the session.

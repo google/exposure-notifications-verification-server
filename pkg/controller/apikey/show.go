@@ -51,15 +51,6 @@ func (c *Controller) HandleShow() http.Handler {
 		}
 		currentRealm := membership.Realm
 
-		// If the API key is present, add it to the variables map and then delete it
-		// from the session.
-		apiKey, ok := session.Values["apiKey"]
-		if ok {
-			m := controller.TemplateMapFromContext(ctx)
-			m["apiKey"] = apiKey
-			delete(session.Values, "apiKey")
-		}
-
 		// Pull the authorized app from the id.
 		authApp, err := currentRealm.FindAuthorizedApp(c.db, vars["id"])
 		if err != nil {
@@ -71,6 +62,18 @@ func (c *Controller) HandleShow() http.Handler {
 
 			controller.InternalError(w, r, c.h, err)
 			return
+		}
+
+		// If the API key is present, add it to the variables map and then delete it
+		// from the session.
+		apiKey := controller.APIKeyFromSession(session)
+		if apiKey != "" {
+			logger.Debug("found API key in session, adding to template map")
+
+			controller.ClearSessionAPIKey(session)
+			m := controller.TemplateMapFromContext(ctx)
+			m["apiKey"] = apiKey
+			ctx = controller.WithTemplateMap(ctx, m)
 		}
 
 		c.renderShow(ctx, w, authApp)
