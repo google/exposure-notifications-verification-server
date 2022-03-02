@@ -16,7 +16,6 @@ package middleware
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -75,9 +74,7 @@ func joinSplitSessionCookie(r *http.Request, store sessions.Store, key interface
 func splitSessionCookie(session *sessions.Session, splitSession *sessions.Session, key interface{}) {
 	splitSession.Values = make(map[interface{}]interface{})
 	value, ok := session.Values[key]
-	log.Printf("moving %v value to separate session: %v : %v", key, value, ok)
 	if ok {
-		log.Printf("successfully moved")
 		splitSession.Values[key] = value
 		delete(session.Values, key)
 	}
