@@ -59,6 +59,14 @@ func NewFirebase(ctx context.Context, config *firebase.Config) (Provider, error)
 	}, nil
 }
 
+func (f *firebaseAuth) SplitAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
+	return splitAuthCookie(mainSession, authSession, sessionKeyFirebaseCookie)
+}
+
+func (f *firebaseAuth) JoinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
+	return joinAuthCookie(mainSession, authSession, sessionKeyFirebaseCookie)
+}
+
 // CheckRevoked checks if the users auth has been revoked.
 func (f *firebaseAuth) CheckRevoked(ctx context.Context, session *sessions.Session) error {
 	raw, err := sessionGet(session, sessionKeyFirebaseCookie)

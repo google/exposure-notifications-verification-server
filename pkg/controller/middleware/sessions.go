@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -30,24 +32,25 @@ import (
 
 const (
 	// sessionName is the name of the session.
-	sessionName = "verification-server-session"
+	sessionName     = "verification-server-session"
+	authSessionName = "verification-user"
 )
 
 // RequireNamedSession retrieves or creates a new session with a specific name, other
 // than the default session name.
-func RequireNamedSession(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, name, h)
+func RequireNamedSession(store sessions.Store, name string, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, name, authProvider, h)
 }
 
 // RequireSession retrieves or creates a new session and stores it on the
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
-func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, sessionName, h)
+func RequireSession(store sessions.Store, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, sessionName, authProvider, h)
 }
 
-func buildHandler(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
+func buildHandler(store sessions.Store, name string, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -65,6 +68,17 @@ func buildHandler(store sessions.Store, name string, h *render.Renderer) func(ht
 				// have a session.
 				session, _ = store.New(r, name)
 			}
+			var authSession *sessions.Session
+			if authProvider != nil {
+				authSession, err = store.Get(r, authSessionName)
+				if err != nil {
+					logger.Errorw("failed to get auth session", "error", err)
+					authSession, _ = store.New(r, name)
+				}
+				if err = authProvider.JoinAuthCookie(session, authSession); err != nil {
+					logger.Debugw("failed to join sessions", "error", err)
+				}
+			}
 
 			// Save the flash in the template map.
 			m := controller.TemplateMapFromContext(ctx)
@@ -80,15 +94,24 @@ func buildHandler(store sessions.Store, name string, h *render.Renderer) func(ht
 			// ensure the session is always sent.
 			var once sync.Once
 			saveSession := func() error {
-				var err error
+				var merr *multierror.Error
 				once.Do(func() {
+					if authSession != nil {
+						authProvider.SplitAuthCookie(session, authSession)
+						if err := authSession.Save(r, w); err != nil {
+							merr = multierror.Append(merr, err)
+						}
+					}
 					session := controller.SessionFromContext(ctx)
 					if session != nil {
 						controller.StoreSessionLastActivity(session, time.Now())
-						err = session.Save(r, w)
+						if err := session.Save(r, w); err != nil {
+							merr = multierror.Append(merr, err)
+						}
+
 					}
 				})
-				return err
+				return merr.ErrorOrNil()
 			}
 
 			bfbw := &beforeFirstByteWriter{

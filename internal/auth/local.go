@@ -33,6 +33,14 @@ func NewLocal(ctx context.Context) (Provider, error) {
 	return &localAuth{}, nil
 }
 
+func (a *localAuth) SplitAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
+	return splitAuthCookie(mainSession, authSession, sessionKeyLocalCookie)
+}
+
+func (a *localAuth) JoinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
+	return joinAuthCookie(mainSession, authSession, sessionKeyLocalCookie)
+}
+
 // CheckRevoked checks if the users auth has been revoked.
 func (a *localAuth) CheckRevoked(ctx context.Context, session *sessions.Session) error {
 	data, err := a.loadCookie(ctx, session)

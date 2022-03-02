@@ -26,6 +26,8 @@ import (
 var (
 	ErrSessionMissing     = fmt.Errorf("session is missing")
 	ErrSessionInfoMissing = fmt.Errorf("session info is missing")
+
+	NoAuthProvider Provider = nil
 )
 
 // InviteUserEmailFunc sends email with the given inviteLink.
@@ -39,6 +41,14 @@ type EmailVerificationEmailFunc func(ctx context.Context, verifyLink string) err
 
 // Provider is a generic authentication provider interface.
 type Provider interface {
+	// SplitAuthCookie moves the auth providers session values from the main
+	// session to the auth session
+	SplitAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error
+
+	// JoinAuthCookie moves the auth providers session values from the authSession
+	// to the main session.
+	JoinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error
+
 	// StoreSession stores the session in the values.
 	StoreSession(context.Context, *sessions.Session, *SessionInfo) error
 

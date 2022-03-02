@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/project"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller/middleware"
@@ -37,7 +38,7 @@ func TestRequireSession(t *testing.T) {
 
 	store := sessions.NewCookieStore()
 
-	requireSession := middleware.RequireSession(store, h)
+	requireSession := middleware.RequireSession(store, auth.NoAuthProvider, h)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
