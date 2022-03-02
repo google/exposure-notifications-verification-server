@@ -157,7 +157,7 @@ func ENXRedirect(
 		hostHeaderCheck := middleware.RequireHostHeader(allowedHostHeaders, h, cfg.DevMode)
 
 		// Using a different name, makes it so cookies don't interfer in local dev.
-		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", h)
+		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", []interface{}{}, h)
 
 		{ // handler for /report/issue, required values must be in the established session.
 			sub := r.Path("/report/issue").Subrouter()

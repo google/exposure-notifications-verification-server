@@ -15,6 +15,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ import (
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -31,23 +33,54 @@ import (
 const (
 	// sessionName is the name of the session.
 	sessionName = "verification-server-session"
+	splitValues = "_vss-"
 )
 
 // RequireNamedSession retrieves or creates a new session with a specific name, other
 // than the default session name.
-func RequireNamedSession(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, name, h)
+func RequireNamedSession(store sessions.Store, name string, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, name, splitValues, h)
 }
 
 // RequireSession retrieves or creates a new session and stores it on the
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
-func RequireSession(store sessions.Store, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, sessionName, h)
+func RequireSession(store sessions.Store, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, sessionName, splitValues, h)
 }
 
-func buildHandler(store sessions.Store, name string, h *render.Renderer) func(http.Handler) http.Handler {
+func splitCookieName(key interface{}) string {
+	return fmt.Sprintf("%s%v", splitValues, key)
+}
+
+// joinSplitSessionCookie retrieves a cookie containing a single value that was previously split from the main session
+// cookie.
+func joinSplitSessionCookie(r *http.Request, store sessions.Store, key interface{}, session *sessions.Session) *sessions.Session {
+	name := splitCookieName(key)
+	splitSession, err := store.Get(r, name)
+	if err != nil {
+		splitSession, _ = store.New(r, name)
+	}
+	if splitSession.Values != nil {
+		v, ok := splitSession.Values[key]
+		if ok {
+			session.Values[key] = v
+		}
+	}
+	return splitSession
+}
+
+func splitSessionCookie(session *sessions.Session, splitSession *sessions.Session, key interface{}) {
+	splitSession.Values = make(map[interface{}]interface{})
+	value, ok := session.Values[key]
+	if ok {
+		splitSession.Values[key] = value
+		delete(session.Values, key)
+	}
+}
+
+func buildHandler(store sessions.Store, name string, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -65,6 +98,10 @@ func buildHandler(store sessions.Store, name string, h *render.Renderer) func(ht
 				// have a session.
 				session, _ = store.New(r, name)
 			}
+			splitSessions := make(map[interface{}]*sessions.Session)
+			for _, key := range splitValues {
+				splitSessions[key] = joinSplitSessionCookie(r, store, key, session)
+			}
 
 			// Save the flash in the template map.
 			m := controller.TemplateMapFromContext(ctx)
@@ -80,15 +117,24 @@ func buildHandler(store sessions.Store, name string, h *render.Renderer) func(ht
 			// ensure the session is always sent.
 			var once sync.Once
 			saveSession := func() error {
-				var err error
+				var merr *multierror.Error
 				once.Do(func() {
 					session := controller.SessionFromContext(ctx)
 					if session != nil {
+						// Split and save individual cookies
+						for key, splitSession := range splitSessions {
+							splitSessionCookie(session, splitSession, key)
+							if err := splitSession.Save(r, w); err != nil {
+								merr = multierror.Append(err, fmt.Errorf("save session %s%s: %w", splitValues, key, err))
+							}
+						}
 						controller.StoreSessionLastActivity(session, time.Now())
-						err = session.Save(r, w)
+						if err := session.Save(r, w); err != nil {
+							merr = multierror.Append(merr, err)
+						}
 					}
 				})
-				return err
+				return merr.ErrorOrNil()
 			}
 
 			bfbw := &beforeFirstByteWriter{

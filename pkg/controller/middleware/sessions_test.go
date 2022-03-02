@@ -37,7 +37,7 @@ func TestRequireSession(t *testing.T) {
 
 	store := sessions.NewCookieStore()
 
-	requireSession := middleware.RequireSession(store, h)
+	requireSession := middleware.RequireSession(store, []interface{}{}, h)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r = r.Clone(ctx)
