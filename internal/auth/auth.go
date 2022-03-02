@@ -27,7 +27,7 @@ var (
 	ErrSessionMissing     = fmt.Errorf("session is missing")
 	ErrSessionInfoMissing = fmt.Errorf("session info is missing")
 
-	NoAuthProvider Provider = nil
+	NoAuthProvider Provider
 )
 
 // InviteUserEmailFunc sends email with the given inviteLink.
