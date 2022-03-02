@@ -84,7 +84,9 @@ func joinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session
 	if v == nil {
 		return nil
 	}
-	sessionSet(mainSession, key, v)
+	if err := sessionSet(mainSession, key, v); err != nil {
+		return err
+	}
 	sessionClear(authSession, key)
 	return nil
 }

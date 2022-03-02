@@ -97,7 +97,10 @@ func buildHandler(store sessions.Store, name string, authProvider auth.Provider,
 				var merr *multierror.Error
 				once.Do(func() {
 					if authSession != nil {
-						authProvider.SplitAuthCookie(session, authSession)
+						if err := authProvider.SplitAuthCookie(session, authSession); err != nil {
+							merr = multierror.Append(merr, err)
+						}
+						// even if the split fails, save the auth session (force logout).
 						if err := authSession.Save(r, w); err != nil {
 							merr = multierror.Append(merr, err)
 						}
@@ -108,7 +111,6 @@ func buildHandler(store sessions.Store, name string, authProvider auth.Provider,
 						if err := session.Save(r, w); err != nil {
 							merr = multierror.Append(merr, err)
 						}
-
 					}
 				})
 				return merr.ErrorOrNil()
