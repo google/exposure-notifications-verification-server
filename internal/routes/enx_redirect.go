@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"github.com/google/exposure-notifications-verification-server/assets"
-	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/internal/i18n"
 	"github.com/google/exposure-notifications-verification-server/pkg/cache"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
@@ -158,7 +157,7 @@ func ENXRedirect(
 		hostHeaderCheck := middleware.RequireHostHeader(allowedHostHeaders, h, cfg.DevMode)
 
 		// Using a different name, makes it so cookies don't interfer in local dev.
-		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", auth.NoAuthProvider, h)
+		requireSession := middleware.RequireNamedSession(sessions, "en-user-report", []interface{}{}, h)
 
 		{ // handler for /report/issue, required values must be in the established session.
 			sub := r.Path("/report/issue").Subrouter()

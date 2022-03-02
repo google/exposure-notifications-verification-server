@@ -62,31 +62,3 @@ func sessionClear(session *sessions.Session, key sessionKey) {
 	}
 	delete(session.Values, key)
 }
-
-func splitAuthCookie(mainSession *sessions.Session, authSession *sessions.Session, key sessionKey) error {
-	v, err := sessionGet(mainSession, key)
-	if err != nil {
-		return nil
-	}
-	if err := sessionSet(authSession, key, v); err != nil {
-		return err
-	}
-	sessionClear(mainSession, key)
-	return nil
-}
-
-func joinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session, key sessionKey) error {
-	v, err := sessionGet(authSession, key)
-	if err != nil {
-		// not an error in this case if there is nothing to join
-		return nil
-	}
-	if v == nil {
-		return nil
-	}
-	if err := sessionSet(mainSession, key, v); err != nil {
-		return err
-	}
-	sessionClear(authSession, key)
-	return nil
-}

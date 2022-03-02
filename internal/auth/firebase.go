@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	sessionKeyFirebaseCookie = sessionKey("firebaseCookie")
+	SessionKeyFirebaseCookie = sessionKey("firebaseCookie")
 )
 
 type firebaseAuth struct {
@@ -59,17 +59,9 @@ func NewFirebase(ctx context.Context, config *firebase.Config) (Provider, error)
 	}, nil
 }
 
-func (f *firebaseAuth) SplitAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
-	return splitAuthCookie(mainSession, authSession, sessionKeyFirebaseCookie)
-}
-
-func (f *firebaseAuth) JoinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session) error {
-	return joinAuthCookie(mainSession, authSession, sessionKeyFirebaseCookie)
-}
-
 // CheckRevoked checks if the users auth has been revoked.
 func (f *firebaseAuth) CheckRevoked(ctx context.Context, session *sessions.Session) error {
-	raw, err := sessionGet(session, sessionKeyFirebaseCookie)
+	raw, err := sessionGet(session, SessionKeyFirebaseCookie)
 	if err != nil {
 		f.ClearSession(ctx, session)
 		return err
@@ -121,7 +113,7 @@ func (f *firebaseAuth) StoreSession(ctx context.Context, session *sessions.Sessi
 	}
 
 	// Set cookie
-	if err := sessionSet(session, sessionKeyFirebaseCookie, cookie); err != nil {
+	if err := sessionSet(session, SessionKeyFirebaseCookie, cookie); err != nil {
 		f.ClearSession(ctx, session)
 		return err
 	}
@@ -132,7 +124,7 @@ func (f *firebaseAuth) StoreSession(ctx context.Context, session *sessions.Sessi
 // ClearSession removes any session information for this auth. It does not
 // revoke the session upstream.
 func (f *firebaseAuth) ClearSession(ctx context.Context, session *sessions.Session) {
-	sessionClear(session, sessionKeyFirebaseCookie)
+	sessionClear(session, SessionKeyFirebaseCookie)
 }
 
 // RevokeSession revokes the upstream session in the provider.
@@ -385,7 +377,7 @@ func (f *firebaseAuth) dataFromCookie(ctx context.Context, cookie string) (*fire
 
 // loadCookie loads and parses the firebase cookie from the session.
 func (f *firebaseAuth) loadCookie(ctx context.Context, session *sessions.Session) (*firebaseCookieData, error) {
-	raw, err := sessionGet(session, sessionKeyFirebaseCookie)
+	raw, err := sessionGet(session, SessionKeyFirebaseCookie)
 	if err != nil {
 		f.ClearSession(ctx, session)
 		return nil, err

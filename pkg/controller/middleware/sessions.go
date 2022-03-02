@@ -15,12 +15,13 @@
 package middleware
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
-	"github.com/google/exposure-notifications-verification-server/internal/auth"
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
@@ -32,25 +33,57 @@ import (
 
 const (
 	// sessionName is the name of the session.
-	sessionName     = "verification-server-session"
-	authSessionName = "verification-user"
+	sessionName = "verification-server-session"
+	splitValues = "_vss-"
 )
 
 // RequireNamedSession retrieves or creates a new session with a specific name, other
 // than the default session name.
-func RequireNamedSession(store sessions.Store, name string, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, name, authProvider, h)
+func RequireNamedSession(store sessions.Store, name string, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, name, splitValues, h)
 }
 
 // RequireSession retrieves or creates a new session and stores it on the
 // request's context for future retrieval. It also ensures the flash data is
 // populated in the template map. Any handler that wants to utilize sessions
 // should use this middleware.
-func RequireSession(store sessions.Store, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
-	return buildHandler(store, sessionName, authProvider, h)
+func RequireSession(store sessions.Store, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
+	return buildHandler(store, sessionName, splitValues, h)
 }
 
-func buildHandler(store sessions.Store, name string, authProvider auth.Provider, h *render.Renderer) func(http.Handler) http.Handler {
+func splitCookieName(key interface{}) string {
+	return fmt.Sprintf("%s%v", splitValues, key)
+}
+
+// joinSplitSessionCookie retrieves a cookie containing a single value that was previously split from the main session
+// cookie.
+func joinSplitSessionCookie(r *http.Request, store sessions.Store, key interface{}, session *sessions.Session) *sessions.Session {
+	name := splitCookieName(key)
+	splitSession, err := store.Get(r, name)
+	if err != nil {
+		splitSession, _ = store.New(r, name)
+	}
+	if splitSession.Values != nil {
+		v, ok := splitSession.Values[key]
+		if ok {
+			session.Values[key] = v
+		}
+	}
+	return splitSession
+}
+
+func splitSessionCookie(session *sessions.Session, splitSession *sessions.Session, key interface{}) {
+	splitSession.Values = make(map[interface{}]interface{})
+	value, ok := session.Values[key]
+	log.Printf("moving %v value to separate session: %v : %v", key, value, ok)
+	if ok {
+		log.Printf("successfully moved")
+		splitSession.Values[key] = value
+		delete(session.Values, key)
+	}
+}
+
+func buildHandler(store sessions.Store, name string, splitValues []interface{}, h *render.Renderer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -68,16 +101,9 @@ func buildHandler(store sessions.Store, name string, authProvider auth.Provider,
 				// have a session.
 				session, _ = store.New(r, name)
 			}
-			var authSession *sessions.Session
-			if authProvider != nil {
-				authSession, err = store.Get(r, authSessionName)
-				if err != nil {
-					logger.Errorw("failed to get auth session", "error", err)
-					authSession, _ = store.New(r, name)
-				}
-				if err = authProvider.JoinAuthCookie(session, authSession); err != nil {
-					logger.Debugw("failed to join sessions", "error", err)
-				}
+			splitSessions := make(map[interface{}]*sessions.Session)
+			for _, key := range splitValues {
+				splitSessions[key] = joinSplitSessionCookie(r, store, key, session)
 			}
 
 			// Save the flash in the template map.
@@ -96,17 +122,15 @@ func buildHandler(store sessions.Store, name string, authProvider auth.Provider,
 			saveSession := func() error {
 				var merr *multierror.Error
 				once.Do(func() {
-					if authSession != nil {
-						if err := authProvider.SplitAuthCookie(session, authSession); err != nil {
-							merr = multierror.Append(merr, err)
-						}
-						// even if the split fails, save the auth session (force logout).
-						if err := authSession.Save(r, w); err != nil {
-							merr = multierror.Append(merr, err)
-						}
-					}
 					session := controller.SessionFromContext(ctx)
 					if session != nil {
+						// Split and save individual cookies
+						for key, splitSession := range splitSessions {
+							splitSessionCookie(session, splitSession, key)
+							if err := splitSession.Save(r, w); err != nil {
+								merr = multierror.Append(err, fmt.Errorf("save session %s%s: %w", splitValues, key, err))
+							}
+						}
 						controller.StoreSessionLastActivity(session, time.Now())
 						if err := session.Save(r, w); err != nil {
 							merr = multierror.Append(merr, err)

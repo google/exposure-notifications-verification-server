@@ -157,7 +157,7 @@ func Server(
 	sub.Use(processDebug)
 
 	// Sessions
-	requireSession := middleware.RequireSession(sessions, authProvider, h)
+	requireSession := middleware.RequireSession(sessions, []interface{}{auth.SessionKeyFirebaseCookie}, h)
 	sub.Use(requireSession)
 
 	// Install the CSRF protection middleware.
