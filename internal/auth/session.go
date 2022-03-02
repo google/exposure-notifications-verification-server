@@ -78,6 +78,10 @@ func splitAuthCookie(mainSession *sessions.Session, authSession *sessions.Sessio
 func joinAuthCookie(mainSession *sessions.Session, authSession *sessions.Session, key sessionKey) error {
 	v, err := sessionGet(authSession, key)
 	if err != nil {
+		// not an error in this case if there is nothing to join
+		return nil
+	}
+	if v == nil {
 		return nil
 	}
 	sessionSet(mainSession, key, v)
