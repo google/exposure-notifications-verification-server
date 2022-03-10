@@ -393,8 +393,11 @@
       // sum over last ${smoothDrop.value} days
       const table = new Array(data[idx].tek_age_distribution.length).fill(0);
       let total = 0;
-      for (let i = idx; i < idx + smoothDrop.value && i < data.length; i++) {
-        const row = data[i];
+      for (let offset = 0; offset < smoothDrop.value; offset++) {
+        if (idx + offset >= data.length) {
+          break;
+        }
+        const row = data[idx + offset];
         for (let j = 0; j < row.tek_age_distribution.length; j++) {
           const count = parseInt(row.tek_age_distribution[j]);
           table[j] += count;
@@ -515,8 +518,11 @@
       // sum over last ${smoothDrop.value} days
       const table = new Array(data[idx].onset_to_upload_distribution.length).fill(0);
       let total = 0;
-      for (let i = idx; i < idx + smoothDrop.value && i < data.length; i++) {
-        const row = data[i];
+      for (let offset = 0; offset < smoothDrop.value; offset++) {
+        if (idx + offset >= data.length) {
+          break;
+        }
+        const row = data[idx + offset];
         for (let j = 0; j < row.onset_to_upload_distribution.length; j++) {
           const count = parseInt(row.onset_to_upload_distribution[j]);
           table[j] += count;
