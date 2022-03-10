@@ -425,8 +425,12 @@
       // sum over last ${smoothDrop.value} days
       const table = new Array(data[idx].data.code_claim_age_distribution.length).fill(0);
       let total = 0;
-      for (let i = idx; i < idx + smoothDrop.value && i < data.length; i++) {
-        const row = data[i].data;
+      // For the number of days to smooth over.
+      for (let offset = 0; offset < smoothDrop.value; offset++) {
+        if (idx + offset >= data.length) {
+          break;
+        }
+        const row = data[idx + offset].data;
         for (let j = 0; j < row.code_claim_age_distribution.length; j++) {
           const codes = parseInt(row.code_claim_age_distribution[j]);
           table[j] += codes;
