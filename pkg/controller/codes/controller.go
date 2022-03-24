@@ -19,8 +19,10 @@ package codes
 
 import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
+	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/gorilla/sessions"
 )
 
 type Controller struct {
@@ -45,5 +47,11 @@ func NewAPI(cfg *config.AdminAPIServerConfig, db *database.Database, h *render.R
 		apiconfig: cfg,
 		db:        db,
 		h:         h,
+	}
+}
+
+func AddMaintenanceMode(realm *database.Realm, session *sessions.Session) {
+	if realm.MaintenanceMode {
+		controller.Flash(session).Warning("This realm has been placed in maintenance mode by the server operator and cannot issue codes at this time.")
 	}
 }

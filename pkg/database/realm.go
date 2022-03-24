@@ -178,6 +178,9 @@ type Realm struct {
 	// Name is the name of the realm.
 	Name string `gorm:"type:varchar(200);unique_index;"`
 
+	// MaintenanceMode defines if this realm is allowed to issue node codes right now.
+	MaintenanceMode bool `gorm:"column:maintenance_mode; type:bool; not null; default:false;"`
+
 	// RegionCode is both a display attribute and required field for ENX. To
 	// handle NULL and uniqueness, the field is converted from it's ptr type to a
 	// concrete type in callbacks. Do not modify RegionCodePtr directly.

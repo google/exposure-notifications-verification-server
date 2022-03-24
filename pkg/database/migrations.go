@@ -2576,6 +2576,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 				return nil
 			},
 		},
+		{
+			ID: "00123-AddRealmMaintenanceMode",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms ADD COLUMN IF NOT EXISTS maintenance_mode BOOLEAN DEFAULT false`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realms DROP COLUMN IF EXISTS maintenance_mode`)
+			},
+		},
 	}
 }
 

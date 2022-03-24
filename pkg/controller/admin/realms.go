@@ -192,6 +192,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		ShortCodeMaxMinutes           uint `form:"short_code_max_minutes"`
 		ENXCodeExpirationConfigurable bool `form:"enx_code_expiration_configurable"`
 		AllowGeneratedSMS             bool `form:"allow_generated_sms"`
+		MaintenanceMode               bool `form:"maintenance_mode"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -287,6 +288,7 @@ func (c *Controller) HandleRealmsUpdate() http.Handler {
 		realm.ShortCodeMaxMinutes = form.ShortCodeMaxMinutes
 		realm.ENXCodeExpirationConfigurable = form.ENXCodeExpirationConfigurable
 		realm.AllowGeneratedSMS = form.AllowGeneratedSMS
+		realm.MaintenanceMode = form.MaintenanceMode
 		if err := c.db.SaveRealm(realm, currentUser); err != nil {
 			if database.IsValidationError(err) {
 				w.WriteHeader(http.StatusUnprocessableEntity)

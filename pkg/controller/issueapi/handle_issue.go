@@ -31,7 +31,8 @@ import (
 // HandleIssueAPI responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssueAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c.config.IsMaintenanceMode() {
+		realm := controller.RealmFromContext(r.Context())
+		if c.config.IsMaintenanceMode() || realm.MaintenanceMode {
 			c.h.RenderJSON(w, http.StatusTooManyRequests,
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
@@ -47,7 +48,8 @@ func (c *Controller) HandleIssueAPI() http.Handler {
 // HandleIssueUI responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssueUI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c.config.IsMaintenanceMode() {
+		realm := controller.RealmFromContext(r.Context())
+		if c.config.IsMaintenanceMode() || realm.MaintenanceMode {
 			c.h.RenderJSON(w, http.StatusTooManyRequests,
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 			return
@@ -101,6 +103,13 @@ func (c *Controller) decodeAndIssue(ctx context.Context, w http.ResponseWriter, 
 	if err := controller.BindJSON(w, r, &request); err != nil {
 		result.obsResult = enobs.ResultError("FAILED_TO_PARSE_JSON_REQUEST")
 		c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
+		return
+	}
+
+	realm := controller.RealmFromContext(ctx)
+	if realm.MaintenanceMode {
+		c.h.RenderJSON(w, http.StatusTooManyRequests,
+			api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
 		return
 	}
 

@@ -28,6 +28,95 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 )
 
+func TestHandleIssueDuringMaintenance(t *testing.T) {
+	t.Parallel()
+
+	ctx := project.TestContext(t)
+	harness := envstest.NewServerConfig(t, testDatabaseInstance)
+
+	realm, err := harness.Database.FindRealm(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	realm.AllowBulkUpload = true
+	realm.AllowGeneratedSMS = true
+	realm.AllowedTestTypes = database.TestTypeConfirmed
+	realm.MaintenanceMode = true
+	if err := harness.Database.SaveRealm(realm, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	authApp := &database.AuthorizedApp{
+		Name:       "Appy",
+		APIKeyType: database.APIKeyTypeAdmin,
+	}
+	if _, err := realm.CreateAuthorizedApp(harness.Database, authApp, database.SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	symptomDate := time.Now().UTC().Add(-48 * time.Hour).Format(project.RFC3339Date)
+
+	c := issueapi.New(harness.Config, harness.Database, harness.RateLimiter, harness.KeyManager, harness.Renderer)
+	handler := c.HandleIssueAPI()
+
+	cases := []struct {
+		name    string
+		request *api.IssueCodeRequest
+	}{
+		{
+			name: "success",
+			request: &api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: symptomDate,
+			},
+		},
+		{
+			name: "only_generate_sms",
+			request: &api.IssueCodeRequest{
+				TestType:        "confirmed",
+				SymptomDate:     symptomDate,
+				Phone:           "5005550000",
+				OnlyGenerateSMS: true,
+			},
+		},
+		{
+			name: "failure",
+			request: &api.IssueCodeRequest{
+				TestType:    "confirmed",
+				SymptomDate: "invalid date",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := ctx
+			ctx = controller.WithRealm(ctx, realm)
+			ctx = controller.WithAuthorizedApp(ctx, authApp)
+
+			w, r := envstest.BuildJSONRequest(ctx, t, http.MethodPost, "/", tc.request)
+			handler.ServeHTTP(w, r)
+
+			if got, want := w.Code, http.StatusTooManyRequests; got != want {
+				t.Errorf("expected %d to be %d: %s", got, want, w.Body.String())
+			}
+
+			var apiResp api.BatchIssueCodeResponse
+			if err := json.NewDecoder(w.Body).Decode(&apiResp); err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := apiResp.ErrorCode, "maintenance_mode"; got != want {
+				t.Errorf("expected %#v to be %#v: %#v", got, want, apiResp)
+			}
+		})
+	}
+}
+
 func TestHandleIssue(t *testing.T) {
 	t.Parallel()
 
