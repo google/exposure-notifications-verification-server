@@ -52,6 +52,38 @@
           </div>
 
           <div class="bg-light border rounded p-3 mb-3">
+            <h5 class="mb-3">Maintenance mode</h5>
+
+            <div class="row g-3">
+              <div class="col-lg">
+                <div class="form-check">
+                  <input type="radio" name="maintenance_mode" id="maintenance-mode-true" class="form-check-input"
+                    value="true" {{checkedIf $realm.MaintenanceMode}} />
+                  <label for="maintenance-mode-true" class="form-check-label">
+                    <div>Enabled</div>
+                    <div class="small text-muted">
+                      Stops this realm from issuing new codes.
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-lg">
+                <div class="form-check">
+                  <input type="radio" name="maintenance_mode" id="maintenance-mode-false" class="form-check-input"
+                    value="false" {{checkedIf (not $realm.MaintenanceMode)}} />
+                  <label for="allow-bulk-false" class="form-check-label">
+                    <div>Disabled</div>
+                    <div class="small text-muted">
+                      Normal operations.
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-light border rounded p-3 mb-3">
             <h5 class="mb-3">Verification code settings</h5>
 
             <div class="row g-3">

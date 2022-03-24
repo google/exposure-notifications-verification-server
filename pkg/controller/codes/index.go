@@ -47,6 +47,8 @@ func (c *Controller) HandleIndex() http.Handler {
 		currentRealm := membership.Realm
 		currentUser := membership.User
 
+		AddMaintenanceMode(currentRealm, session)
+
 		var code database.VerificationCode
 		if err := c.renderStatus(ctx, w, currentRealm, currentUser, &code); err != nil {
 			controller.InternalError(w, r, c.h, err)
