@@ -31,7 +31,9 @@ import (
 // HandleIssueAPI responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssueAPI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		realm := controller.RealmFromContext(r.Context())
+		ctx := r.Context()
+		realm := controller.RealmFromContext(ctx)
+
 		if c.config.IsMaintenanceMode() || realm.MaintenanceMode {
 			c.h.RenderJSON(w, http.StatusTooManyRequests,
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
@@ -48,7 +50,9 @@ func (c *Controller) HandleIssueAPI() http.Handler {
 // HandleIssueUI responds to the /issue API for issuing verification codes
 func (c *Controller) HandleIssueUI() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		realm := controller.RealmFromContext(r.Context())
+		ctx := r.Context()
+		realm := controller.RealmFromContext(ctx)
+
 		if c.config.IsMaintenanceMode() || realm.MaintenanceMode {
 			c.h.RenderJSON(w, http.StatusTooManyRequests,
 				api.Errorf("server is read-only for maintenance").WithCode(api.ErrMaintenanceMode))
