@@ -46,7 +46,6 @@ func (c *Controller) HandleIssue() http.Handler {
 		}
 
 		currentRealm := membership.Realm
-		AddMaintenanceMode(currentRealm, session)
 
 		hasSMSConfig, err := currentRealm.HasSMSConfig(c.db)
 		if err != nil {

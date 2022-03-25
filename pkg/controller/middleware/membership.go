@@ -45,6 +45,7 @@ func LoadCurrentMembership(h *render.Renderer) mux.MiddlewareFunc {
 				controller.MissingSession(w, r, h)
 				return
 			}
+			flash := controller.Flash(session)
 
 			currentUser := controller.UserFromContext(ctx)
 			if currentUser == nil {
@@ -78,6 +79,12 @@ func LoadCurrentMembership(h *render.Renderer) mux.MiddlewareFunc {
 				controller.ClearSessionRealm(session)
 				next.ServeHTTP(w, r)
 				return
+			}
+
+			// Check if realm is in maintenance mode.
+			if membership.Realm.MaintenanceMode {
+				flash.Warning(fmt.Sprintf("%s is in maintenance mode and cannot issue "+
+					"codes.", membership.Realm.Name))
 			}
 
 			// Save the membership on the context.

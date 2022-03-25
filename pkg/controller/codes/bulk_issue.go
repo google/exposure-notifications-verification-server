@@ -51,8 +51,6 @@ func (c *Controller) HandleBulkIssue() http.Handler {
 			return
 		}
 
-		AddMaintenanceMode(currentRealm, session)
-
 		hasSMSConfig, err := currentRealm.HasSMSConfig(c.db)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
