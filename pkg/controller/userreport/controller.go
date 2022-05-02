@@ -29,7 +29,6 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 
-	memcache "github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/google/exposure-notifications-server/pkg/keys"
 
 	"github.com/sethvargo/go-limiter"
@@ -40,7 +39,6 @@ type Controller struct {
 	cacher           cache.Cacher
 	config           *config.RedirectConfig
 	db               *database.Database
-	localCache       *memcache.Cache
 	httpClient       *http.Client
 	limiter          limiter.Store
 	smsSigner        keys.KeyManager
@@ -58,8 +56,6 @@ func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfi
 
 	issueController := issueapi.New(cfg, db, limiter, smsSigner, h)
 
-	localCache, _ := memcache.New(30 * time.Second)
-
 	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: project.DefaultHTTPTransport(),
@@ -70,7 +66,6 @@ func New(locales *i18n.LocaleMap, cacher cache.Cacher, cfg *config.RedirectConfi
 		cacher:           cacher,
 		config:           cfg,
 		db:               db,
-		localCache:       localCache,
 		httpClient:       httpClient,
 		limiter:          limiter,
 		smsSigner:        smsSigner,

@@ -28,24 +28,24 @@ type SecretResolver struct {
 	// TTL-based cache that exists to limit load on the database. It maps a secret
 	// type to the result from the database query.
 	//
-	//   database(cookie_key) -> projects/p/secrets/s/versions/1
+	//   database(cookie_key) -> []string{projects/p/secrets/s/versions/1}
 	//
-	referencesCache *cache.Cache
+	referencesCache *cache.Cache[[]string]
 
 	// valuesCache maps the references to their actual secret values. Since secret
 	// versions are immutable, this is a long-running cache.
 	//
-	//   projects/p/secrets/s/versions/1 -> abcd1234
+	//   projects/p/secrets/s/versions/1 -> []byte(abcd1234)
 	//
-	valuesCache *cache.Cache
+	valuesCache *cache.Cache[[]byte]
 }
 
 // NewSecretResolver makes a new secret resolver using the provided database and
 // secret manager instance.
 func NewSecretResolver() *SecretResolver {
 	// These only return an error if the duration is < 0.
-	referencesCache, _ := cache.New(60 * time.Second)
-	valuesCache, _ := cache.New(120 * time.Minute)
+	referencesCache, _ := cache.New[[]string](60 * time.Second)
+	valuesCache, _ := cache.New[[]byte](120 * time.Minute)
 
 	return &SecretResolver{
 		referencesCache: referencesCache,
@@ -77,7 +77,7 @@ func (r *SecretResolver) Resolve(ctx context.Context, db *Database, sm secrets.S
 // ResolveReferences resolves the database references for the given secret type,
 // handling caching where appropriate.
 func (r *SecretResolver) ResolveReferences(db *Database, typ SecretType) ([]string, error) {
-	iface, err := r.referencesCache.WriteThruLookup(string(typ), func() (interface{}, error) {
+	list, err := r.referencesCache.WriteThruLookup(string(typ), func() ([]string, error) {
 		records, err := db.ListSecretsForType(typ)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list secrets for %s: %w", typ, err)
@@ -92,17 +92,12 @@ func (r *SecretResolver) ResolveReferences(db *Database, typ SecretType) ([]stri
 	if err != nil {
 		return nil, err
 	}
-
-	list, ok := iface.([]string)
-	if !ok {
-		return nil, fmt.Errorf("result for %s is not []string: %T", typ, iface)
-	}
 	return list, nil
 }
 
 // ResolveValue resolves a single secret, taking caching into account.
 func (r *SecretResolver) ResolveValue(ctx context.Context, sm secrets.SecretManager, ref string) ([]byte, error) {
-	iface, err := r.valuesCache.WriteThruLookup(ref, func() (interface{}, error) {
+	typ, err := r.valuesCache.WriteThruLookup(ref, func() ([]byte, error) {
 		result, err := sm.GetSecretValue(ctx, ref)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get secret value %s: %w", ref, err)
@@ -111,11 +106,6 @@ func (r *SecretResolver) ResolveValue(ctx context.Context, sm secrets.SecretMana
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	typ, ok := iface.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("result for %s is not []byte: %T", ref, iface)
 	}
 	return typ, nil
 }

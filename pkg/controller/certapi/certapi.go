@@ -38,8 +38,8 @@ type Controller struct {
 	db          *database.Database
 	cacher      vcache.Cacher
 	h           *render.Renderer
-	pubKeyCache *keyutils.PublicKeyCache // Cache of public keys for verification token verification.
-	signerCache *cache.Cache             // Cache signers on a per-realm basis.
+	pubKeyCache *keyutils.PublicKeyCache  // Cache of public keys for verification token verification.
+	signerCache *cache.Cache[*SignerInfo] // Cache signers on a per-realm basis.
 	kms         keys.KeyManager
 }
 
@@ -50,7 +50,7 @@ func New(ctx context.Context, config *config.APIServerConfig, db *database.Datab
 	}
 
 	// This has to be in-memory because the signer has state and connection pools.
-	signerCache, err := cache.New(config.CertificateSigning.SignerCacheDuration)
+	signerCache, err := cache.New[*SignerInfo](config.CertificateSigning.SignerCacheDuration)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create signer cache, likely invalid duration: %w", err)
 	}

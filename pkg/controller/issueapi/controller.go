@@ -27,6 +27,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"github.com/google/exposure-notifications-verification-server/pkg/sms"
 
 	"github.com/google/exposure-notifications-server/pkg/cache"
 	"github.com/sethvargo/go-limiter"
@@ -34,25 +35,28 @@ import (
 )
 
 type Controller struct {
-	config     config.IssueAPIConfig
-	db         *database.Database
-	localCache *cache.Cache
-	limiter    limiter.Store
-	smsSigner  keys.KeyManager
-	h          *render.Renderer
+	config           config.IssueAPIConfig
+	db               *database.Database
+	smsSignerCache   *cache.Cache[*cachedSMSSigner]
+	smsProviderCache *cache.Cache[sms.Provider]
+	limiter          limiter.Store
+	smsSigner        keys.KeyManager
+	h                *render.Renderer
 }
 
 // New creates a new IssueAPI controller.
 func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store, smsSigner keys.KeyManager, h *render.Renderer) *Controller {
-	localCache, _ := cache.New(30 * time.Second)
+	smsSignerCache, _ := cache.New[*cachedSMSSigner](30 * time.Second)
+	smsProviderCache, _ := cache.New[sms.Provider](30 * time.Second)
 
 	return &Controller{
-		config:     cfg,
-		db:         db,
-		localCache: localCache,
-		limiter:    limiter,
-		smsSigner:  smsSigner,
-		h:          h,
+		config:           cfg,
+		db:               db,
+		smsSignerCache:   smsSignerCache,
+		smsProviderCache: smsProviderCache,
+		limiter:          limiter,
+		smsSigner:        smsSigner,
+		h:                h,
 	}
 }
 
