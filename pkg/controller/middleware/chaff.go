@@ -44,7 +44,7 @@ func ChaffHeaderDetector() chaff.Detector {
 //
 // cache.New only returns an error if the duration is negative, so we ignore the
 // error here.
-var localChaffCache, _ = cache.New(48 * time.Hour)
+var localChaffCache, _ = cache.New[*struct{}](48 * time.Hour)
 
 // ProcessChaff injects the chaff processing middleware. If chaff requests send
 // a value of "daily" (case-insensitive), they will be counted toward the
@@ -76,7 +76,7 @@ func recordChaffEvent(ctx context.Context, t time.Time, realm *database.Realm, d
 	}
 
 	key := fmt.Sprintf("%s:%d", t.Format("2006-01-02"), realm.ID)
-	if _, err := localChaffCache.WriteThruLookup(key, func() (interface{}, error) {
+	if _, err := localChaffCache.WriteThruLookup(key, func() (*struct{}, error) {
 		if err := realm.RecordChaffEvent(db, t); err != nil {
 			return nil, err
 		}

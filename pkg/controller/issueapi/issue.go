@@ -199,22 +199,18 @@ func (c *Controller) smsProviderFor(ctx context.Context, realm *database.Realm, 
 	}
 
 	key := fmt.Sprintf("realm:%d:sms_provider:user_report:%v", realm.ID, appendKey)
-	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
+	result, err := c.smsProviderCache.WriteThruLookup(key, func() (sms.Provider, error) {
 		return realm.SMSProvider(c.db, opts...)
 	})
 	if err != nil {
 		return nil, err
 	}
+	return result, nil
+}
 
-	if result == nil {
-		return nil, nil
-	}
-	typ, ok := result.(sms.Provider)
-	if !ok {
-		return nil, fmt.Errorf("invalid type %T", result)
-	}
-
-	return typ, nil
+type cachedSMSSigner struct {
+	signer crypto.Signer
+	keyID  string
 }
 
 // smsSignerFor returns the sms signer for the given realm. It pulls the value
@@ -225,13 +221,8 @@ func (c *Controller) smsSignerFor(ctx context.Context, realm *database.Realm) (c
 		return nil, "", nil
 	}
 
-	type cachedSMSSigner struct {
-		signer crypto.Signer
-		keyID  string
-	}
-
 	key := fmt.Sprintf("realm:%d:sms_signer", realm.ID)
-	result, err := c.localCache.WriteThruLookup(key, func() (interface{}, error) {
+	result, err := c.smsSignerCache.WriteThruLookup(key, func() (*cachedSMSSigner, error) {
 		signingKey, err := realm.CurrentSMSSigningKey(c.db)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current sms signing key: %w", err)
@@ -250,16 +241,10 @@ func (c *Controller) smsSignerFor(ctx context.Context, realm *database.Realm) (c
 	if err != nil {
 		return nil, "", err
 	}
-
 	if result == nil {
 		return nil, "", nil
 	}
-	typ, ok := result.(*cachedSMSSigner)
-	if !ok {
-		return nil, "", fmt.Errorf("invalid type %T", result)
-	}
-
-	return typ.signer, typ.keyID, nil
+	return result.signer, result.keyID, nil
 }
 
 // errorAll sets the ErrorReturn on all results to the provided value.
