@@ -28,7 +28,7 @@ func isAndroid(userAgent string) bool {
 // isIOS determines if a User-Agent is an iOS EN device.
 func isIOS(userAgent string) bool {
 	lAgent := strings.ToLower(userAgent)
-	return strings.Contains(lAgent, "iphone") || strings.Contains(lAgent, "Macintosh")
+	return strings.Contains(lAgent, "iphone") || strings.Contains(lAgent, "macintosh")
 }
 
 // decideRedirect selects where to redirect based on several signals.
