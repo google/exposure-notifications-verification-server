@@ -229,6 +229,13 @@ func TestAgentDetection(t *testing.T) {
 			// For ENX purposes exclude iPad as it's unsupported.
 			ios: false,
 		},
+		{
+			name:      "osx_desktop",
+			userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A",
+			android:   false,
+			// edge case, if a user has their browser in desktop mode, it sends a mac user agent
+			ios: true,
+		},
 	}
 
 	for _, tc := range cases {
