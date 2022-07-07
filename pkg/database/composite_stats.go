@@ -95,7 +95,7 @@ func (c CompositeStats) MarshalJSON() ([]byte, error) {
 			}
 			data.UserReportsIssued = stat.RealmStats.UserReportsIssued
 			data.UserReportsClaimed = stat.RealmStats.UserReportsClaimed
-			data.UserReportsInvalid = stat.RealmStats.UserReportsInvalid
+			data.UserReportsInvalidNonce = stat.RealmStats.UserReportsInvalidNonce
 			data.TokensClaimed = stat.RealmStats.TokensClaimed
 			data.TokensInvalid = stat.RealmStats.TokensInvalid
 			data.UserReportTokensClaimed = stat.RealmStats.UserReportTokensClaimed
@@ -161,7 +161,7 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 		"publish_requests_unknown", "publish_requests_android", "publish_requests_ios",
 		"total_teks_published", "requests_with_revisions", "requests_missing_onset_date", "tek_age_distribution", "onset_to_upload_distribution",
 		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
-		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android", "user_reports_invalid",
+		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android", "user_reports_invalid_nonce",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -225,7 +225,7 @@ func (c CompositeStats) MarshalCSV() ([]byte, error) {
 		if stat.RealmStats == nil {
 			row = append(row, "")
 		} else {
-			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsInvalid), 10))
+			row = append(row, strconv.FormatUint(uint64(stat.RealmStats.UserReportsInvalidNonce), 10))
 		}
 
 		// New stats should always be added to the end to preserve existing external user applications.

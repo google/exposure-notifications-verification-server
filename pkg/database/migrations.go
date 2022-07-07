@@ -2592,14 +2592,14 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 			Migrate: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realm_stats
-						ADD COLUMN IF NOT EXISTS user_reports_invalid INTEGER DEFAULT 0`,
+						ADD COLUMN IF NOT EXISTS user_reports_invalid_nonce INTEGER DEFAULT 0`,
 					`ALTER TABLE realm_stats
-						ALTER COLUMN user_reports_invalid SET NOT NULL`)
+						ALTER COLUMN user_reports_invalid_nonce SET NOT NULL`)
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return multiExec(tx,
 					`ALTER TABLE realm_stats
-						DROP COLUMN user_reports_invalid`)
+						DROP COLUMN IF EXISTS user_reports_invalid_nonce`)
 			},
 		},
 	}

@@ -390,7 +390,7 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, 
 		// update general codes invalid
 		existing.CodesInvalid++
 		if badNonce {
-			existing.UserReportsInvalid++
+			existing.UserReportsInvalidNonce++
 		}
 
 		sel := tx.Table("realm_stats").
