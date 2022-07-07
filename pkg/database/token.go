@@ -230,6 +230,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
 
+	badNonce := false
 	var tok *Token
 	var vc VerificationCode
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
@@ -272,13 +273,28 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
 			required := providedNonce != ""
 
-			result := tx.Model(UserReport{}).
-				Where("id = ? AND code_claimed = ? and nonce = ? and nonce_required = ?", *vc.UserReportID, false, providedNonce, required).
-				Updates(UserReport{CodeClaimed: true})
-			if err := result.Error; err != nil {
-				return fmt.Errorf("unable to look up associated user_report record: %w", err)
+			var ur UserReport
+			if err := tx.
+				Set("gorm:query_option", "FOR UPDATE").
+				Where("id = ?", *vc.UserReportID).
+				First(&ur).
+				Error; err != nil {
+				if IsNotFound(err) {
+					return ErrVerificationCodeNotFound
+				}
+				return err
 			}
-			if result.RowsAffected != 1 {
+
+			if required && providedNonce != ur.Nonce {
+				badNonce = true
+			}
+
+			if !ur.CodeClaimed && ur.NonceRequired == required && ur.Nonce == providedNonce {
+				ur.CodeClaimed = true
+				if err := tx.Save(ur).Error; err != nil {
+					return fmt.Errorf("unable to mark user report claimed: %w", err)
+				}
+			} else {
 				return ErrVerificationCodeNotFound
 			}
 		}
@@ -309,7 +325,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		return tx.Create(tok).Error
 	}); err != nil {
 		if !errors.Is(err, ErrVerificationCodeUsed) {
-			go db.updateStatsCodeInvalid(t, request.AuthApp, request.OS)
+			go db.updateStatsCodeInvalid(t, request.AuthApp, request.OS, badNonce)
 		}
 		return nil, err
 	}
@@ -345,7 +361,7 @@ func (db *Database) PurgeTokens(maxAge time.Duration) (int64, error) {
 
 // updateStatsCodeInvalid updates the statistics, increasing the number of codes
 // that were invalid.
-func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, os OSType) {
+func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, os OSType, badNonce bool) {
 	t = timeutils.UTCMidnight(t)
 
 	if err := db.db.Transaction(func(tx *gorm.DB) error {
@@ -373,6 +389,9 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, 
 		existing.CodesInvalidByOS[os]++
 		// update general codes invalid
 		existing.CodesInvalid++
+		if badNonce {
+			existing.UserReportsInvalid++
+		}
 
 		sel := tx.Table("realm_stats").
 			Where("realm_id = ?", authApp.RealmID).

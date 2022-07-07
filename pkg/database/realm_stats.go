@@ -61,6 +61,7 @@ type RealmStat struct {
 	// in the sum of codes issued and codes claimed.
 	UserReportsIssued  uint `gorm:"column:user_reports_issued; type:integer; not null; default:0;"`
 	UserReportsClaimed uint `gorm:"column:user_reports_claimed; type:integer; not null; default:0;"`
+	UserReportsInvalid uint `gorm:"column:user_reports_invalid; type:integer; not null; default:0;"`
 
 	// TokensClaimed is the number of tokens exchanged for a certificate.
 	// TokensInvalid is the number of tokens which failed to exchange due to
@@ -98,6 +99,9 @@ func (s *RealmStat) IsEmpty() bool {
 		return false
 	}
 	if s.UserReportsClaimed > 0 {
+		return false
+	}
+	if s.UserReportsInvalid > 0 {
 		return false
 	}
 	if s.TokensClaimed > 0 {
@@ -152,6 +156,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
 		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
 		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android",
+		"user_reports_invalid",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -172,6 +177,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeUnknown]), 10),
 			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeIOS]), 10),
 			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeAndroid]), 10),
+			strconv.FormatUint(uint64(stat.UserReportsInvalid), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -219,6 +225,7 @@ type JSONRealmStatStatsData struct {
 	CodesInvalidByOS        CodesInvalidByOSData `json:"codes_invalid_by_os"`
 	UserReportsIssued       uint                 `json:"user_reports_issued"`
 	UserReportsClaimed      uint                 `json:"user_reports_claimed"`
+	UserReportsInvalid      uint                 `json:"user_reports_invalid"`
 	TokensClaimed           uint                 `json:"tokens_claimed"`
 	TokensInvalid           uint                 `json:"tokens_invalid"`
 	UserReportTokensClaimed uint                 `json:"user_report_tokens_claimed"`
@@ -248,6 +255,7 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 				},
 				UserReportsIssued:       stat.UserReportsIssued,
 				UserReportsClaimed:      stat.UserReportsClaimed,
+				UserReportsInvalid:      stat.UserReportsInvalid,
 				TokensClaimed:           stat.TokensClaimed,
 				TokensInvalid:           stat.TokensInvalid,
 				UserReportTokensClaimed: stat.UserReportTokensClaimed,
@@ -297,6 +305,7 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 			},
 			UserReportsIssued:        stat.Data.UserReportsIssued,
 			UserReportsClaimed:       stat.Data.UserReportsClaimed,
+			UserReportsInvalid:       stat.Data.UserReportsInvalid,
 			TokensClaimed:            stat.Data.TokensClaimed,
 			TokensInvalid:            stat.Data.TokensInvalid,
 			UserReportTokensClaimed:  stat.Data.UserReportTokensClaimed,

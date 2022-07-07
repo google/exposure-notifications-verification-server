@@ -2587,6 +2587,21 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 					`ALTER TABLE realms DROP COLUMN IF EXISTS maintenance_mode`)
 			},
 		},
+		{
+			ID: "00124-AddUserInvalid",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats
+						ADD COLUMN IF NOT EXISTS user_reports_invalid INTEGER DEFAULT 0`,
+					`ALTER TABLE realm_stats
+						ALTER COLUMN user_reports_invalid SET NOT NULL`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats
+						DROP COLUMN user_reports_invalid`)
+			},
+		},
 	}
 }
 
