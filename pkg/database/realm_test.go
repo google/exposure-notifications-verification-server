@@ -308,10 +308,10 @@ func TestRealm_BeforeSave(t *testing.T) {
 
 				Curabitur non massa urna. Phasellus sit amet nisi ut quam dapibus pretium eget in turpis. Phasellus et justo odio. In auctor, felis a tincidunt maximus, nunc erat vehicula ligula, ac posuere felis odio eget mauris. Nulla gravida.`,
 			},
-			Error: "smsTextTemplate must be 800 characters or less, current message is 807 characters long",
+			Error: "smsTextTemplate must be 800 characters or less, current message is 802 characters long",
 		},
 		{
-			Name: "text_too_long",
+			Name: "text_too_long_2",
 			Input: &Realm{
 				Name:            "a",
 				EnableENExpress: false,
@@ -454,6 +454,24 @@ func TestRealm_BeforeSave(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRealm_validateSMSTemplate(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.SMSTextTemplate = "your link     is \n\n\n\n\n \n [longcode] Expires in      [longexpires] hours"
+	realm.RegionCode = "US-WA"
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("save error: %v issues: %+v", err, realm.ErrorMessages())
+	}
+
+	expected := "your link is [longcode] Expires in [longexpires] hours"
+	if realm.SMSTextTemplate != expected {
+		t.Fatalf("sms text template mismatch: want: %q got: %q", expected, realm.SMSTextTemplate)
 	}
 }
 
