@@ -128,6 +128,9 @@ var (
 	}()
 
 	colorRegex = regexp.MustCompile(`\A#[0-9a-f]{6}\z`)
+
+	smsMultipleSpaceRegex = regexp.MustCompile(`[\s]+`)
+	smsNewlineRegex       = regexp.MustCompile(`[\n|\r]`)
 )
 
 const (
@@ -581,7 +584,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 		r.AddError("longCodeDuration", "must be no more than 24 hours")
 	}
 
-	r.validateSMSTemplate(DefaultTemplateLabel, r.SMSTextTemplate)
+	r.SMSTextTemplate = r.validateSMSTemplate(DefaultTemplateLabel, r.SMSTextTemplate)
 
 	// See if the user report template needs to be added into the mix.
 	if r.SMSTextAlternateTemplates == nil && r.AllowsUserReport() {
@@ -620,7 +623,7 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 				r.AddError(l, fmt.Sprintf("label %s reserved for the default template", l))
 				continue
 			}
-			r.validateSMSTemplate(l, *t)
+			*t = r.validateSMSTemplate(l, *t)
 		}
 	}
 
@@ -683,7 +686,12 @@ func (r *Realm) BeforeSave(tx *gorm.DB) error {
 
 // validateSMSTemplate is a helper method to validate a single SMSTemplate.
 // Errors are returned by appending them to the realm's Errorable fields.
-func (r *Realm) validateSMSTemplate(label, t string) {
+func (r *Realm) validateSMSTemplate(label, t string) string {
+	// Replace all newlines with spaces.
+	t = smsNewlineRegex.ReplaceAllString(t, " ")
+	// Replace all sets of multiple spaces with a single space
+	t = smsMultipleSpaceRegex.ReplaceAllString(t, " ")
+
 	if !r.EnableENExpress {
 		// Check that we have exactly one of [code] or [longcode] as template substitutions.
 		if c, lc := strings.Contains(t, SMSCode), strings.Contains(t, SMSLongCode); !(c || lc) || (c && lc) {
@@ -728,6 +736,8 @@ func (r *Realm) validateSMSTemplate(label, t string) {
 		r.AddError("smsTextTemplate", fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 		r.AddError(label, fmt.Sprintf("when expanded, the result message is too long (%v characters). The max expanded message is %v characters", l, SMSTemplateExpansionMax))
 	}
+
+	return t
 }
 
 // enxRedirectDomain returns the configured ENX redirect domain for this realm.

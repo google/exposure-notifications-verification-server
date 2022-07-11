@@ -447,6 +447,17 @@
       val = val.replace(/\[expires\]/g, shortExpires);
       val = val.replace(/\[longexpires\]/g, longExpires);
 
+      let newVal = val.replace(/[\n|\r]/g, ' ');
+      if (newVal != val) {
+        errors.push('Line breaks are not allowed in the SMS template.');      
+      }
+      val = newVal;
+      newVal = val.replace(/[\s]+/g, ' ');
+      if (newVal != val) {
+        errors.push('Multiple spaces in a row are not allowed in the SMS template.');
+      }
+      val = newVal;
+
       if (val.length > {{$realm.SMSTemplateExpansionMax}}) {
         errors.push('Fully expanded SMS Templates must be at most {{$realm.SMSTemplateExpansionMax}} characters, currently ' + val.length + ' characters.');
       }
