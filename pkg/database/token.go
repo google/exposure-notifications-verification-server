@@ -271,7 +271,6 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		// Check associated UserReport record if necessary.
 		if vc.UserReportID != nil {
 			providedNonce := base64.StdEncoding.EncodeToString(request.Nonce)
-			required := providedNonce != ""
 
 			var ur UserReport
 			if err := tx.
@@ -285,11 +284,15 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 				return err
 			}
 
-			if required && providedNonce != ur.Nonce {
+			// If a nonce is required, it must match.
+			if ur.NonceRequired && providedNonce != ur.Nonce {
 				badNonce = true
 			}
 
-			if !ur.CodeClaimed && ur.NonceRequired == required && ur.Nonce == providedNonce {
+			// If this code hasn't been previously claimed and the nonce matches
+			// or isn't required, mark the user report claimed.
+			// A mismatched nonce is presented the same as code not found.
+			if !ur.CodeClaimed && !badNonce {
 				ur.CodeClaimed = true
 				if err := tx.Save(ur).Error; err != nil {
 					return fmt.Errorf("unable to mark user report claimed: %w", err)

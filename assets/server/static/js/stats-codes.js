@@ -89,6 +89,7 @@
             dataTable.addColumn('number', 'User Report Codes Issued');
             dataTable.addColumn('number', 'User Report Codes Claimed');
             dataTable.addColumn('number', 'User Report Tokens Claimed');
+            dataTable.addColumn('number', 'User Report Device Mismatch');
           },
           rowFunc: (dataTable, row, hasKeyServerStats) => {
             dataTable.addRow([
@@ -96,6 +97,7 @@
               row.data.user_reports_issued,
               row.data.user_reports_claimed,
               row.data.user_report_tokens_claimed,
+              row.data.user_reports_invalid_nonce,
             ]);
           },
         },

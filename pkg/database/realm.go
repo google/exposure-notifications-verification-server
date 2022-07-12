@@ -1874,7 +1874,8 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 			COALESCE(s.user_report_tokens_claimed, 0) AS user_report_tokens_claimed,
 			COALESCE(s.code_claim_age_distribution, array[]::integer[]) AS code_claim_age_distribution,
 			COALESCE(s.code_claim_mean_age, 0) AS code_claim_mean_age,
-			COALESCE(s.codes_invalid_by_os, array[0,0,0]::bigint[]) AS codes_invalid_by_os
+			COALESCE(s.codes_invalid_by_os, array[0,0,0]::bigint[]) AS codes_invalid_by_os,
+			COALESCE(s.user_reports_invalid_nonce, 0) AS user_reports_invalid_nonce
 		FROM (
 			SELECT date::date FROM generate_series($2, $3, '1 day'::interval) date
 		) d
