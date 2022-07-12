@@ -28,6 +28,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -324,6 +325,24 @@ func realMain(ctx context.Context) error {
 	return nil
 }
 
+type phoneNumberGenerator struct {
+	lastNumber uint64
+	mu         sync.Mutex
+}
+
+func newPhoneNumberGenerator() *phoneNumberGenerator {
+	return &phoneNumberGenerator{
+		lastNumber: uint64(10000000000),
+	}
+}
+
+func (png *phoneNumberGenerator) next() uint64 {
+	png.mu.Lock()
+	defer png.mu.Unlock()
+	png.lastNumber++
+	return png.lastNumber
+}
+
 // generateCodesAndStats exercises the system for the past N days with random
 // values to simulate data that might appear in the real world. This is
 // primarily used to test statistics and graphs.
@@ -368,7 +387,7 @@ func generateCodesAndStats(ctx context.Context, db *database.Database, realm *da
 		return externalIDs[rand.Intn(len(externalIDs))]
 	}
 
-	phoneNumber := uint64(10000000000)
+	phoneNumberGen := newPhoneNumberGenerator()
 	nonce := make([]byte, database.NonceLength)
 	allowsUserReport := realm.AllowsUserReport()
 
@@ -444,7 +463,7 @@ func generateCodesAndStats(ctx context.Context, db *database.Database, realm *da
 					IssuingExternalID: issuingExternalID,
 				}
 				if isUserReport {
-					phoneNumber++
+					phoneNumber := phoneNumberGen.next()
 					verificationCode.PhoneNumber = fmt.Sprintf("+%d", phoneNumber)
 					verificationCode.Nonce = nonce
 					verificationCode.NonceRequired = true
@@ -499,7 +518,8 @@ func generateCodesAndStats(ctx context.Context, db *database.Database, realm *da
 						ExpireAfter: 24 * time.Hour,
 						OS:          os,
 					}
-					if isUserReport {
+					// 75% of the time, send the correct nonce. 25% of the time, don't (Will cause a failure).
+					if isUserReport && percentChance(75) {
 						request.Nonce = nonce
 					}
 					token, err := db.VerifyCodeAndIssueToken(request)

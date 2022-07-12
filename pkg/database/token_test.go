@@ -170,6 +170,7 @@ func TestIssueToken(t *testing.T) {
 		Subject      *Subject
 		ClaimError   string
 	}{
+
 		{
 			Name: "normal_token_issue",
 			Verification: func() *VerificationCode {
@@ -399,7 +400,7 @@ func TestIssueToken(t *testing.T) {
 			},
 			Nonce:    validNonce,
 			Accept:   acceptConfirmedAndSelfReport,
-			Error:    "verification code not found",
+			Error:    "",
 			TokenAge: time.Hour,
 		},
 	}
@@ -502,6 +503,10 @@ func TestIssueToken(t *testing.T) {
 						t.Fatalf("claimed token is not marked as used")
 					}
 				}
+
+				// There are deferred go funcs to update stats. Give some time
+				// for those to complete. There's no way to coordinate the execution.
+				time.Sleep(500 * time.Millisecond)
 			}
 		})
 	}
