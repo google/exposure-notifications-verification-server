@@ -69,7 +69,6 @@ issues:
   # default: []
   exclude:
   - '^S1023:' # staticcheck: redundant returns help with http handlers
-  - '^SA1019: strings.Title' # staticcheck: strings.Title is deprecated (#2344)
   - '^SA3000:' # staticcheck: not required in Go 11.4+
   - '^G101:' # gosec: many false positives
   - '^G102:' # gosec: we have to bind to all ifaces

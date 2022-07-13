@@ -19,12 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/gorilla/mux"
 )
@@ -138,15 +139,29 @@ func passwordRedirectRequired(ctx context.Context, user *database.User, realm *d
 	flash := controller.Flash(session)
 
 	if errors.Is(err, errPasswordChangeRequired) {
-		flash.Error(strings.Title(err.Error() + "."))
+		flash.Error(errorToSentence(err))
 		return true
 	}
 
 	if !controller.PasswordExpireWarnedFromSession(session) {
 		controller.StorePasswordExpireWarned(session, true)
-		flash.Warning(strings.Title(err.Error() + "."))
+		flash.Warning(errorToSentence(err))
 	}
 	return false
+}
+
+// errorToSentence converts the error message to a sentence format. These errors
+// are always in English from the upstream API.
+func errorToSentence(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	msg := cases.Title(language.English).String(err.Error())
+	if msg == "" {
+		return ""
+	}
+	return msg + "."
 }
 
 var errPasswordChangeRequired = errors.New("password change required")
