@@ -30,13 +30,13 @@ import (
 	"github.com/google/exposure-notifications-verification-server/internal/buildinfo"
 )
 
-const sriPrefix = "sha384-"
+const sriPrefix = "sha512-"
 
 var (
 	cssIncludeTmpl = texttemplate.Must(texttemplate.New(`cssIncludeTmpl`).Parse(strings.TrimSpace(`
 {{ range . -}}
 <link rel="stylesheet" href="/{{.Path}}?{{.BuildID}}"
-  integrity="{{.SRI}}" crossorigin="anonymous">
+  integrity="{{.SRI}}" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {{ end }}
 `)))
 
@@ -47,7 +47,7 @@ var (
 	jsIncludeTmpl = texttemplate.Must(texttemplate.New(`jsIncludeTmpl`).Parse(strings.TrimSpace(`
 {{ range . -}}
 <script defer src="/{{.Path}}?{{.BuildID}}"
-  integrity="{{.SRI}}" crossorigin="anonymous"></script>
+  integrity="{{.SRI}}" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {{ end }}
 `)))
 	jsIncludeTagCache htmltemplate.HTML
@@ -127,7 +127,7 @@ func assetIncludeTag(fsys fs.FS, search string, tmpl *texttemplate.Template, cac
 func generateSRI(r io.ReadCloser) (string, error) {
 	defer r.Close()
 
-	h := sha512.New384()
+	h := sha512.New()
 	if _, err := io.Copy(h, r); err != nil {
 		return "", err
 	}
