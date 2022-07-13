@@ -8,7 +8,7 @@ require (
 	contrib.go.opencensus.io/integrations/ocsql v0.1.7
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/chromedp/cdproto v0.0.0-20220530001853-c0f376d894d1
+	github.com/chromedp/cdproto v0.0.0-20220629234738-4cfc9cdeeb92
 	github.com/chromedp/chromedp v0.8.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/structs v1.1.0
@@ -29,9 +29,9 @@ require (
 	github.com/kelseyhightower/run v0.0.17
 	github.com/leonelquinteros/gotext v1.5.0
 	github.com/lib/pq v1.10.6
-	github.com/microcosm-cc/bluemonday v1.0.18
+	github.com/microcosm-cc/bluemonday v1.0.19
 	github.com/mikehelmick/go-chaff v0.6.0
-	github.com/nyaruka/phonenumbers v1.0.75
+	github.com/nyaruka/phonenumbers v1.1.0
 	github.com/opencensus-integrations/redigo v2.0.1+incompatible
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/rakutentech/jwk-go v1.0.1
@@ -42,7 +42,7 @@ require (
 	github.com/sethvargo/go-redisstore-opencensus v1.0.1
 	github.com/sethvargo/go-retry v0.2.3
 	github.com/sethvargo/zapw v0.1.0
-	github.com/unrolled/secure v1.10.0
+	github.com/unrolled/secure v1.11.0
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220708220712-1185a9018129
