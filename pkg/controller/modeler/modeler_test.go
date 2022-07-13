@@ -156,7 +156,7 @@ func TestRebuildAbusePreventionModel(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got, want := realm.AbusePreventionLimit, uint(22); got != want {
+		if got, want := realm.AbusePreventionLimit, uint(21); got != want {
 			t.Errorf("expected %v to be %v", got, want)
 		}
 	}
