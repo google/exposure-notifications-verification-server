@@ -18,12 +18,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/google/exposure-notifications-verification-server/pkg/controller"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
 	"github.com/google/exposure-notifications-verification-server/pkg/rbac"
 	"github.com/gorilla/mux"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // HandleShow renders html for the status of an issued verification code
@@ -90,7 +91,7 @@ func (c *Controller) responseCode(ctx context.Context, code *database.Verificati
 	// Build initial code.
 	var retCode Code
 	retCode.UUID = code.UUID
-	retCode.TestType = strings.Title(code.TestType)
+	retCode.TestType = cases.Title(language.English).String(code.TestType) // API is in english
 
 	// Get realm from context.
 	_, _, realm, err := c.getAuthorizationFromContext(ctx)
