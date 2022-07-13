@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gonum/matrix/mat64"
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	"github.com/google/exposure-notifications-verification-server/pkg/config"
 	"github.com/google/exposure-notifications-verification-server/pkg/database"
@@ -31,6 +30,7 @@ import (
 	"github.com/google/exposure-notifications-verification-server/pkg/render"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
+	"gonum.org/v1/gonum/mat"
 
 	"github.com/sethvargo/go-limiter"
 )
@@ -151,11 +151,11 @@ func (c *Controller) rebuildAbusePreventionModel(ctx context.Context, realm *dat
 	// the future, if we want.
 	degree := 1
 	alpha := vandermonde(xs, degree)
-	beta := mat64.NewDense(len(ys), 1, ys)
-	gamma := mat64.NewDense(degree+1, 1, nil)
-	qr := new(mat64.QR)
+	beta := mat.NewDense(len(ys), 1, ys)
+	gamma := mat.NewDense(degree+1, 1, nil)
+	qr := new(mat.QR)
 	qr.Factorize(alpha)
-	if err := gamma.SolveQR(qr, false, beta); err != nil {
+	if err := qr.SolveTo(gamma, false, beta); err != nil {
 		return fmt.Errorf("failed to solve QR: %w", err)
 	}
 
@@ -173,13 +173,20 @@ func (c *Controller) rebuildAbusePreventionModel(ctx context.Context, realm *dat
 	// potentially less than zero. We need to do the negative check against the
 	// float value before casting to a uint, or else risk overflowing if this
 	// value is negative.
-	nextFloat := math.Ceil(curve(float64(len(ys))))
+	raw := curve(float64(len(ys)))
+	logger.Debugw("computed raw next curve", "next", raw)
+
+	// Round the value. There are small floating point number variations between
+	// Intel and Arm processors, but they are like 0.0000000004 off. However, this
+	// can cause conversion issues, so round.
+	nextFloat := math.Round(raw)
 	if nextFloat < 0 {
 		nextFloat = 0
 	}
 
 	// Calculate the predicted next value as a uint.
 	next := uint(nextFloat)
+	logger.Debugw("computed next float", "next", next)
 
 	// This should really never happen - it means there's been a very sharp
 	// decline in the number of codes issued. In that case, we want to revert
@@ -332,8 +339,8 @@ func stddev(in []float64, m float64) float64 {
 }
 
 // vandermonde creates a Vandermonde projection (matrix) of the given degree.
-func vandermonde(a []float64, degree int) *mat64.Dense {
-	x := mat64.NewDense(len(a), degree+1, nil)
+func vandermonde(a []float64, degree int) *mat.Dense {
+	x := mat.NewDense(len(a), degree+1, nil)
 	for i := range a {
 		for j, p := 0, 1.; j <= degree; j, p = j+1, p*a[i] {
 			x.Set(i, j, p)
