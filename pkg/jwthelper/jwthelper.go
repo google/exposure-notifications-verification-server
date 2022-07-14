@@ -29,6 +29,9 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+// keyBytes is 256 bits / 32 bytes.
+const keyBytes = 32
+
 // TODO(mikehelmick): Add ValidateJWT, accepting a serialized token + signer.
 // Needed for taking a verification token back in and issuing a certificate.
 
@@ -61,11 +64,6 @@ func SignJWT(token *jwt.Token, signer crypto.Signer) (string, error) {
 	_, err = asn1.Unmarshal(sig, &parsedSig)
 	if err != nil {
 		return "", fmt.Errorf("unable to unmarshal signature: %w", err)
-	}
-
-	keyBytes := 256 / 8
-	if 256%8 > 0 {
-		keyBytes++
 	}
 
 	// 2. Turn R and S into octet sequences in big-endian order, with each
