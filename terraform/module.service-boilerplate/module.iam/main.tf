@@ -18,14 +18,13 @@ resource "google_project_iam_member" "observability" {
 }
 
 resource "google_kms_key_ring_iam_member" "verification-signer-verifier" {
-  key_ring_id = google_kms_key_ring.verification.self_link
+  key_ring_id = google_kms_key_ring.verification.id
   role        = "roles/cloudkms.signerVerifier"
   member      = "serviceAccount:${google_service_account.service-account.email}"
 }
 
 resource "google_kms_crypto_key_iam_member" "database-encrypter" {
-  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  crypto_key_id = google_kms_crypto_key.database-encrypter.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_service_account.service-account.email}"
 }
-

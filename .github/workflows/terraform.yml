@@ -13,6 +13,11 @@ on:
     paths:
     - 'terraform/**'
     - '.github/workflows/terraform*'
+  workflow_dispatch:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
   # main config
@@ -21,18 +26,13 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-    - name: Cancel previous
-      uses: styfle/cancel-workflow-action@0.7.0
-      with:
-        access_token: ${{ github.token }}
-
     - name: 'checkout'
       uses: 'actions/checkout@v3'
 
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v2'
       with:
-        terraform_version: '1.1.9'
+        terraform_version: '1.2'
 
     - name: 'init'
       working-directory: './terraform'
@@ -52,18 +52,13 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-    - name: Cancel previous
-      uses: styfle/cancel-workflow-action@0.7.0
-      with:
-        access_token: ${{ github.token }}
-
     - name: 'checkout'
       uses: 'actions/checkout@v3'
 
     - name: 'setup-terraform'
       uses: 'hashicorp/setup-terraform@v2'
       with:
-        terraform_version: '1.1.9'
+        terraform_version: '1.2'
 
     - name: 'init'
       working-directory: './terraform/alerting'

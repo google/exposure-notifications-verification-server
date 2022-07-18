@@ -107,7 +107,7 @@ resource "google_cloud_run_service" "emailer" {
         // Force all traffic to go through the specific egress IPs, which is
         // required for email authentication.
         {
-          "run.googleapis.com/vpc-access-connector" : google_vpc_access_connector.connector.self_link,
+          "run.googleapis.com/vpc-access-connector" : google_vpc_access_connector.connector.id,
           "run.googleapis.com/vpc-access-egress" : "all-traffic",
         },
         lookup(var.revision_annotations, "emailer", {})
@@ -131,12 +131,14 @@ resource "google_cloud_run_service" "emailer" {
       metadata[0].annotations["run.googleapis.com/client-name"],
       metadata[0].annotations["run.googleapis.com/client-version"],
       metadata[0].annotations["run.googleapis.com/ingress-status"],
+      metadata[0].annotations["run.googleapis.com/launch-stage"],
       metadata[0].annotations["serving.knative.dev/creator"],
       metadata[0].annotations["serving.knative.dev/lastModifier"],
       metadata[0].labels["cloud.googleapis.com/location"],
       template[0].metadata[0].annotations["client.knative.dev/user-image"],
       template[0].metadata[0].annotations["run.googleapis.com/client-name"],
       template[0].metadata[0].annotations["run.googleapis.com/client-version"],
+      template[0].metadata[0].annotations["run.googleapis.com/sandbox"],
       template[0].metadata[0].annotations["serving.knative.dev/creator"],
       template[0].metadata[0].annotations["serving.knative.dev/lastModifier"],
       template[0].spec[0].containers[0].image,

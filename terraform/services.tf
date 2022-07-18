@@ -46,8 +46,8 @@ locals {
 
   database_config = {
     DB_KEY_MANAGER    = "GOOGLE_CLOUD_KMS"
-    DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
-    DB_KEYRING        = google_kms_key_ring.verification.self_link
+    DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.id
+    DB_KEYRING        = google_kms_key_ring.verification.id
 
     DB_HOST        = google_sql_database_instance.db-inst.private_ip_address
     DB_NAME        = google_sql_database.db.name
