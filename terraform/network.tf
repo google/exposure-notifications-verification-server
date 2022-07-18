@@ -45,7 +45,7 @@ resource "google_compute_router_nat" "serverless-vpc-nat" {
   router = google_compute_router.serverless-vpc-router.name
 
   nat_ip_allocate_option = "MANUAL_ONLY"
-  nat_ips                = google_compute_address.serverless-vpc-addresses.*.self_link
+  nat_ips                = google_compute_address.serverless-vpc-addresses.*.id
 
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

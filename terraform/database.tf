@@ -300,7 +300,7 @@ resource "google_project_iam_member" "cloudbuild-sql" {
 
 # Grant Cloud Build use of the KMS key to run migrations
 resource "google_kms_crypto_key_iam_member" "database-database-encrypter" {
-  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  crypto_key_id = google_kms_crypto_key.database-encrypter.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${local.cloudbuild_email}"
 
@@ -318,7 +318,7 @@ resource "null_resource" "migrate" {
 
       DB_CONN           = google_sql_database_instance.db-inst.connection_name
       DB_DEBUG          = true
-      DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.self_link
+      DB_ENCRYPTION_KEY = google_kms_crypto_key.database-encrypter.id
       DB_NAME           = google_sql_database.db.name
       DB_PASSWORD       = "secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"
       DB_USER           = google_sql_user.user.name
@@ -398,7 +398,7 @@ output "db_password" {
 }
 
 output "migrate_command" {
-  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.self_link}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_LEVEL=\"debug\" ./scripts/migrate"
+  value = "PROJECT_ID=\"${var.project}\" DB_CONN=\"${google_sql_database_instance.db-inst.connection_name}\" DB_ENCRYPTION_KEY=\"${google_kms_crypto_key.database-encrypter.id}\" DB_PASSWORD=\"secret://${google_secret_manager_secret_version.db-secret-version["password"].name}\" DB_NAME=\"${google_sql_database.db.name}\" DB_USER=\"${google_sql_user.user.name}\" DB_DEBUG=\"true\" LOG_LEVEL=\"debug\" ./scripts/migrate"
 }
 
 output "proxy_command" {
@@ -414,7 +414,7 @@ output "psql_env" {
 }
 
 output "db_encryption_key_secret" {
-  value = google_kms_crypto_key.database-encrypter.self_link
+  value = google_kms_crypto_key.database-encrypter.id
 }
 
 output "db_backup_command" {

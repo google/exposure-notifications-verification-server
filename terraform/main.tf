@@ -163,20 +163,20 @@ resource "google_app_engine_application" "app" {
 
 # Create a helper for generating the local environment configuration - this is
 # disabled by default because it includes sensitive information to the project.
-resource "local_file" "env" {
+resource "local_sensitive_file" "env" {
   count = var.create_env_file == true ? 1 : 0
 
   filename        = "${path.root}/.env"
   file_permission = "0600"
 
-  sensitive_content = <<EOF
+  content = <<EOF
 export PROJECT_ID="${var.project}"
 export REGION="${var.region}"
 
 # Note: these configurations assume you're using the Cloud SQL proxy!
 export DB_CONN="${google_sql_database_instance.db-inst.connection_name}"
 export DB_DEBUG="true"
-export DB_ENCRYPTION_KEY="${google_kms_crypto_key.database-encrypter.self_link}"
+export DB_ENCRYPTION_KEY="${google_kms_crypto_key.database-encrypter.id}"
 export DB_HOST="127.0.0.1"
 export DB_NAME="${google_sql_database.db.name}"
 export DB_PASSWORD="secret://${google_secret_manager_secret_version.db-secret-version["password"].id}"

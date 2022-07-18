@@ -37,19 +37,19 @@ resource "google_project_iam_member" "enx-redirect-observability" {
 }
 
 resource "google_kms_key_ring_iam_member" "enx-redirect-verification-key-admin" {
-  key_ring_id = google_kms_key_ring.verification.self_link
+  key_ring_id = google_kms_key_ring.verification.id
   role        = "roles/cloudkms.admin"
   member      = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
 resource "google_kms_key_ring_iam_member" "enx-redirect-verification-key-signer-verifier" {
-  key_ring_id = google_kms_key_ring.verification.self_link
+  key_ring_id = google_kms_key_ring.verification.id
   role        = "roles/cloudkms.signerVerifier"
   member      = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
 
 resource "google_kms_crypto_key_iam_member" "enx-redirect-database-encrypter" {
-  crypto_key_id = google_kms_crypto_key.database-encrypter.self_link
+  crypto_key_id = google_kms_crypto_key.database-encrypter.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_service_account.enx-redirect.email}"
 }
@@ -151,12 +151,14 @@ resource "google_cloud_run_service" "enx-redirect" {
       metadata[0].annotations["run.googleapis.com/client-name"],
       metadata[0].annotations["run.googleapis.com/client-version"],
       metadata[0].annotations["run.googleapis.com/ingress-status"],
+      metadata[0].annotations["run.googleapis.com/launch-stage"],
       metadata[0].annotations["serving.knative.dev/creator"],
       metadata[0].annotations["serving.knative.dev/lastModifier"],
       metadata[0].labels["cloud.googleapis.com/location"],
       template[0].metadata[0].annotations["client.knative.dev/user-image"],
       template[0].metadata[0].annotations["run.googleapis.com/client-name"],
       template[0].metadata[0].annotations["run.googleapis.com/client-version"],
+      template[0].metadata[0].annotations["run.googleapis.com/sandbox"],
       template[0].metadata[0].annotations["serving.knative.dev/creator"],
       template[0].metadata[0].annotations["serving.knative.dev/lastModifier"],
       template[0].spec[0].containers[0].image,
