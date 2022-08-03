@@ -227,6 +227,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 
 	hmacedCodes, err := db.generateVerificationCodeHMACs(request.VerCode)
 	if err != nil {
+		db.logger.Debugw("failed to create hmac", "error", err)
 		return nil, fmt.Errorf("failed to create hmac: %w", err)
 	}
 
@@ -279,13 +280,15 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 				First(&ur).
 				Error; err != nil {
 				if IsNotFound(err) {
+					db.logger.Debugw("verification code has user report ID, but user report record not found", "error", err)
 					return ErrVerificationCodeNotFound
 				}
 				return err
 			}
 
 			// If a nonce is required, it must match.
-			if ur.NonceRequired && providedNonce != ur.Nonce {
+			nonceMismatch := providedNonce != ur.Nonce
+			if ur.NonceRequired && nonceMismatch {
 				badNonce = true
 			}
 
@@ -295,9 +298,11 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 			if !ur.CodeClaimed && !badNonce {
 				ur.CodeClaimed = true
 				if err := tx.Save(ur).Error; err != nil {
+					db.logger.Debugw("unable to mark user report claimed", "error", err)
 					return fmt.Errorf("unable to mark user report claimed: %w", err)
 				}
 			} else {
+				db.logger.Debugw("unable to satisfy nonce requirements", "nonce-required", ur.NonceRequired, "nonce-mismatch", nonceMismatch)
 				return ErrVerificationCodeNotFound
 			}
 		}
@@ -305,11 +310,13 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		// Mark as claimed
 		vc.Claimed = true
 		if err := tx.Save(&vc).Error; err != nil {
+			db.logger.Debugw("failed to claim verification code", "error", err)
 			return fmt.Errorf("failed to claim verification code: %w", err)
 		}
 
 		buffer := make([]byte, tokenBytes)
 		if _, err := rand.Read(buffer); err != nil {
+			db.logger.Debugw("failed to create token", "error", err)
 			return fmt.Errorf("failed to create token: %w", err)
 		}
 		tokenID := base64.RawStdEncoding.EncodeToString(buffer)
@@ -330,6 +337,7 @@ func (db *Database) VerifyCodeAndIssueToken(request *IssueTokenRequest) (*Token,
 		if !errors.Is(err, ErrVerificationCodeUsed) {
 			go db.updateStatsCodeInvalid(t, request.AuthApp, request.OS, badNonce)
 		}
+		db.logger.Debugw("unable to process verification code", "error", err)
 		return nil, err
 	}
 

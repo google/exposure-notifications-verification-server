@@ -59,6 +59,7 @@ func (c *Controller) HandleVerify() http.Handler {
 		if authApp == nil {
 			blame = enobs.BlameClient
 			result = enobs.ResultError("MISSING_AUTHORIZED_APP")
+			logger.Debugw("no authorized app detected", "blame", blame, "result", result)
 			controller.MissingAuthorizedApp(w, r, c.h)
 			return
 		}
@@ -110,10 +111,9 @@ func (c *Controller) HandleVerify() http.Handler {
 		if request.Nonce != "" {
 			nonce, err = base64util.DecodeString(request.Nonce)
 			if err != nil {
-				logger.Errorw("bad request", "error", err)
 				blame = enobs.BlameClient
 				result = enobs.ResultError("BAD_NONCE")
-
+				logger.Errorw("bad request", "error", err, "blame", blame, "result", result)
 				c.h.RenderJSON(w, http.StatusBadRequest, api.Error(err).WithCode(api.ErrUnparsableRequest))
 				return
 			}
@@ -136,19 +136,27 @@ func (c *Controller) HandleVerify() http.Handler {
 			switch {
 			case errors.Is(err, database.ErrVerificationCodeExpired):
 				result = enobs.ResultError("VERIFICATION_CODE_EXPIRED")
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired))
+				apiErr := api.Errorf("verification code expired").WithCode(api.ErrVerifyCodeExpired)
+				logger.Debugw("verify failed: verification code expired", "error", err, "api-error", apiErr)
+				c.h.RenderJSON(w, http.StatusBadRequest, apiErr)
 				return
 			case errors.Is(err, database.ErrVerificationCodeUsed):
 				result = enobs.ResultError("VERIFICATION_CODE_INVALID")
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
+				apiErr := api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid)
+				logger.Debugw("verify failed: verification code invalid", "error", err, "api-error", apiErr)
+				c.h.RenderJSON(w, http.StatusBadRequest, apiErr)
 				return
 			case errors.Is(err, database.ErrVerificationCodeNotFound):
 				result = enobs.ResultError("VERIFICATION_CODE_NOT_FOUND")
-				c.h.RenderJSON(w, http.StatusBadRequest, api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid))
+				apiErr := api.Errorf("verification code invalid").WithCode(api.ErrVerifyCodeInvalid)
+				logger.Debugw("verify failed: verification code not found", "error", err, "api-error", apiErr)
+				c.h.RenderJSON(w, http.StatusBadRequest, apiErr)
 				return
 			case errors.Is(err, database.ErrUnsupportedTestType):
 				result = enobs.ResultError("VERIFICATION_CODE_UNSUPPORTED_TEST_TYPE")
-				c.h.RenderJSON(w, http.StatusPreconditionFailed, api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType))
+				apiErr := api.Errorf("verification code has unsupported test type").WithCode(api.ErrUnsupportedTestType)
+				logger.Debugw("verify failed: unsupported test type", "error", err, "api-error", apiErr)
+				c.h.RenderJSON(w, http.StatusPreconditionFailed, apiErr)
 				return
 			default:
 				logger.Errorw("failed to issue verification token", "error", err)
