@@ -42,6 +42,7 @@ func TestTestType(t *testing.T) {
 		{TestTypeConfirmed, 2},
 		{TestTypeLikely, 4},
 		{TestTypeNegative, 8},
+		{TestTypeUserReport, 16},
 	}
 
 	for _, tc := range cases {
@@ -689,6 +690,46 @@ func TestRealm_FindVerificationCodeByUUID(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRealm_Maximum(t *testing.T) {
+	t.Parallel()
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+
+	realm1 := NewRealmWithDefaults("realm1")
+	realm1.RegionCode = "US-MOO"
+	realm1.AllowedTestTypes = TestTypeConfirmed | TestTypeUserReport
+	realm1.CodeDuration = FromDuration(15 * time.Minute)
+	if err := db.SaveRealm(realm1, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	realm2 := NewRealmWithDefaults("realm2")
+	realm2.RegionCode = "US-FOO"
+	realm2.AllowedTestTypes = TestTypeConfirmed | TestTypeUserReport
+	realm2.CodeDuration = FromDuration(42 * time.Minute)
+	if err := db.SaveRealm(realm2, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	realm3 := NewRealmWithDefaults("realm3")
+	realm3.RegionCode = "US-BAR"
+	realm3.AllowedTestTypes = TestTypeConfirmed
+	realm3.CodeDuration = FromDuration(59 * time.Minute)
+	if err := db.SaveRealm(realm3, SystemTest); err != nil {
+		t.Fatal(err)
+	}
+
+	maxDuration, err := db.MaximumUserReportTimeout()
+	if err != nil {
+		t.Fatalf("Unable to read max user report timeout: %v", err)
+	}
+
+	want := 42 * time.Minute
+	if want != maxDuration {
+		t.Fatalf("Incorrect max timeout, want: %v ,got: %v", want, maxDuration)
 	}
 }
 

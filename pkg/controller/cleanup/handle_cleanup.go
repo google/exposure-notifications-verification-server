@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
-	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
@@ -268,23 +267,16 @@ func (c *Controller) HandleCleanup() http.Handler {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "UNCLAIMED_USER_REPORTS")
 
-			realms, _, err := c.db.ListRealms(pagination.UnlimitedResults)
+			realmMaxAge, err := c.db.MaximumUserReportTimeout()
 			if err != nil {
-				merr = multierror.Append(merr, fmt.Errorf("unable to list realms for determining correct user report timeout: %w", err))
+				merr = multierror.Append(merr, fmt.Errorf("failed to determine max user report timeout: %w", err))
 				result = enobs.ResultError("FAILED")
+				return
 			}
-
-			// Ensure that the cleanup configuration is the maximum for short code duration
-			// across all realms that have user report enabled.
-			maxAge := c.config.UserReportUnclaimedMaxAge
-			for _, realm := range realms {
-				if realm.AllowsUserReport() {
-					realmTimeout := time.Duration(realm.ShortCodeMaxMinutes) * time.Minute
-					if realmTimeout > maxAge {
-						logger.Warnw("realm short code setting is causing user report cleanup to be delayed", "realm", realm.ID, "location", realm.RegionCode, "minutes", realm.ShortCodeMaxMinutes)
-						maxAge = realmTimeout
-					}
-				}
+			maxAge := c.config.UserReportMaxAge
+			if realmMaxAge > maxAge {
+				logger.Warnw("overriding user report max age cleanup due to realm settings", "config", c.config.UserPurgeMaxAge, "using", realmMaxAge)
+				maxAge = realmMaxAge
 			}
 
 			if count, err := c.db.PurgeUnclaimedUserReports(maxAge); err != nil {

@@ -1294,6 +1294,25 @@ func (r *Realm) ValidTestType(typ string) bool {
 	}
 }
 
+func (db *Database) MaximumUserReportTimeout() (time.Duration, error) {
+	// TestTypeUSerReport == 16 == 0b10000
+	sql := `
+	SELECT
+		MAX(code_duration) AS duration
+	FROM realms
+	WHERE
+	    allowed_test_types >= 16;`
+
+	var result struct {
+		Quantity int64 `gorm:"column:duration;"`
+	}
+	if err := db.db.Raw(sql).Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	timeout := time.Duration(result.Quantity) * time.Second
+	return timeout, nil
+}
+
 func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
 	var realm Realm
 	if err := db.db.
