@@ -266,7 +266,20 @@ func (c *Controller) HandleCleanup() http.Handler {
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "UNCLAIMED_USER_REPORTS")
-			if count, err := c.db.PurgeUnclaimedUserReports(c.config.UserReportUnclaimedMaxAge); err != nil {
+
+			realmMaxAge, err := c.db.MaximumUserReportTimeout()
+			if err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("failed to determine max user report timeout: %w", err))
+				result = enobs.ResultError("FAILED")
+				return
+			}
+			maxAge := c.config.UserReportMaxAge
+			if realmMaxAge > maxAge {
+				logger.Warnw("overriding user report max age cleanup due to realm settings", "config", c.config.UserPurgeMaxAge, "using", realmMaxAge)
+				maxAge = realmMaxAge
+			}
+
+			if count, err := c.db.PurgeUnclaimedUserReports(maxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge unclaimed user reports: %w", err))
 				result = enobs.ResultError("FAILED")
 			} else {

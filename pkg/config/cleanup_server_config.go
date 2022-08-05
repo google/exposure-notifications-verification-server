@@ -77,7 +77,7 @@ type CleanupConfig struct {
 	VerificationTokenMaxAge      time.Duration `env:"VERIFICATION_TOKEN_MAX_AGE, default=24h"`
 
 	// UserReportUnclaimedMaxAge is how long a user report phone hash will be kept if the record goes unclaimed.
-	UserReportUnclaimedMaxAge time.Duration `env:"USER_REPORT_UNCLAIMED_MAX_AGE, default=30m"`
+	UserReportUnclaimedMaxAge time.Duration `env:"USER_REPORT_UNCLAIMED_MAX_AGE, default=60m"`
 	// UserReportMaxAge is how long a claimed user report phone hash will be kept.
 	UserReportMaxAge time.Duration `env:"USER_REPORT_MAX_AGE, default=720h"` // 720h = 30 days
 }
