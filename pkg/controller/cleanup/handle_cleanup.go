@@ -281,12 +281,13 @@ func (c *Controller) HandleCleanup() http.Handler {
 				if realm.AllowsUserReport() {
 					realmTimeout := time.Duration(realm.ShortCodeMaxMinutes) * time.Minute
 					if realmTimeout > maxAge {
+						logger.Warnw("realm short code setting is causing user report cleanup to be delayed", "realm", realm.ID, "location", realm.RegionCode, "minutes", realm.ShortCodeMaxMinutes)
 						maxAge = realmTimeout
 					}
 				}
 			}
 
-			if count, err := c.db.PurgeUnclaimedUserReports(c.config.UserReportUnclaimedMaxAge); err != nil {
+			if count, err := c.db.PurgeUnclaimedUserReports(maxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge unclaimed user reports: %w", err))
 				result = enobs.ResultError("FAILED")
 			} else {
