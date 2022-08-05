@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/exposure-notifications-server/pkg/logging"
 	enobs "github.com/google/exposure-notifications-server/pkg/observability"
+	"github.com/google/exposure-notifications-verification-server/pkg/pagination"
 	"github.com/hashicorp/go-multierror"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/tag"
@@ -266,6 +267,25 @@ func (c *Controller) HandleCleanup() http.Handler {
 		func() {
 			defer enobs.RecordLatency(ctx, time.Now(), mLatencyMs, &result, &item)
 			item = tag.Upsert(itemTagKey, "UNCLAIMED_USER_REPORTS")
+
+			realms, _, err := c.db.ListRealms(pagination.UnlimitedResults)
+			if err != nil {
+				merr = multierror.Append(merr, fmt.Errorf("unable to list realms for determining correct user report timeout: %w", err))
+				result = enobs.ResultError("FAILED")
+			}
+
+			// Ensure that the cleanup configuration is the maximum for short code duration
+			// across all realms that have user report enabled.
+			maxAge := c.config.UserReportUnclaimedMaxAge
+			for _, realm := range realms {
+				if realm.AllowsUserReport() {
+					realmTimeout := time.Duration(realm.ShortCodeMaxMinutes) * time.Minute
+					if realmTimeout > maxAge {
+						maxAge = realmTimeout
+					}
+				}
+			}
+
 			if count, err := c.db.PurgeUnclaimedUserReports(c.config.UserReportUnclaimedMaxAge); err != nil {
 				merr = multierror.Append(merr, fmt.Errorf("failed to purge unclaimed user reports: %w", err))
 				result = enobs.ResultError("FAILED")
