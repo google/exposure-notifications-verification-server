@@ -33,8 +33,7 @@ func TestContext(tb testing.TB) context.Context {
 // TestLogger returns a logger configured for test. See the following link for
 // more information:
 //
-//     https://pkg.go.dev/go.uber.org/zap/zaptest
-//
+//	https://pkg.go.dev/go.uber.org/zap/zaptest
 func TestLogger(tb testing.TB) *zap.SugaredLogger {
 	if testing.Verbose() {
 		return zaptest.NewLogger(tb, zaptest.Level(zap.DebugLevel)).Sugar()

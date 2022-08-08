@@ -358,8 +358,7 @@ func (db *Database) generateAPIKeyHMACs(apiKey string) ([]string, error) {
 // GenerateAPIKey generates a new API key that is bound to the given realm. This
 // API key is NOT stored in the database. API keys are of the format:
 //
-//   key:realmID:hex(hmac)
-//
+//	key:realmID:hex(hmac)
 func (db *Database) GenerateAPIKey(realmID uint) (string, error) {
 	// Create the "key" parts.
 	buf := make([]byte, apiKeyBytes)

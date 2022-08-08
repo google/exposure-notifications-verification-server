@@ -16,10 +16,12 @@
 // protocols. For more discussion of these protocols, please see:
 //
 // Android:
-//   https://developer.android.com/training/app-links/verify-site-associations
+//
+//	https://developer.android.com/training/app-links/verify-site-associations
 //
 // iOS:
-//   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
+//
+//	https://developer.apple.com/documentation/safariservices/supporting_associated_domains
 package associated
 
 import (

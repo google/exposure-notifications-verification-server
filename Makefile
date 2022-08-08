@@ -18,12 +18,24 @@ GO_FILES = $(shell find . -name \*.go)
 MD_FILES = $(shell find . -name \*.md)
 PO_FILES = $(shell find . -name \*.po)
 
+# diff-check runs git-diff and fails if there are any changes.
+diff-check:
+	@FINDINGS="$$(git status -s -uall)" ; \
+		if [ -n "$${FINDINGS}" ]; then \
+			echo "Changed files:\n\n" ; \
+			echo "$${FINDINGS}\n\n" ; \
+			echo "Diffs:\n\n" ; \
+			git diff ; \
+			git diff --cached ; \
+			exit 1 ; \
+		fi
+.PHONY: diff-check
+
 generate:
 	@go generate ./...
 .PHONY: generate
 
-generate-check: generate
-	@git update-index --refresh && git diff-index --quiet HEAD --
+generate-check: generate diff-check
 .PHONY: generate-check
 
 # lint uses the same linter as CI and tries to report the same results running

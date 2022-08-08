@@ -26,7 +26,7 @@ steps:
 # adminapi
 #
 - id: 'deploy-adminapi'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -47,7 +47,7 @@ steps:
 # apiserver
 #
 - id: 'deploy-apiserver'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -68,7 +68,7 @@ steps:
 # appsync
 #
 - id: 'deploy-appsync'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -89,7 +89,7 @@ steps:
 # backup
 #
 - id: 'deploy-backup'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -110,7 +110,7 @@ steps:
 # cleanup
 #
 - id: 'deploy-cleanup'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -131,7 +131,7 @@ steps:
 # e2e-runner
 #
 - id: 'deploy-e2e-runner'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -152,7 +152,7 @@ steps:
 # emailer
 #
 - id: 'deploy-emailer'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -173,7 +173,7 @@ steps:
 # enx-redirect
 #
 - id: 'deploy-enx-redirect'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -195,7 +195,7 @@ steps:
 # metrics-registrar
 #
 - id: 'deploy-metrics-registrar'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -217,7 +217,7 @@ steps:
 # modeler
 #
 - id: 'deploy-modeler'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -239,7 +239,7 @@ steps:
 # rotation
 #
 - id: 'deploy-rotation'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -261,7 +261,7 @@ steps:
 # server
 #
 - id: 'deploy-server'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'
@@ -283,7 +283,7 @@ steps:
 # stats-puller
 #
 - id: 'deploy-stats-puller'
-  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:365.0.0-alpine'
+  name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:396.0.0-alpine'
   args:
   - 'bash'
   - '-eEuo'

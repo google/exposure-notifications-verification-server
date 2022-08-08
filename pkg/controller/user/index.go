@@ -81,7 +81,8 @@ func (c *Controller) HandleIndex() http.Handler {
 
 func (c *Controller) renderIndex(
 	ctx context.Context, w http.ResponseWriter,
-	memberships []*database.Membership, paginator *pagination.Paginator, query string) {
+	memberships []*database.Membership, paginator *pagination.Paginator, query string,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Users")
 	m["memberships"] = memberships

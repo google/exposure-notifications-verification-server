@@ -22,7 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/google/exposure-notifications-server/pkg/base64util"
@@ -235,7 +235,7 @@ func sendWebhookRequest(ctx context.Context, client *http.Client, realm *databas
 	defer resp.Body.Close()
 
 	if code := resp.StatusCode; code != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		logger.Errorw("unsuccessful response from webhook",
 			"code", code,
 			"headers", resp.Header,

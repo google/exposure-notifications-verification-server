@@ -60,7 +60,8 @@ func (c *Controller) HandleMobileAppsIndex() http.Handler {
 }
 
 func (c *Controller) renderMobileAppsIndex(ctx context.Context, w http.ResponseWriter,
-	apps []*database.MobileApp, paginator *pagination.Paginator, q string) {
+	apps []*database.MobileApp, paginator *pagination.Paginator, q string,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Mobile apps - System Admin")
 	m["apps"] = apps

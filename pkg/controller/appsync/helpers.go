@@ -125,7 +125,8 @@ func (c *Controller) syncApps(ctx context.Context, apps *appsync.AppsResponse) *
 }
 
 func (c *Controller) findRealmForApp(
-	app appsync.App, realms map[string]*database.Realm) (*database.Realm, error) {
+	app appsync.App, realms map[string]*database.Realm,
+) (*database.Realm, error) {
 	var err error
 	realm, has := realms[app.Region]
 	if !has { // Find this apps region and cache it in our realms map
@@ -139,7 +140,8 @@ func (c *Controller) findRealmForApp(
 }
 
 func (c *Controller) findAppsForRealm(
-	realmID uint, appsByRealm map[uint][]*database.MobileApp) ([]*database.MobileApp, error) {
+	realmID uint, appsByRealm map[uint][]*database.MobileApp,
+) ([]*database.MobileApp, error) {
 	var err error
 	realmApps, has := appsByRealm[realmID]
 	if !has { // Find all of the apps for this realm and cache that list in our appByRealmMap

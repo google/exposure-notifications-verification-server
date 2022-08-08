@@ -382,7 +382,6 @@ type UserReportRequest struct {
 }
 
 // UserReportResponse is the reply from a UserReportRequest.
-//
 type UserReportResponse struct {
 	Padding Padding `json:"padding"`
 
@@ -398,33 +397,40 @@ type UserReportResponse struct {
 	ErrorCode string `json:"errorCode,omitempty"`
 }
 
-// VerifyCodeRequest is the request structure for exchanging a short term Verification Code
-// (OTP) for a long term token (a JWT) that can later be used to sign TEKs.
-//
-// 'code' is either the issued short code or long code issued to the user. Either one is
-//   acceptable. Note that they normally have different expiry times.
-// 'accept' is a list of accepted test types by the client. Acceptable values are
-//   - ["confirmed"]
-//   - ["confirmed", "likely"]  == ["likely"]
-//   - ["confirmed", "likely", "negative"] == ["negative"]
-//   These values form a hierarchy, if a client will accept 'likely' they must accept
-//   both confirmed and likely. 'negative' indicates you accept confirmed, likely, and negative.
-//   A client can pass in the complete list they accept or the "highest" value they can accept.
-//   If this value is omitted or is empty, the client agrees to accept ALL possible
-//   test types, including test types that may be introduced in the future.
-// The special type of test, '"user-report"' can be added safely to any of the other types.
-//
-// The nonce must be provided when validating a self report key.
+// VerifyCodeRequest is the request structure for exchanging a short term
+// Verification Code (OTP) for a long term token (a JWT) that can later be used
+// to sign TEKs.
 //
 // Requires API key in a HTTP header, X-API-Key: APIKEY
 type VerifyCodeRequest struct {
 	Padding Padding `json:"padding"`
 
-	VerificationCode string   `json:"code"`
-	AcceptTestTypes  []string `json:"accept"`
+	// VerificationCode (code) is either the issued short code or long code issued
+	// to the user. Either one is acceptable. Note that they normally have
+	// different expiry times.
+	VerificationCode string `json:"code"`
 
-	// Optional: If present must be the same nonce that was used to request the verification code.
-	// base64 encoded.
+	// AcceptTestTypes (accept)  is a list of accepted test types by the client.
+	// Acceptable values are:
+	//
+	//   - ["confirmed"]
+	//   - ["confirmed", "likely"]  == ["likely"]
+	//   - ["confirmed", "likely", "negative"] == ["negative"]
+	//
+	// These values form a hierarchy, if a client will accept 'likely' they must
+	// accept both confirmed and likely. 'negative' indicates you accept
+	// confirmed, likely, and negative. A client can pass in the complete list
+	// they accept or the "highest" value they can accept. If this value is
+	// omitted or is empty, the client agrees to accept ALL possible test types,
+	// including test types that may be introduced in the future.
+	//
+	// The special type of test, '"user-report"' can be added safely to any of the
+	// other types.
+	AcceptTestTypes []string `json:"accept"`
+
+	// Nonce (nonce) If present must be the same nonce that was used to request
+	// the verification code. base64 encoded. The nonce must be provided when
+	// validating a self report key.
 	Nonce string `json:"nonce,omitempty"`
 }
 

@@ -75,7 +75,8 @@ func (c *Controller) HandleRegisterPhone() http.Handler {
 }
 
 func (c *Controller) renderRegisterPhone(ctx context.Context, w http.ResponseWriter,
-	mode *database.AuthRequirement, mfaEnabled bool) {
+	mode *database.AuthRequirement, mfaEnabled bool,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Multi-factor authentication registration")
 	m["mfaMode"] = mode

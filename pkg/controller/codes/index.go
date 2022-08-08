@@ -60,7 +60,8 @@ func (c *Controller) renderStatus(
 	w http.ResponseWriter,
 	realm *database.Realm,
 	user *database.User,
-	code *database.VerificationCode) error {
+	code *database.VerificationCode,
+) error {
 	recentCodes, err := realm.ListRecentCodes(c.db, user)
 	if err != nil {
 		return err

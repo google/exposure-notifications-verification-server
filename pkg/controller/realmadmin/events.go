@@ -75,7 +75,8 @@ func (c *Controller) HandleEvents() http.Handler {
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator, from, to string) {
+	realm *database.Realm, events []*database.AuditEntry, paginator *pagination.Paginator, from, to string,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Events")
 	m["user"] = realm
