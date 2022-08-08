@@ -40,7 +40,8 @@ func (c *Controller) getSignerForAuthApp(ctx context.Context, authApp *database.
 
 // GetSignerForRealm gets the certificate signer info for the given realm.
 func GetSignerForRealm(ctx context.Context, realmID uint,
-	cfg config.CertificateSigningConfig, cache *cache.Cache[*SignerInfo], db *database.Database, kms keys.KeyManager) (*SignerInfo, error) {
+	cfg config.CertificateSigningConfig, cache *cache.Cache[*SignerInfo], db *database.Database, kms keys.KeyManager,
+) (*SignerInfo, error) {
 	signer, err := cache.WriteThruLookup(fmt.Sprintf("%d", realmID),
 		func() (*SignerInfo, error) {
 			realm, err := db.FindRealm(realmID)

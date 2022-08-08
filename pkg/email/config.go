@@ -32,13 +32,15 @@ const (
 	ProviderTypeSMTP ProviderType = "SIMPLE_SMTP"
 )
 
-// Config represents the env var based configuration for email SMTP server connection.
+// Config represents the env var based configuration for email SMTP server
+// connection.
 //
-// Note: This will only work with email providers that accept external connections.
-//       The provider must accept TLS, and users should independently consider the security
-//       of the email provider / account.
-//   Gmail or Google Workspace accounts can be used with an app-password, but will
-//   not work with security features such as Advanced Protection enabled.
+// This will only work with email providers that accept external connections.
+//
+// The provider must accept TLS, and users should independently consider the
+// security of the email provider / account. Gmail or Google Workspace accounts
+// can be used with an app-password, but will not work with security features
+// such as Advanced Protection enabled.
 type Config struct {
 	ProviderType ProviderType
 

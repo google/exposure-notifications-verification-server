@@ -15,8 +15,8 @@
 package api
 
 // IOSDataResponse is the iOS format is specified by:
-//   https://developer.apple.com/documentation/safariservices/supporting_associated_domains
 //
+//	https://developer.apple.com/documentation/safariservices/supporting_associated_domains
 type IOSDataResponse struct {
 	Applinks IOSAppLinks `json:"applinks"`
 

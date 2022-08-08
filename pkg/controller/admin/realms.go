@@ -175,7 +175,8 @@ func (c *Controller) HandleRealmsCreate() http.Handler {
 }
 
 func (c *Controller) renderNewRealm(ctx context.Context, w http.ResponseWriter,
-	realm *database.Realm, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig) {
+	realm *database.Realm, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("New Realm - System Admin")
 	m["realm"] = realm
@@ -309,7 +310,8 @@ func (c *Controller) renderEditRealm(ctx context.Context, w http.ResponseWriter,
 	realm *database.Realm, membership *database.Membership, smsConfig *database.SMSConfig, emailConfig *database.EmailConfig,
 	chaffEvents []*database.RealmChaffEvent,
 	quotaLimit, quotaRemaining uint64,
-	translations []*database.DynamicTranslation) {
+	translations []*database.DynamicTranslation,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("Realm: %s - System Admin", realm.Name)
 	m["realm"] = realm

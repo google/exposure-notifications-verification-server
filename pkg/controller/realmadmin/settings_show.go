@@ -33,7 +33,8 @@ type TemplateData struct {
 func (c *Controller) renderSettings(
 	ctx context.Context, w http.ResponseWriter, r *http.Request, realm *database.Realm,
 	smsConfig *database.SMSConfig, emailConfig *database.EmailConfig, keyServerStats *database.KeyServerStats,
-	quotaLimit, quotaRemaining uint64) {
+	quotaLimit, quotaRemaining uint64,
+) {
 	if smsConfig == nil {
 		var err error
 		smsConfig, err = realm.SMSConfig(c.db)

@@ -78,7 +78,8 @@ func (c *Controller) HandleImportBatch() http.Handler {
 
 func (c *Controller) importUsers(ctx context.Context,
 	realm *database.Realm, realmMemberships map[uint]rbac.Permission, actor database.Auditable,
-	users []api.BatchUser, sendInvites bool) ([]*api.BatchUser, *multierror.Error) {
+	users []api.BatchUser, sendInvites bool,
+) ([]*api.BatchUser, *multierror.Error) {
 	logger := logging.FromContext(ctx).Named("user.importUsers")
 
 	addedUsers := make([]*api.BatchUser, 0, len(users))

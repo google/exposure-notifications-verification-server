@@ -66,7 +66,8 @@ func (c *Controller) HandleIndex() http.Handler {
 
 // renderIndex renders the index page.
 func (c *Controller) renderIndex(ctx context.Context, w http.ResponseWriter,
-	apps []*database.AuthorizedApp, paginator *pagination.Paginator, query string) {
+	apps []*database.AuthorizedApp, paginator *pagination.Paginator, query string,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m.Title("API keys")
 	m["apps"] = apps

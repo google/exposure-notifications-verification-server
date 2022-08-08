@@ -103,7 +103,8 @@ func (c *Controller) HandleEventsShow() http.Handler {
 }
 
 func (c *Controller) renderEvents(ctx context.Context, w http.ResponseWriter,
-	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm) {
+	events []*database.AuditEntry, paginator *pagination.Paginator, from, to string, realm *database.Realm,
+) {
 	m := controller.TemplateMapFromContext(ctx)
 	m["events"] = events
 	m["paginator"] = paginator

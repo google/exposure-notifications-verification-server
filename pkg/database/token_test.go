@@ -170,7 +170,6 @@ func TestIssueToken(t *testing.T) {
 		Subject      *Subject
 		ClaimError   string
 	}{
-
 		{
 			Name: "normal_token_issue",
 			Verification: func() *VerificationCode {
