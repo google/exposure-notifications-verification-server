@@ -26,16 +26,10 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
+          go-version: '1.19'
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-test-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-test-
-            ${{ runner.os }}-go-
+      - name: Download modules
+        run: go mod download
 
       - name: go-test
         shell: bash
@@ -74,16 +68,10 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.18'
+          go-version: '1.19'
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-lint-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-lint-
-            ${{ runner.os }}-go-
+      - name: Download modules
+        run: go mod download
 
       - name: go-lint
         shell: bash
