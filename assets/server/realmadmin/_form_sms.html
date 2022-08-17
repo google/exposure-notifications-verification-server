@@ -187,7 +187,7 @@
       </div>
       <div class="form-floating mb-3">
         <textarea name="sms_text_template_{{$i}}" class="form-control font-monospace {{if $realm.ErrorsFor $v.Label}}is-invalid{{end}} sms-text-template"
-          placeholder="SMS text template" style="height:150px;">{{$v.Value}}</textarea>
+          placeholder="SMS text template" style="height:150px;" label="{{$v.Label}}">{{$v.Value}}</textarea>
         <label for="sms-text-template">SMS text template</label>
       </div>
       {{if $realm.ErrorsFor $v.Label}}
@@ -416,7 +416,7 @@
       if (val.length > {{$realm.SMSTemplateMaxLength}}) {
         errors.push('SMS Templates must be <= {{$realm.SMSTemplateMaxLength}} characters, currently ' + val.length + ' characters.');
       }
-
+    
       // Provide live feedback on errors in the SMS Template construction.
       if (enxEnabled) {
         if (!val.includes("[enslink]")) {
@@ -438,11 +438,19 @@
         hasLC = val.includes("[longcode]");
         if (!(hasSC || hasLC) || (hasSC && hasLC)) {
           errors.push('must contain exactly one of `[code]` or `[longcode]`');
-        }
+        }        
 
         val = val.replace(/\[region\]/g, region);
         val = val.replace(/\[longcode\]/g, longCode);
       }
+
+      isUserReport = $(target).attr('label') === "User Report";
+      if (isUserReport) {
+        if (val.includes(("[longexpires]"))) {
+          errors.push("'User Report' template cannot contain `[longexpires]` since user report always uses the short expiration time `[expires]`, which is always in minutes.");
+        }
+      }
+
       val = val.replace(/\[code\]/g, shortCode);
       val = val.replace(/\[expires\]/g, shortExpires);
       val = val.replace(/\[longexpires\]/g, longExpires);

@@ -718,6 +718,13 @@ func (r *Realm) validateSMSTemplate(label, t string) string {
 		}
 	}
 
+	if label == UserReportTemplateLabel {
+		if strings.Contains(t, SMSLongExpires) {
+			r.AddError("smsTextTemplate", fmt.Sprintf("cannot contain %q - for %q the 'short expiration' time is used an is represented in minutes", SMSLongExpires, UserReportTemplateLabel))
+			r.AddError(label, fmt.Sprintf("cannot contain %q", SMSLongExpires))
+		}
+	}
+
 	// Check template length.
 	if l := len(t); l > SMSTemplateMaxLength {
 		r.AddError("smsTextTemplate", fmt.Sprintf("must be %d characters or less, current message is %v characters long", SMSTemplateMaxLength, l))
