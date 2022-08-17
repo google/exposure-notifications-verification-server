@@ -458,6 +458,34 @@ func TestRealm_BeforeSave(t *testing.T) {
 	}
 }
 
+func TestRealm_ValidateSMSTemplateUserReport(t *testing.T) {
+	t.Parallel()
+
+	realm := NewRealmWithDefaults("test")
+	realm.RegionCode = "US-WA"
+	realm.AllowedTestTypes = TestTypeConfirmed | TestTypeUserReport
+	realm.EnableENExpress = true
+	realm.SMSTextTemplate = DefaultENXSMSTextTemplate
+
+	db, _ := testDatabaseInstance.NewDatabase(t, nil)
+	if err := db.SaveRealm(realm, SystemTest); err != nil {
+		t.Fatalf("save error: %v issues: %+v", err, realm.ErrorMessages())
+	}
+
+	_ = realm.validateSMSTemplate(UserReportTemplateLabel, *realm.SMSTextAlternateTemplates[UserReportTemplateLabel])
+	if len(realm.Errors()) > 0 {
+		t.Fatalf("unexpected errors when saving realm in ")
+	}
+
+	badTemplate := "Click here [enslink] expires in [longexpires] time"
+	realm.SMSTextAlternateTemplates[UserReportTemplateLabel] = &badTemplate
+
+	_ = realm.validateSMSTemplate(UserReportTemplateLabel, *realm.SMSTextAlternateTemplates[UserReportTemplateLabel])
+	if _, ok := realm.Errors()["smsTextTemplate"]; !ok {
+		t.Fatalf("missing expected error for `smsTextTemplate`")
+	}
+}
+
 func TestRealm_validateSMSTemplate(t *testing.T) {
 	t.Parallel()
 

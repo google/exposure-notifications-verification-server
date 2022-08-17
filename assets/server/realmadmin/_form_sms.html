@@ -444,7 +444,7 @@
         val = val.replace(/\[longcode\]/g, longCode);
       }
 
-      isUserReport = $(target).attr('label') == "User Report";
+      isUserReport = $(target).attr('label') === "User Report";
       if (isUserReport) {
         if (val.includes(("[longexpires]"))) {
           errors.push("'User Report' template cannot contain `[longexpires]` since user report always uses the short expiration time `[expires]`, which is always in minutes.");
