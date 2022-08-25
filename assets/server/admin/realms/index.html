@@ -8,6 +8,7 @@
 <html dir="{{$.textDirection}}" lang="{{$.textLanguage}}">
 <head>
   {{template "head" .}}
+  <script defer src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 
 <body id="admin-realms-index" class="tab-content">
@@ -15,6 +16,19 @@
 
   <main role="main" class="container">
     {{template "flash" .}}
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">
+        <i class="bi bi-graph-up me-2"></i>
+        System wide verification code statistics
+      </div>
+      <div id="dashboard_div">
+        <div id="system_chart_div" class="h-100 w-100" style="min-height:325px;">
+          <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+        </div>
+        <div id="filter_div" class="text-end" style="height: 75px;"></div>
+      </div>
+    </div>
 
     <div class="card mb-3 shadow-sm">
       <div class="card-header">

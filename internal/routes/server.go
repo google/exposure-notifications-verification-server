@@ -514,6 +514,8 @@ func systemAdminRoutes(r *mux.Router, c *admin.Controller) {
 	r.Handle("", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods(http.MethodGet)
 	r.Handle("/", http.RedirectHandler("/admin/realms", http.StatusSeeOther)).Methods(http.MethodGet)
 
+	r.Handle("/stats/system.json", c.HandleCodeStats()).Methods(http.MethodGet)
+
 	r.Handle("/realms", c.HandleRealmsIndex()).Methods(http.MethodGet)
 	r.Handle("/realms", c.HandleRealmsCreate()).Methods(http.MethodPost)
 	r.Handle("/realms/new", c.HandleRealmsCreate()).Methods(http.MethodGet)

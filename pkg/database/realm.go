@@ -1922,6 +1922,67 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 	return stats, nil
 }
 
+// AllRealmCodeStatsCached returns combined code issue / claimed stats for all realms
+// in the system, but cached.
+func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher) (RealmStats, error) {
+	if cacher == nil {
+		return nil, fmt.Errorf("cacher cannot be nil")
+	}
+
+	var stats RealmStats
+	cacheKey := &cache.Key{
+		Namespace: "stats:system",
+		Key:       "all",
+	}
+	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
+		return db.AllRealmCodeStats(ctx)
+	}); err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// AllRealmCodeStats returns the usage statistics for all realms.
+func (db *Database) AllRealmCodeStats(ctx context.Context) (RealmStats, error) {
+	stop := timeutils.UTCMidnight(time.Now())
+	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
+	if start.After(stop) {
+		return nil, ErrBadDateRange
+	}
+
+	sql := `
+		SELECT
+			d.date AS date,
+			COALESCE(s.codes_issued, 0) AS codes_issued,
+			COALESCE(s.codes_claimed, 0) AS codes_claimed,
+			COALESCE(s.codes_invalid, 0) AS codes_invalid,
+			COALESCE(s.user_reports_issued, 0) AS user_reports_issued,
+			COALESCE(s.user_reports_claimed, 0) AS user_reports_claimed,
+			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
+			COALESCE(s.tokens_invalid, 0) AS tokens_invalid,
+			COALESCE(s.user_report_tokens_claimed, 0) AS user_report_tokens_claimed,
+			COALESCE(s.code_claim_age_distribution, array[]::integer[]) AS code_claim_age_distribution,
+			COALESCE(s.code_claim_mean_age, 0) AS code_claim_mean_age,
+			COALESCE(s.codes_invalid_by_os, array[0,0,0]::bigint[]) AS codes_invalid_by_os,
+			COALESCE(s.user_reports_invalid_nonce, 0) AS user_reports_invalid_nonce
+		FROM (
+			SELECT date::date FROM generate_series($1, $2, '1 day'::interval) date
+		) d
+		LEFT JOIN realm_stats s ON s.date = d.date
+		ORDER BY date DESC`
+
+	var stats []*RealmStat
+	if err := db.db.Raw(sql, start, stop).Scan(&stats).Error; err != nil {
+		if IsNotFound(err) {
+			return stats, nil
+		}
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 // StatsCached is stats, but cached.
 func (r *Realm) StatsCached(ctx context.Context, db *Database, cacher cache.Cacher) (RealmStats, error) {
 	if cacher == nil {

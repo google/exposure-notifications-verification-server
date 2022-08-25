@@ -253,53 +253,60 @@ func realMain(ctx context.Context) error {
 		return err
 	}
 
-	// Create device API keys
-	for _, name := range []string{"Corona Capture", "Tracing Tracker"} {
-		deviceAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
-			Name:       name,
-			APIKeyType: database.APIKeyTypeDevice,
-		}, admin)
-		if err != nil {
-			return fmt.Errorf("failed to create device api key: %w", err)
-		}
-		logger.Infow("created device api key", "key", deviceAPIKey)
-	}
-
-	// Create some Apps
-	apps := []*database.MobileApp{
-		{
-			Name:    "Example iOS app",
-			RealmID: realm1.ID,
-			URL:     "http://google.com/",
-			OS:      database.OSTypeIOS,
-			AppID:   "ios.example.app",
-		},
-		{
-			Name:    "Example Android app",
-			RealmID: realm1.ID,
-			URL:     "http://google.com",
-			OS:      database.OSTypeAndroid,
-			AppID:   "android.example.app",
-			SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
-		},
-	}
-	for i := range apps {
-		app := apps[i]
-		if err := db.SaveMobileApp(app, database.System); err != nil {
-			return fmt.Errorf("failed to create app: %w", err)
+	realms := []*database.Realm{realm1, realm2}
+	for _, realm := range realms {
+		// Create device API keys
+		for _, name := range []string{"Corona Capture", "Tracing Tracker"} {
+			deviceAPIKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
+				Name:       name,
+				APIKeyType: database.APIKeyTypeDevice,
+			}, admin)
+			if err != nil {
+				return fmt.Errorf("failed to create device api key: %w", err)
+			}
+			logger.Infow("created device api key", "key", deviceAPIKey)
 		}
 	}
 
-	// Create an admin API key
-	for _, name := range []string{"Closet Cloud", "Internal Health System"} {
-		adminAPIKey, err := realm1.CreateAuthorizedApp(db, &database.AuthorizedApp{
-			Name:       name,
-			APIKeyType: database.APIKeyTypeAdmin,
-		}, admin)
-		if err != nil {
-			return fmt.Errorf("failed to create admin api key: %w", err)
+	for _, realm := range realms {
+		// Create some Apps
+		apps := []*database.MobileApp{
+			{
+				Name:    "Example iOS app",
+				RealmID: realm.ID,
+				URL:     "http://google.com/",
+				OS:      database.OSTypeIOS,
+				AppID:   "ios.example.app",
+			},
+			{
+				Name:    "Example Android app",
+				RealmID: realm.ID,
+				URL:     "http://google.com",
+				OS:      database.OSTypeAndroid,
+				AppID:   "android.example.app",
+				SHA:     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA",
+			},
 		}
-		logger.Infow("created admin api key", "key", adminAPIKey)
+		for i := range apps {
+			app := apps[i]
+			if err := db.SaveMobileApp(app, database.System); err != nil {
+				return fmt.Errorf("failed to create app: %w", err)
+			}
+		}
+	}
+
+	for _, realm := range realms {
+		// Create an admin API key
+		for _, name := range []string{"Closet Cloud", "Internal Health System"} {
+			adminAPIKey, err := realm.CreateAuthorizedApp(db, &database.AuthorizedApp{
+				Name:       name,
+				APIKeyType: database.APIKeyTypeAdmin,
+			}, admin)
+			if err != nil {
+				return fmt.Errorf("failed to create admin api key: %w", err)
+			}
+			logger.Infow("created admin api key", "key", adminAPIKey)
+		}
 	}
 
 	if *flagStats {
@@ -308,17 +315,20 @@ func realMain(ctx context.Context) error {
 		db.RawDB().LogMode(false)
 		defer db.RawDB().LogMode(true)
 
-		maxPerDay, err := generateCodesAndStats(ctx, db, realm1)
-		if err != nil {
-			return fmt.Errorf("failed to generate stats: %w", err)
-		}
+		realms := []*database.Realm{realm1, realm2}
+		for _, realm := range realms {
+			maxPerDay, err := generateCodesAndStats(ctx, db, realm)
+			if err != nil {
+				return fmt.Errorf("failed to generate stats: %w", err)
+			}
 
-		if err := generateKeyServerStats(ctx, db, realm1, maxPerDay); err != nil {
-			return fmt.Errorf("failed to generate key-server stats: %w", err)
-		}
+			if err := generateKeyServerStats(ctx, db, realm, maxPerDay); err != nil {
+				return fmt.Errorf("failed to generate key-server stats: %w", err)
+			}
 
-		if err := generateSMSErrorStats(ctx, db, realm1); err != nil {
-			return fmt.Errorf("failed to generate sms-error stats: %w", err)
+			if err := generateSMSErrorStats(ctx, db, realm); err != nil {
+				return fmt.Errorf("failed to generate sms-error stats: %w", err)
+			}
 		}
 	}
 
