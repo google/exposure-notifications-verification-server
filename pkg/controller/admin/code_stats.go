@@ -15,6 +15,7 @@ func (c *Controller) HandleCodeStats() http.Handler {
 		stats, err := c.db.AllRealmCodeStatsCached(ctx, c.cacher)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
+			return
 		}
 
 		c.h.RenderJSON(w, http.StatusOK, stats)
