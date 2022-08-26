@@ -69,6 +69,7 @@ func (c *Controller) HandleRealmsIndex() http.Handler {
 		m["memberships"] = membershipsMap
 		m["query"] = q
 		m["paginator"] = paginator
+		m["minRealms"] = c.config.MinRealmsForSystemStatistics
 		c.h.RenderHTML(w, "admin/realms/index", m)
 	})
 }

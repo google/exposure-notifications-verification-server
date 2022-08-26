@@ -100,6 +100,10 @@ type ServerConfig struct {
 	// If MaintenanceMode is true, the server is temporarily read-only and will not issue codes.
 	MaintenanceMode bool `env:"MAINTENANCE_MODE"`
 
+	// MinRealmsForSystemStatistics gives a minimum threshold for displaying system
+	// admin level statistics
+	MinRealmsForSystemStatistics uint `env:"MIN_REALMS_FOR_SYSTEM_STATS, default=2"`
+
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
 }

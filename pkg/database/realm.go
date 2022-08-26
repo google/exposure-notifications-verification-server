@@ -1924,7 +1924,7 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 
 // AllRealmCodeStatsCached returns combined code issue / claimed stats for all realms
 // in the system, but cached.
-func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher) (RealmStats, error) {
+func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int) (RealmStats, error) {
 	if cacher == nil {
 		return nil, fmt.Errorf("cacher cannot be nil")
 	}
@@ -1932,10 +1932,10 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 	var stats RealmStats
 	cacheKey := &cache.Key{
 		Namespace: "stats:system",
-		Key:       "all",
+		Key:       fmt.Sprintf("all:min-%d", requiredRealms),
 	}
 	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
-		return db.AllRealmCodeStats(ctx)
+		return db.AllRealmCodeStats(ctx, requiredRealms)
 	}); err != nil {
 		return nil, err
 	}
@@ -1944,7 +1944,10 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 }
 
 // AllRealmCodeStats returns the usage statistics for all realms.
-func (db *Database) AllRealmCodeStats(ctx context.Context) (RealmStats, error) {
+// This reuses the RealmStats data structure and the realm_id is the COUNT
+// of all realms that contributed to statistics on that day, so that filtering
+// can be done if there are not enough data points.
+func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int) (RealmStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
@@ -1954,22 +1957,24 @@ func (db *Database) AllRealmCodeStats(ctx context.Context) (RealmStats, error) {
 	sql := `
 		SELECT
 			d.date AS date,
-			COALESCE(s.codes_issued, 0) AS codes_issued,
-			COALESCE(s.codes_claimed, 0) AS codes_claimed,
-			COALESCE(s.codes_invalid, 0) AS codes_invalid,
-			COALESCE(s.user_reports_issued, 0) AS user_reports_issued,
-			COALESCE(s.user_reports_claimed, 0) AS user_reports_claimed,
-			COALESCE(s.tokens_claimed, 0) AS tokens_claimed,
-			COALESCE(s.tokens_invalid, 0) AS tokens_invalid,
-			COALESCE(s.user_report_tokens_claimed, 0) AS user_report_tokens_claimed,
-			COALESCE(s.code_claim_age_distribution, array[]::integer[]) AS code_claim_age_distribution,
-			COALESCE(s.code_claim_mean_age, 0) AS code_claim_mean_age,
-			COALESCE(s.codes_invalid_by_os, array[0,0,0]::bigint[]) AS codes_invalid_by_os,
-			COALESCE(s.user_reports_invalid_nonce, 0) AS user_reports_invalid_nonce
+			COUNT(DISTINCT(realm_id)) as realm_id,
+			SUM(s.codes_issued) AS codes_issued,		
+			SUM(s.codes_claimed) AS codes_claimed,
+			0 AS codes_invalid,
+			0 AS user_reports_issued,
+			0 AS user_reports_claimed,
+			0 AS tokens_claimed,
+			0 AS tokens_invalid,
+			0 AS user_report_tokens_claimed,
+			array[]::integer[] AS code_claim_age_distribution,
+			0 AS code_claim_mean_age,
+			array[0,0,0]::bigint[] AS codes_invalid_by_os,
+			0 AS user_reports_invalid_nonce
 		FROM (
 			SELECT date::date FROM generate_series($1, $2, '1 day'::interval) date
 		) d
 		LEFT JOIN realm_stats s ON s.date = d.date
+		GROUP BY d.date
 		ORDER BY date DESC`
 
 	var stats []*RealmStat
@@ -1978,6 +1983,13 @@ func (db *Database) AllRealmCodeStats(ctx context.Context) (RealmStats, error) {
 			return stats, nil
 		}
 		return nil, err
+	}
+
+	for _, s := range stats {
+		if s.RealmID < uint(requiredRealms) {
+			s.CodesIssued = 0
+			s.CodesClaimed = 0
+		}
 	}
 
 	return stats, nil
