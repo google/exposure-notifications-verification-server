@@ -1989,9 +1989,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 	sql = sql + `GROUP BY d.date
 		ORDER BY date DESC`
 
-	values := make([]interface{}, 2)
-	values[0] = start
-	values[1] = stop
+	values := []interface{}{start, stop}
 	if realm != nil {
 		values = append(values, realm.ID)
 	}
