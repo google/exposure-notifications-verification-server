@@ -1323,6 +1323,18 @@ func (db *Database) MaximumUserReportTimeout() (time.Duration, error) {
 	return timeout, nil
 }
 
+func (db *Database) FindE2ETestRealms() ([]*Realm, error) {
+	var realms []*Realm
+	if err := db.db.
+		Model(&Realm{}).
+		Where("is_e2e = ?", true).
+		First(&realms).
+		Error; err != nil {
+		return nil, err
+	}
+	return realms, nil
+}
+
 func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
 	var realm Realm
 	if err := db.db.
@@ -1924,7 +1936,7 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 
 // AllRealmCodeStatsCached returns combined code issue / claimed stats for all realms
 // in the system, but cached.
-func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int, excludeRealm string) (RealmStats, error) {
+func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int, excludeRealms []uint) (RealmStats, error) {
 	if cacher == nil {
 		return nil, fmt.Errorf("cacher cannot be nil")
 	}
@@ -1935,7 +1947,7 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 		Key:       fmt.Sprintf("all:min-%d", requiredRealms),
 	}
 	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
-		return db.AllRealmCodeStats(ctx, requiredRealms, excludeRealm)
+		return db.AllRealmCodeStats(ctx, requiredRealms, excludeRealms)
 	}); err != nil {
 		return nil, err
 	}
@@ -1947,17 +1959,26 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 // This reuses the RealmStats data structure and the realm_id is the COUNT
 // of all realms that contributed to statistics on that day, so that filtering
 // can be done if there are not enough data points.
-func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, excludeReam string) (RealmStats, error) {
+func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, excludeRealms []uint) (RealmStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
 
-	realm, err := db.FindRealmByRegion(excludeReam)
+	excludedRealmIDs := make([]uint, 0)
+	// Find and exclude e2e test realm(s) if they exist.
+	e2eTestRealms, err := db.FindE2ETestRealms()
 	if err != nil {
-		db.logger.Warnw("unable to find realm to exclude from system stats", "excludeRealm", excludeReam, "error", err)
-		realm = nil
+		db.logger.Warnf("unable o find e2e test realms for exclusion from system stats", "error", err)
+	} else {
+		for _, r := range e2eTestRealms {
+			excludedRealmIDs = append(excludedRealmIDs, r.ID)
+		}
+	}
+	// Exclude other explicitly listed realms
+	for _, rID := range excludeRealms {
+		excludedRealmIDs = append(excludedRealmIDs, rID)
 	}
 
 	sql := `
@@ -1981,17 +2002,17 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 		) d
 		LEFT JOIN realm_stats s ON s.date = d.date
 		`
-	if realm != nil {
+	if len(excludedRealmIDs) > 0 {
 		// This needs the newlines in it
-		sql = sql + `WHERE s.realm_id != $3
+		sql = sql + `WHERE NOT s.realm_id = ANY($3)
 		`
 	}
 	sql = sql + `GROUP BY d.date
 		ORDER BY date DESC`
 
 	values := []interface{}{start, stop}
-	if realm != nil {
-		values = append(values, realm.ID)
+	if len(excludedRealmIDs) > 0 {
+		values = append(values, pq.Array(excludedRealmIDs))
 	}
 
 	var stats []*RealmStat

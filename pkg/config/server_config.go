@@ -103,9 +103,9 @@ type ServerConfig struct {
 	// MinRealmsForSystemStatistics gives a minimum threshold for displaying system
 	// admin level statistics
 	MinRealmsForSystemStatistics uint `env:"MIN_REALMS_FOR_SYSTEM_STATS, default=2"`
-	// ExcludeFromSystemStatistics is the realm location to exclude from the system stats.
-	// This is the e2e testing realm by default.
-	ExcludeFromSystemStatistics string `env:"EXCLUDE_FROM_SYSTEM_STATS, default=E2E-TEST"`
+	// ExcludeFromSystemStatistics is a list of realm IDs to exclude from system stats, in addition
+	// to any e2e test realms that are found.
+	ExcludeFromSystemStatistics []uint `env:"EXCLUDE_FROM_SYSTEM_STATS"`
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
@@ -172,7 +172,7 @@ func (c *ServerConfig) Validate() error {
 		return fmt.Errorf("failed to validate issue API configuration: %w", err)
 	}
 
-	if c.MinRealmsForSystemStatistics < 2 {
+	if c.MinRealmsForSystemStatistics < 1 {
 		return fmt.Errorf("MIN_REALMS_FOR_SYSTEM_STATS cannot be set lower than 2")
 	}
 
