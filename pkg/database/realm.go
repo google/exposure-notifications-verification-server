@@ -1924,7 +1924,7 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 
 // AllRealmCodeStatsCached returns combined code issue / claimed stats for all realms
 // in the system, but cached.
-func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int) (RealmStats, error) {
+func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int, excludeRealm string) (RealmStats, error) {
 	if cacher == nil {
 		return nil, fmt.Errorf("cacher cannot be nil")
 	}
@@ -1935,7 +1935,7 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 		Key:       fmt.Sprintf("all:min-%d", requiredRealms),
 	}
 	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
-		return db.AllRealmCodeStats(ctx, requiredRealms)
+		return db.AllRealmCodeStats(ctx, requiredRealms, excludeRealm)
 	}); err != nil {
 		return nil, err
 	}
@@ -1947,11 +1947,17 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 // This reuses the RealmStats data structure and the realm_id is the COUNT
 // of all realms that contributed to statistics on that day, so that filtering
 // can be done if there are not enough data points.
-func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int) (RealmStats, error) {
+func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, excludeReam string) (RealmStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
+	}
+
+	realm, err := db.FindRealmByRegion(excludeReam)
+	if err != nil {
+		db.logger.Warnw("unable to find realm to exclude from system stats")
+		realm = nil
 	}
 
 	sql := `
@@ -1974,11 +1980,24 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int) (
 			SELECT date::date FROM generate_series($1, $2, '1 day'::interval) date
 		) d
 		LEFT JOIN realm_stats s ON s.date = d.date
-		GROUP BY d.date
+		`
+	if realm != nil {
+		// This needs the newlines in it
+		sql = sql + `WHERE s.realm_id != $3
+		`
+	}
+	sql = sql + `GROUP BY d.date
 		ORDER BY date DESC`
 
+	values := make([]interface{}, 2)
+	values[0] = start
+	values[1] = stop
+	if realm != nil {
+		values = append(values, realm.ID)
+	}
+
 	var stats []*RealmStat
-	if err := db.db.Raw(sql, start, stop).Scan(&stats).Error; err != nil {
+	if err := db.db.Raw(sql, values).Scan(&stats).Error; err != nil {
 		if IsNotFound(err) {
 			return stats, nil
 		}
