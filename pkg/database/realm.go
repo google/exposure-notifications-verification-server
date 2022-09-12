@@ -1977,9 +1977,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 		}
 	}
 	// Exclude other explicitly listed realms
-	for _, rID := range excludeRealms {
-		excludedRealmIDs = append(excludedRealmIDs, rID)
-	}
+	excludedRealmIDs = append(excludedRealmIDs, excludeRealms...)
 
 	sql := `
 		SELECT
