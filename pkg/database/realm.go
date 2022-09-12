@@ -1956,7 +1956,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 
 	realm, err := db.FindRealmByRegion(excludeReam)
 	if err != nil {
-		db.logger.Warnw("unable to find realm to exclude from system stats")
+		db.logger.Warnw("unable to find realm to exclude from system stats", "excludeRealm", excludeReam, "error", err)
 		realm = nil
 	}
 
