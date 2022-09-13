@@ -1323,16 +1323,16 @@ func (db *Database) MaximumUserReportTimeout() (time.Duration, error) {
 	return timeout, nil
 }
 
-func (db *Database) FindE2ETestRealms() ([]*Realm, error) {
-	var realms []*Realm
+func (db *Database) FindE2ETestRealm() (*Realm, error) {
+	var realm Realm
 	if err := db.db.
 		Model(&Realm{}).
 		Where("is_e2e = ?", true).
-		First(&realms).
+		First(&realm).
 		Error; err != nil {
 		return nil, err
 	}
-	return realms, nil
+	return &realm, nil
 }
 
 func (db *Database) FindRealmByRegion(region string) (*Realm, error) {
@@ -1967,14 +1967,12 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 	}
 
 	allExcludedRealmIDs := make([]uint, 0)
-	// Find and exclude e2e test realm(s) if they exist.
-	e2eTestRealms, err := db.FindE2ETestRealms()
+	// Find and exclude e2e test realm if it exists.
+	e2eTestRealm, err := db.FindE2ETestRealm()
 	if err != nil {
 		db.logger.Warnf("unable o find e2e test realms for exclusion from system stats", "error", err)
 	} else {
-		for _, r := range e2eTestRealms {
-			allExcludedRealmIDs = append(allExcludedRealmIDs, r.ID)
-		}
+		allExcludedRealmIDs = append(allExcludedRealmIDs, e2eTestRealm.ID)
 	}
 	// Exclude other explicitly listed realms
 	allExcludedRealmIDs = append(allExcludedRealmIDs, excludeRealmIDs...)
@@ -2003,7 +2001,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 		GROUP BY d.date
 		ORDER BY date DESC`
 
-	values := []interface{}{start, stop, pq.Array(allExcludedRealmIDs)}
+	values := []any{start, stop, pq.Array(allExcludedRealmIDs)}
 
 	var stats []*RealmStat
 	if err := db.db.Raw(sql, values).Scan(&stats).Error; err != nil {
