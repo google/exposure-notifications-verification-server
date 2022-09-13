@@ -1936,7 +1936,7 @@ func (r *Realm) Stats(db *Database) (RealmStats, error) {
 
 // AllRealmCodeStatsCached returns combined code issue / claimed stats for all realms
 // in the system, but cached.
-func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int, excludeRealms []uint) (RealmStats, error) {
+func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Cacher, requiredRealms int, excludeRealmIDs []uint) (RealmStats, error) {
 	if cacher == nil {
 		return nil, fmt.Errorf("cacher cannot be nil")
 	}
@@ -1947,7 +1947,7 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 		Key:       fmt.Sprintf("all:min-%d", requiredRealms),
 	}
 	if err := cacher.Fetch(ctx, cacheKey, &stats, 30*time.Minute, func() (interface{}, error) {
-		return db.AllRealmCodeStats(ctx, requiredRealms, excludeRealms)
+		return db.AllRealmCodeStats(ctx, requiredRealms, excludeRealmIDs)
 	}); err != nil {
 		return nil, err
 	}
@@ -1959,25 +1959,25 @@ func (db *Database) AllRealmCodeStatsCached(ctx context.Context, cacher cache.Ca
 // This reuses the RealmStats data structure and the realm_id is the COUNT
 // of all realms that contributed to statistics on that day, so that filtering
 // can be done if there are not enough data points.
-func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, excludeRealms []uint) (RealmStats, error) {
+func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, excludeRealmIDs []uint) (RealmStats, error) {
 	stop := timeutils.UTCMidnight(time.Now())
 	start := stop.Add(project.StatsDisplayDays * -24 * time.Hour)
 	if start.After(stop) {
 		return nil, ErrBadDateRange
 	}
 
-	excludedRealmIDs := make([]uint, 0)
+	allExcludedRealmIDs := make([]uint, 0)
 	// Find and exclude e2e test realm(s) if they exist.
 	e2eTestRealms, err := db.FindE2ETestRealms()
 	if err != nil {
 		db.logger.Warnf("unable o find e2e test realms for exclusion from system stats", "error", err)
 	} else {
 		for _, r := range e2eTestRealms {
-			excludedRealmIDs = append(excludedRealmIDs, r.ID)
+			allExcludedRealmIDs = append(allExcludedRealmIDs, r.ID)
 		}
 	}
 	// Exclude other explicitly listed realms
-	excludedRealmIDs = append(excludedRealmIDs, excludeRealms...)
+	allExcludedRealmIDs = append(allExcludedRealmIDs, excludeRealmIDs...)
 
 	sql := `
 		SELECT
@@ -1999,19 +1999,11 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 			SELECT date::date FROM generate_series($1, $2, '1 day'::interval) date
 		) d
 		LEFT JOIN realm_stats s ON s.date = d.date
-		`
-	if len(excludedRealmIDs) > 0 {
-		// This needs the newlines in it
-		sql = sql + `WHERE NOT s.realm_id = ANY($3)
-		`
-	}
-	sql = sql + `GROUP BY d.date
+		WHERE NOT s.realm_id = ANY ($3)
+		GROUP BY d.date
 		ORDER BY date DESC`
 
-	values := []interface{}{start, stop}
-	if len(excludedRealmIDs) > 0 {
-		values = append(values, pq.Array(excludedRealmIDs))
-	}
+	values := []interface{}{start, stop, pq.Array(allExcludedRealmIDs)}
 
 	var stats []*RealmStat
 	if err := db.db.Raw(sql, values).Scan(&stats).Error; err != nil {
