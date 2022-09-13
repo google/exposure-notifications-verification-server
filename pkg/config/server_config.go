@@ -172,7 +172,7 @@ func (c *ServerConfig) Validate() error {
 		return fmt.Errorf("failed to validate issue API configuration: %w", err)
 	}
 
-	if c.MinRealmsForSystemStatistics < 1 {
+	if c.MinRealmsForSystemStatistics < 2 {
 		return fmt.Errorf("MIN_REALMS_FOR_SYSTEM_STATS cannot be set lower than 2")
 	}
 
