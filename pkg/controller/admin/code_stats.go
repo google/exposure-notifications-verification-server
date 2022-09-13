@@ -26,7 +26,7 @@ func (c *Controller) HandleCodeStats() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		stats, err := c.db.AllRealmCodeStatsCached(ctx, c.cacher, int(c.config.MinRealmsForSystemStatistics))
+		stats, err := c.db.AllRealmCodeStatsCached(ctx, c.cacher, int(c.config.MinRealmsForSystemStatistics), c.config.ExcludeFromSystemStatistics)
 		if err != nil {
 			controller.InternalError(w, r, c.h, err)
 			return

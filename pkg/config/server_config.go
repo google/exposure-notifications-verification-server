@@ -103,6 +103,9 @@ type ServerConfig struct {
 	// MinRealmsForSystemStatistics gives a minimum threshold for displaying system
 	// admin level statistics
 	MinRealmsForSystemStatistics uint `env:"MIN_REALMS_FOR_SYSTEM_STATS, default=2"`
+	// ExcludeFromSystemStatistics is a list of realm IDs to exclude from system stats, in addition
+	// to any e2e test realms that are found.
+	ExcludeFromSystemStatistics []uint `env:"EXCLUDE_FROM_SYSTEM_STATS"`
 
 	// Rate limiting configuration
 	RateLimit ratelimit.Config
