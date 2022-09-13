@@ -1970,7 +1970,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 	// Find and exclude e2e test realm if it exists.
 	e2eTestRealm, err := db.FindE2ETestRealm()
 	if err != nil {
-		db.logger.Warnf("unable o find e2e test realms for exclusion from system stats", "error", err)
+		db.logger.Warnf("failed to find e2e test realms for exclusion from system stats", "error", err)
 	} else {
 		allExcludedRealmIDs = append(allExcludedRealmIDs, e2eTestRealm.ID)
 	}
@@ -1981,7 +1981,7 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 		SELECT
 			d.date AS date,
 			COUNT(DISTINCT(realm_id)) as realm_id,
-			SUM(s.codes_issued) AS codes_issued,		
+			SUM(s.codes_issued) AS codes_issued,
 			SUM(s.codes_claimed) AS codes_claimed,
 			0 AS codes_invalid,
 			0 AS user_reports_issued,
