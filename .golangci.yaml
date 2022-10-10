@@ -30,7 +30,6 @@ linters:
   enable:
   - 'asciicheck'
   - 'bodyclose'
-  - 'deadcode'
   - 'depguard'
   - 'dogsled'
   - 'errcheck'
@@ -57,12 +56,10 @@ linters:
   - 'revive'
   - 'sqlclosecheck'
   - 'staticcheck'
-  - 'structcheck'
   - 'stylecheck'
   - 'typecheck'
   - 'unconvert'
   - 'unused'
-  - 'varcheck'
   - 'whitespace'
 
 issues:
