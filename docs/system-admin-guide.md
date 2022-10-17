@@ -12,6 +12,7 @@
 - [Clearing caches](#clearing-caches)
 - [Getting system information](#getting-system-information)
 - [Adding system notices](#adding-system-notices)
+- [Realm turndown](#realm-turndown)
 
 <!-- /TOC -->
 
@@ -294,3 +295,35 @@ string.
 You can also set the environment variable `MAINTENANCE_MODE` to a truthy value which will put the system in readonly and automatically add a system notice.
 
 ![](images/mainteance-mode-example.png)
+
+## Realm turndown
+
+These instructions assume that the server operator is operating both the
+key server and the verification server. Here, we specifically cover turning
+down an individual realm (not shutting down the whole server).
+
+1. Put the realm into maintenance mode on the verification server (requires >= v1.8).
+This prevents the realm from issuing new codes and is easily reversible should the health
+authority change their mind.
+2. Wait for a cool down period, 14 days is suggested.
+3. Ensure that the PHA has exported any statistics that they wish to retain, as those
+statistics will become inaccessible once you move beyond this step.
+4. Tear down access, these steps are not easily reversible and would likely require
+re-launching an application.
+    - Verification server
+        1. Remove all users from the realm (except system admin, who can always rejoin) 
+        2. Delete any API keys from the realm (they can be restored within 14 days)
+        3. Change the Realm’s Region (ISO) location to be invalid to prevent syncing of
+        associated applications. For example, change `US-WA` to `US-WA-INVALID`.
+        4. Remove SMS credentials from the verification server.
+        5. Delete any mobile app configurations for the realm.
+    - Key server, using the admin console application.
+      1. Delete the health authority ID.
+      2. Remove keys from the “Verification Key” settings.
+          - Remove the “JWKS” URI
+          - Wait 5 minutes
+          - Refresh the page
+          - Revoke any remaining keys
+      3. If (and only if) a realm is the only one using an export configuration, that export
+      configuration should be removed as well and the files manually cleaned up from the
+      cloud storage / CDN location.
