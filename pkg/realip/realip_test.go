@@ -51,18 +51,18 @@ func TestOnGoogleCloud(t *testing.T) {
 		{
 			name: "xff_multi",
 			xff:  "34.1.2.3,231.5.4.3,2.2.2.2",
-			exp:  "2.2.2.2",
+			exp:  "231.5.4.3",
 		},
 		{
 			name: "xff_multi_trim",
 			xff:  "     34.1.2.3,  231.5.4.3,2.2.2.2",
-			exp:  "2.2.2.2",
+			exp:  "231.5.4.3",
 		},
 		{
 			name:       "remote_addr_with_xff",
 			remoteAddr: "1.1.1.1",
 			xff:        "34.1.2.3,231.5.4.3,2.2.2.2",
-			exp:        "2.2.2.2",
+			exp:        "231.5.4.3",
 		},
 	}
 
