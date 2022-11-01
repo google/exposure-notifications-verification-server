@@ -97,7 +97,7 @@ func TestProcessFirewall(t *testing.T) {
 		{
 			name: "single_allowed_xff",
 			ctx: controller.WithRealm(ctx, &database.Realm{
-				AllowedCIDRsServer: []string{"1.2.3.4/32"},
+				AllowedCIDRsServer: []string{"5.6.7.8/32"},
 			}),
 			remoteAddr: "9.8.7.6",
 			xff:        "5.6.7.8, 1.2.3.4",

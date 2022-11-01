@@ -194,9 +194,13 @@ func UserIDKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.
 
 // IPAddressKeyFunc uses the client IP to rate limit.
 func IPAddressKeyFunc(ctx context.Context, scope string, hmacKey []byte) httplimit.KeyFunc {
+	logger := logging.FromContext(ctx)
+
 	return func(r *http.Request) (string, error) {
 		// Get the remote addr
 		ip := realip.FromGoogleCloud(r)
+
+		logger.Debugw("falling back to rate limiting by ip address", "address", ip)
 
 		dig, err := digest.HMAC(ip, hmacKey)
 		if err != nil {

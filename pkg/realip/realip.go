@@ -41,7 +41,7 @@ func FromGoogleCloud(r *http.Request) string {
 	if xff != "" {
 		parts := strings.Split(xff, ",")
 		if len(parts) > 1 {
-			ip = parts[len(parts)-1]
+			ip = parts[len(parts)-2]
 		}
 	}
 
