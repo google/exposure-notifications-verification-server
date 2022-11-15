@@ -35,13 +35,14 @@ import (
 )
 
 type Controller struct {
-	config           config.IssueAPIConfig
-	db               *database.Database
-	smsSignerCache   *cache.Cache[*cachedSMSSigner]
-	smsProviderCache *cache.Cache[sms.Provider]
-	limiter          limiter.Store
-	smsSigner        keys.KeyManager
-	h                *render.Renderer
+	config               config.IssueAPIConfig
+	db                   *database.Database
+	smsSignerCache       *cache.Cache[*cachedSMSSigner]
+	smsProviderCache     *cache.Cache[sms.Provider]
+	limiter              limiter.Store
+	smsSigner            keys.KeyManager
+	h                    *render.Renderer
+	overrideGeneratedSMS map[uint]struct{}
 }
 
 // New creates a new IssueAPI controller.
@@ -49,14 +50,20 @@ func New(cfg config.IssueAPIConfig, db *database.Database, limiter limiter.Store
 	smsSignerCache, _ := cache.New[*cachedSMSSigner](30 * time.Second)
 	smsProviderCache, _ := cache.New[sms.Provider](30 * time.Second)
 
+	overrideGeneratedSMS := make(map[uint]struct{})
+	for _, realmID := range cfg.IssueConfig().RealmOverrideGeneratedSMS {
+		overrideGeneratedSMS[realmID] = struct{}{}
+	}
+
 	return &Controller{
-		config:           cfg,
-		db:               db,
-		smsSignerCache:   smsSignerCache,
-		smsProviderCache: smsProviderCache,
-		limiter:          limiter,
-		smsSigner:        smsSigner,
-		h:                h,
+		config:               cfg,
+		db:                   db,
+		smsSignerCache:       smsSignerCache,
+		smsProviderCache:     smsProviderCache,
+		limiter:              limiter,
+		smsSigner:            smsSigner,
+		h:                    h,
+		overrideGeneratedSMS: overrideGeneratedSMS,
 	}
 }
 

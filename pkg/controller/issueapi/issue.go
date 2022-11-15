@@ -147,16 +147,20 @@ func (c *Controller) IssueMany(ctx context.Context, requests []*IssueRequestInte
 		// If the request was only to generate the SMS, generate and sign the SMS
 		// and attach the message to the response.
 		if issueReq.OnlyGenerateSMS {
-			message, err := c.BuildSMS(ctx, realm, smsSigner, keyID, issueReq, result.VerCode)
-			if err != nil {
-				result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
-				result.HTTPCode = http.StatusInternalServerError
-				result.ErrorReturn = api.Errorf("failed to build sms: %s", err).WithCode(api.ErrSMSFailure)
-			}
-			result.GeneratedSMS = message
+			// Only generate SMS if this realm hasn't been overridden in config.
+			// If the realm has been overridden in the config; we'll send the SMS instead.
+			if _, ok := c.overrideGeneratedSMS[realm.ID]; !ok {
+				message, err := c.BuildSMS(ctx, realm, smsSigner, keyID, issueReq, result.VerCode)
+				if err != nil {
+					result.obsResult = enobs.ResultError("FAILED_TO_BUILD_SMS")
+					result.HTTPCode = http.StatusInternalServerError
+					result.ErrorReturn = api.Errorf("failed to build sms: %s", err).WithCode(api.ErrSMSFailure)
+				}
+				result.GeneratedSMS = message
 
-			// Do not attempt to send if OnlyGenerateSMS was true.
-			continue
+				// Do not attempt to send if OnlyGenerateSMS was true.
+				continue
+			}
 		}
 
 		if smsProvider != nil {

@@ -28,6 +28,11 @@ type IssueAPIVars struct {
 	AllowedSymptomAge   time.Duration `env:"ALLOWED_PAST_SYMPTOM_DAYS,default=672h"` // 672h is 28 days.
 	EnforceRealmQuotas  bool          `env:"ENFORCE_REALM_QUOTAS, default=true"`
 
+	// RealmOverrideGeneratedSMS - if a realm is included in the list, and that realm
+	// is allowed to use generated SMS; then the generate SMS field is ignored and
+	// internal SMS dispatch is used instead.
+	RealmOverrideGeneratedSMS []uint `env:"REALM_OVERRIDE_GENERATED_SMS"`
+
 	// For EN Express, the link will be
 	// https://[realm-region].[ENX_REDIRECT_DOMAIN]/v?c=[longcode]
 	// This repository contains a redirect service that can be used for this purpose.
