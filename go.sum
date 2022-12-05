@@ -790,8 +790,8 @@ github.com/gomodule/redigo v1.8.2/go.mod h1:P9dn9mFrCBvWhGE1wpxx6fgq7BAeLBk+UUUz
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.1/go.mod h1:xXMiIv4Fb/0kKde4SpL7qlzvu5cMJDRkFDxJfI9uaxA=
-github.com/google/exposure-notifications-server v1.14.1-0.20221128215310-97d0b99b9b15 h1:s0N0OXxNzZSax0NGuFz0LoqXdWxp6Bv/5zctZZMzVmE=
-github.com/google/exposure-notifications-server v1.14.1-0.20221128215310-97d0b99b9b15/go.mod h1:HEGHNAwlQ015KZLAJoB84hWO199RCHwgGu/zred0ljE=
+github.com/google/exposure-notifications-server v1.15.0 h1:n0/33K4jEeyNaqp2qsW8rFQg9cDPA5JajJf/wfPq+3I=
+github.com/google/exposure-notifications-server v1.15.0/go.mod h1:HEGHNAwlQ015KZLAJoB84hWO199RCHwgGu/zred0ljE=
 github.com/google/flatbuffers v2.0.0+incompatible/go.mod h1:1AeVuKshWv4vARoZatz6mlQ0JxURH0Kv5+zNeJKJCa8=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
