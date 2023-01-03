@@ -793,6 +793,8 @@ github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ
 github.com/google/btree v1.0.1/go.mod h1:xXMiIv4Fb/0kKde4SpL7qlzvu5cMJDRkFDxJfI9uaxA=
 github.com/google/exposure-notifications-server v1.6.0 h1:eeHJLHmfH7DkpTnwks28NoTFvQ5VWpYi6TicLmPO14k=
 github.com/google/exposure-notifications-server v1.6.0/go.mod h1:NlXAv+maeBo4f8QW0sKWXtsp1UuHh9BNB3nbUOfRq9Q=
+github.com/google/exposure-notifications-server v1.16.0 h1:8fuXQHiwQLcFSDr+AHnPjbEEaet7klyAY7YzMaJNR08=
+github.com/google/exposure-notifications-server v1.16.0/go.mod h1:ysfPDRYY7CL9JZgIRaYHJdlPf0LUfQmnT3gcixuhYg4=
 github.com/google/flatbuffers v2.0.0+incompatible/go.mod h1:1AeVuKshWv4vARoZatz6mlQ0JxURH0Kv5+zNeJKJCa8=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
