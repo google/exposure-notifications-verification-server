@@ -395,6 +395,9 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, 
 		if len(existing.CodesInvalidByOS) == 0 {
 			existing.CodesInvalidByOS = make([]int64, os.Len())
 		}
+		if len(existing.UserReportsInvalidNonceByOS) == 0 {
+			existing.UserReportsInvalidNonceByOS = make([]int64, os.Len())
+		}
 
 		// Update the OS field in the array
 		existing.CodesInvalidByOS[os]++
@@ -402,6 +405,7 @@ func (db *Database) updateStatsCodeInvalid(t time.Time, authApp *AuthorizedApp, 
 		existing.CodesInvalid++
 		if badNonce {
 			existing.UserReportsInvalidNonce++
+			existing.UserReportsInvalidNonceByOS[os]++
 		}
 
 		sel := tx.Table("realm_stats").

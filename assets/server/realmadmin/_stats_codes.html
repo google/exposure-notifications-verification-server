@@ -78,6 +78,26 @@
 <div class="card shadow-sm mb-3">
   <div class="card-header">
     <i class="bi bi-graph-up me-2"></i>
+    User report device mismatch by OS
+  </div>
+  <div id="user_issued_mismatch_dashboard_div">
+    <div id="user_issued_mismatch_chart_div" class="h-100 w-100" style="min-height:325px;">
+      <p class="text-center font-italic w-100 mt-5">Loading chart...</p>
+    </div>
+    <div id="user_issued_mismatch_filter_div" class="text-end" style="height: 75px;"></div>
+  </div>
+  <small class="card-footer d-flex justify-content-between text-muted">
+    <a href="#" data-bs-toggle="modal" data-bs-target="#realm-user-codes-mismatch-modal">Learn more about this chart</a>
+    <span>
+      <a href="/stats/realm.csv" class="me-1">CSV</a>
+      <a href="/stats/realm.json" target="_blank">JSON</a>
+    </span>
+  </small>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">
+    <i class="bi bi-graph-up me-2"></i>
     Manual / automated code issue &amp; user report
   </div>
   <div id="comparison_dashboard_div">
@@ -176,6 +196,24 @@
         <p>
           This line indicates that a code was requested but not sent to the same
           device that requested the code. This could indicate attempted system abuse.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="realm-user-codes-modal" data-backdrop="static" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">User report device mismatch by OS</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This graph shows device mismatch statistics by operating system attempting to 
+          claim the code. A mismatch occurs when a code was sent to a device other than
+          the one that requested it.
         </p>
       </div>
     </div>
