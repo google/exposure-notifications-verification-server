@@ -103,6 +103,26 @@
         },
         {
           chartType: 'AreaChart',
+          chartDiv: '#user_issued_mismatch_chart_div',
+          dashboardDiv: '#user_issued_mismatch_dashboard_div',
+          filterDiv: '#user_issued_mismatch_filter_div',
+          headerFunc: (dataTable, hasKeyServerStats) => {
+            dataTable.addColumn('date', 'Date');
+            dataTable.addColumn('number', 'Unknown');
+            dataTable.addColumn('number', 'iOS');
+            dataTable.addColumn('number', 'Android');
+          },
+          rowFunc: (dataTable, row, hasKeyServerStats) => {
+            dataTable.addRow([
+              utcDate(row.date),
+              row.data.user_reports_invalid_nonce_by_os.unknown_os,
+              row.data.user_reports_invalid_nonce_by_os.ios,
+              row.data.user_reports_invalid_nonce_by_os.android,
+            ]);
+          },
+        },
+        {
+          chartType: 'AreaChart',
           chartDiv: '#comparison_chart_div',
           dashboardDiv: '#comparison_dashboard_div',
           filterDiv: '#comparison_filter_div',

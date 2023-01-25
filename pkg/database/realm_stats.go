@@ -63,6 +63,10 @@ type RealmStat struct {
 	UserReportsClaimed      uint `gorm:"column:user_reports_claimed; type:integer; not null; default:0;"`
 	UserReportsInvalidNonce uint `gorm:"column:user_reports_invalid_nonce; type:integer; not null; default:0;"`
 
+	// UserReportsInvalidNonceByOS breaks the invalid nonce into a per-platform number
+	// to help diagnose potential platform issues.
+	UserReportsInvalidNonceByOS pq.Int64Array `gorm:"column:user_reports_invalid_nonce_by_os; type:bigint[];"`
+
 	// TokensClaimed is the number of tokens exchanged for a certificate.
 	// TokensInvalid is the number of tokens which failed to exchange due to
 	// a user error. This includes UserReportTokensClaimed.
@@ -127,7 +131,17 @@ func (s *RealmStat) AfterFind(tx *gorm.DB) (err error) {
 	if len(s.CodesInvalidByOS) == 0 {
 		s.CodesInvalidByOS = make([]int64, OSTypeUnknown.Len())
 	}
+	if len(s.UserReportsInvalidNonceByOS) == 0 {
+		s.UserReportsInvalidNonceByOS = make([]int64, OSTypeUnknown.Len())
+	}
 	return nil
+}
+
+func (s *RealmStat) BackfillBadNonceByOS() {
+	remaining := int64(s.UserReportsInvalidNonce) - s.UserReportsInvalidNonceByOS[OSTypeUnknown] - s.UserReportsInvalidNonceByOS[OSTypeIOS] - s.UserReportsInvalidNonceByOS[OSTypeAndroid]
+	if remaining > 0 {
+		s.UserReportsInvalidNonceByOS[OSTypeUnknown] += remaining
+	}
 }
 
 // CodeClaimAgeDistributionAsStrings returns CodeClaimAgeDistribution as
@@ -156,7 +170,7 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 		"tokens_claimed", "tokens_invalid", "code_claim_mean_age_seconds", "code_claim_age_distribution",
 		"user_reports_issued", "user_reports_claimed", "user_report_tokens_claimed",
 		"codes_invalid_unknown_os", "codes_invalid_ios", "codes_invalid_android",
-		"user_reports_invalid_nonce",
+		"user_reports_invalid_nonce", "user_report_invalid_nonce_unknown_os", "user_report_invalid_nonce_ios", "user_report_invalid_nonce_android",
 	}); err != nil {
 		return nil, fmt.Errorf("failed to write CSV header: %w", err)
 	}
@@ -178,6 +192,9 @@ func (s RealmStats) MarshalCSV() ([]byte, error) {
 			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeIOS]), 10),
 			strconv.FormatUint(uint64(stat.CodesInvalidByOS[OSTypeAndroid]), 10),
 			strconv.FormatUint(uint64(stat.UserReportsInvalidNonce), 10),
+			strconv.FormatUint(uint64(stat.UserReportsInvalidNonceByOS[OSTypeUnknown]), 10),
+			strconv.FormatUint(uint64(stat.UserReportsInvalidNonceByOS[OSTypeIOS]), 10),
+			strconv.FormatUint(uint64(stat.UserReportsInvalidNonceByOS[OSTypeAndroid]), 10),
 		}); err != nil {
 			return nil, fmt.Errorf("failed to write CSV entry %d: %w", i, err)
 		}
@@ -219,18 +236,19 @@ type CodesInvalidByOSData struct {
 }
 
 type JSONRealmStatStatsData struct {
-	CodesIssued             uint                 `json:"codes_issued"`
-	CodesClaimed            uint                 `json:"codes_claimed"`
-	CodesInvalid            uint                 `json:"codes_invalid"`
-	CodesInvalidByOS        CodesInvalidByOSData `json:"codes_invalid_by_os"`
-	UserReportsIssued       uint                 `json:"user_reports_issued"`
-	UserReportsClaimed      uint                 `json:"user_reports_claimed"`
-	UserReportsInvalidNonce uint                 `json:"user_reports_invalid_nonce"`
-	TokensClaimed           uint                 `json:"tokens_claimed"`
-	TokensInvalid           uint                 `json:"tokens_invalid"`
-	UserReportTokensClaimed uint                 `json:"user_report_tokens_claimed"`
-	CodeClaimMeanAge        uint                 `json:"code_claim_mean_age_seconds"`
-	CodeClaimDistribution   []int32              `json:"code_claim_age_distribution"`
+	CodesIssued                 uint                 `json:"codes_issued"`
+	CodesClaimed                uint                 `json:"codes_claimed"`
+	CodesInvalid                uint                 `json:"codes_invalid"`
+	CodesInvalidByOS            CodesInvalidByOSData `json:"codes_invalid_by_os"`
+	UserReportsIssued           uint                 `json:"user_reports_issued"`
+	UserReportsClaimed          uint                 `json:"user_reports_claimed"`
+	UserReportsInvalidNonce     uint                 `json:"user_reports_invalid_nonce"`
+	UserReportsInvalidNonceByOS CodesInvalidByOSData `json:"user_reports_invalid_nonce_by_os"`
+	TokensClaimed               uint                 `json:"tokens_claimed"`
+	TokensInvalid               uint                 `json:"tokens_invalid"`
+	UserReportTokensClaimed     uint                 `json:"user_report_tokens_claimed"`
+	CodeClaimMeanAge            uint                 `json:"code_claim_mean_age_seconds"`
+	CodeClaimDistribution       []int32              `json:"code_claim_age_distribution"`
 }
 
 // MarshalJSON is a custom JSON marshaller.
@@ -256,6 +274,11 @@ func (s RealmStats) MarshalJSON() ([]byte, error) {
 				UserReportsIssued:       stat.UserReportsIssued,
 				UserReportsClaimed:      stat.UserReportsClaimed,
 				UserReportsInvalidNonce: stat.UserReportsInvalidNonce,
+				UserReportsInvalidNonceByOS: CodesInvalidByOSData{
+					UnknownOS: stat.UserReportsInvalidNonceByOS[OSTypeUnknown],
+					IOS:       stat.UserReportsInvalidNonceByOS[OSTypeIOS],
+					Android:   stat.UserReportsInvalidNonceByOS[OSTypeAndroid],
+				},
 				TokensClaimed:           stat.TokensClaimed,
 				TokensInvalid:           stat.TokensInvalid,
 				UserReportTokensClaimed: stat.UserReportTokensClaimed,
@@ -303,9 +326,14 @@ func (s *RealmStats) UnmarshalJSON(b []byte) error {
 				stat.Data.CodesInvalidByOS.IOS,
 				stat.Data.CodesInvalidByOS.Android,
 			},
-			UserReportsIssued:        stat.Data.UserReportsIssued,
-			UserReportsClaimed:       stat.Data.UserReportsClaimed,
-			UserReportsInvalidNonce:  stat.Data.UserReportsInvalidNonce,
+			UserReportsIssued:       stat.Data.UserReportsIssued,
+			UserReportsClaimed:      stat.Data.UserReportsClaimed,
+			UserReportsInvalidNonce: stat.Data.UserReportsInvalidNonce,
+			UserReportsInvalidNonceByOS: []int64{
+				stat.Data.UserReportsInvalidNonceByOS.UnknownOS,
+				stat.Data.UserReportsInvalidNonceByOS.IOS,
+				stat.Data.UserReportsInvalidNonceByOS.Android,
+			},
 			TokensClaimed:            stat.Data.TokensClaimed,
 			TokensInvalid:            stat.Data.TokensInvalid,
 			UserReportTokensClaimed:  stat.Data.UserReportTokensClaimed,

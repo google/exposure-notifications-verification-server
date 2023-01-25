@@ -2602,6 +2602,17 @@ func (db *Database) Migrations(ctx context.Context) []*gormigrate.Migration {
 						DROP COLUMN IF EXISTS user_reports_invalid_nonce`)
 			},
 		},
+		{
+			ID: "00125-AddUserReportInvalidNonceByOS",
+			Migrate: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats ADD COLUMN IF NOT EXISTS user_reports_invalid_nonce_by_os BIGINT[]`)
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return multiExec(tx,
+					`ALTER TABLE realm_stats DROP COLUMN IF EXISTS user_reports_invalid_nonce_by_os`)
+			},
+		},
 	}
 }
 
