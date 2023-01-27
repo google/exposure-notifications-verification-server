@@ -1996,7 +1996,8 @@ func (db *Database) AllRealmCodeStats(ctx context.Context, requiredRealms int, e
 			array[]::integer[] AS code_claim_age_distribution,
 			0 AS code_claim_mean_age,
 			array[0,0,0]::bigint[] AS codes_invalid_by_os,
-			0 AS user_reports_invalid_nonce
+			0 AS user_reports_invalid_nonce,
+			array[0,0,0]::bigint[] AS user_reports_invalid_nonce_by_os
 		FROM (
 			SELECT date::date FROM generate_series($1, $2, '1 day'::interval) date
 		) d
