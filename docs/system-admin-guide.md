@@ -13,6 +13,7 @@
 - [Getting system information](#getting-system-information)
 - [Adding system notices](#adding-system-notices)
 - [Realm turndown](#realm-turndown)
+- [System turndown](#system-turndown)
 
 <!-- /TOC -->
 
@@ -327,3 +328,19 @@ re-launching an application.
       3. If (and only if) a realm is the only one using an export configuration, that export
       configuration should be removed as well and the files manually cleaned up from the
       cloud storage / CDN location.
+
+## System turndown
+
+System turndown is not intended to be recoverable. It would require bootstrapping
+new environments from scratch.
+
+1. Communicate with public health authorities on your server installation early.
+This will help lead to a smooth and prompt shutdown.
+2. Follow the realm turndown procedures, likely with an accelerated cool down period (2-3 days), this is only for PHAs to harvest statistics.
+3. **Caution** : Going past this step is not recoverable.
+4. Verification server
+   * Pause all Cloud Scheduler jobs to stop background processing
+   * Delete the project
+5. Key server
+   * Pause all Cloud Scheduler jobs to stop background processing
+   * Delete the project
