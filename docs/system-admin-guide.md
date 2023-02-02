@@ -332,7 +332,7 @@ re-launching an application.
 ## System turndown
 
 System turndown is not intended to be recoverable. It would require bootstrapping
-new environments from scratch.
+new environments from scratch. All existing data will be lost.
 
 1. Communicate with public health authorities on your server installation early.
 This will help lead to a smooth and prompt shutdown.
