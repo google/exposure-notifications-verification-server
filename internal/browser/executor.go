@@ -26,6 +26,7 @@ import (
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/cdproto/storage"
 	"github.com/chromedp/chromedp"
 )
 
@@ -161,7 +162,7 @@ func SetCookie(c *http.Cookie) chromedp.Action {
 // Cookies sets the current list of cookies into the provided destination.
 func Cookies(dst *[]*http.Cookie) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		networkCookies, err := network.GetAllCookies().Do(ctx)
+		networkCookies, err := storage.GetCookies().Do(ctx)
 		if err != nil {
 			return err
 		}
