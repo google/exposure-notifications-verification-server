@@ -1,3 +1,15 @@
+# Archive status announcement
+
+The Exposure Notifications Server projects are scheduled to move into
+archive status on July 1, 2023. 
+
+v1.17.0 is the last planned regular release. Maintenance releases
+may be published before the public archive date if necessary to address
+issues that may arise.
+
+The Exposure Notifications Authors want to thank everyone who contributed
+to this project either directly or indirectly 
+
 # Exposure Notifications Verification Server
 
 This is a reference implementation for an Exposure Notifications [verification server](https://developers.google.com/android/exposure-notifications/verification-system), part of the broader [Google Exposure Notifications system](https://github.com/google/exposure-notifications-server).
